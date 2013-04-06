@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glml>
+	<camera position="0 0 3"/>
+	<cube id="photocube" rotation="0 1 0 0.7853981" 
+		style="material:blinn;diffuse:red;specular:0, 0, 1;map:url(diffuse.jpg);env-map:url(env.jpg);rotation:0, 1, 0, 0.7853981;">
+	<img src="foo.jpg"/>
+	</cube>
+	<sphere id="backdrop" class="blinn1" scale="2 2 2">
+	<img src="foo.jpg"/>
+	</sphere>
+</glml>
