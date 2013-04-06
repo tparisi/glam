@@ -47,8 +47,8 @@
 		translation:vec3(.5, 1, -2);
 	}
 </style>
-<script id="glam" type="text/glam">
-<glam>
+<script id="glam1" type="text/glam">
+<scene>
 	<camera position="0 0 3"/>
 	<cube id="photocube" x=".5" y="1" z="-2" rotation="0 1 0 0.7853981" 
 		style="material:blinn;diffuse:red;specular:0, 0, 1;map:url(diffuse.jpg);env-map:url(env.jpg);rotation:0, 1, 0, 0.7853981;">
@@ -57,7 +57,7 @@
 	<sphere id="backdrop" class="blinn1" scale="2 2 2">
 	<img src="foo.jpg"/>
 	</sphere>
-</glam>
+</scene>
 </script>
 <script>
 function onLoad()

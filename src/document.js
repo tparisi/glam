@@ -1,12 +1,12 @@
 glam.document = {
 		
-	scenes : [],
+	scenes : {},
 	
 	styles : [],
 
-	addScene : function(scene)
+	addScene : function(id, scene)
 	{
-		glam.document.scenes.push(scene);
+		glam.document.scenes[id] = scene;		
 	},
 
 	addStyle : function(declaration)
@@ -27,7 +27,7 @@ glam.document = {
 			if (scripts[i].type == "text/glam")
 			{
 				var scene = dp.parseFromString(scripts[i].textContent, "text/xml");
-				glam.document.addScene(scene);
+				glam.document.addScene(scripts[i].id, scene);
 			}
 		}
 		
