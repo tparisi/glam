@@ -1,0 +1,120 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.js"></script>
+<script src="../libs/parsecss/jquery.parsecss.js" ></script>
+<script src="../src/glam.js" ></script>
+<script src="../src/document.js" ></script>
+<title>glAM Example 1</title>
+<style>
+	pre {
+		background: #F4F4F4;
+		border: 1px solid #B2B2B2;
+		overflow: auto;
+	}
+	body {
+		font-family: "Trebuchet MS",tahoma,verdana,sans-serif;
+		font-size: medium;
+		background: #555;
+		padding: 2em 4em;
+		width: 47em;
+		margin: 0 auto;
+	}
+	
+	.text {
+		background: #fff;
+		padding: 2em;
+		width:45em;
+		height:40em;
+		margin:0 auto;
+		border:solid 0px #111;
+	}
+
+</style>
+
+<style type="text/glam">
+	.blinn1 {
+		type:blinn;
+		diffuse:red;
+		specular:0, 0, 1;
+		map:url(diffuse.jpg);
+		env-map:url(env.jpg);
+	}
+	
+	photocube {
+		rotation:0, 1, 0, 0.7853981;
+		translation:vec3(.5, 1, -2);
+	}
+</style>
+<script id="glam" type="text/glam">
+<glam>
+	<camera position="0 0 3"/>
+	<cube id="photocube" x=".5" y="1" z="-2" rotation="0 1 0 0.7853981" 
+		style="material:blinn;diffuse:red;specular:0, 0, 1;map:url(diffuse.jpg);env-map:url(env.jpg);rotation:0, 1, 0, 0.7853981;">
+	<img src="foo.jpg"/>
+	</cube>
+	<sphere id="backdrop" class="blinn1" scale="2 2 2">
+	<img src="foo.jpg"/>
+	</sphere>
+</glam>
+</script>
+<script>
+function onLoad()
+{
+}
+
+var scenes = [];
+function addToScenes(scene)
+{
+	scenes.push(scene);
+}
+
+var styles = [];
+function addToStyles(declaration)
+{
+	styles.push(declaration);
+}
+
+$(document).ready(function(){
+
+	glam.ready();
+	return;
+	
+	var dp = new DOMParser;
+
+//	document.getElementById('glam')
+	var i, len;
+	
+	var scripts = document.head.getElementsByTagName("script");
+	var len = scripts.length;
+	for (i = 0; i < len; i++)
+	{
+		if (scripts[i].type == "text/glam")
+		{
+			var scene = dp.parseFromString(scripts[i].textContent, "text/xml");
+			addToScenes(scene);
+		}
+	}
+	
+	var styles = document.head.getElementsByTagName("style");
+	var len = styles.length;
+	for (i = 0; i < len; i++)
+	{
+		if (styles[i].type == "text/glam")
+		{
+			$.parsecss(styles[i].childNodes[0].data,
+					function(css) {
+							addToStyles(css);
+						}
+					);
+		}
+	}
+});
+
+</script>
+</head>
+<body onload="onLoad();">
+Hello glAM
+</body>
+</html>
