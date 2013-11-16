@@ -1,11 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<glml>
-	<camera position="0 0 3"/>
-	<cube id="photocube" rotation="0 1 0 0.7853981" 
-		style="material:blinn;diffuse:red;specular:0, 0, 1;map:url(diffuse.jpg);env-map:url(env.jpg);rotation:0, 1, 0, 0.7853981;">
-	<img src="foo.jpg"/>
-	</cube>
-	<sphere id="backdrop" class="blinn1" scale="2 2 2">
-	<img src="foo.jpg"/>
-	</sphere>
-</glml>
+<glam>
+	<scene>
+		<camera position="0 0 3">
+		<translation x="5" y="5" z="-5"/>
+		</camera>
+		<cube id="photocube" x=".5" y="1" z="-2" rotation="0 1 0 0.7853981" 
+			style="shader:blinn;diffuse:red;specular:0, 0, 1;map:url(diffuse.jpg);env-map:url(env.jpg);rotation:0, 1, 0, 0.7853981;">
+		<img src="foo.jpg"/>
+		</cube>
+		<sphere id="backdrop" class="blinn1" scale="2 2 2">
+		<img src="foo.jpg"/>
+		</sphere>
+	</scene>
+	
+	<scene>
+		<camera fov="45" near=".5" far="10000">
+			<translation x="5" y="5" z="-5"/>
+		</camera>
+		<cube id="photocube" x=".5" y="1" z="-2" rotation="0 1 0 0.7853981" 
+			style="shader:blinn;diffuse:red;specular:0, 0, 1;map:url(diffuse.jpg);env-map:url(env.jpg);rotation:0, 1, 0, 0.7853981;">
+		<img src="foo.jpg"/>
+		</cube>
+		<sphere id="backdrop" radius="4" x="x" y="y" z="z" sx="sx" sy="sy" sz="sy" rx="rx" ry="rx" rz="rz" ra="ra" qx="qx" qy="qy" qz="qz" qw="qw">
+			<transform translation="0 0 0" rotation="0 1 0 0" scale="1 1 1"/>
+			<material shader="blinn" diffuse="red" specular="blue" ambient="black" map="foo.jpg" envMap="foo-env.jpg" bumpMap="foo-bump.jpg"/>
+		</sphere>
+	</scene>
+</glam>
+

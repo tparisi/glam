@@ -35,27 +35,28 @@
 
 <style type="text/glam">
 	.blinn1 {
-		type:blinn;
+		shader:blinn;
 		diffuse:red;
 		specular:0, 0, 1;
 		map:url(diffuse.jpg);
 		env-map:url(env.jpg);
 	}
 	
-	photocube {
-		rotation:0, 1, 0, 0.7853981;
+	#photocube {
+		rotation:euler(0, 1, 0, 0.7853981);
 		translation:vec3(.5, 1, -2);
 	}
 </style>
 <script id="glam1" type="text/glam">
 <scene>
-	<camera position="0 0 3"/>
+	<camera position="0 0 3">
+		<translation x="5" y="5" z="-5"/>
+	</camera>
 	<cube id="photocube" x=".5" y="1" z="-2" rotation="0 1 0 0.7853981" 
-		style="material:blinn;diffuse:red;specular:0, 0, 1;map:url(diffuse.jpg);env-map:url(env.jpg);rotation:0, 1, 0, 0.7853981;">
-	<img src="foo.jpg"/>
+		style="shader:blinn;diffuse:red;specular:0, 0, 1;map:url(diffuse.jpg);env-map:url(env.jpg);rotation:0, 1, 0, 0.7853981;">
 	</cube>
 	<sphere id="backdrop" class="blinn1" scale="2 2 2">
-	<img src="foo.jpg"/>
+		<img src="foo.jpg"/>
 	</sphere>
 </scene>
 </script>
