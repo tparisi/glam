@@ -1,0 +1,61 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Programming 3D Applications in HTML5 and WebGL &mdash; A Simple Vizi Example</title>
+
+<div id="container" style="width:98%; height:98%; position:absolute;">
+</div>
+
+<script src="../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+<script src="../libs/vizi/vizi.js"></script>
+<style>
+
+	body {
+		background-color:lightgray;
+	}
+	
+	#overlay {
+		position:absolute;
+		font-family:Arial;
+		font-style:italic;
+		width:50%;
+		left:40px;
+		top:40px;
+		z-index:-1;
+	}
+	
+</style>
+<script type="text/javascript">
+
+	$(document).ready(function() {
+
+		// Create the Vizi application object
+		var container = document.getElementById("container");		
+		var app = new Vizi.Application({ container : container });
+
+		// Create a phong-shaded, texture-mapped cube
+		var cube = new Vizi.Object;	
+		var visual = new Vizi.Visual(
+				{ geometry: new THREE.CubeGeometry(2, 2, 2),
+					material: new THREE.MeshBasicMaterial({map:THREE.ImageUtils.loadTexture("../images/flowers.jpg")})
+				});
+		cube.addComponent(visual);
+		
+		// Rotate the cube toward the viewer to show off the 3D
+		cube.transform.rotation.x = 0.5;
+		
+		// Add the cube and light to the scene
+		app.addObject(cube);
+
+		// Run it
+		app.run();
+	}
+	);
+
+</script>
+
+</head>
+<body>
+
+
+</html>

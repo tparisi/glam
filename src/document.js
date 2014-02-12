@@ -35,7 +35,7 @@ glam.document = {
 		var len = styles.length;
 		for (i = 0; i < len; i++)
 		{
-			if (styles[i].type == "text/glam")
+			// if (styles[i].type == "text/glam")
 			{
 				$.parsecss(styles[i].childNodes[0].data,
 						function(css) {

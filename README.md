@@ -2,4 +2,5 @@ glam
 ====
 
 GL and Markup
-Private for now
+
+glam (for GL and Markup) is a declarative language for creating 3D web content.
