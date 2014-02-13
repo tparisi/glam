@@ -1,17 +1,14 @@
-glam.document = {
+glam.parser = {
 		
-	scenes : {},
-	
-	styles : [],
-
-	addScene : function(script, scene)
+	addDocument : function(script, document)
 	{
-		glam.document.scenes[script.id] = { parentElement : script.parentElement, scene : scene };
+		glam.documents[script.id] = document;
+		glam.documentParents[script.id] = script.parentElement;
 	},
 
 	addStyle : function(declaration)
 	{
-		glam.document.styles.push(declaration);
+		glam.styles.push(declaration);
 	},
 	
 	parseDocument : function()
@@ -27,7 +24,7 @@ glam.document = {
 			if (scripts[i].type == "text/glam")
 			{
 				var scene = dp.parseFromString(scripts[i].textContent, "text/xml");
-				glam.document.addScene(scripts[i], scene);
+				glam.parser.addDocument(scripts[i], scene);
 			}
 		}
 		
@@ -39,7 +36,7 @@ glam.document = {
 			{
 				$.parsecss(styles[i].childNodes[0].data,
 						function(css) {
-								glam.document.addStyle(css);
+								glam.parser.addStyle(css);
 							}
 						);
 			}

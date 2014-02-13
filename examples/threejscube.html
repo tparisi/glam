@@ -42,18 +42,21 @@
 			function() {
 
 				var canvas = document.getElementById("webglcanvas");
-				
+				var container = document.getElementById("container");
 		        // Create the Three.js renderer and attach it to our canvas
-			    renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true } );
+			    renderer = new THREE.WebGLRenderer( { antialias: true } );
 
 			    // Set the viewport size
-			    renderer.setSize(canvas.width, canvas.height);
+//			    renderer.setSize(canvas.width, canvas.height);
 
+			    renderer.setSize(container.offsetWidth, container.offsetHeight);
+			    container.appendChild( renderer.domElement );
+			    
 			    // Create a new Three.js scene
 			    scene = new THREE.Scene();
 
 			    // Add  a camera so we can view the scene
-		        camera = new THREE.PerspectiveCamera( 45, canvas.width / canvas.height, 1, 4000 );
+		        camera = new THREE.PerspectiveCamera( 45, container.offsetWidth / container.offsetHeight, 1, 4000 );
 		        camera.position.z = 5;
 				scene.add(camera);
 				
@@ -87,19 +90,10 @@
 </head>
 <body>
 
-	<!-- 
-	<div id="overlay">			
-			Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-			Aenean euismod nibh ut velit dictum, eu scelerisque purus adipiscing. 
-			Duis quis est ut dolor tincidunt sodales sed a erat. 
-			Proin vitae sem nec arcu mattis ullamcorper. Duis dignissim, nisl sed 
-			laoreet aliquam, nisl massa fringilla neque, rhoncus facilisis sem 
-			enim a orci. Etiam sit amet risus est. Vivamus ornare velit lorem, vel 
-			euismod turpis faucibus ut. Cras dignissim fermentum quam sit amet 
-			pellentesque. Curabitur porta non tortor quis ultricies.
-	</div>
-	 -->
+<!-- 
     <canvas id="webglcanvas" style="border: none;" width="800" height="600"></canvas>
+ -->
+    <div id="container" style="border: 1px solid; width:800px; height:600px;"></div>
 </body>
 
 </html>

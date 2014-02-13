@@ -2,10 +2,12 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.js"></script>
+<script src="../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
 <script src="../libs/parsecss/jquery.parsecss.js" ></script>
+<script src="../libs/vizi/vizi.js" ></script>
 <script src="../src/glam.js" ></script>
-<script src="../src/document.js" ></script>
+<script src="../src/parser.js" ></script>
+<script src="../src/viewer.js" ></script>
 <title>glam - Simple scene with cube</title>
 
 <style>
@@ -14,13 +16,6 @@
 		rotation:vec3(.5, 0, 0);
 	}
 </style>
-<script id="glam1" type="text/glam">
-<glam>
-  <scene>
-	<cube id="photocube"/>
-  </scene>
-</glam>
-</script>
 <script>
 $(document).ready(function(){
 
@@ -30,6 +25,19 @@ $(document).ready(function(){
 </script>
 </head>
 <body>
+<!-- 
 glam - Simple scene with cube
+ -->
+<div id="container" style="width:600px; height:600px;">
+<script id="glam1" type="text/glam">
+<glam>
+  <scene>
+	<cube id="photocube"/>
+  </scene>
+</glam>
+</script>
+</div>
+
+
 </body>
 </html>
