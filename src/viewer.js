@@ -58,34 +58,19 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 		var fn = null;
 		if (tag && (fn = glam.Viewer.types[tag]) && typeof(fn) == "function") {
 			console.log("    * found it in table!");
+			fn.call(this, childelt, sceneobj);
 		}
 	}
-	
-	// Create a phong-shaded, texture-mapped cube
-	var cube = new Vizi.Object;	
-	var visual = new Vizi.Visual(
-			{ geometry: new THREE.CubeGeometry(2, 2, 2),
-				material: new THREE.MeshPhongMaterial({map:THREE.ImageUtils.loadTexture("../images/flowers.jpg")})
-			});
-	cube.addComponent(visual);
-
-	// Add a rotate behavior to give the cube some life
-	var rotator = new Vizi.RotateBehavior({autoStart:true, duration:5});
-	cube.addComponent(rotator);
-	
-    // Tilt the cube toward the viewer so we can see 3D-ness
-    cube.transform.rotation.x = .5;
 	
 	// Add a light to show shading
 	var light = new Vizi.Object;
 	light.addComponent(new Vizi.DirectionalLight);
 
-	// Add the cube and light to the scene
-	sceneobj.addChild(cube);
 	sceneobj.addChild(light);
 }
 
-glam.Viewer.prototype.createCube = function() {
+glam.Viewer.prototype.createCube = function(docelt, sceneobj) {
+	return glam.Cube.createCube(docelt, sceneobj);
 }
 
 glam.Viewer.prototype.go = function() {

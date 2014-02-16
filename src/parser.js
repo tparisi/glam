@@ -8,7 +8,14 @@ glam.parser = {
 
 	addStyle : function(declaration)
 	{
-		glam.styles.push(declaration);
+		for (selector in declaration) {
+			glam.addStyle(selector, declaration[selector]);
+		}
+	},
+	
+	getStyle : function(selector)
+	{
+		return glam.getStyle(selector);
 	},
 	
 	parseDocument : function()

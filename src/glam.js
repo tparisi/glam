@@ -4,7 +4,7 @@ glam = {
 		
 		documentParents : {},
 		
-		styles : [],
+		styles : {},
 
 		viewers : {},
 };
@@ -22,4 +22,15 @@ glam.createViewers = function() {
 		glam.viewers[docname] = viewer;
 		viewer.go();
 	}
+}
+
+
+glam.addStyle = function(selector, style)
+{
+	glam.styles[selector] = style;
+}
+
+glam.getStyle = function(selector)
+{
+	return glam.styles[selector];
 }
