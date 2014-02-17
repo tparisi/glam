@@ -14,16 +14,18 @@ glam.Cube.createCube = function(docelt, sceneobj) {
 	}
 	
 	var image = "";
-	if (style.width)
-		width = style.width
-	if (style.height)
-		height = style.height;
-	if (style.depth)
-		depth = style.depth;
-	if (style.image) {
-		var regExp = /\(([^)]+)\)/;
-		var matches = regExp.exec(style.image);
-		image = matches[1];
+	if (style) {
+		if (style.width)
+			width = style.width
+		if (style.height)
+			height = style.height;
+		if (style.depth)
+			depth = style.depth;
+		if (style.image) {
+			var regExp = /\(([^)]+)\)/;
+			var matches = regExp.exec(style.image);
+			image = matches[1];
+		}
 	}
 	
 	// Create a phong-shaded, texture-mapped cube

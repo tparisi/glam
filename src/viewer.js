@@ -23,6 +23,12 @@ glam.Viewer.prototype.initDefaultScene = function() {
 	
 	this.scene = new Vizi.Object;
 	this.app.addObject(this.scene);
+
+	// Add a light to show shading
+	var light = new Vizi.Object;
+	light.addComponent(new Vizi.DirectionalLight);
+
+	this.scene.addChild(light);
 }
 
 glam.Viewer.prototype.traverseDocument = function() {
@@ -62,11 +68,6 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 		}
 	}
 	
-	// Add a light to show shading
-	var light = new Vizi.Object;
-	light.addComponent(new Vizi.DirectionalLight);
-
-	sceneobj.addChild(light);
 }
 
 glam.Viewer.prototype.createCube = function(docelt, sceneobj) {
