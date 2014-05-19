@@ -4,7 +4,7 @@ glam.Cube.DEFAULT_WIDTH = 2;
 glam.Cube.DEFAULT_HEIGHT = 2;
 glam.Cube.DEFAULT_DEPTH = 2;
 
-glam.Cube.createCube = function(docelt, sceneobj) {
+glam.Cube.create = function(docelt, sceneobj) {
 	var width = docelt.getAttribute('width') || glam.Cube.DEFAULT_WIDTH;
 	var height = docelt.getAttribute('height') || glam.Cube.DEFAULT_HEIGHT;
 	var depth = docelt.getAttribute('depth') || glam.Cube.DEFAULT_DEPTH;

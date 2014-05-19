@@ -62,16 +62,12 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 		var tag = childelt.tagName;
 		console.log("  child element ", childelt.tagName);
 		var fn = null;
-		if (tag && (fn = glam.Viewer.types[tag]) && typeof(fn) == "function") {
+		if (tag && glam.Viewer.types[tag] && (fn = glam.Viewer.types[tag].create) && typeof(fn) == "function") {
 			console.log("    * found it in table!");
 			fn.call(this, childelt, sceneobj);
 		}
 	}
 	
-}
-
-glam.Viewer.prototype.createCube = function(docelt, sceneobj) {
-	return glam.Cube.createCube(docelt, sceneobj);
 }
 
 glam.Viewer.prototype.go = function() {
@@ -81,7 +77,7 @@ glam.Viewer.prototype.go = function() {
 
 // statics
 glam.Viewer.types = {
-		"cube" : glam.Viewer.prototype.createCube,
+		"cube" : glam.Cube,
 };
 
 
