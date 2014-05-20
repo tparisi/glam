@@ -47194,43 +47194,6 @@ Vizi.Object.prototype.map = function(query, callback){
 	}
 }
 /**
- *
- */
-goog.provide('Vizi.Keyboard');
-
-Vizi.Keyboard = function()
-{
-	// N.B.: freak out if somebody tries to make 2
-	// throw (...)
-
-	Vizi.Keyboard.instance = this;
-}
-
-Vizi.Keyboard.prototype.onKeyDown = function(event)
-{
-}
-
-Vizi.Keyboard.prototype.onKeyUp = function(event)
-{
-}
-
-Vizi.Keyboard.prototype.onKeyPress = function(event)
-{
-}	        
-
-Vizi.Keyboard.instance = null;
-
-/* key codes
-37: left
-38: up
-39: right
-40: down
-*/
-Vizi.Keyboard.KEY_LEFT  = 37;
-Vizi.Keyboard.KEY_UP  = 38;
-Vizi.Keyboard.KEY_RIGHT  = 39;
-Vizi.Keyboard.KEY_DOWN  = 40;
-/**
  * @fileoverview Component is the base class for defining capabilities used within an Object
  * 
  * @author Tony Parisi
@@ -47284,6 +47247,202 @@ Vizi.Component.prototype.realize = function() {
 
 Vizi.Component.prototype.update = function() {
 }
+/**
+ * @fileoverview Base class for visual elements.
+ * @author Tony Parisi
+ */
+goog.provide('Vizi.SceneComponent');
+goog.require('Vizi.Component');
+
+/**
+ * @constructor
+ */
+Vizi.SceneComponent = function(param)
+{	
+	param = param || {};
+
+	Vizi.Component.call(this, param);
+    
+    // Create accessors for all properties... just pass-throughs to Three.js
+    Object.defineProperties(this, {
+        position: {
+	        get: function() {
+	            return this.object.position;
+	        }
+    	},
+        rotation: {
+	        get: function() {
+	            return this.object.rotation;
+	        }
+    	},
+        scale: {
+	        get: function() {
+	            return this.object.scale;
+	        }
+    	},
+        quaternion: {
+	        get: function() {
+	            return this.object.quaternion;
+	        }
+    	},    	
+        up: {
+	        get: function() {
+	            return this.object.up;
+	        },
+	        set: function(v) {
+	            this.object.up = v;
+	        }
+    	},    	
+        useQuaternion: {
+	        get: function() {
+	            return this.object.useQuaternion;
+	        },
+	        set: function(v) {
+	            this.object.useQuaternion = v;
+	        }
+    	},    	
+        visible: {
+	        get: function() {
+	            return this.object.visible;
+	        },
+	        set: function(v) {
+	            this.object.visible = v;
+	        }
+    	},    	
+    	lookAt : {
+    		value : function(v) {
+    			this.object.lookAt(v);
+    		}
+    	}
+    });
+    
+    this.layer = param.layer;
+} ;
+
+goog.inherits(Vizi.SceneComponent, Vizi.Component);
+
+Vizi.SceneComponent.prototype.realize = function()
+{
+	if (this.object && !this.object.data)
+	{
+		this.addToScene();
+	}
+	
+	Vizi.Component.prototype.realize.call(this);
+}
+
+Vizi.SceneComponent.prototype.update = function()
+{	
+	Vizi.Component.prototype.update.call(this);
+}
+
+Vizi.SceneComponent.prototype.addToScene = function() {
+	var scene = this.layer ? this.layer.scene : Vizi.Graphics.instance.scene;
+	if (this._object) {
+		
+		// only add me if the object's transform component actually points
+		// to a different Three.js object than mine
+		if (this._object.transform.object != this.object) {
+
+			var parent = this._object.transform ? this._object.transform.object : scene;
+			
+			if (parent) {
+				
+			    if (parent != this.object.parent)
+			    	 parent.add(this.object);
+			    
+			    this.object.data = this; // backpointer for picking and such
+			}
+			else {
+				// N.B.: throw something?
+			}
+		}
+	}
+	else {
+		// N.B.: throw something?
+	}
+}
+
+Vizi.SceneComponent.prototype.removeFromScene = function() {
+	var scene = this.layer ? this.layer.scene : Vizi.Graphics.instance.scene;
+	if (this._object)
+	{
+		var parent = this._object.transform ? this._object.transform.object : scene;
+		if (parent)
+		{
+			this.object.data = null;
+		    parent.remove(this.object);
+		}
+		else
+		{
+			// N.B.: throw something?
+		}
+	}
+	else
+	{
+		// N.B.: throw something?
+	}
+	
+	this._realized = false;
+}
+goog.provide('Vizi.Camera');
+goog.require('Vizi.SceneComponent');
+
+Vizi.Camera = function(param)
+{
+	param = param || {};
+	
+	Vizi.SceneComponent.call(this, param);
+
+    // Accessors
+    Object.defineProperties(this, {
+        active: {
+	        get: function() {
+	            return this._active;
+	        },
+	        set: function(v) {
+	        	this._active = v;
+	        	if (this._realized && this._active)
+	        	{
+	        		Vizi.CameraManager.setActiveCamera(this);
+	        	}
+	        }
+    	},    	
+
+    });
+	
+	this._active = param.active || false;
+	var position = param.position || Vizi.Camera.DEFAULT_POSITION;
+    //this.position.copy(position);	
+}
+
+goog.inherits(Vizi.Camera, Vizi.SceneComponent);
+
+Vizi.Camera.prototype._componentProperty = "camera";
+Vizi.Camera.prototype._componentPropertyType = "Camera";
+
+Vizi.Camera.prototype.realize = function() 
+{
+	Vizi.SceneComponent.prototype.realize.call(this);
+	
+	this.addToScene();
+	
+	Vizi.CameraManager.addCamera(this);
+	
+	if (this._active)
+	{
+		Vizi.CameraManager.setActiveCamera(this);
+	}
+}
+
+Vizi.Camera.prototype.lookAt = function(v) 
+{
+	this.object.lookAt(v);
+}
+
+Vizi.Camera.DEFAULT_POSITION = new THREE.Vector3(0, 0, 10);
+Vizi.Camera.DEFAULT_NEAR = 1;
+Vizi.Camera.DEFAULT_FAR = 10000;
 /**
  * @fileoverview Behavior component - base class for time-based behaviors
  * 
@@ -47883,144 +48042,6 @@ Vizi.Timer.prototype.stop = function()
 }
 
 /**
- * @fileoverview Base class for visual elements.
- * @author Tony Parisi
- */
-goog.provide('Vizi.SceneComponent');
-goog.require('Vizi.Component');
-
-/**
- * @constructor
- */
-Vizi.SceneComponent = function(param)
-{	
-	param = param || {};
-
-	Vizi.Component.call(this, param);
-    
-    // Create accessors for all properties... just pass-throughs to Three.js
-    Object.defineProperties(this, {
-        position: {
-	        get: function() {
-	            return this.object.position;
-	        }
-    	},
-        rotation: {
-	        get: function() {
-	            return this.object.rotation;
-	        }
-    	},
-        scale: {
-	        get: function() {
-	            return this.object.scale;
-	        }
-    	},
-        quaternion: {
-	        get: function() {
-	            return this.object.quaternion;
-	        }
-    	},    	
-        up: {
-	        get: function() {
-	            return this.object.up;
-	        },
-	        set: function(v) {
-	            this.object.up = v;
-	        }
-    	},    	
-        useQuaternion: {
-	        get: function() {
-	            return this.object.useQuaternion;
-	        },
-	        set: function(v) {
-	            this.object.useQuaternion = v;
-	        }
-    	},    	
-        visible: {
-	        get: function() {
-	            return this.object.visible;
-	        },
-	        set: function(v) {
-	            this.object.visible = v;
-	        }
-    	},    	
-    	lookAt : {
-    		value : function(v) {
-    			this.object.lookAt(v);
-    		}
-    	}
-    });
-    
-    this.layer = param.layer;
-} ;
-
-goog.inherits(Vizi.SceneComponent, Vizi.Component);
-
-Vizi.SceneComponent.prototype.realize = function()
-{
-	if (this.object && !this.object.data)
-	{
-		this.addToScene();
-	}
-	
-	Vizi.Component.prototype.realize.call(this);
-}
-
-Vizi.SceneComponent.prototype.update = function()
-{	
-	Vizi.Component.prototype.update.call(this);
-}
-
-Vizi.SceneComponent.prototype.addToScene = function() {
-	var scene = this.layer ? this.layer.scene : Vizi.Graphics.instance.scene;
-	if (this._object) {
-		
-		// only add me if the object's transform component actually points
-		// to a different Three.js object than mine
-		if (this._object.transform.object != this.object) {
-
-			var parent = this._object.transform ? this._object.transform.object : scene;
-			
-			if (parent) {
-				
-			    if (parent != this.object.parent)
-			    	 parent.add(this.object);
-			    
-			    this.object.data = this; // backpointer for picking and such
-			}
-			else {
-				// N.B.: throw something?
-			}
-		}
-	}
-	else {
-		// N.B.: throw something?
-	}
-}
-
-Vizi.SceneComponent.prototype.removeFromScene = function() {
-	var scene = this.layer ? this.layer.scene : Vizi.Graphics.instance.scene;
-	if (this._object)
-	{
-		var parent = this._object.transform ? this._object.transform.object : scene;
-		if (parent)
-		{
-			this.object.data = null;
-		    parent.remove(this.object);
-		}
-		else
-		{
-			// N.B.: throw something?
-		}
-	}
-	else
-	{
-		// N.B.: throw something?
-	}
-	
-	this._realized = false;
-}
-/**
  *
  */
 goog.provide('Vizi.Transform');
@@ -48473,186 +48494,42 @@ Vizi.SceneVisual.prototype.realize = function()
     this.addToScene();
 }
 /**
- * @fileoverview Picker component - add one to get picking support on your object
- * 
- * @author Tony Parisi
+ *
  */
+goog.provide('Vizi.Keyboard');
 
-goog.provide('Vizi.CylinderDragger');
-goog.require('Vizi.Picker');
-
-Vizi.CylinderDragger = function(param) {
-	
-	param = param || {};
-	
-    Vizi.Picker.call(this, param);
-    
-    this.normal = param.normal || new THREE.Vector3(0, 1, 0);
-    this.position = param.position || new THREE.Vector3;
-    this.color = 0xaa0000;
-}
-
-goog.inherits(Vizi.CylinderDragger, Vizi.Picker);
-
-Vizi.CylinderDragger.prototype.realize = function()
+Vizi.Keyboard = function()
 {
-	Vizi.Picker.prototype.realize.call(this);
+	// N.B.: freak out if somebody tries to make 2
+	// throw (...)
 
-    // And some helpers
-    this.dragObject = null;
-	this.dragOffset = new THREE.Euler;
-	this.currentOffset = new THREE.Euler;
-	this.dragHitPoint = new THREE.Vector3;
-	this.dragStartPoint = new THREE.Vector3;
-	this.dragPlane = this.createDragPlane();
-	this.dragPlane.visible = Vizi.CylinderDragger.SHOW_DRAG_PLANE;
-	this.dragPlane.ignorePick = true;
-	this.dragPlane.ignoreBounds = true;
-	this._object.transform.object.add(this.dragPlane);
+	Vizi.Keyboard.instance = this;
 }
 
-Vizi.CylinderDragger.prototype.createDragPlane = function() {
-
-	var size = 2000;
-	var normal = this.normal;
-	var position = this.position;
-	
-	var u = new THREE.Vector3(0, normal.z, -normal.y).normalize().multiplyScalar(size);
-	if (!u.lengthSq())
-		u = new THREE.Vector3(-normal.z, normal.x, 0).normalize().multiplyScalar(size);
-
-	var v = u.clone().cross(normal).normalize().multiplyScalar(size);
-	
-	var p1 = position.clone().sub(u).sub(v);
-	var p2 = position.clone().add(u).sub(v);
-	var p3 = position.clone().add(u).add(v);
-	var p4 = position.clone().sub(u).add(v);
-	
-	var planegeom = new THREE.Geometry();
-	planegeom.vertices.push(p1, p2, p3, p4); 
-	var planeface = new THREE.Face3( 0, 2, 1 );
-	planeface.normal.copy( normal );
-	planeface.vertexNormals.push( normal.clone(), normal.clone(), normal.clone(), normal.clone() );
-	planegeom.faces.push(planeface);
-	var planeface = new THREE.Face3( 0, 3, 2 );
-	planeface.normal.copy( normal );
-	planeface.vertexNormals.push( normal.clone(), normal.clone(), normal.clone(), normal.clone() );
-	planegeom.faces.push(planeface);
-	planegeom.computeFaceNormals();
-	planegeom.computeCentroids();
-
-	var mat = new THREE.MeshBasicMaterial({color:this.color, transparent: true, side:THREE.DoubleSide, opacity:0.1 });
-
-	var mesh = new THREE.Mesh(planegeom, mat);
-	
-	return mesh;
-}
-
-Vizi.CylinderDragger.prototype.update = function()
+Vizi.Keyboard.prototype.onKeyDown = function(event)
 {
 }
 
-Vizi.CylinderDragger.prototype.onMouseDown = function(event) {
-	Vizi.Picker.prototype.onMouseDown.call(this, event);
-	this.handleMouseDown(event);
+Vizi.Keyboard.prototype.onKeyUp = function(event)
+{
 }
 
-Vizi.CylinderDragger.prototype.handleMouseDown = function(event) {
-	
-	if (this.dragPlane) {
-		
-		var intersection = Vizi.Graphics.instance.getObjectIntersection(event.elementX, event.elementY, this.dragPlane);
-		
-		if (intersection)
-		{			
-//			this.toModelSpace(intersection.point);
-			this.dragStartPoint.copy(intersection.point).normalize();
-//			this.dragOffset.copy(this._object.transform.rotation);
-			this.dragObject = event.object;
-		    this.dispatchEvent("dragstart", {
-		        type : "dragstart",
-		        offset : intersection.point
-		    });
-		    
-		}
-	    
-	}
-	
-	if (Vizi.CylinderDragger.SHOW_DRAG_NORMAL) {
-		
-		if (this.arrowDecoration)
-			this._object.removeComponent(this.arrowDecoration);
-		
-		var mesh = new THREE.ArrowHelper(this.normal, new THREE.Vector3, 500, 0x00ff00, 5, 5);
-		var visual = new Vizi.Decoration({object:mesh});
-		this._object.addComponent(visual);
-		this.arrowDecoration = visual;
-		
-	}
-}
+Vizi.Keyboard.prototype.onKeyPress = function(event)
+{
+}	        
 
-Vizi.CylinderDragger.prototype.onMouseMove = function(event) {
-	Vizi.Picker.prototype.onMouseMove.call(this, event);
-	this.handleMouseMove(event);
-}
+Vizi.Keyboard.instance = null;
 
-Vizi.CylinderDragger.prototype.handleMouseMove = function(event) {
-	
-	var intersection = Vizi.Graphics.instance.getObjectIntersection(event.elementX, event.elementY, this.dragPlane);
-	
-	if (intersection)
-	{
-//		this.toModelSpace(intersection.point);
-		var projectedPoint = intersection.point.clone().normalize();
-		var theta = Math.acos(projectedPoint.dot(this.dragStartPoint));
-		var cross = projectedPoint.clone().cross(this.dragStartPoint);
-		if (this.normal.dot(cross) > 0)
-			theta = -theta;
-		
-		this.currentOffset.set(this.dragOffset.x + this.normal.x * theta, 
-				this.dragOffset.y + this.normal.y * theta,
-				this.dragOffset.z + this.normal.z * theta);
-			
-		this.dispatchEvent("drag", {
-				type : "drag", 
-				offset : this.currentOffset,
-			}
-		);
-	}
-}
-
-Vizi.CylinderDragger.prototype.onMouseUp = function(event) {
-	Vizi.Picker.prototype.onMouseUp.call(this, event);
-	this.handleMouseUp(event);
-}
-
-Vizi.CylinderDragger.prototype.handleMouseUp = function(event) {
-	
-	if (this.arrowDecoration)
-		this._object.removeComponent(this.arrowDecoration);
-
-}
-
-Vizi.CylinderDragger.prototype.onTouchStart = function(event) {
-	Vizi.Picker.prototype.onTouchStart.call(this, event);
-
-	this.handleMouseDown(event);
-}
-
-Vizi.CylinderDragger.prototype.onTouchMove = function(event) {
-	Vizi.Picker.prototype.onTouchMove.call(this, event);
-
-	this.handleMouseMove(event);
-}
-
-Vizi.CylinderDragger.prototype.onTouchEnd = function(event) {
-	Vizi.Picker.prototype.onTouchEnd.call(this, event);
-
-	this.handleMouseUp(event);
-}
-
-Vizi.CylinderDragger.SHOW_DRAG_PLANE = false;
-Vizi.CylinderDragger.SHOW_DRAG_NORMAL = false;
+/* key codes
+37: left
+38: up
+39: right
+40: down
+*/
+Vizi.Keyboard.KEY_LEFT  = 37;
+Vizi.Keyboard.KEY_UP  = 38;
+Vizi.Keyboard.KEY_RIGHT  = 39;
+Vizi.Keyboard.KEY_DOWN  = 40;
 /**
  * @fileoverview Main interface to the graphics and rendering subsystem
  * 
@@ -49061,6 +48938,187 @@ Vizi.Input = function()
 goog.inherits(Vizi.Input, Vizi.Service);
 
 Vizi.Input.instance = null;/**
+ * @fileoverview Picker component - add one to get picking support on your object
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('Vizi.CylinderDragger');
+goog.require('Vizi.Picker');
+
+Vizi.CylinderDragger = function(param) {
+	
+	param = param || {};
+	
+    Vizi.Picker.call(this, param);
+    
+    this.normal = param.normal || new THREE.Vector3(0, 1, 0);
+    this.position = param.position || new THREE.Vector3;
+    this.color = 0xaa0000;
+}
+
+goog.inherits(Vizi.CylinderDragger, Vizi.Picker);
+
+Vizi.CylinderDragger.prototype.realize = function()
+{
+	Vizi.Picker.prototype.realize.call(this);
+
+    // And some helpers
+    this.dragObject = null;
+	this.dragOffset = new THREE.Euler;
+	this.currentOffset = new THREE.Euler;
+	this.dragHitPoint = new THREE.Vector3;
+	this.dragStartPoint = new THREE.Vector3;
+	this.dragPlane = this.createDragPlane();
+	this.dragPlane.visible = Vizi.CylinderDragger.SHOW_DRAG_PLANE;
+	this.dragPlane.ignorePick = true;
+	this.dragPlane.ignoreBounds = true;
+	this._object.transform.object.add(this.dragPlane);
+}
+
+Vizi.CylinderDragger.prototype.createDragPlane = function() {
+
+	var size = 2000;
+	var normal = this.normal;
+	var position = this.position;
+	
+	var u = new THREE.Vector3(0, normal.z, -normal.y).normalize().multiplyScalar(size);
+	if (!u.lengthSq())
+		u = new THREE.Vector3(-normal.z, normal.x, 0).normalize().multiplyScalar(size);
+
+	var v = u.clone().cross(normal).normalize().multiplyScalar(size);
+	
+	var p1 = position.clone().sub(u).sub(v);
+	var p2 = position.clone().add(u).sub(v);
+	var p3 = position.clone().add(u).add(v);
+	var p4 = position.clone().sub(u).add(v);
+	
+	var planegeom = new THREE.Geometry();
+	planegeom.vertices.push(p1, p2, p3, p4); 
+	var planeface = new THREE.Face3( 0, 2, 1 );
+	planeface.normal.copy( normal );
+	planeface.vertexNormals.push( normal.clone(), normal.clone(), normal.clone(), normal.clone() );
+	planegeom.faces.push(planeface);
+	var planeface = new THREE.Face3( 0, 3, 2 );
+	planeface.normal.copy( normal );
+	planeface.vertexNormals.push( normal.clone(), normal.clone(), normal.clone(), normal.clone() );
+	planegeom.faces.push(planeface);
+	planegeom.computeFaceNormals();
+	planegeom.computeCentroids();
+
+	var mat = new THREE.MeshBasicMaterial({color:this.color, transparent: true, side:THREE.DoubleSide, opacity:0.1 });
+
+	var mesh = new THREE.Mesh(planegeom, mat);
+	
+	return mesh;
+}
+
+Vizi.CylinderDragger.prototype.update = function()
+{
+}
+
+Vizi.CylinderDragger.prototype.onMouseDown = function(event) {
+	Vizi.Picker.prototype.onMouseDown.call(this, event);
+	this.handleMouseDown(event);
+}
+
+Vizi.CylinderDragger.prototype.handleMouseDown = function(event) {
+	
+	if (this.dragPlane) {
+		
+		var intersection = Vizi.Graphics.instance.getObjectIntersection(event.elementX, event.elementY, this.dragPlane);
+		
+		if (intersection)
+		{			
+//			this.toModelSpace(intersection.point);
+			this.dragStartPoint.copy(intersection.point).normalize();
+//			this.dragOffset.copy(this._object.transform.rotation);
+			this.dragObject = event.object;
+		    this.dispatchEvent("dragstart", {
+		        type : "dragstart",
+		        offset : intersection.point
+		    });
+		    
+		}
+	    
+	}
+	
+	if (Vizi.CylinderDragger.SHOW_DRAG_NORMAL) {
+		
+		if (this.arrowDecoration)
+			this._object.removeComponent(this.arrowDecoration);
+		
+		var mesh = new THREE.ArrowHelper(this.normal, new THREE.Vector3, 500, 0x00ff00, 5, 5);
+		var visual = new Vizi.Decoration({object:mesh});
+		this._object.addComponent(visual);
+		this.arrowDecoration = visual;
+		
+	}
+}
+
+Vizi.CylinderDragger.prototype.onMouseMove = function(event) {
+	Vizi.Picker.prototype.onMouseMove.call(this, event);
+	this.handleMouseMove(event);
+}
+
+Vizi.CylinderDragger.prototype.handleMouseMove = function(event) {
+	
+	var intersection = Vizi.Graphics.instance.getObjectIntersection(event.elementX, event.elementY, this.dragPlane);
+	
+	if (intersection)
+	{
+//		this.toModelSpace(intersection.point);
+		var projectedPoint = intersection.point.clone().normalize();
+		var theta = Math.acos(projectedPoint.dot(this.dragStartPoint));
+		var cross = projectedPoint.clone().cross(this.dragStartPoint);
+		if (this.normal.dot(cross) > 0)
+			theta = -theta;
+		
+		this.currentOffset.set(this.dragOffset.x + this.normal.x * theta, 
+				this.dragOffset.y + this.normal.y * theta,
+				this.dragOffset.z + this.normal.z * theta);
+			
+		this.dispatchEvent("drag", {
+				type : "drag", 
+				offset : this.currentOffset,
+			}
+		);
+	}
+}
+
+Vizi.CylinderDragger.prototype.onMouseUp = function(event) {
+	Vizi.Picker.prototype.onMouseUp.call(this, event);
+	this.handleMouseUp(event);
+}
+
+Vizi.CylinderDragger.prototype.handleMouseUp = function(event) {
+	
+	if (this.arrowDecoration)
+		this._object.removeComponent(this.arrowDecoration);
+
+}
+
+Vizi.CylinderDragger.prototype.onTouchStart = function(event) {
+	Vizi.Picker.prototype.onTouchStart.call(this, event);
+
+	this.handleMouseDown(event);
+}
+
+Vizi.CylinderDragger.prototype.onTouchMove = function(event) {
+	Vizi.Picker.prototype.onTouchMove.call(this, event);
+
+	this.handleMouseMove(event);
+}
+
+Vizi.CylinderDragger.prototype.onTouchEnd = function(event) {
+	Vizi.Picker.prototype.onTouchEnd.call(this, event);
+
+	this.handleMouseUp(event);
+}
+
+Vizi.CylinderDragger.SHOW_DRAG_PLANE = false;
+Vizi.CylinderDragger.SHOW_DRAG_NORMAL = false;
+/**
  * @fileoverview RotateBehavior - simple angular rotation
  * 
  * @author Tony Parisi
@@ -51700,64 +51758,134 @@ Vizi.KeyFrameAnimator.prototype.updateAnimations = function()
 // Statics
 Vizi.KeyFrameAnimator.default_duration = 1000;
 Vizi.KeyFrameAnimator.FORWARD_DIRECTION = 0;
-Vizi.KeyFrameAnimator.REVERSE_DIRECTION = 1;goog.provide('Vizi.Camera');
-goog.require('Vizi.SceneComponent');
+Vizi.KeyFrameAnimator.REVERSE_DIRECTION = 1;/**
+ * @fileoverview Interpolator for key frame animation
+ * @author Tony Parisi
+ */
+goog.provide('Vizi.Interpolator');
+goog.require('Vizi.EventDispatcher');
 
-Vizi.Camera = function(param)
+//Interpolator class
+//Construction/initialization
+Vizi.Interpolator = function(param) 
 {
+	Vizi.EventDispatcher.call(param);
+	    		
 	param = param || {};
 	
-	Vizi.SceneComponent.call(this, param);
-
-    // Accessors
-    Object.defineProperties(this, {
-        active: {
-	        get: function() {
-	            return this._active;
-	        },
-	        set: function(v) {
-	        	this._active = v;
-	        	if (this._realized && this._active)
-	        	{
-	        		Vizi.CameraManager.setActiveCamera(this);
-	        	}
-	        }
-    	},    	
-
-    });
-	
-	this._active = param.active || false;
-	var position = param.position || Vizi.Camera.DEFAULT_POSITION;
-    //this.position.copy(position);	
+	this.keys = param.keys || [];
+	this.values = param.values || [];
+	this.target = param.target ? param.target : null;
+	this.running = false;
 }
 
-goog.inherits(Vizi.Camera, Vizi.SceneComponent);
-
-Vizi.Camera.prototype._componentProperty = "camera";
-Vizi.Camera.prototype._componentPropertyType = "Camera";
-
-Vizi.Camera.prototype.realize = function() 
+goog.inherits(Vizi.Interpolator, Vizi.EventDispatcher);
+	
+Vizi.Interpolator.prototype.realize = function()
 {
-	Vizi.SceneComponent.prototype.realize.call(this);
-	
-	this.addToScene();
-	
-	Vizi.CameraManager.addCamera(this);
-	
-	if (this._active)
+	if (this.keys && this.values)
 	{
-		Vizi.CameraManager.setActiveCamera(this);
+		this.setValue(this.keys, this.values);
+	}	    		
+}
+
+Vizi.Interpolator.prototype.setValue = function(keys, values)
+{
+	this.keys = [];
+	this.values = [];
+	if (keys && keys.length && values && values.length)
+	{
+		this.copyKeys(keys, this.keys);
+		this.copyValues(values, this.values);
 	}
 }
 
-Vizi.Camera.prototype.lookAt = function(v) 
+//Copying helper functions
+Vizi.Interpolator.prototype.copyKeys = function(from, to)
 {
-	this.object.lookAt(v);
+	var i = 0, len = from.length;
+	for (i = 0; i < len; i++)
+	{
+		to[i] = from[i];
+	}
 }
 
-Vizi.Camera.DEFAULT_POSITION = new THREE.Vector3(0, 0, 10);
-Vizi.Camera.DEFAULT_NEAR = 1;
-Vizi.Camera.DEFAULT_FAR = 10000;
+Vizi.Interpolator.prototype.copyValues = function(from, to)
+{
+	var i = 0, len = from.length;
+	for (i = 0; i < len; i++)
+	{
+		var val = {};
+		this.copyValue(from[i], val);
+		to[i] = val;
+	}
+}
+
+Vizi.Interpolator.prototype.copyValue = function(from, to)
+{
+	for ( var property in from ) {
+		
+		if ( from[ property ] === null ) {		
+		continue;		
+		}
+
+		to[ property ] = from[ property ];
+	}
+}
+
+//Interpolation and tweening methods
+Vizi.Interpolator.prototype.interp = function(fract)
+{
+	var value;
+	var i, len = this.keys.length;
+	if (fract == this.keys[0])
+	{
+		value = this.values[0];
+	}
+	else if (fract >= this.keys[len - 1])
+	{
+		value = this.values[len - 1];
+	}
+
+	for (i = 0; i < len - 1; i++)
+	{
+		var key1 = this.keys[i];
+		var key2 = this.keys[i + 1];
+
+		if (fract >= key1 && fract <= key2)
+		{
+			var val1 = this.values[i];
+			var val2 = this.values[i + 1];
+			value = this.tween(val1, val2, (fract - key1) / (key2 - key1));
+		}
+	}
+	
+	if (this.target)
+	{
+		this.copyValue(value, this.target);
+	}
+	else
+	{
+		this.publish("value", value);
+	}
+}
+
+Vizi.Interpolator.prototype.tween = function(from, to, fract)
+{
+	var value = {};
+	for ( var property in from ) {
+		
+		if ( from[ property ] === null ) {		
+		continue;		
+		}
+
+		var range = to[property] - from[property];
+		var delta = range * fract;
+		value[ property ] = from[ property ] + delta;
+	}
+	
+	return value;
+}
 goog.provide('Vizi.PerspectiveCamera');
 goog.require('Vizi.Camera');
 
@@ -53728,6 +53856,7 @@ goog.require('Vizi.Application');
 goog.require('Vizi.Service');
 goog.require('Vizi.Services');
 goog.require('Vizi.AnimationService');
+goog.require('Vizi.Interpolator');
 goog.require('Vizi.KeyFrameAnimator');
 goog.require('Vizi.TweenService');
 goog.require('Vizi.Behavior');

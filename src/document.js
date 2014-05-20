@@ -4,6 +4,8 @@ glam.document = {
 	
 	styles : [],
 
+	animations : {},
+	
 	addScene : function(script, scene)
 	{
 		glam.document.scenes[script.id] = { parentElement : script.parentElement, scene : scene };
@@ -14,6 +16,11 @@ glam.document = {
 		glam.document.styles.push(declaration);
 	},
 	
+	addAnimation : function(id, animation)
+	{
+		glam.document.animations[id] = animation;
+	},
+
 	parseDocument : function()
 	{
 		var dp = new DOMParser;

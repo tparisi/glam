@@ -7,6 +7,9 @@ glam = {
 		styles : {},
 
 		viewers : {},
+
+		animations : {},
+		
 };
 
 glam.ready = function() {
@@ -34,3 +37,14 @@ glam.getStyle = function(selector)
 {
 	return glam.styles[selector];
 }
+
+glam.addAnimation = function(id, animation)
+{
+	glam.animations[id] = animation;
+}
+
+glam.getAnimation = function(id) {
+	return glam.animations[id];
+}
+
+
