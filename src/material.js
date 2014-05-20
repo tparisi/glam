@@ -19,6 +19,9 @@ glam.Material.create = function(style) {
 					break;
 			}
 		}
+		else if (style["shader-vertex"] && style["shader-fragment"] && style["shader-uniforms"]) {
+			material = glam.Material.createShaderMaterial(style, param);
+		}
 		else {
 			material = new THREE.MeshBasicMaterial(param);
 		}
@@ -33,7 +36,7 @@ glam.Material.create = function(style) {
 glam.Material.parseStyle = function(style) {
 	var image = "";
 	if (style.image) {
-		image = glam.Material.parseImage(style.image);
+		image = glam.Material.parseUrl(style.image);
 	}
 	
 	var reflectivity;
@@ -91,7 +94,7 @@ glam.Material.parseStyle = function(style) {
 	return param;
 }
 
-glam.Material.parseImage = function(image) {
+glam.Material.parseUrl = function(image) {
 	var regExp = /\(([^)]+)\)/;
 	var matches = regExp.exec(image);
 	image = matches[1];
@@ -102,17 +105,17 @@ glam.Material.tryParseEnvMap = function(style) {
 	var urls = [];
 	
 	if (style["envmap-right"])
-		urls.push(glam.Material.parseImage(style["envmap-right"]));
+		urls.push(glam.Material.parseUrl(style["envmap-right"]));
 	if (style["envmap-left"])
-		urls.push(glam.Material.parseImage(style["envmap-left"]));
+		urls.push(glam.Material.parseUrl(style["envmap-left"]));
 	if (style["envmap-top"])
-		urls.push(glam.Material.parseImage(style["envmap-top"]));
+		urls.push(glam.Material.parseUrl(style["envmap-top"]));
 	if (style["envmap-bottom"])
-		urls.push(glam.Material.parseImage(style["envmap-bottom"]));
+		urls.push(glam.Material.parseUrl(style["envmap-bottom"]));
 	if (style["envmap-front"])
-		urls.push(glam.Material.parseImage(style["envmap-front"]));
+		urls.push(glam.Material.parseUrl(style["envmap-front"]));
 	if (style["envmap-back"])
-		urls.push(glam.Material.parseImage(style["envmap-back"]));
+		urls.push(glam.Material.parseUrl(style["envmap-back"]));
 	
 	if (urls.length == 6) {
 		var cubeTexture = THREE.ImageUtils.loadTextureCube( urls );
@@ -120,7 +123,77 @@ glam.Material.tryParseEnvMap = function(style) {
 	}
 	
 	if (style["envmap"])
-		return THREE.ImageUtils.loadTexture(glam.Material.parseImage(style["envmap"]), THREE.SphericalRefractionMapping);
+		return THREE.ImageUtils.loadTexture(glam.Material.parseUrl(style["envmap"]), THREE.SphericalRefractionMapping);
 	
 	return null;
+}
+
+glam.Material.createShaderMaterial = function(style, param) {
+	
+	var vs = style["shader-vertex"];
+	var fs = style["shader-fragment"];
+	var uniforms = glam.Material.parseUniforms(style["shader-uniforms"], param);
+
+	var vselt = document.getElementById(vs);
+	var vstext = vselt.textContent;
+	var fselt = document.getElementById(fs);
+	var fstext = fselt.textContent;
+	
+	return new THREE.ShaderMaterial({
+		vertexShader : vstext,
+		fragmentShader : fstext,
+		uniforms: uniforms,
+	});
+	
+	/*
+	var vsurl = glam.Material.parseUrl(vs);
+	var fsurl = glam.Material.parseUrl(fs);
+	
+	var vstext = "";
+	var fstext = "";
+	
+	$.ajax({
+	      type: 'GET',
+	      url: vsurl,
+	      dataType: "text",
+	      success: function(result) { vstext = result; if (fstext) done(); },
+	});	
+	
+	
+	$.ajax({
+	      type: 'GET',
+	      url: fsurl,
+	      dataType: "text",
+	      success: function(result) { fstext = result; if (vstext) done(); },
+	});	
+	*/
+}
+
+glam.Material.parseUniforms = function(uniformsText, param) {
+	
+	var uniforms = {
+	};
+	
+	var tokens = uniformsText.split(" ");
+
+	var i, len = tokens.length / 3;
+	for (i = 0; i < len; i++) {
+		var name = tokens[i * 3];
+		var type = tokens[i * 3 + 1];
+		var value = tokens[i * 3 + 2];
+		
+		if (type == "f")
+			value = parseFloat(value);
+		else if (type == "t")
+			value = param.envMap; // hack hack
+		
+		var uniform =  {
+			type : type,
+			value : value,
+		};
+		
+		uniforms[name] = uniform;
+	}
+		
+	return uniforms;
 }
