@@ -8,6 +8,8 @@
 <script src="../src/glam.js" ></script>
 <script src="../src/parser.js" ></script>
 <script src="../src/cube.js" ></script>
+<script src="../src/cone.js" ></script>
+<script src="../src/cylinder.js" ></script>
 <script src="../src/sphere.js" ></script>
 <script src="../src/group.js" ></script>
 <script src="../src/material.js" ></script>
@@ -23,8 +25,14 @@
         transform: translateX(.5) translateZ(-5) rotateY(30deg);
 	}
 
-	#bluecube {
+	#bluecone {
 		color-diffuse:blue;
+		radius:1;
+	}
+
+	#greencylinder {
+		color-diffuse:green;
+		radius:1;
 	}
 	
 	#backgroundSphere {
@@ -79,13 +87,19 @@ glam - Simple scene with cube
 	<group id="aGroup" x="1" y=".5" z="-2" >
 		<sphere id="backgroundSphere" animation="animFade"/>
 		<group id="nestedGroup">
-			<cube id="bluecube"/>
+			<cone id="bluecone"/>
+			<cylinder id="greencylinder" animation="animRotateZ"/>
 		</group>
 	</group>
   	<animation id="animRotateY" duration="2s" iteration-count="infinite" timing-function="ease-in-out">
 		<frame time="0%" property="transform" value="translateY(0) rotateY(0deg);"/>
 		<frame time="50%" property="transform" value="translateY(3) rotateY(180deg);"/>
 		<frame time="100%" property="transform" value="translateY(0) rotateY(360deg);"/>
+	</animation>
+  	<animation id="animRotateZ" duration="5s" iteration-count="infinite" timing-function="ease-in-out">
+		<frame time="0%" property="transform" value="translateY(0) rotateZ(0deg);"/>
+		<frame time="50%" property="transform" value="translateY(3) rotateZ(180deg);"/>
+		<frame time="100%" property="transform" value="translateY(0) rotateZ(360deg);"/>
 	</animation>
   	<animation id="animFade" duration="1s" iteration-count="infinite" timing-function="ease-in-out">
 		<frame time="0%" property="material" value="opacity:1;color-diffuse:red;"/>

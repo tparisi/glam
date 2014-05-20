@@ -74,8 +74,10 @@ glam.Viewer.prototype.go = function() {
 // statics
 glam.Viewer.types = {
 		"cube" : glam.Cube,
-		"group" : glam.Group,
+		"cone" : glam.Cone,
+		"cylinder" : glam.Cylinder,
 		"sphere" : glam.Sphere,
+		"group" : glam.Group,
 		"animation" : glam.Animation,
 };
 
