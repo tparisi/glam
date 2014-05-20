@@ -51602,6 +51602,7 @@ Vizi.KeyFrameAnimator = function(param)
 	this.direction = Vizi.KeyFrameAnimator.FORWARD_DIRECTION;
 	this.duration = param.duration ? param.duration : Vizi.KeyFrameAnimator.default_duration;
 	this.loop = param.loop ? param.loop : false;
+	this.easing = param.easing;
 }
 
 goog.inherits(Vizi.KeyFrameAnimator, Vizi.Component);
@@ -51712,6 +51713,8 @@ Vizi.KeyFrameAnimator.prototype.update = function()
 	var deltat = (now - this.startTime) % this.duration;
 	var nCycles = Math.floor((now - this.startTime) / this.duration);
 	var fract = deltat / this.duration;
+	if (this.easing)
+		fract = this.easing(fract);
 
 	if (nCycles >= 1 && !this.loop)
 	{

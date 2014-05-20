@@ -75,18 +75,23 @@ glam - Simple scene with cube
 <script id="glam1" type="text/glam">
 <glam>
   <scene>
-  	<animation id="animRotateY" duration="2s" iteration-count="infinite" timing-function="linear">
-		<frame time="0%" property="transform" value="translateY(0) rotateY(0deg);"/>
-		<frame time="50%" property="transform" value="translateY(3) rotateY(180deg);"/>
-		<frame time="100%" property="transform" value="translateY(0) rotateY(360deg);"/>
-	</animation>
 	<cube id="photocube" x="-1" sz=".5" animation="animRotateY"/>
 	<group id="aGroup" x="1" y=".5" z="-2" >
-		<sphere id="backgroundSphere"/>
+		<sphere id="backgroundSphere" animation="animFade"/>
 		<group id="nestedGroup">
 			<cube id="bluecube"/>
 		</group>
 	</group>
+  	<animation id="animRotateY" duration="2s" iteration-count="infinite" timing-function="ease-in-out">
+		<frame time="0%" property="transform" value="translateY(0) rotateY(0deg);"/>
+		<frame time="50%" property="transform" value="translateY(3) rotateY(180deg);"/>
+		<frame time="100%" property="transform" value="translateY(0) rotateY(360deg);"/>
+	</animation>
+  	<animation id="animFade" duration="1s" iteration-count="infinite" timing-function="ease-in-out">
+		<frame time="0%" property="material" value="opacity:1;color-diffuse:red;"/>
+		<frame time="50%" property="material" value="opacity:.5;color-diffuse:green;"/>
+		<frame time="100%" property="material" value="opacity:1;color-diffuse:red;"/>
+	</animation>
   </scene>
 </glam>
 </script>
