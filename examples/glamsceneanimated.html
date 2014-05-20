@@ -33,6 +33,7 @@
 	#greencylinder {
 		color-diffuse:green;
 		radius:1;
+		render-mode:wireframe;
 	}
 	
 	#backgroundSphere {
@@ -88,7 +89,7 @@ glam - Simple scene with cube
 		<sphere id="backgroundSphere" animation="animFade"/>
 		<group id="nestedGroup">
 			<cone id="bluecone"/>
-			<cylinder id="greencylinder" animation="animRotateZ"/>
+			<cylinder id="greencylinder" animation="animRotateZ" x="2"/>
 		</group>
 	</group>
   	<animation id="animRotateY" duration="2s" iteration-count="infinite" timing-function="ease-in-out">
@@ -96,10 +97,10 @@ glam - Simple scene with cube
 		<frame time="50%" property="transform" value="translateY(3) rotateY(180deg);"/>
 		<frame time="100%" property="transform" value="translateY(0) rotateY(360deg);"/>
 	</animation>
-  	<animation id="animRotateZ" duration="5s" iteration-count="infinite" timing-function="ease-in-out">
-		<frame time="0%" property="transform" value="translateY(0) rotateZ(0deg);"/>
-		<frame time="50%" property="transform" value="translateY(3) rotateZ(180deg);"/>
-		<frame time="100%" property="transform" value="translateY(0) rotateZ(360deg);"/>
+  	<animation id="animRotateZ" duration="5s" iteration-count="infinite" timing-function="linear">
+		<frame time="0%" property="transform" value="rotateZ(0deg);"/>
+		<frame time="50%" property="transform" value="rotateZ(180deg);"/>
+		<frame time="100%" property="transform" value="rotateZ(360deg);"/>
 	</animation>
   	<animation id="animFade" duration="1s" iteration-count="infinite" timing-function="ease-in-out">
 		<frame time="0%" property="material" value="opacity:1;color-diffuse:red;"/>

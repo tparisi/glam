@@ -79,6 +79,7 @@ glam.Viewer.types = {
 		"sphere" : glam.Sphere,
 		"group" : glam.Group,
 		"animation" : glam.Animation,
+		"background" : glam.Background,
 };
 
 

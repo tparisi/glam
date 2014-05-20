@@ -8,39 +8,33 @@
 <script src="../src/glam.js" ></script>
 <script src="../src/parser.js" ></script>
 <script src="../src/cube.js" ></script>
-<script src="../src/cone.js" ></script>
-<script src="../src/cylinder.js" ></script>
-<script src="../src/sphere.js" ></script>
-<script src="../src/group.js" ></script>
 <script src="../src/material.js" ></script>
 <script src="../src/transform.js" ></script>
 <script src="../src/animation.js" ></script>
+<script src="../src/background.js" ></script>
 <script src="../src/viewer.js" ></script>
-<title>glam - Scene with multiple objects</title>
+<title>glam - Scene with skybox background and environment map</title>
 
 <style>
-
-	#photocube {
-		image:url(../images/flowers.jpg);
-        transform: translateX(.5) translateZ(-5) rotateY(30deg);
-	}
-
-	#bluecube {
-		color-diffuse:blue;
-		render-mode:wireframe;
+	#cube1 {
+		color-diffuse:lightgray;
+		envmap-right:url(../images/sky35/rightcity.jpg);
+		envmap-left:url(../images/sky35/leftcity.jpg);
+		envmap-top:url(../images/sky35/topcity.jpg);
+		envmap-bottom:url(../images/sky35/botcity.jpg);
+		envmap-front:url(../images/sky35/frontcity.jpg);
+		envmap-back:url(../images/sky35/backcity.jpg);
+		shader:phong;
 	}
 	
-	#backgroundSphere {
-		radius:1.5;
-		shader:phong;
-		color-diffuse:red;
-		color-specular:#004400;
-		opacity:.8;
-/*		image:url(../images/bowieorangeglam.png); */
-	}
-
-	#nestedGroup {
-		transform:translateZ(-10);
+	#sb1 {
+		background-type:box;
+		envmap-right:url(../images/sky35/rightcity.jpg);
+		envmap-left:url(../images/sky35/leftcity.jpg);
+		envmap-top:url(../images/sky35/topcity.jpg);
+		envmap-bottom:url(../images/sky35/botcity.jpg);
+		envmap-front:url(../images/sky35/frontcity.jpg);
+		envmap-back:url(../images/sky35/backcity.jpg);
 	}
 	
 </style>
@@ -56,17 +50,12 @@ $(document).ready(function(){
 <!-- 
 glam - Simple scene with cube
  -->
-<div id="container" style="width:600px; height:600px;">
+<div id="container" style="width:80%; height:80%;position:absolute;">
 <script id="glam1" type="text/glam">
 <glam>
   <scene>
-	<cube id="photocube" x="-1" sz=".5"/>
-	<group id="aGroup" x="1" y=".5" z="-2" >
-		<sphere id="backgroundSphere"/>
-		<group id="nestedGroup">
-			<cube id="bluecube"/>
-		</group>
-	</group>
+	<background id="sb1"/>
+	<cube id="cube1"/>
   </scene>
 </glam>
 </script>

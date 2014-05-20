@@ -11,36 +11,33 @@
 <script src="../src/cone.js" ></script>
 <script src="../src/cylinder.js" ></script>
 <script src="../src/sphere.js" ></script>
-<script src="../src/group.js" ></script>
 <script src="../src/material.js" ></script>
 <script src="../src/transform.js" ></script>
 <script src="../src/animation.js" ></script>
+<script src="../src/background.js" ></script>
 <script src="../src/viewer.js" ></script>
-<title>glam - Scene with multiple objects</title>
+<title>glam - fresnel shader</title>
 
 <style>
-
-	#photocube {
-		image:url(../images/flowers.jpg);
-        transform: translateX(.5) translateZ(-5) rotateY(30deg);
-	}
-
-	#bluecube {
-		color-diffuse:blue;
-		render-mode:wireframe;
+	#sphere1 {
+		color-diffuse:lightgray;
+		shader:phong;
+		envmap-right:url(../images/Park2/posx.jpg);
+		envmap-left:url(../images/Park2/negx.jpg);
+		envmap-top:url(../images/Park2/posy.jpg);
+		envmap-bottom:url(../images/Park2/negy.jpg);
+		envmap-front:url(../images/Park2/posz.jpg);
+		envmap-back:url(../images/Park2/negz.jpg);
 	}
 	
-	#backgroundSphere {
-		radius:1.5;
-		shader:phong;
-		color-diffuse:red;
-		color-specular:#004400;
-		opacity:.8;
-/*		image:url(../images/bowieorangeglam.png); */
-	}
-
-	#nestedGroup {
-		transform:translateZ(-10);
+	#sb1 {
+		background-type:box;
+		envmap-right:url(../images/Park2/posx.jpg);
+		envmap-left:url(../images/Park2/negx.jpg);
+		envmap-top:url(../images/Park2/posy.jpg);
+		envmap-bottom:url(../images/Park2/negy.jpg);
+		envmap-front:url(../images/Park2/posz.jpg);
+		envmap-back:url(../images/Park2/negz.jpg);
 	}
 	
 </style>
@@ -56,17 +53,12 @@ $(document).ready(function(){
 <!-- 
 glam - Simple scene with cube
  -->
-<div id="container" style="width:600px; height:600px;">
+<div id="container" style="width:80%; height:80%;position:absolute;">
 <script id="glam1" type="text/glam">
 <glam>
   <scene>
-	<cube id="photocube" x="-1" sz=".5"/>
-	<group id="aGroup" x="1" y=".5" z="-2" >
-		<sphere id="backgroundSphere"/>
-		<group id="nestedGroup">
-			<cube id="bluecube"/>
-		</group>
-	</group>
+	<background id="sb1"/>
+	<sphere id="sphere1"/>
   </scene>
 </glam>
 </script>

@@ -33,14 +33,23 @@ glam.Material.create = function(style) {
 glam.Material.parseStyle = function(style) {
 	var image = "";
 	if (style.image) {
-		var regExp = /\(([^)]+)\)/;
-		var matches = regExp.exec(style.image);
-		image = matches[1];
+		image = glam.Material.parseImage(style.image);
 	}
+	
+	var reflectivity;
+	if (style.reflectivity)
+		reflectivity = parseFloat(style.reflectivity);
+	
+	var refractionRatio;
+	if (style.refractionRatio)
+		refractionRatio = parseFloat(style.refractionRatio);
+	
+	var envMap = glam.Material.tryParseEnvMap(style);
 	
 	var diffuse;
 	var specular;
 	var css = "";
+
 	if (css = style["color-diffuse"]) {
 		diffuse = new THREE.Color().setStyle(css).getHex();
 	}
@@ -50,13 +59,19 @@ glam.Material.parseStyle = function(style) {
 	
 	var opacity;
 	if (style.opacity)
-		opacity = style.opacity;
+		opacity = parseFloat(style.opacity);
+
+	var wireframe;
+	if (style.hasOwnProperty("render-mode"))
+		wireframe = style["render-mode"] == "wireframe";
 	
 	var param = {
 	};
 	
 	if (image)
 		param.map = THREE.ImageUtils.loadTexture(image);
+	if (envMap)
+		param.envMap = envMap;
 	if (diffuse !== undefined)
 		param.color = diffuse;
 	if (specular !== undefined)
@@ -65,6 +80,47 @@ glam.Material.parseStyle = function(style) {
 		param.opacity = opacity;
 		param.transparent = opacity < 1;
 	}
+	if (wireframe !== undefined) {
+		param.wireframe = true;
+	}
+	if (reflectivity !== undefined)
+		param.reflectivity = reflectivity;
+	if (refractionRatio !== undefined)
+		param.refractionRatio = refractionRatio;
 	
 	return param;
+}
+
+glam.Material.parseImage = function(image) {
+	var regExp = /\(([^)]+)\)/;
+	var matches = regExp.exec(image);
+	image = matches[1];
+	return image;
+}
+
+glam.Material.tryParseEnvMap = function(style) {
+	var urls = [];
+	
+	if (style["envmap-right"])
+		urls.push(glam.Material.parseImage(style["envmap-right"]));
+	if (style["envmap-left"])
+		urls.push(glam.Material.parseImage(style["envmap-left"]));
+	if (style["envmap-top"])
+		urls.push(glam.Material.parseImage(style["envmap-top"]));
+	if (style["envmap-bottom"])
+		urls.push(glam.Material.parseImage(style["envmap-bottom"]));
+	if (style["envmap-front"])
+		urls.push(glam.Material.parseImage(style["envmap-front"]));
+	if (style["envmap-back"])
+		urls.push(glam.Material.parseImage(style["envmap-back"]));
+	
+	if (urls.length == 6) {
+		var cubeTexture = THREE.ImageUtils.loadTextureCube( urls );
+		return cubeTexture;
+	}
+	
+	if (style["envmap"])
+		return THREE.ImageUtils.loadTexture(glam.Material.parseImage(style["envmap"]), THREE.SphericalRefractionMapping);
+	
+	return null;
 }

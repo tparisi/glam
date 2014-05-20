@@ -11,14 +11,16 @@
 <script src="../src/material.js" ></script>
 <script src="../src/transform.js" ></script>
 <script src="../src/animation.js" ></script>
+<script src="../src/background.js" ></script>
 <script src="../src/viewer.js" ></script>
-<title>glam - Simple scene with cube</title>
+<title>Scene with skysphere background and environment map</title>
 
 <style>
-	#photocube {
-		image:url(../images/flowers.jpg);
-		rx:30deg;
+	
+	#ss1 {
+		envmap:url(../images/spherepano/pan2.jpg);
 	}
+	
 </style>
 <script>
 $(document).ready(function(){
@@ -32,11 +34,11 @@ $(document).ready(function(){
 <!-- 
 glam - Simple scene with cube
  -->
-<div id="container" style="width:600px; height:600px;">
+<div id="container" style="width:98%; height:98%;position:absolute;">
 <script id="glam1" type="text/glam">
 <glam>
   <scene>
-	<cube id="photocube"/>
+	<background id="ss1" type="sphere"/>
   </scene>
 </glam>
 </script>
