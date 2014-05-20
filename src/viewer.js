@@ -76,6 +76,7 @@ glam.Viewer.types = {
 		"cube" : glam.Cube,
 		"group" : glam.Group,
 		"sphere" : glam.Sphere,
+		"animation" : glam.Animation,
 };
 
 
