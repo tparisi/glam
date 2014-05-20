@@ -11,24 +11,15 @@ glam.Viewer = function(doc, docParent) {
 glam.Viewer.prototype = new Object;
 
 glam.Viewer.prototype.initRenderer = function() {
-	this.app = new Vizi.Application({ container : this.documentParent });
+	this.app = new Vizi.Viewer({ container : this.documentParent, headlight: false });
 }
 
 glam.Viewer.prototype.initDefaultScene = function() {
-	var camobj = new Vizi.Object;
-	camera1 = new Vizi.PerspectiveCamera({active:true});
-	camobj.addComponent(camera1);
-	camera1.position.z = 5;
-	this.app.addObject(camobj);
 	
 	this.scene = new Vizi.Object;
-	this.app.addObject(this.scene);
-
-	// Add a light to show shading
-	var light = new Vizi.Object;
-	light.addComponent(new Vizi.DirectionalLight);
-
-	this.scene.addChild(light);
+	this.app.sceneRoot.addChild(this.scene);
+//	this.app.controllerScript.enabled = false;
+	this.app.defaultCamera.position.set(0, 0, 5);
 }
 
 glam.Viewer.prototype.traverseDocument = function() {
@@ -64,7 +55,12 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 		var fn = null;
 		if (tag && glam.Viewer.types[tag] && (fn = glam.Viewer.types[tag].create) && typeof(fn) == "function") {
 			console.log("    * found it in table!");
-			fn.call(this, childelt, sceneobj);
+			var obj = fn.call(this, childelt, sceneobj);
+			
+			if (obj) {
+				sceneobj.addChild(obj);
+				this.traverse(childelt, obj);
+			}
 		}
 	}
 	
@@ -78,6 +74,8 @@ glam.Viewer.prototype.go = function() {
 // statics
 glam.Viewer.types = {
 		"cube" : glam.Cube,
+		"group" : glam.Group,
+		"sphere" : glam.Sphere,
 };
 
 
