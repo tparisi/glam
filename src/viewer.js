@@ -44,7 +44,10 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 			tag = tag.toLowerCase();
 		// console.log("  child element ", childelt.tagName);
 		var fn = null;
-		if (tag && glam.Viewer.types[tag] && (fn = glam.Viewer.types[tag].create) && typeof(fn) == "function") {
+		if (tag == "controller") {
+			this.initController(childelt);
+		}
+		else if (tag && glam.Viewer.types[tag] && (fn = glam.Viewer.types[tag].create) && typeof(fn) == "function") {
 			// console.log("    * found it in table!");
 			this.addFeatures(childelt);
 			var obj = fn.call(this, childelt, sceneobj);
@@ -96,6 +99,24 @@ glam.Viewer.prototype.addFeatures = function(docelt) {
 				handler(attr, val);
 			}
 		}
+	}
+}
+
+glam.Viewer.prototype.initController = function(docelt) {
+	var on = true;
+	
+	var noheadlight = docelt.getAttribute("noheadlight");
+	if (noheadlight !== null) {
+		this.app.controllerScript.headlightOn = false;
+	}
+	
+	var type = docelt.getAttribute("type");
+	if (type !== null) {
+		type = type.toLowerCase();
+		if (type == "fps")
+			this.controllerType = "FPS";
+		else
+			this.controllerType = "model";
 	}
 }
 

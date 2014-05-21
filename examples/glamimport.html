@@ -17,7 +17,7 @@
 <script src="../src/import.js" ></script>
 <script src="../src/camera.js" ></script>
 <script src="../src/viewer.js" ></script>
-<title>glam - Scene with skybox background and environment map</title>
+<title>glam - Imported scene with skybox background</title>
 
 <style>
 	#cube1 {
@@ -57,6 +57,7 @@ glam - Simple scene with cube
 <div id="container" style="width:98%; height:98%;position:absolute;">
 <glam>
   <scene>
+	<controller noheadlight type="fps"></controller>
 	<background id="sb1"></background>
 	<import id="imported_scene" src="../models/futurgo_city/futurgo_city.dae" animation=""></import>
   	<animation id="animRotateY" duration="100s" iteration-count="infinite" timing-function="linear">
