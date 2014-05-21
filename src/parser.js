@@ -21,6 +21,14 @@ glam.parser = {
 			    	viewer.removeNode(node);
 		    	}
 		    }
+		    else if (mutation.type == "attributes") {
+		    	var onSetAttribute = mutation.target.onSetAttribute;
+		    	if (onSetAttribute) {
+		    		var attr = mutation.attributeName;
+		    		var val = mutation.target.getAttribute(attr);
+		    		onSetAttribute(attr, val);
+		    	}
+		    }
 		  });    
 		});
 		 

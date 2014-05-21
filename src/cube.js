@@ -37,6 +37,7 @@ glam.Cube.create = function(docelt, sceneobj) {
 	glam.Transform.parse(docelt, cube);
 	glam.Animation.parse(docelt, cube);
 	glam.Input.add(docelt, cube);
+	glam.Material.addHandlers(docelt, cube);
 	
     // Tilt the cube toward the viewer so we can see 3D-ness
     // cube.transform.rotation.x = .5;

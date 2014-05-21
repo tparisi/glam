@@ -60,6 +60,8 @@ function createBubble(scene, x, y, z, animClass) {
 	sphereelt.setAttribute('class', "bubble skybox");
 
 	sphereelt.addEventListener("click", function(event) {
+		pop.pause();
+		pop.currentTime = 0;
 		pop.play();
 		scene.removeChild(groupelt);
 	});

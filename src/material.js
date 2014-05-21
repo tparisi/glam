@@ -287,3 +287,20 @@ glam.Material.getShaderMaterialLoading = function(vsurl, fsurl) {
 	var entry = glam.Material.shaderMaterials[key];
 	return (entry && entry.loading);
 }
+
+glam.Material.addHandlers = function(docelt, obj) {
+
+	docelt.setAttributeHandlers.push(function(attr, val) {
+		glam.Material.onSetAttribute(obj, docelt, attr, val);
+	});
+}
+
+glam.Material.onSetAttribute = function(obj, docelt, attr, val) {
+
+	var material = obj.visuals[0].material;
+	switch (attr) {
+		case "color-diffuse" :
+			material.color.setStyle(val);
+			break;
+	}
+}

@@ -35,22 +35,24 @@ $(document).ready(function(){
 	var photocube = document.getElementById('photocube');
 
 	photocube.addEventListener("mouseover", function(event) {
-		stat.innerHTML='mouseover';
+		stat.innerHTML = 'mouseover';
+		photocube.setAttribute('color-diffuse', 'red');
 	});
 	photocube.addEventListener("mouseout", function(event) {
-		stat.innerHTML='mouseout';
+		stat.innerHTML = 'mouseout';
+		photocube.setAttribute('color-diffuse', 'white');
 	});
 	photocube.addEventListener("mousedown", function(event) {
-		stat.innerHTML='mousedown';
+		stat.innerHTML = 'mousedown';
 	});
 	photocube.addEventListener("mouseup", function(event) {
-		stat.innerHTML='mouseup';
+		stat.innerHTML = 'mouseup';
 	});
 	photocube.addEventListener("mousemove", function(event) {
-		stat.innerHTML='mousemove';
+		stat.innerHTML = 'mousemove';
 	});
 	photocube.addEventListener("click", function(event) {
-		stat.innerHTML='click';
+		stat.innerHTML = 'click';
 	});
 	
 });
@@ -73,7 +75,7 @@ glam - Simple scene with cube
   </scene>
 </glam>
 </div>
-<div id="stat">
+<div id="stat" style="position:absolute;left:160px;top:20%;font-size:48px;color:goldenrod;font-family:Arial;">
 </div>
 
 </body>

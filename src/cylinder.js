@@ -33,6 +33,7 @@ glam.Cylinder.create = function(docelt, sceneobj) {
 	glam.Transform.parse(docelt, cylinder);
 	glam.Animation.parse(docelt, cylinder);
 	glam.Input.add(docelt, cylinder);
+	glam.Material.addHandlers(docelt, cylinder);
 	
     // Tilt the cube toward the viewer so we can see 3D-ness
     // cube.transform.rotation.x = .5;

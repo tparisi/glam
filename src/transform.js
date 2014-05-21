@@ -25,6 +25,10 @@ glam.Transform.parse = function(docelt, obj) {
 	obj.transform.position.set(t.x, t.y, t.z);
 	obj.transform.rotation.set(t.rx, t.ry, t.rz);
 	obj.transform.scale.set(t.sx, t.sy, t.sz);
+	
+	docelt.setAttributeHandlers.push(function(attr, val) {
+		glam.Transform.onSetAttribute(obj, docelt, attr, val);
+	});
 }
 
 glam.Transform.parseStyle = function(style, t) {
@@ -127,4 +131,38 @@ glam.Transform.parseRotation = function(r) {
 	}
 	
 	return parseFloat(r);
+}
+
+glam.Transform.onSetAttribute = function(obj, docelt, attr, val) {
+	var v = parseFloat(val);
+	switch(attr) {
+		case 'x' :
+			obj.transform.position.x = v;
+			break;
+		case 'y' :
+			obj.transform.position.y = v;
+			break;
+		case 'z' :
+			obj.transform.position.z = v;
+			break;
+		case 'rx' :
+			obj.transform.rotation.x = v;
+			break;
+		case 'ry' :
+			obj.transform.rotation.y = v;
+			break;
+		case 'rz' :
+			obj.transform.rotation.z = v;
+			break;
+		case 'sx' :
+			obj.transform.scale.x = v;
+			break;
+		case 'sy' :
+			obj.transform.scale.y = v;
+			break;
+		case 'sz' :
+			obj.transform.scale.z = v;
+			break;
+		
+	}
 }
