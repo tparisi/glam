@@ -9,22 +9,36 @@ glam.Sphere.create = function(docelt, sceneobj) {
 		var style = glam.getStyle("#" + docelt.id);
 	}
 	
-	var material = null;
+	var klass = docelt.getAttribute('class')
+	if (klass) {
+		var style = glam.getStyle("." + klass);
+	}
+	
 	if (style) {
 		if (style.radius)
 			radius = style.radius;
 	}
 
-	var material = glam.Material.create(style);
-	
 	// Create the cube
-	var sphere = new Vizi.Object;	
-	var visual = new Vizi.Visual(
-			{ geometry: new THREE.SphereGeometry(radius, 32, 32),
-				material: material
-			});
-	sphere.addComponent(visual);
-
+	var sphere = new Vizi.Object;
+	var material = glam.Material.create(style, function(material) {
+		var visual = new Vizi.Visual(
+				{ geometry: new THREE.SphereGeometry(radius, 32, 32),
+					material: material
+				});
+		sphere.addComponent(visual);
+		
+	});
+	
+	if (material) {
+		var visual = new Vizi.Visual(
+				{ geometry: new THREE.SphereGeometry(radius, 32, 32),
+					material: material
+				});
+		sphere.addComponent(visual);
+	}
+	
+	
 	glam.Transform.parse(docelt, sphere);
 	glam.Animation.parse(docelt, sphere);
 

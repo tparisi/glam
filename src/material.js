@@ -1,6 +1,6 @@
 glam.Material = {};
 
-glam.Material.create = function(style) {
+glam.Material.create = function(style, createCB) {
 	var material = null;
 	
 	if (style) {
@@ -20,7 +20,7 @@ glam.Material.create = function(style) {
 			}
 		}
 		else if (style["shader-vertex"] && style["shader-fragment"] && style["shader-uniforms"]) {
-			material = glam.Material.createShaderMaterial(style, param);
+			material = glam.Material.createShaderMaterial(style, param, createCB);
 		}
 		else {
 			material = new THREE.MeshBasicMaterial(param);
@@ -128,26 +128,38 @@ glam.Material.tryParseEnvMap = function(style) {
 	return null;
 }
 
-glam.Material.createShaderMaterial = function(style, param) {
+glam.Material.createShaderMaterial = function(style, param, createCB) {
+	
+	function done() {
+		var material = new THREE.ShaderMaterial({
+			vertexShader : vstext,
+			fragmentShader : fstext,
+			uniforms: uniforms,
+		});
+		
+		if (createCB)
+			createCB(material);
+	}
 	
 	var vs = style["shader-vertex"];
 	var fs = style["shader-fragment"];
 	var uniforms = glam.Material.parseUniforms(style["shader-uniforms"], param);
 
-	var vselt = document.getElementById(vs);
-	var vstext = vselt.textContent;
-	var fselt = document.getElementById(fs);
-	var fstext = fselt.textContent;
-	
-	return new THREE.ShaderMaterial({
-		vertexShader : vstext,
-		fragmentShader : fstext,
-		uniforms: uniforms,
-	});
-	
-	/*
 	var vsurl = glam.Material.parseUrl(vs);
 	var fsurl = glam.Material.parseUrl(fs);
+
+	if (!vsurl || !fsurl) {
+		var vselt = document.getElementById(vs);
+		var vstext = vselt.textContent;
+		var fselt = document.getElementById(fs);
+		var fstext = fselt.textContent;
+		
+		return new THREE.ShaderMaterial({
+			vertexShader : vstext,
+			fragmentShader : fstext,
+			uniforms: uniforms,
+		});		
+	}	
 	
 	var vstext = "";
 	var fstext = "";
@@ -166,7 +178,6 @@ glam.Material.createShaderMaterial = function(style, param) {
 	      dataType: "text",
 	      success: function(result) { fstext = result; if (vstext) done(); },
 	});	
-	*/
 }
 
 glam.Material.parseUniforms = function(uniformsText, param) {
