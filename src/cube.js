@@ -9,10 +9,7 @@ glam.Cube.create = function(docelt, sceneobj) {
 	var height = docelt.getAttribute('height') || glam.Cube.DEFAULT_HEIGHT;
 	var depth = docelt.getAttribute('depth') || glam.Cube.DEFAULT_DEPTH;
 	
-	var style = null;
-	if (docelt.id) {
-		style = glam.getStyle("#" + docelt.id);
-	}
+	var style = glam.Node.getStyle(docelt);
 
 	if (style) {
 		if (style.width)

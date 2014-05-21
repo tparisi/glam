@@ -7,10 +7,7 @@ glam.Cone.create = function(docelt, sceneobj) {
 	var radius = docelt.getAttribute('radius') || glam.Cone.DEFAULT_RADIUS;
 	var height = docelt.getAttribute('height') || glam.Cone.DEFAULT_HEIGHT;
 	
-	var style = null;
-	if (docelt.id) {
-		style = glam.getStyle("#" + docelt.id);
-	}
+	var style = glam.Node.getStyle(docelt);
 
 	if (style) {
 		if (style.radius)

@@ -137,8 +137,8 @@ glam.Material.createShaderMaterial = function(style, param, createCB) {
 			uniforms: uniforms,
 		});
 		
-		if (createCB)
-			createCB(material);
+		glam.Material.saveShaderMaterial(vsurl, fsurl, material);
+		glam.Material.callShaderMaterialCallbacks(vsurl, fsurl);
 	}
 	
 	var vs = style["shader-vertex"];
@@ -154,12 +154,28 @@ glam.Material.createShaderMaterial = function(style, param, createCB) {
 		var fselt = document.getElementById(fs);
 		var fstext = fselt.textContent;
 		
-		return new THREE.ShaderMaterial({
-			vertexShader : vstext,
-			fragmentShader : fstext,
-			uniforms: uniforms,
-		});		
+		if (vstext && fstext) {
+			return new THREE.ShaderMaterial({
+				vertexShader : vstext,
+				fragmentShader : fstext,
+				uniforms: uniforms,
+			});
+		}
+		else {
+			return null;
+		}
 	}	
+	
+	var material = glam.Material.getShaderMaterial(vsurl, fsurl);
+	if (material)
+		return material;
+	
+	glam.Material.addShaderMaterialCallback(vsurl, fsurl, createCB);
+	
+	if (glam.Material.getShaderMaterialLoading(vsurl, fsurl))
+		return;
+	
+	glam.Material.setShaderMaterialLoading(vsurl, fsurl);
 	
 	var vstext = "";
 	var fstext = "";
@@ -207,4 +223,67 @@ glam.Material.parseUniforms = function(uniformsText, param) {
 	}
 		
 	return uniforms;
+}
+
+glam.Material.shaderMaterials = {};
+
+glam.Material.saveShaderMaterial = function(vsurl, fsurl, material) {
+	var key = vsurl + fsurl;
+	var entry = glam.Material.shaderMaterials[key];
+	entry.material = material;
+	entry.loading = false;
+}
+
+glam.Material.addShaderMaterialCallback = function(vsurl, fsurl, cb) {
+	var key = vsurl + fsurl;
+	
+	var entry = glam.Material.shaderMaterials[key];
+	if (!entry) {
+		glam.Material.shaderMaterials[key] = {
+			material : null,
+			loading : false,
+			callbacks : [],
+		};
+	}
+	
+	glam.Material.shaderMaterials[key].callbacks.push(cb);
+}
+
+glam.Material.callShaderMaterialCallbacks = function(vsurl, fsurl) {
+	var key = vsurl + fsurl;
+	
+	var entry = glam.Material.shaderMaterials[key];
+	if (entry && entry.material) {
+		for (cb in entry.callbacks) {
+			entry.callbacks[cb](entry.material);
+		}
+	}
+}
+
+glam.Material.getShaderMaterial = function(vsurl, fsurl) {
+	
+	var key = vsurl + fsurl;
+	var entry = glam.Material.shaderMaterials[key];
+	if (entry) {
+		return entry.material;
+	}
+	else {
+		return null;
+	}
+}
+
+glam.Material.setShaderMaterialLoading = function(vsurl, fsurl) {
+	
+	var key = vsurl + fsurl;
+	var entry = glam.Material.shaderMaterials[key];
+	if (entry) {
+		entry.loading = true;
+	}
+}
+
+glam.Material.getShaderMaterialLoading = function(vsurl, fsurl) {
+	
+	var key = vsurl + fsurl;
+	var entry = glam.Material.shaderMaterials[key];
+	return (entry && entry.loading);
 }

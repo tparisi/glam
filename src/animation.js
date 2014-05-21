@@ -33,7 +33,7 @@ glam.Animation.create = function(docelt, sceneobj) {
 	for (i = 0; i < len; i++) {
 		var childelt = children[i];
 		var tag = childelt.tagName;
-		console.log("  child element ", childelt.tagName);
+		// console.log("  child element ", childelt.tagName);
 		
 		if (childelt.tagName == "frame") {
 			var frame = glam.Animation.createFrame(childelt);

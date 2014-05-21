@@ -7,10 +7,7 @@ glam.Cylinder.create = function(docelt, sceneobj) {
 	var radius = docelt.getAttribute('radius') || glam.Cylinder.DEFAULT_RADIUS;
 	var height = docelt.getAttribute('height') || glam.Cylinder.DEFAULT_HEIGHT;
 	
-	var style = null;
-	if (docelt.id) {
-		style = glam.getStyle("#" + docelt.id);
-	}
+	var style = glam.Node.getStyle(docelt);
 
 	if (style) {
 		if (style.radius)

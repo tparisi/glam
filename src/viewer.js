@@ -45,16 +45,16 @@ glam.Viewer.prototype.traverseScene = function() {
 glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 
 	var tag = docelt.tagName;
-	console.log("Parsing element ", tag, "!");
+	// console.log("Parsing element ", tag, "!");
 
 	var i, len, children = docelt.childNodes, len = children.length;
 	for (i = 0; i < len; i++) {
 		var childelt = children[i];
 		var tag = childelt.tagName;
-		console.log("  child element ", childelt.tagName);
+		// console.log("  child element ", childelt.tagName);
 		var fn = null;
 		if (tag && glam.Viewer.types[tag] && (fn = glam.Viewer.types[tag].create) && typeof(fn) == "function") {
-			console.log("    * found it in table!");
+			// console.log("    * found it in table!");
 			var obj = fn.call(this, childelt, sceneobj);
 			
 			if (obj) {

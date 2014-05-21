@@ -5,14 +5,7 @@ glam.Sphere.DEFAULT_RADIUS = 2;
 glam.Sphere.create = function(docelt, sceneobj) {
 	var radius = docelt.getAttribute('radius') || glam.Sphere.DEFAULT_RADIUS;
 	
-	if (docelt.id) {
-		var style = glam.getStyle("#" + docelt.id);
-	}
-	
-	var klass = docelt.getAttribute('class')
-	if (klass) {
-		var style = glam.getStyle("." + klass);
-	}
+	var style = glam.Node.getStyle(docelt);
 	
 	if (style) {
 		if (style.radius)
