@@ -1,0 +1,73 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+<script src="../libs/parsecss/jquery.parsecss.js" ></script>
+<script src="../libs/vizi/vizi.js" ></script>
+<script src="../src/glam.js" ></script>
+<script src="../src/node.js" ></script>
+<script src="../src/parser.js" ></script>
+<script src="../src/cube.js" ></script>
+<script src="../src/material.js" ></script>
+<script src="../src/transform.js" ></script>
+<script src="../src/animation.js" ></script>
+<script src="../src/input.js" ></script>
+<script src="../src/background.js" ></script>
+<script src="../src/import.js" ></script>
+<script src="../src/camera.js" ></script>
+<script src="../src/viewer.js" ></script>
+<title>glam - Scene with skybox background and environment map</title>
+
+<style>
+	#cube1 {
+		color-diffuse:lightgray;
+		envmap-right:url(../images/sky35/rightcity.jpg);
+		envmap-left:url(../images/sky35/leftcity.jpg);
+		envmap-top:url(../images/sky35/topcity.jpg);
+		envmap-bottom:url(../images/sky35/botcity.jpg);
+		envmap-front:url(../images/sky35/frontcity.jpg);
+		envmap-back:url(../images/sky35/backcity.jpg);
+		shader:phong;
+	}
+	
+	#sb1 {
+		background-type:box;
+		envmap-right:url(../images/sky35/rightcity.jpg);
+		envmap-left:url(../images/sky35/leftcity.jpg);
+		envmap-top:url(../images/sky35/topcity.jpg);
+		envmap-bottom:url(../images/sky35/botcity.jpg);
+		envmap-front:url(../images/sky35/frontcity.jpg);
+		envmap-back:url(../images/sky35/backcity.jpg);
+	}
+	
+</style>
+<script>
+$(document).ready(function(){
+
+	glam.ready();
+});
+
+</script>
+</head>
+<body>
+<!-- 
+glam - Simple scene with cube
+ -->
+<div id="container" style="width:98%; height:98%;position:absolute;">
+<glam>
+  <scene>
+	<background id="sb1"></background>
+	<import id="imported_scene" src="../models/futurgo_city/futurgo_city.dae" animation=""></import>
+  	<animation id="animRotateY" duration="100s" iteration-count="infinite" timing-function="linear">
+		<keyframe time="0%" property="transform" value="rotateY(0deg);"></keyframe>
+		<keyframe time="50%" property="transform" value="rotateY(180deg);"></keyframe>
+		<keyframe time="100%" property="transform" value="rotateY(360deg);"></keyframe>
+	</animation>
+  </scene>
+</glam>
+</div>
+
+
+</body>
+</html>

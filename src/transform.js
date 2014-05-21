@@ -5,15 +5,15 @@ glam.Transform.parse = function(docelt, obj) {
 	var t = {
 	};
 	
-	t.x = docelt.getAttribute('x') || 0;
-	t.y = docelt.getAttribute('y') || 0;
-	t.z = docelt.getAttribute('z') || 0;
-	t.rx = docelt.getAttribute('rx') || 0;
-	t.ry = docelt.getAttribute('ry') || 0;
-	t.rz = docelt.getAttribute('rz') || 0;
-	t.sx = docelt.getAttribute('sx') || 1;
-	t.sy = docelt.getAttribute('sy') || 1;
-	t.sz = docelt.getAttribute('sz') || 1;
+	t.x = parseFloat(docelt.getAttribute('x')) || 0;
+	t.y = parseFloat(docelt.getAttribute('y')) || 0;
+	t.z = parseFloat(docelt.getAttribute('z')) || 0;
+	t.rx = parseFloat(docelt.getAttribute('rx')) || 0;
+	t.ry = parseFloat(docelt.getAttribute('ry')) || 0;
+	t.rz = parseFloat(docelt.getAttribute('rz')) || 0;
+	t.sx = parseFloat(docelt.getAttribute('sx')) || 1;
+	t.sy = parseFloat(docelt.getAttribute('sy')) || 1;
+	t.sz = parseFloat(docelt.getAttribute('sz')) || 1;
 
 	if (docelt.id) {
 		var style = glam.getStyle("#" + docelt.id);

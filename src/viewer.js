@@ -113,6 +113,8 @@ glam.Viewer.types = {
 		"group" : glam.Group,
 		"animation" : glam.Animation,
 		"background" : glam.Background,
+		"import" : glam.Import,
+		"camera" : glam.Camera,
 };
 
 
