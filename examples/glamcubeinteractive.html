@@ -2,61 +2,82 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.js"></script>
+<script src="../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
 <script src="../libs/parsecss/jquery.parsecss.js" ></script>
+<script src="../libs/vizi/vizi.js" ></script>
 <script src="../src/glam.js" ></script>
-<script src="../src/document.js" ></script>
-<title>glam - Trigger cube animation with rollover</title>
+<script src="../src/node.js" ></script>
+<script src="../src/parser.js" ></script>
+<script src="../src/cube.js" ></script>
+<script src="../src/material.js" ></script>
+<script src="../src/transform.js" ></script>
+<script src="../src/animation.js" ></script>
+<script src="../src/input.js" ></script>
+<script src="../src/viewer.js" ></script>
+<title>glam - Simple scene with cube, animated, interactive</title>
 
 <style>
 	#photocube {
-		image:url(../images/flower.jpg);
-		rotation:vec3(.5, 0, 0);
-	}
-	
-	@keyframes kfRotateY {
-	  from {
-	    transform: rotateY(0deg);
-	  }
-	
-	  to {
-	    transform: rotateY(360deg);
-	  }
-	}
-	
-	.rotating
-	 {
-	  animation-duration: 10s;
-	  animation-name: kfRotateY;
-	  animation-iteration-count: infinite;
-	  animation-timing-function:linear;
+		image:url(../images/flowers.jpg);
+		rx:30deg;
 	}
 
 </style>
-<script id="glam1" type="text/glam">
-<glam>
-  <scene>
-	<cube id="photocube"/>
-  </scene>
-</glam>
-</script>
 <script>
+
+var stat = null;
 $(document).ready(function(){
 
 	glam.ready();
 
-	var scene = glam.document.scenes["glam1"];
-	var cube = scene.getElementById("photocube");
+	stat = document.getElementById("stat");
+	
+	var doc = glam.documents.glam1;
+	var photocube = doc.getElementById('photocube');
 
-	cube.addEventListener("mouseover", function(event) { 
-		cube.classList.add("rotating"); });              	
-	cube.addEventListener("mouseout", function(event) { 
-		cube.classList.remove("rotating"); });
+	photocube.addEventListener("mouseover", function(event) {
+		stat.innerHTML='mouseover';
+	});
+	photocube.addEventListener("mouseout", function(event) {
+		stat.innerHTML='mouseout';
+	});
+	photocube.addEventListener("mousedown", function(event) {
+		stat.innerHTML='mousedown';
+	});
+	photocube.addEventListener("mouseup", function(event) {
+		stat.innerHTML='mouseup';
+	});
+	photocube.addEventListener("mousemove", function(event) {
+		stat.innerHTML='mousemove';
+	});
+	photocube.addEventListener("click", function(event) {
+		stat.innerHTML='click';
+	});
+	
 });
 
 </script>
 </head>
 <body>
-glam - Trigger cube animation with rollover
+<!-- 
+glam - Simple scene with cube
+ -->
+<div id="container" style="width:600px; height:600px;">
+<script id="glam1" type="text/glam">
+<glam>
+  <scene>
+	<cube id="photocube" animation="animRotateY"/>
+  	<animation id="animRotateY" duration="10s" iteration-count="infinite" timing-function="linear">
+		<frame time="0%" property="transform" value="rotateY(0deg);"/>
+		<frame time="50%" property="transform" value="rotateY(180deg);"/>
+		<frame time="100%" property="transform" value="rotateY(360deg);"/>
+	</animation>
+  </scene>
+</glam>
+</script>
+</div>
+<div id="stat">
+</div>
+
 </body>
 </html>

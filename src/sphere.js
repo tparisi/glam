@@ -31,27 +31,9 @@ glam.Sphere.create = function(docelt, sceneobj) {
 		sphere.addComponent(visual);
 	}
 	
-	var picker = new Vizi.Picker;
-	picker.addEventListener("click", function(event){
-		var domEvent = new CustomEvent(
-				"click", 
-				{
-					detail: {
-					},
-					bubbles: true,
-					cancelable: true
-				}
-			);
-		for (propName in event) {
-			domEvent[propName] = event[propName];
-		}
-		var res = docelt.dispatchEvent(domEvent);
-		
-	});
-	sphere.addComponent(picker);
-	
 	glam.Transform.parse(docelt, sphere);
 	glam.Animation.parse(docelt, sphere);
+	glam.Input.add(docelt, sphere);
 
 	return sphere;
 }

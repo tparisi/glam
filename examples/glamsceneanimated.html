@@ -16,6 +16,7 @@
 <script src="../src/material.js" ></script>
 <script src="../src/transform.js" ></script>
 <script src="../src/animation.js" ></script>
+<script src="../src/input.js" ></script>
 <script src="../src/viewer.js" ></script>
 <title>glam - Scene with multiple objects</title>
 
@@ -43,30 +44,11 @@
 		color-diffuse:red;
 		color-specular:#004400;
 		opacity:.8;
-/*		image:url(../images/bowieorangeglam.png); */
 	}
 
 	#nestedGroup {
 		transform:translateZ(-10);
 	}
-
-@-webkit-keyframes kfRotateY {
-  from {
-    -webkit-transform: rotateY(0deg);
-  }
-
-  to {
-   -webkit-transform: rotateY(360deg);
-  }
-}
-
-.animRotateY
- {
-  -webkit-animation-duration: 2s;
-  -webkit-animation-name: kfRotateY;
-  -webkit-animation-iteration-count: infinite;
-  -webkit-animation-timing-function:linear;
-}
 
 </style>
 <script>

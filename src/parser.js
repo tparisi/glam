@@ -2,8 +2,7 @@ glam.parser = {
 		
 	addDocument : function(script, doc)
 	{
-		doc.createElement = function(type) {
-			var elt = document.createElement(type);
+		function overrideElementMethods(elt) {
 			elt.eventListeners = {};
 			elt.addEventListener = function(type, listener) {
 				if (!elt.eventListeners[type]) {
@@ -20,7 +19,18 @@ glam.parser = {
 					listeners[i](event);
 				}
 			}
-			
+		}
+		
+		doc.getEltOrig = doc.getElementById;
+		doc.getElementById = function(id) {
+			var elt = doc.getEltOrig(id);
+			overrideElementMethods(elt);
+			return elt;
+		}
+		
+		doc.createElement = function(type) {
+			var elt = document.createElement(type);
+			overrideElementMethods(elt);
 			return elt;
 		}
 		

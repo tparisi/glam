@@ -2,29 +2,45 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.js"></script>
+<script src="../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
 <script src="../libs/parsecss/jquery.parsecss.js" ></script>
+<script src="../libs/vizi/vizi.js" ></script>
 <script src="../src/glam.js" ></script>
 <script src="../src/node.js" ></script>
-<script src="../src/document.js" ></script>
-<title>glam - Scene with cube, animated using markup</title>
+<script src="../src/parser.js" ></script>
+<script src="../src/cube.js" ></script>
+<script src="../src/material.js" ></script>
+<script src="../src/transform.js" ></script>
+<script src="../src/animation.js" ></script>
+<script src="../src/input.js" ></script>
+<script src="../src/viewer.js" ></script>
+<title>glam - Simple scene with cube, animated</title>
 
 <style>
 	#photocube {
-		image:url(../images/flower.jpg);
-		rotation:vec3(.5, 0, 0);
+		image:url(../images/flowers.jpg);
+		rx:30deg;
 	}
+
+@-webkit-keyframes kfRotateY {
+  from {
+    -webkit-transform: rotateY(0deg);
+  }
+
+  to {
+   -webkit-transform: rotateY(360deg);
+  }
+}
+
+.animRotateY
+ {
+  -webkit-animation-duration: 2s;
+  -webkit-animation-name: kfRotateY;
+  -webkit-animation-iteration-count: infinite;
+  -webkit-animation-timing-function:linear;
+}
+
 </style>
-<script id="glam1" type="text/glam">
-<glam>
-  <scene>
-	<cube id="photocube">
-	<animation type="rotation" from="0 0 0" to="0 6.2831853 0”
-		duration="10s" iterationCount="infinite"/>
-	</cube>
-  </scene>
-</glam>
-</script>
 <script>
 $(document).ready(function(){
 
@@ -34,6 +50,24 @@ $(document).ready(function(){
 </script>
 </head>
 <body>
-glam - Scene with cube, animated using markup
+<!-- 
+glam - Simple scene with cube
+ -->
+<div id="container" style="width:600px; height:600px;">
+<script id="glam1" type="text/glam">
+<glam>
+  <scene>
+	<cube id="photocube" animation="animRotateY"/>
+  	<animation id="animRotateY" duration="10s" iteration-count="infinite" timing-function="linear">
+		<frame time="0%" property="transform" value="rotateY(0deg);"/>
+		<frame time="50%" property="transform" value="rotateY(180deg);"/>
+		<frame time="100%" property="transform" value="rotateY(360deg);"/>
+	</animation>
+  </scene>
+</glam>
+</script>
+</div>
+
+
 </body>
 </html>
