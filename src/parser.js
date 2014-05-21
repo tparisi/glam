@@ -1,9 +1,63 @@
 glam.parser = {
 		
-	addDocument : function(script, document)
+	addDocument : function(script, doc)
 	{
-		glam.documents[script.id] = document;
+		doc.createElement = function(type) {
+			var elt = document.createElement(type);
+			elt.eventListeners = {};
+			elt.addEventListener = function(type, listener) {
+				if (!elt.eventListeners[type]) {
+					elt.eventListeners[type] = [];
+				}
+				
+				elt.eventListeners[type].push(listener);
+			}
+			
+			elt.dispatchEvent = function(event) {
+				var listeners = elt.eventListeners[event.type];
+				var i, len = listeners.length;
+				for (i = 0; i < len; i++) {
+					listeners[i](event);
+				}
+			}
+			
+			return elt;
+		}
+		
+		glam.documents[script.id] = doc;
 		glam.documentParents[script.id] = script.parentElement;
+		
+		// create an observer instance
+		var observer = new WebKitMutationObserver(function(mutations) {
+		  mutations.forEach(function(mutation) {
+		    if (mutation.type == "childList") {
+		    	var i, len = mutation.addedNodes.length;
+		    	// console.log("len: ", len);
+		    	for (i = 0; i < len; i++) {
+		    		var node = mutation.addedNodes[i];
+		    		var viewer = glam.viewers[script.id];
+			    	viewer.addNode(node);
+		    	}
+		    	var i, len = mutation.removedNodes.length;
+		    	// console.log("len: ", len);
+		    	for (i = 0; i < len; i++) {
+		    		var node = mutation.removedNodes[i];
+		    		var viewer = glam.viewers[script.id];
+			    	viewer.removeNode(node);
+		    	}
+		    }
+		  });    
+		});
+		 
+		// configuration of the observer:
+		var config = { attributes: true, childList: true, characterData: true, subtree: true };
+		 
+		// pass in the target node, as well as the observer options
+		observer.observe(doc, config);
+		
+//		var r1 = document.childNodes[0];
+//		r1.setAttribute('foo', 'hi');
+//		r1.appendChild(document.createElement("foo"))
 	},
 
 	addStyle : function(declaration)

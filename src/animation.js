@@ -213,7 +213,7 @@ glam.Animation.parse = function(docelt, obj) {
 	if (animationId) {
 		var animation = glam.getAnimation(animationId);
 		if (animation) {
-			glam.Animation.addAnimationToObject(animation, docelt, obj);
+			glam.Animation.addAnimationToObject(animation, obj);
 		}
 		else {
 			glam.Animation.addParseCallback(animationId, function(animation) {

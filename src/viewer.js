@@ -56,7 +56,7 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 		if (tag && glam.Viewer.types[tag] && (fn = glam.Viewer.types[tag].create) && typeof(fn) == "function") {
 			// console.log("    * found it in table!");
 			var obj = fn.call(this, childelt, sceneobj);
-			
+			childelt.glam = obj;
 			if (obj) {
 				sceneobj.addChild(obj);
 				this.traverse(childelt, obj);
@@ -64,6 +64,30 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 		}
 	}
 	
+}
+
+glam.Viewer.prototype.addNode = function(docelt) {
+
+	var tag = docelt.tagName;
+	var fn = null;
+	if (tag && glam.Viewer.types[tag] && (fn = glam.Viewer.types[tag].create) && typeof(fn) == "function") {
+		// console.log("    * found it in table!");
+		var obj = fn.call(this, docelt, this.scene);
+		
+		if (obj) {
+			docelt.glam = obj;
+			this.scene.addChild(obj);
+			this.traverse(docelt, obj);
+		}
+	}
+}
+
+glam.Viewer.prototype.removeNode = function(docelt) {
+
+	var obj = docelt.glam;
+	if (obj) {
+		obj._parent.removeChild(obj);
+	}
 }
 
 glam.Viewer.prototype.go = function() {

@@ -15,7 +15,10 @@ glam.Node.getStyle = function(docelt) {
 		style = glam.getStyle("#" + docelt.id);
 	}
 	
-	var klass = docelt.getAttribute('class')
+	var klass = docelt.getAttribute('class');
+	if (!klass)
+		klass = docelt['class'];
+	
 	if (klass) {
 		var klasses = klass.split(" ");
 		for (klassname in klasses) {

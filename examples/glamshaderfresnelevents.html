@@ -46,8 +46,34 @@
 </style>
 <script>
 
-function addBubbles(scene) {
+var pop = null;
 
+function createBubble(doc, scene, x, y, z, animClass) {
+	var groupelt = doc.createElement('group');
+	
+	groupelt.setAttribute('x', x);
+	groupelt.setAttribute('z', z);
+	groupelt.setAttribute('y', y);
+
+	var sphereelt = doc.createElement('sphere');
+	sphereelt.setAttribute('class', "bubble skybox");
+
+	sphereelt.addEventListener("click", function(event) {
+		pop.play();
+		scene.removeChild(groupelt);
+	});
+
+	sphereelt.setAttribute('animation', animClass);
+
+	groupelt.appendChild(sphereelt);
+		
+	return groupelt;
+}
+
+function addBubbles(doc, scene) {
+
+	pop = document.getElementById("pop");
+	
 	var i, len = 50;
 
 	for (i = 0; i < len; i++) {
@@ -56,18 +82,8 @@ function addBubbles(scene) {
 		var y = -6 + (Math.random() * 12);
 		var z = -6 + (Math.random() * 12);
 
-		var groupelt = document.createElement('group');
-		
-		groupelt.setAttribute('x', x);
-		groupelt.setAttribute('z', z);
-		groupelt.setAttribute('y', y);
-		
-		var sphereelt = document.createElement('sphere');
-		sphereelt.setAttribute('class', "bubble skybox");
 		var animClass = i % 3 ? 'bubbleBounce' : (i % 2 ? 'bubbleBounce2' : 'bubbleBounce3');
-		sphereelt.setAttribute('animation', animClass);
-
-		groupelt.appendChild(sphereelt);
+		var groupelt = createBubble(doc, scene, x, y, z, animClass);
 		
 		scene.appendChild(groupelt);
 		
@@ -77,14 +93,23 @@ function addBubbles(scene) {
 $(document).ready(function(){
 
 	glam.ready();
+		
 	var doc = glam.documents.glam1;
 	var scene = doc.getElementsByTagName('scene')[0];
-	addBubbles(scene);
+	addBubbles(doc, scene);
+
 });
 
 </script>
 </head>
 <body>
+<!--  Audio file  
+	http://freesound.org/people/Godowan/sounds/235264/
+-->
+<audio volume="1" id="pop">
+  <source src="../sounds/235264__godowan__bubble1_trimmed.wav" type="audio/wav" />
+  Your browser does not support WAV files in the audio element.
+</audio>
 <!-- 
 glam - Simple scene with cube
  -->
@@ -93,16 +118,6 @@ glam - Simple scene with cube
 <glam>
   <scene>
 	<background id="sb1" class="skybox"/>
-	<group y ='1' z='-3'>
-		<sphere class="bubble skybox" animation="bubbleBounce"/>
-		<sphere x='-1' z='-2' class="bubble skybox" animation="bubbleBounce2"/>
-	</group>
-	<group x='2' y ='.5' z='-2'>
-		<sphere class="bubble skybox" animation="bubbleBounce"/>
-		<sphere x='-1' z='-2' class="bubble skybox" animation="bubbleBounce2"/>
-	</group>
-	<sphere class="bubble skybox" animation="bubbleBounce"/>
-	<sphere x='-1' z='-2' class="bubble skybox" animation="bubbleBounce2"/>
   	<animation id="bubbleBounce" duration="20s" iteration-count="infinite" timing-function="ease-in-out">
 		<frame time="0%" property="transform" value="translateY(-6);"/>
 		<frame time="50%" property="transform" value="translateY(0);"/>
