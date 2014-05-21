@@ -35,7 +35,7 @@
 	#greencylinder {
 		color-diffuse:green;
 		radius:1;
-		render-mode:wireframe;
+		render-mode:wirekeyframe;
 	}
 	
 	#backgroundSphere {
@@ -64,35 +64,33 @@ $(document).ready(function(){
 glam - Simple scene with cube
  -->
 <div id="container" style="width:600px; height:600px;">
-<script id="glam1" type="text/glam">
 <glam>
   <scene>
-	<cube id="photocube" x="-1" sz=".5" animation="animRotateY"/>
+	<cube id="photocube" x="-1" sz=".5" animation="animRotateY"></cube>
 	<group id="aGroup" x="1" y=".5" z="-2" >
-		<sphere id="backgroundSphere" animation="animFade"/>
+		<sphere id="backgroundSphere" animation="animFade"></sphere>
 		<group id="nestedGroup">
-			<cone id="bluecone"/>
-			<cylinder id="greencylinder" animation="animRotateZ" x="2"/>
+			<cone id="bluecone"></cone>
+			<cylinder id="greencylinder" animation="animRotateZ" x="2"></cylinder>
 		</group>
 	</group>
   	<animation id="animRotateY" duration="2s" iteration-count="infinite" timing-function="ease-in-out">
-		<frame time="0%" property="transform" value="translateY(0) rotateY(0deg);"/>
-		<frame time="50%" property="transform" value="translateY(3) rotateY(180deg);"/>
-		<frame time="100%" property="transform" value="translateY(0) rotateY(360deg);"/>
+		<keyframe time="0%" property="transform" value="translateY(0) rotateY(0deg);"></keyframe>
+		<keyframe time="50%" property="transform" value="translateY(3) rotateY(180deg);"></keyframe>
+		<keyframe time="100%" property="transform" value="translateY(0) rotateY(360deg);"></keyframe>
 	</animation>
   	<animation id="animRotateZ" duration="5s" iteration-count="infinite" timing-function="linear">
-		<frame time="0%" property="transform" value="rotateZ(0deg);"/>
-		<frame time="50%" property="transform" value="rotateZ(180deg);"/>
-		<frame time="100%" property="transform" value="rotateZ(360deg);"/>
+		<keyframe time="0%" property="transform" value="rotateZ(0deg);"></keyframe>
+		<keyframe time="50%" property="transform" value="rotateZ(180deg);"></keyframe>
+		<keyframe time="100%" property="transform" value="rotateZ(360deg);"></keyframe>
 	</animation>
   	<animation id="animFade" duration="1s" iteration-count="infinite" timing-function="ease-in-out">
-		<frame time="0%" property="material" value="opacity:1;color-diffuse:red;"/>
-		<frame time="50%" property="material" value="opacity:.5;color-diffuse:green;"/>
-		<frame time="100%" property="material" value="opacity:1;color-diffuse:red;"/>
+		<keyframe time="0%" property="material" value="opacity:1;color-diffuse:red;"></keyframe>
+		<keyframe time="50%" property="material" value="opacity:.5;color-diffuse:green;"></keyframe>
+		<keyframe time="100%" property="material" value="opacity:1;color-diffuse:red;"></keyframe>
 	</animation>
   </scene>
 </glam>
-</script>
 </div>
 
 

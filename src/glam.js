@@ -2,8 +2,8 @@ glam = {
 
 		documents : {},
 		
-		documentParents : {},
-		
+		documentIndex : 0,
+				
 		styles : {},
 
 		viewers : {},
@@ -20,8 +20,7 @@ glam.ready = function() {
 glam.createViewers = function() {
 	for (docname in glam.documents) {
 		var doc = glam.documents[docname];
-		var docParent = glam.documentParents[docname];
-		var viewer = new glam.Viewer(doc, docParent);
+		var viewer = new glam.Viewer(doc);
 		glam.viewers[docname] = viewer;
 		viewer.go();
 	}

@@ -6,14 +6,20 @@
 <script src="../libs/parsecss/jquery.parsecss.js" ></script>
 <script src="../libs/vizi/vizi.js" ></script>
 <script src="../src/glam.js" ></script>
+<script src="../src/node.js" ></script>
 <script src="../src/parser.js" ></script>
-<script src="../src/viewer.js" ></script>
 <script src="../src/cube.js" ></script>
+<script src="../src/material.js" ></script>
+<script src="../src/transform.js" ></script>
+<script src="../src/animation.js" ></script>
+<script src="../src/input.js" ></script>
+<script src="../src/viewer.js" ></script>
 <title>glam - Simple scene with cube</title>
 
 <style>
 	#photocube {
 		image:url(../images/bowieorangeglam.png);
+		rx:30deg;
 	}
 </style>
 <script>
@@ -29,14 +35,17 @@ $(document).ready(function(){
 glam - Simple scene with cube
  -->
 <div id="container" style="width:600px; height:600px;">
-<script id="glam1" type="text/glam">
 <glam>
   <scene>
-	<cube id="photocube"/>
+	<cube id="photocube" animation="animRotateY"></cube>
+  	<animation id="animRotateY" duration="10s" iteration-count="infinite" timing-function="linear">
+		<keyframe time="0%" property="transform" value="rotateY(0deg);"></keyframe>
+		<keyframe time="50%" property="transform" value="rotateY(180deg);"></keyframe>
+		<keyframe time="100%" property="transform" value="rotateY(360deg);"></keyframe>
+	</animation>
   </scene>
 </glam>
 </script>
-</div>
 
 
 </body>

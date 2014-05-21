@@ -78,8 +78,7 @@ function addBubbles(scene) {
 $(document).ready(function(){
 
 	glam.ready();
-	var doc = glam.documents.glam1;
-	var scene = doc.getElementsByTagName('scene')[0];
+	var scene = document.getElementsByTagName('scene')[0];
 	addBubbles(scene);
 });
 
@@ -90,38 +89,36 @@ $(document).ready(function(){
 glam - Simple scene with cube
  -->
 <div id="container" style="width:98%; height:98%;position:absolute;">
-<script id="glam1" type="text/glam">
 <glam>
   <scene>
-	<background id="sb1" class="skybox"/>
+	<background id="sb1" class="skybox"></background>
 	<group y ='1' z='-3'>
-		<sphere class="bubble skybox" animation="bubbleBounce"/>
-		<sphere x='-1' z='-2' class="bubble skybox" animation="bubbleBounce2"/>
+		<sphere class="bubble skybox" animation="bubbleBounce"></sphere>
+		<sphere x='-1' z='-2' class="bubble skybox" animation="bubbleBounce2"></sphere>
 	</group>
 	<group x='2' y ='.5' z='-2'>
-		<sphere class="bubble skybox" animation="bubbleBounce"/>
-		<sphere x='-1' z='-2' class="bubble skybox" animation="bubbleBounce2"/>
+		<sphere class="bubble skybox" animation="bubbleBounce"></sphere>
+		<sphere x='-1' z='-2' class="bubble skybox" animation="bubbleBounce2"></sphere>
 	</group>
-	<sphere class="bubble skybox" animation="bubbleBounce"/>
-	<sphere x='-1' z='-2' class="bubble skybox" animation="bubbleBounce2"/>
+	<sphere class="bubble skybox" animation="bubbleBounce"></sphere>
+	<sphere x='-1' z='-2' class="bubble skybox" animation="bubbleBounce2"></sphere>
   	<animation id="bubbleBounce" duration="20s" iteration-count="infinite" timing-function="ease-in-out">
-		<frame time="0%" property="transform" value="translateY(-6);"/>
-		<frame time="50%" property="transform" value="translateY(0);"/>
-		<frame time="100%" property="transform" value="translateY(6);"/>
+		<keyframe time="0%" property="transform" value="translateY(-6);"></keyframe>
+		<keyframe time="50%" property="transform" value="translateY(0);"></keyframe>
+		<keyframe time="100%" property="transform" value="translateY(6);"></keyframe>
 	</animation>
   	<animation id="bubbleBounce2" duration="5s" iteration-count="infinite" timing-function="ease-in-out">
-		<frame time="0%" property="transform" value="translateY(0);"/>
-		<frame time="50%" property="transform" value="translateY(2);"/>
-		<frame time="100%" property="transform" value="translateY(0);"/>
+		<keyframe time="0%" property="transform" value="translateY(0);"></keyframe>
+		<keyframe time="50%" property="transform" value="translateY(2);"></keyframe>
+		<keyframe time="100%" property="transform" value="translateY(0);"></keyframe>
 	</animation>
   	<animation id="bubbleBounce3" duration="8s" iteration-count="infinite" timing-function="ease-in-out">
-		<frame time="0%" property="transform" value="translateX(-2);"/>
-		<frame time="50%" property="transform" value="translateX(0);"/>
-		<frame time="100%" property="transform" value="translateX(-2);"/>
+		<keyframe time="0%" property="transform" value="translateX(-2);"></keyframe>
+		<keyframe time="50%" property="transform" value="translateX(0);"></keyframe>
+		<keyframe time="100%" property="transform" value="translateX(-2);"></keyframe>
 	</animation>
   </scene>
 </glam>
-</script>
 </div>
 
 </body>

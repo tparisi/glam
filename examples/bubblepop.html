@@ -19,7 +19,7 @@
 <script src="../src/input.js" ></script>
 <script src="../src/background.js" ></script>
 <script src="../src/viewer.js" ></script>
-<title>glam - fresnel shader</title>
+<title>glam - bubble pop!</title>
 
 <style>
 
@@ -49,14 +49,14 @@
 
 var pop = null;
 
-function createBubble(doc, scene, x, y, z, animClass) {
-	var groupelt = doc.createElement('group');
+function createBubble(scene, x, y, z, animClass) {
+	var groupelt = document.createElement('group');
 	
 	groupelt.setAttribute('x', x);
 	groupelt.setAttribute('z', z);
 	groupelt.setAttribute('y', y);
 
-	var sphereelt = doc.createElement('sphere');
+	var sphereelt = document.createElement('sphere');
 	sphereelt.setAttribute('class', "bubble skybox");
 
 	sphereelt.addEventListener("click", function(event) {
@@ -71,7 +71,7 @@ function createBubble(doc, scene, x, y, z, animClass) {
 	return groupelt;
 }
 
-function addBubbles(doc, scene) {
+function addBubbles(scene) {
 
 	pop = document.getElementById("pop");
 	
@@ -84,7 +84,7 @@ function addBubbles(doc, scene) {
 		var z = -6 + (Math.random() * 12);
 
 		var animClass = i % 3 ? 'bubbleBounce' : (i % 2 ? 'bubbleBounce2' : 'bubbleBounce3');
-		var groupelt = createBubble(doc, scene, x, y, z, animClass);
+		var groupelt = createBubble(scene, x, y, z, animClass);
 		
 		scene.appendChild(groupelt);
 		
@@ -95,9 +95,8 @@ $(document).ready(function(){
 
 	glam.ready();
 		
-	var doc = glam.documents.glam1;
-	var scene = doc.getElementsByTagName('scene')[0];
-	addBubbles(doc, scene);
+	var scene = document.getElementsByTagName('scene')[0];
+	addBubbles(scene);
 
 });
 
@@ -115,28 +114,26 @@ $(document).ready(function(){
 glam - Simple scene with cube
  -->
 <div id="container" style="width:98%; height:98%;position:absolute;">
-<script id="glam1" type="text/glam">
 <glam>
   <scene>
-	<background id="sb1" class="skybox"/>
+	<background id="sb1" class="skybox"></background>
   	<animation id="bubbleBounce" duration="20s" iteration-count="infinite" timing-function="ease-in-out">
-		<frame time="0%" property="transform" value="translateY(-6);"/>
-		<frame time="50%" property="transform" value="translateY(0);"/>
-		<frame time="100%" property="transform" value="translateY(6);"/>
+		<keyframe time="0%" property="transform" value="translateY(-6);"></keyframe>
+		<keyframe time="50%" property="transform" value="translateY(0);"></keyframe>
+		<keyframe time="100%" property="transform" value="translateY(6);"></keyframe>
 	</animation>
   	<animation id="bubbleBounce2" duration="5s" iteration-count="infinite" timing-function="ease-in-out">
-		<frame time="0%" property="transform" value="translateY(0);"/>
-		<frame time="50%" property="transform" value="translateY(2);"/>
-		<frame time="100%" property="transform" value="translateY(0);"/>
+		<keyframe time="0%" property="transform" value="translateY(0);"></keyframe>
+		<keyframe time="50%" property="transform" value="translateY(2);"></keyframe>
+		<keyframe time="100%" property="transform" value="translateY(0);"></keyframe>
 	</animation>
   	<animation id="bubbleBounce3" duration="8s" iteration-count="infinite" timing-function="ease-in-out">
-		<frame time="0%" property="transform" value="translateX(-2);"/>
-		<frame time="50%" property="transform" value="translateX(0);"/>
-		<frame time="100%" property="transform" value="translateX(-2);"/>
+		<keyframe time="0%" property="transform" value="translateX(-2);"></keyframe>
+		<keyframe time="50%" property="transform" value="translateX(0);"></keyframe>
+		<keyframe time="100%" property="transform" value="translateX(-2);"></keyframe>
 	</animation>
   </scene>
 </glam>
-</script>
 </div>
 
 </body>
