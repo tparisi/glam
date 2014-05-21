@@ -6,10 +6,7 @@ glam.Background.create = function(docelt, sceneobj) {
 	var type = docelt.getAttribute('background-type') || glam.Background.DEFAULT_BACKGROUND_TYPE;
 	type = docelt.getAttribute('type') || type;
 	
-	var style = null;
-	if (docelt.id) {
-		style = glam.getStyle("#" + docelt.id);
-	}
+	var style = glam.Node.getStyle(docelt);
 
 	if (style) {
 		if (style["background-type"])
