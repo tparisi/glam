@@ -20,14 +20,27 @@
 <style>
 	
 	#ss1 {
-		envmap:url(../images/spherepano/pan2.jpg);
+		envmap:url(../images/spherepano/pan0.jpg);
 	}
 	
 </style>
 <script>
+var skysphere = null;
 $(document).ready(function(){
 
 	glam.ready();
+
+	skysphere = document.getElementById("ss1");
+
+	var views = document.getElementById("viewSelect");
+	views.onchange = function(){
+
+		var pic = views.options[views.selectedIndex].value;	
+		var src = '../images/spherepano/' + pic;
+		skysphere.setAttribute('envmap', src);
+		
+	}
+
 });
 
 </script>
@@ -36,7 +49,7 @@ $(document).ready(function(){
 <!-- 
 glam - Simple scene with cube
  -->
-<div id="container" style="width:98%; height:98%;position:absolute;">
+<div id="container" style="z-index:-1;width:98%; height:98%;position:absolute;">
 <glam>
   <scene>
 	<background id="ss1" type="sphere"></background>
@@ -44,6 +57,30 @@ glam - Simple scene with cube
 </glam>
 </div>
 
+	<select id="viewSelect">
+	<option value="pan0.jpg">Plaza</option>
+	<option value="pan1.jpg">Mall</option>
+	<option value="pan2.jpg">Mall 2</option>
+	<option value="pan3.jpg">Back Yard</option>
+	<option value="pan4.jpg">Bar</option>
+	<option value="pan5.jpg">Restaurant</option>
+	<option value="pan6.jpg">Tunnels</option>
+	<option value="pan7.jpg">Planetarium</option>
+	<option value="pan8.jpg">Basement Bar</option>
+	<option value="pan9.jpg">Greece</option>
+	<option value="car.jpg">Car</option>
+	<option value="car2.jpg">Car 2</option>
+	<option value="car3.jpg">Car 3</option>
+	<option value="room.jpg">Room</option>
+	<option value="room2.jpg">Room 2</option>
+	<option value="room3.jpg">Room 3</option>
+	<option value="room4.jpg">Room 4</option>
+	<option value="room5.jpg">Room 5</option>
+	<option value="mellon_square.jpg">Mellon Square</option>
+	<option value="belmorepark1right.jpg">Belmore Park</option>
+	<option value="Panorama-wx8jmd.jpg">Museum</option>
+	
+	</select>
 
 </body>
 </html>

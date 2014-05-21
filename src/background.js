@@ -26,5 +26,29 @@ glam.Background.create = function(docelt, sceneobj) {
 		skysphereScript.texture = param.envMap;
 	}
 
+	glam.Background.addHandlers(docelt, background);
+	
 	return background;
+}
+
+glam.Background.addHandlers = function(docelt, obj) {
+
+	docelt.setAttributeHandlers.push(function(attr, val) {
+		glam.Background.onSetAttribute(obj, docelt, attr, val);
+	});
+}
+
+glam.Background.onSetAttribute = function(obj, docelt, attr, val) {
+
+	switch (attr) {
+		case "envmap" :
+			var skysphereScript = obj.getComponent(Vizi.SkysphereScript);
+			if (skysphereScript) {
+				var envMap = THREE.ImageUtils.loadTexture(val);
+				skysphereScript.texture = envMap;
+			}
+			else {
+			}
+			break;
+	}
 }
