@@ -9,14 +9,11 @@
 <script src="../src/node.js" ></script>
 <script src="../src/parser.js" ></script>
 <script src="../src/cube.js" ></script>
-<script src="../src/cone.js" ></script>
-<script src="../src/cylinder.js" ></script>
 <script src="../src/text.js" ></script>
-<script src="../src/sphere.js" ></script>
-<script src="../src/group.js" ></script>
 <script src="../src/material.js" ></script>
 <script src="../src/transform.js" ></script>
 <script src="../src/animation.js" ></script>
+<script src="../src/camera.js" ></script>
 <script src="../src/input.js" ></script>
 <script src="../src/viewer.js" ></script>
 <script src="../fonts/gentilis_bold.typeface.js"></script>
@@ -29,41 +26,14 @@
 <script src="../fonts/droid/droid_sans_bold.typeface.js"></script>
 <script src="../fonts/droid/droid_serif_regular.typeface.js"></script>
 <script src="../fonts/droid/droid_serif_bold.typeface.js"></script>
-<title>glam - Scene with multiple objects</title>
+
+<title>glam - Simple scene with cube</title>
 
 <style>
-
-	#texturedcube {
-		image:url(../images/ash_uvgrid01.jpg);
-	}
-
-	#cone1 {
-		color-diffuse:blue;
-		shader:phong;
-		radius:1;
-	}
-
-	#cylinder1 {
-		color-diffuse:green;
-		radius:1;
-		render-mode:wirekeyframe;
-	}
-	
-	#sphere1 {
-		shader:phong;
-		color-diffuse:red;
-		color-specular:#004400;
-		opacity:.8;
-	}
-
-	#nestedGroup {
-	}
-
 	#text1 {
 		color-diffuse:cornflowerblue;
 		shader:phong;
 	}
-	
 </style>
 <script>
 $(document).ready(function(){
@@ -80,20 +50,14 @@ glam - Simple scene with cube
 <div id="container" style="width:98%; height:98%;position:absolute;background:url(../images/slidebg.png);">
 <glam>
   <scene>
-  	<group y='-1'>
-		<cube id="texturedcube" x="1.5" y='2' z='-5' depth='.5' height='1.5' ></cube>
-		<group id="aGroup" x="1" y=".5" z="-2" >
-			<sphere id="sphere1" radius='1.5'></sphere>
-			<group id="nestedGroup" x='-3' y='1' z='-5'>
-				<cone id="cone1" x='-1' y='-.5' z='2' rz='90deg'></cone>
-				<cylinder id="cylinder1"></cylinder>
-			</group>
-		</group>
-		<text id="text1" value="glam"></text>
-  	</group>
+	<text id="text1" value="glam" x='' animation="animRotateY"></text>
+  	<animation id="animRotateY" duration="4s" iteration-count="infinite" timing-function="ease-in-out">
+		<keyframe time="0%" property="transform" value="rotateY(0deg);"></keyframe>
+		<keyframe time="50%" property="transform" value="rotateY(180deg);"></keyframe>
+		<keyframe time="100%" property="transform" value="rotateY(360deg);"></keyframe>
+	</animation>
   </scene>
 </glam>
-</div>
 
 
 </body>

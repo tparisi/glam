@@ -3,9 +3,6 @@ glam.Viewer = function(doc) {
 	this.document = doc;
 	this.documentParent = doc.parentElement;
 	
-	this.initRenderer();
-	this.initDefaultScene();
-	this.traverseScene();
 }
 
 glam.Viewer.prototype = new Object;
@@ -107,22 +104,43 @@ glam.Viewer.prototype.initController = function(docelt) {
 	
 	var noheadlight = docelt.getAttribute("noheadlight");
 	if (noheadlight !== null) {
+		on = false;
 		this.app.controllerScript.headlightOn = false;
 	}
 	
 	var type = docelt.getAttribute("type");
 	if (type !== null) {
 		type = type.toLowerCase();
-		if (type == "fps")
-			this.controllerType = "FPS";
-		else
-			this.controllerType = "model";
+		if (type == "fps") {
+			
+			var x = parseFloat(docelt.getAttribute('x')) || 0;
+			var y = parseFloat(docelt.getAttribute('y')) || 0;
+			var z = parseFloat(docelt.getAttribute('z')) || 0;
+			
+			var controller = Vizi.Prefabs.FirstPersonController({active:true, headlight:on});
+			var controllerScript = controller.getComponent(Vizi.FirstPersonControllerScript);
+			this.app.addObject(controller);
+
+			var object = new Vizi.Object;	
+			var camera = new Vizi.PerspectiveCamera();
+			object.addComponent(camera);
+			this.app.addObject(object);
+
+			controllerScript.camera = camera;
+			camera.active = true;
+			
+//			object.transform.position.set(x, y, z);
+		}		
 	}
+	
 }
 
 glam.Viewer.prototype.go = function() {
 	// Run it
+	this.initRenderer();
 	this.app.run();
+	this.initDefaultScene();
+	this.traverseScene();
 }
 
 // statics
@@ -136,6 +154,7 @@ glam.Viewer.types = {
 		"background" : glam.Background,
 		"import" : glam.Import,
 		"camera" : glam.Camera,
+		"text" : glam.Text,
 };
 
 

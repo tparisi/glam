@@ -20,6 +20,7 @@
 	#photocube {
 		image:url(../images/bowieorangeglam.png);
 		rx:30deg;
+		ry:45deg;
 	}
 </style>
 <script>
@@ -37,12 +38,7 @@ glam - Simple scene with cube
 <div id="container" style="width:600px; height:600px;">
 <glam>
   <scene>
-	<cube id="photocube" animation="animRotateY"></cube>
-  	<animation id="animRotateY" duration="10s" iteration-count="infinite" timing-function="linear">
-		<keyframe time="0%" property="transform" value="rotateY(0deg);"></keyframe>
-		<keyframe time="50%" property="transform" value="rotateY(180deg);"></keyframe>
-		<keyframe time="100%" property="transform" value="rotateY(360deg);"></keyframe>
-	</animation>
+	<cube id="photocube" animation=""></cube>
   </scene>
 </glam>
 </script>

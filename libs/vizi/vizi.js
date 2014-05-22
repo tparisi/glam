@@ -53685,7 +53685,16 @@ Vizi.Viewer.prototype.calcSceneStats = function()
 }
 
 Vizi.Viewer.prototype.setController = function(type) {
-	var center = this.boundingBox.max.clone().add(this.boundingBox.min).multiplyScalar(0.5);
+	if (!this.boundingBox)
+		this.boundingBox = Vizi.SceneUtils.computeBoundingBox(this.sceneRoot);
+
+	var center;
+	if (!isFinite(this.boundingBox.max.x)) {
+		center = new THREE.Vector3;
+	}
+	else {
+		center = this.boundingBox.max.clone().add(this.boundingBox.min).multiplyScalar(0.5);
+	}
 	switch (type) {
 		case "model" :
 			break;

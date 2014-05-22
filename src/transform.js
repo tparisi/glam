@@ -8,9 +8,9 @@ glam.Transform.parse = function(docelt, obj) {
 	t.x = parseFloat(docelt.getAttribute('x')) || 0;
 	t.y = parseFloat(docelt.getAttribute('y')) || 0;
 	t.z = parseFloat(docelt.getAttribute('z')) || 0;
-	t.rx = parseFloat(docelt.getAttribute('rx')) || 0;
-	t.ry = parseFloat(docelt.getAttribute('ry')) || 0;
-	t.rz = parseFloat(docelt.getAttribute('rz')) || 0;
+	t.rx = glam.Transform.parseRotation(docelt.getAttribute('rx')) || 0;
+	t.ry = glam.Transform.parseRotation(docelt.getAttribute('ry')) || 0;
+	t.rz = glam.Transform.parseRotation(docelt.getAttribute('rz')) || 0;
 	t.sx = parseFloat(docelt.getAttribute('sx')) || 1;
 	t.sy = parseFloat(docelt.getAttribute('sy')) || 1;
 	t.sz = parseFloat(docelt.getAttribute('sz')) || 1;
@@ -111,6 +111,9 @@ glam.Transform.parseStyle = function(style, t) {
 }
 
 glam.Transform.parseRotation = function(r) {
+	if (!r)
+		return null;
+	
 	r = r.toLowerCase();
 	var i = r.indexOf("deg");
 	if (i != -1) {
