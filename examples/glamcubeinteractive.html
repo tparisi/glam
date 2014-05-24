@@ -14,7 +14,7 @@
 <script src="../src/animation.js" ></script>
 <script src="../src/input.js" ></script>
 <script src="../src/viewer.js" ></script>
-<title>glam - Simple scene with cube, animated, interactive</title>
+<title>glam - cube with mouse interaction</title>
 
 <style>
 	#photocube {
@@ -35,24 +35,24 @@ $(document).ready(function(){
 	var photocube = document.getElementById('photocube');
 
 	photocube.addEventListener("mouseover", function(event) {
-		stat.innerHTML = 'mouseover';
+		stat.innerHTML = 'OVER';
 		photocube.setAttribute('color-diffuse', 'red');
 	});
 	photocube.addEventListener("mouseout", function(event) {
-		stat.innerHTML = 'mouseout';
+		stat.innerHTML = 'OUT';
 		photocube.setAttribute('color-diffuse', 'white');
 	});
 	photocube.addEventListener("mousedown", function(event) {
-		stat.innerHTML = 'mousedown';
+		stat.innerHTML = 'DOWN';
 	});
 	photocube.addEventListener("mouseup", function(event) {
-		stat.innerHTML = 'mouseup';
+		stat.innerHTML = 'UP';
 	});
 	photocube.addEventListener("mousemove", function(event) {
-		stat.innerHTML = 'mousemove';
+		stat.innerHTML = 'MOVE';
 	});
 	photocube.addEventListener("click", function(event) {
-		stat.innerHTML = 'click';
+		stat.innerHTML = 'CLICK';
 	});
 	
 });
@@ -70,7 +70,7 @@ glam - Simple scene with cube
   </scene>
 </glam>
 </div>
-<div id="stat" style="position:absolute;left:160px;top:20%;font-size:48px;color:goldenrod;font-family:Arial;">
+<div id="stat" style="position:absolute;left:200px;top:20%;font-size:72px;color:goldenrod;font-family:Arial;font-style:normal;">
 </div>
 
 </body>
