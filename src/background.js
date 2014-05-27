@@ -28,7 +28,9 @@ glam.Background.create = function(docelt, sceneobj) {
 
 	glam.Background.addHandlers(docelt, background);
 	
-	return background;
+	Vizi.Application.instance.addObject(background);
+	
+	return null;
 }
 
 glam.Background.addHandlers = function(docelt, obj) {
