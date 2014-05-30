@@ -138,9 +138,9 @@ glam.Viewer.prototype.initController = function(docelt) {
 glam.Viewer.prototype.go = function() {
 	// Run it
 	this.initRenderer();
-	this.app.run();
 	this.initDefaultScene();
 	this.traverseScene();
+	this.app.run();
 }
 
 // statics
