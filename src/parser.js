@@ -3,7 +3,8 @@ glam.parser = {
 	addDocument : function(doc)
 	{
 		// create an observer instance
-		var observer = new WebKitMutationObserver(function(mutations) {
+		var mo = (window.WebKitMutationObserver !== undefined) ? window.WebKitMutationObserver : window.MutationObserver;
+		var observer = new mo(function(mutations) {
 		  mutations.forEach(function(mutation) {
 		    if (mutation.type == "childList") {
 		    	var i, len = mutation.addedNodes.length;
