@@ -38679,7 +38679,7 @@ THREE.ColladaLoader = function () {
 				var sampler = animation.sampler[i];
 				var id = channel.target.split('/')[0];
 
-				if ( id == node.id ) {
+				if ( sampler && id == node.id ) {
 
 					sampler.create();
 					channel.sampler = sampler;
@@ -50906,7 +50906,7 @@ Vizi.FirstPersonControllerScript.prototype.setCamera = function(camera) {
 	this._camera = camera;
 	this.controls = this.createControls(camera);
 	this.controls.movementSpeed = this.moveSpeed;
-	this.controls.lookSpeed = 0.1;
+	this.controls.lookSpeed = this._look ?  0.1 : 0;
 
 }
 
@@ -51243,6 +51243,209 @@ Vizi.Mouse.prototype.getState = function()
 
 Vizi.Mouse.instance = null;
 Vizi.Mouse.NO_POSITION = Number.MIN_VALUE;
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
+goog.provide('Vizi.PointerLockControls');
+
+Vizi.PointerLockControls = function ( camera ) {
+
+  var scope = this;
+  this.speed = 0.05
+  this.speedMultiplier = 1;
+  this.fly = false;
+  this.jumpPower = .1;
+  this.gravity = 0.0;
+
+  camera.rotation.set( 0, 0, 0 );
+
+  var pitchObject = new THREE.Object3D();
+  pitchObject.add( camera );
+
+  var yawObject = new THREE.Object3D();
+  yawObject.position.y = 10;
+  yawObject.add( pitchObject );
+
+  var moveForward = false;
+  var moveBackward = false;
+  var moveLeft = false;
+  var moveRight = false;
+
+
+  var speedBoost = 10
+  var speedSlow = .5
+
+  var velocity = new THREE.Vector3();
+
+  var PI_2 = Math.PI / 2;
+
+  var onMouseMove = function ( event ) {
+
+    if ( scope.enabled === false ) return;
+
+    var movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
+    var movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
+
+    yawObject.rotation.y -= movementX * 0.002;
+    pitchObject.rotation.x -= movementY * 0.002;
+
+    pitchObject.rotation.x = Math.max( - PI_2, Math.min( PI_2, pitchObject.rotation.x ) );
+
+  };
+
+  var onKeyDown = function ( event ) {
+    switch ( event.keyCode ) {
+      case 82:
+        break;
+      case 16:
+        this.speedMultiplier = speedBoost;
+        break
+
+      case 17:
+        this.speedMultiplier = speedSlow;
+        break;
+
+      case 38: // up
+      case 87: // w
+        moveForward = true;
+        break;
+
+      case 37: // left
+      case 65: // a
+        moveLeft = true; break;
+
+      case 40: // down
+      case 83: // s
+        moveBackward = true;
+        break;
+
+      case 39: // right
+      case 68: // d
+        moveRight = true;
+        break;
+
+      case 67: // c
+        velocity.y += this.jumpPower;
+        break;
+      case 32: // space
+        velocity.y -= this.jumpPower;
+        break;
+
+    }
+
+  };
+
+  var onKeyUp = function ( event ) {
+
+    switch( event.keyCode ) {
+      case 16:
+        this.speedMultiplier = 1;
+        break;
+      case 17:
+        this.speedMultiplier = 1;
+        break;
+      case 38: // up
+      case 87: // w
+        moveForward = false;
+        break;
+
+      case 37: // left
+      case 65: // a
+        moveLeft = false;
+        break;
+
+      case 40: // down
+      case 83: // s
+        moveBackward = false;
+        break;
+
+      case 39: // right
+      case 68: // d
+        moveRight = false;
+        break;
+      case 32: //space
+        velocity.y = 0;
+        break;
+      case 67: //c
+        velocity.y = 0;
+        break;
+
+    }
+
+  };
+
+  document.addEventListener( 'mousemove', onMouseMove, false );
+  document.addEventListener( 'keydown', onKeyDown.bind(this), false );
+  document.addEventListener( 'keyup', onKeyUp.bind(this), false );
+
+  this.enabled = false;
+
+  this.getObject = function () {
+
+    return yawObject;
+
+  };
+
+
+  this.getPosition = function() {
+    return new THREE.Vector3().copy(yawObject.position)
+  }
+
+  this.getDirection = function() {
+
+    // assumes the camera itself is not rotated
+
+    var direction = new THREE.Vector3( 0, 0, -1 );
+    var rotation = new THREE.Euler( 0, 0, 0, "YXZ" );
+
+    return function( ) {
+      v = new THREE.Vector3()
+
+      rotation.set( pitchObject.rotation.x, yawObject.rotation.y, 0 );
+
+      v.copy( direction ).applyEuler( rotation );
+
+      return v;
+
+    }
+
+  }();
+
+  this.update = function ( delta ) {
+
+    if ( scope.enabled === false ) return;
+
+    delta *= 0.1;
+
+    velocity.x += ( - velocity.x ) * 0.08 * delta;
+    velocity.z += ( - velocity.z ) * 0.08 * delta;
+
+    velocity.y -= this.gravity * delta;
+
+    if ( moveForward ) velocity.z -= this.speed * delta * this.speedMultiplier;
+    if ( moveBackward ) velocity.z += this.speed * delta * this.speedMultiplier;
+
+    if ( moveLeft ) velocity.x -= this.speed * delta * this.speedMultiplier;
+    if ( moveRight ) velocity.x += this.speed * delta * this.speedMultiplier;
+
+
+
+    yawObject.translateX( velocity.x );
+    yawObject.translateY( velocity.y ); 
+    yawObject.translateZ( velocity.z );
+
+    if ( yawObject.position.y < 10 ) {
+
+      velocity.y = 0;
+      yawObject.position.y = 10;
+
+
+    }
+
+  };
+
+};
 /**
  * @fileoverview Timer - component that generates time events
  * 
@@ -52963,7 +53166,7 @@ Vizi.FirstPersonControls = function ( object, domElement ) {
 
 		var DRAG_DEAD_ZONE = 1;
 		
-		if (this.mouseDragOn || this.mouseLook) {
+		if ((this.mouseDragOn || this.mouseLook) && this.lookSpeed) {
 			
 			var deltax = this.lastMouseX - this.mouseX;
 			if (Math.abs(deltax) < DRAG_DEAD_ZONE)
@@ -54872,7 +55075,7 @@ Vizi.ModelControllerScript.prototype.createControls = function(camera)
 	controls.userPan = this.allowPan;
 	controls.userZoom = this.allowZoom;
 	controls.userRotate = this.allowRotate;
-	
+	controls.enabled = this._enabled;
 	return controls;
 }
 
@@ -55558,6 +55761,213 @@ Vizi.Interpolator.prototype.tween = function(from, to, fract)
 	
 	return value;
 }
+
+goog.require('Vizi.Prefabs');
+
+Vizi.Prefabs.PointerLockController = function(param)
+{
+	param = param || {};
+	
+	var controller = new Vizi.Object(param);
+	var controllerScript = new Vizi.PointerLockControllerScript(param);
+	controller.addComponent(controllerScript);
+
+	var intensity = param.headlight ? 1 : 0;
+	
+	var headlight = new Vizi.DirectionalLight({ intensity : intensity });
+	controller.addComponent(headlight);
+	
+	return controller;
+}
+
+goog.provide('Vizi.PointerLockControllerScript');
+goog.require('Vizi.Script');
+
+Vizi.PointerLockControllerScript = function(param)
+{
+	Vizi.Script.call(this, param);
+
+	this._enabled = (param.enabled !== undefined) ? param.enabled : true;
+	this._move = (param.move !== undefined) ? param.move : true;
+	this._look = (param.look !== undefined) ? param.look : true;
+	this._turn = (param.turn !== undefined) ? param.turn : true;
+	this._tilt = (param.tilt !== undefined) ? param.tilt : true;
+	this._mouseLook = (param.mouseLook !== undefined) ? param.mouseLook : false;
+	
+	this.collisionDistance = 10;
+	this.moveSpeed = 13;
+	this.turnSpeed = 5;
+	this.tiltSpeed = 5;
+	this.lookSpeed = 1;
+	
+	this.savedCameraPos = new THREE.Vector3;	
+	this.movementVector = new THREE.Vector3;
+	
+    Object.defineProperties(this, {
+    	camera: {
+			get : function() {
+				return this._camera;
+			},
+			set: function(camera) {
+				this.setCamera(camera);
+			}
+		},
+    	enabled : {
+    		get: function() {
+    			return this._enabled;
+    		},
+    		set: function(v) {
+    			this.setEnabled(v);
+    		}
+    	},
+    	move : {
+    		get: function() {
+    			return this._move;
+    		},
+    		set: function(v) {
+    			this.setMove(v);
+    		}
+    	},
+    	look : {
+    		get: function() {
+    			return this._look;
+    		},
+    		set: function(v) {
+    			this.setLook(v);
+    		}
+    	},
+    	mouseLook : {
+    		get: function() {
+    			return this._mouseLook;
+    		},
+    		set: function(v) {
+    			this.setMouseLook(v);
+    		}
+    	},
+        headlightOn: {
+	        get: function() {
+	            return this._headlightOn;
+	        },
+	        set:function(v)
+	        {
+	        	this.setHeadlightOn(v);
+	        }
+    	},
+    });
+}
+
+goog.inherits(Vizi.PointerLockControllerScript, Vizi.Script);
+
+Vizi.PointerLockControllerScript.prototype.realize = function()
+{
+	this.headlight = this._object.getComponent(Vizi.DirectionalLight);
+	this.headlight.intensity = this._headlightOn ? 1 : 0;
+}
+
+Vizi.PointerLockControllerScript.prototype.createControls = function(camera)
+{
+	var controls = new Vizi.PointerLockControls(camera.object, Vizi.Graphics.instance.container);
+	controls.mouseLook = this._mouseLook;
+	controls.movementSpeed = this._move ? this.moveSpeed : 0;
+	controls.lookSpeed = this._look ? this.lookSpeed  : 0;
+	controls.turnSpeed = this._turn ? this.turnSpeed : 0;
+	controls.tiltSpeed = this._tilt ? this.tiltSpeed : 0;
+
+	this.clock = new THREE.Clock();
+	return controls;
+}
+
+Vizi.PointerLockControllerScript.prototype.update = function()
+{
+	this.saveCamera();
+	this.controls.update(this.clock.getDelta());
+	var collide = this.testCollision();
+	if (collide && collide.object) {
+		this.restoreCamera();
+		this.dispatchEvent("collide", collide);
+	}
+	
+	if (this.testTerrain()) {
+		this.restoreCamera();
+	}
+	
+	if (this._headlightOn)
+	{
+		this.headlight.direction.copy(this._camera.position).negate();
+	}	
+}
+
+Vizi.PointerLockControllerScript.prototype.setEnabled = function(enabled)
+{
+	this._enabled = enabled;
+	this.controls.enabled = enabled;
+}
+
+Vizi.PointerLockControllerScript.prototype.setMove = function(move)
+{
+	this._move = move;
+	this.controls.movementSpeed = move ? this.moveSpeed : 0;
+}
+
+Vizi.PointerLockControllerScript.prototype.setLook = function(look)
+{
+	this._look = look;
+	this.controls.lookSpeed = look ? 1.0 : 0;
+}
+
+Vizi.PointerLockControllerScript.prototype.setMouseLook = function(mouseLook)
+{
+	this._mouseLook = mouseLook;
+	this.controls.mouseLook = mouseLook;
+}
+
+Vizi.PointerLockControllerScript.prototype.setCamera = function(camera) {
+	this._camera = camera;
+	this.controls = this.createControls(camera);
+	this.controls.movementSpeed = this.moveSpeed;
+	this.controls.lookSpeed = this._look ?  0.1 : 0;
+
+}
+
+Vizi.PointerLockControllerScript.prototype.saveCamera = function() {
+	this.savedCameraPos.copy(this._camera.position);
+}
+
+Vizi.PointerLockControllerScript.prototype.restoreCamera = function() {
+	this._camera.position.copy(this.savedCameraPos);
+}
+
+Vizi.PointerLockControllerScript.prototype.testCollision = function() {
+	
+	this.movementVector.copy(this._camera.position).sub(this.savedCameraPos);
+	if (this.movementVector.length()) {
+		
+        var collide = Vizi.Graphics.instance.objectFromRay(null, 
+        		this.savedCameraPos,
+        		this.movementVector, 1, 2);
+
+        if (collide && collide.object) {
+        	var dist = this.savedCameraPos.distanceTo(collide.hitPointWorld);
+        }
+        
+        return collide;
+	}
+	
+	return null;
+}
+
+Vizi.PointerLockControllerScript.prototype.testTerrain = function() {
+	return false;
+}
+
+Vizi.PointerLockControllerScript.prototype.setHeadlightOn = function(on)
+{
+	this._headlightOn = on;
+	if (this.headlight) {
+		this.headlight.intensity = on ? 1 : 0;
+	}
+}
+
 goog.provide('Vizi.PerspectiveCamera');
 goog.require('Vizi.Camera');
 
@@ -57916,6 +58326,8 @@ goog.require('Vizi.PerspectiveCamera');
 goog.require('Vizi.FirstPersonControls');
 goog.require('Vizi.OrbitControls');
 goog.require('Vizi.FirstPersonControllerScript');
+goog.require('Vizi.PointerLockControllerScript');
+goog.require('Vizi.PointerLockControls');
 goog.require('Vizi.ModelControllerScript');
 goog.require('Vizi.DeviceOrientationControls');
 goog.require('Vizi.DeviceOrientationControllerScript');

@@ -161,6 +161,13 @@ glam.Viewer.prototype.initController = function(docelt) {
 
 			controllerScript.camera = camera;
 			camera.active = true;
+			
+			if (this.app.controllerScript) {
+				this.app.controllerScript.enabled = false;
+			}
+			
+			this.app.controller = controller;
+			this.app.controllerScript = controllerScript;
 		}
 	}
 	
