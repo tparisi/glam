@@ -2,13 +2,24 @@ glam.Viewer = function(doc) {
 
 	this.document = doc;
 	this.documentParent = doc.parentElement;
-	
+	this.riftRender = glam.riftRender || false;
+	this.displayStats = glam.displayStats || false;
 }
 
 glam.Viewer.prototype = new Object;
 
 glam.Viewer.prototype.initRenderer = function() {
-	this.app = new Vizi.Viewer({ container : this.documentParent, headlight: false });
+	var renderers = this.document.getElementsByTagName('renderer');
+	if (renderers) {
+		var renderer = renderers[0];
+		if (renderer) {
+			var type = renderer.getAttribute("type");
+			if (type.toLowerCase() == "rift") {
+				this.riftRender = true;
+			}
+		}
+	}
+	this.app = new Vizi.Viewer({ container : this.documentParent, headlight: false, riftRender:this.riftRender, displayStats:this.displayStats });
 }
 
 glam.Viewer.prototype.initDefaultScene = function() {
@@ -20,12 +31,15 @@ glam.Viewer.prototype.initDefaultScene = function() {
 }
 
 glam.Viewer.prototype.traverseScene = function() {
-	var elt = this.document.childNodes[1];
-	if (elt.tagName.toLowerCase() != "scene") {
-		console.warn("Document error! First (and only) glam child must be 'scene'");
+	var scenes = this.document.getElementsByTagName('scene');
+	if (scenes) {
+		var scene = scenes[0];
+		this.traverse(scene, this.scene);
+	}
+	else {
+		console.warn("Document error! glam requires one 'scene' element");
 		return;
 	}
-	this.traverse(elt, this.scene);
 }
 
 glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
@@ -130,7 +144,24 @@ glam.Viewer.prototype.initController = function(docelt) {
 			camera.active = true;
 			
 //			object.transform.position.set(x, y, z);
-		}		
+		}
+		else if (type == "rift") {
+			var controller = Vizi.Prefabs.RiftController({active:true, 
+				headlight:on,
+				mouseLook:false,
+				useVRJS : true,
+			});
+			var controllerScript = controller.getComponent(Vizi.RiftControllerScript);			
+			this.app.addObject(controller);
+
+			var object = new Vizi.Object;	
+			var camera = new Vizi.PerspectiveCamera();
+			object.addComponent(camera);
+			this.app.addObject(object);
+
+			controllerScript.camera = camera;
+			camera.active = true;
+		}
 	}
 	
 }
