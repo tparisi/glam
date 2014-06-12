@@ -26,7 +26,6 @@ glam.Viewer.prototype.initDefaultScene = function() {
 	
 	this.scene = new Vizi.Object;
 	this.app.sceneRoot.addChild(this.scene);
-//	this.app.controllerScript.enabled = false;
 	this.app.defaultCamera.position.set(0, 0, 5);
 }
 
@@ -45,7 +44,6 @@ glam.Viewer.prototype.traverseScene = function() {
 glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 
 	var tag = docelt.tagName;
-	// console.log("Parsing element ", tag, "!");
 
 	var i, len, children = docelt.childNodes, len = children.length;
 	for (i = 0; i < len; i++) {
@@ -53,7 +51,7 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 		var tag = childelt.tagName;
 		if (tag)
 			tag = tag.toLowerCase();
-		// console.log("  child element ", childelt.tagName);
+
 		var fn = null;
 		if (tag == "controller") {
 			this.initController(childelt);
@@ -79,7 +77,7 @@ glam.Viewer.prototype.addNode = function(docelt) {
 		tag = tag.toLowerCase();
 	var fn = null;
 	if (tag && glam.Viewer.types[tag] && (fn = glam.Viewer.types[tag].create) && typeof(fn) == "function") {
-		// console.log("    * found it in table!");
+
 		this.addFeatures(docelt);
 		var obj = fn.call(this, docelt, this.scene);
 		
@@ -143,7 +141,6 @@ glam.Viewer.prototype.initController = function(docelt) {
 			controllerScript.camera = camera;
 			camera.active = true;
 			
-//			object.transform.position.set(x, y, z);
 		}
 		else if (type == "rift") {
 			var controller = Vizi.Prefabs.RiftController({active:true, 

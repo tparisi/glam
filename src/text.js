@@ -64,7 +64,6 @@ glam.Text.create = function(docelt, sceneobj) {
 	                    				] );
 
 
-	// Create the cube
 	var text = new Vizi.Object;	
 	var visual = new Vizi.Visual(
 			{ geometry: textGeo,
@@ -74,10 +73,6 @@ glam.Text.create = function(docelt, sceneobj) {
 
 	THREE.GeometryUtils.center(textGeo);
 	
-	// Add a rotate behavior to give the cube some life
-	//var rotator = new Vizi.RotateBehavior({autoStart:true, duration:5});
-	//cube.addComponent(rotator);
-
 	glam.Transform.parse(docelt, text);
 	glam.Animation.parse(docelt, text);
 	glam.Input.add(docelt, text);

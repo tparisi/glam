@@ -8,14 +8,12 @@ glam.parser = {
 		  mutations.forEach(function(mutation) {
 		    if (mutation.type == "childList") {
 		    	var i, len = mutation.addedNodes.length;
-		    	// console.log("len: ", len);
 		    	for (i = 0; i < len; i++) {
 		    		var node = mutation.addedNodes[i];
 		    		var viewer = glam.viewers[doc.id];
 			    	viewer.addNode(node);
 		    	}
 		    	var i, len = mutation.removedNodes.length;
-		    	// console.log("len: ", len);
 		    	for (i = 0; i < len; i++) {
 		    		var node = mutation.removedNodes[i];
 		    		var viewer = glam.viewers[doc.id];
@@ -37,11 +35,7 @@ glam.parser = {
 		var config = { attributes: true, childList: true, characterData: true, subtree: true };
 		 
 		// pass in the target node, as well as the observer options
-		observer.observe(doc, config);
-		
-//		var r1 = document.childNodes[0];
-//		r1.setAttribute('foo', 'hi');
-//		r1.appendChild(document.createElement("foo"))
+		observer.observe(doc, config);		
 	},
 
 	addStyle : function(declaration)

@@ -19,11 +19,9 @@ glam.Camera.create = function(docelt, sceneobj) {
 	glam.Animation.parse(docelt, camera);
 
 	var controller = Vizi.Application.instance.controllerScript;
-	controller.camera = cam; // .position.copy(camera.transform.position);
+	controller.camera = cam;
 	controller.enabled = true;
 	cam.active = true;
-    // Tilt the cube toward the viewer so we can see 3D-ness
-    // cube.transform.rotation.x = .5;
 
 	return camera;
 }

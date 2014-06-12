@@ -18,7 +18,6 @@ glam.Cylinder.create = function(docelt, sceneobj) {
 	
 	var material = glam.Material.create(style);
 	
-	// Create the cube
 	var cylinder = new Vizi.Object;	
 	var visual = new Vizi.Visual(
 			{ geometry: new THREE.CylinderGeometry(radius, radius, height, 16),
@@ -26,17 +25,10 @@ glam.Cylinder.create = function(docelt, sceneobj) {
 			});
 	cylinder.addComponent(visual);
 
-	// Add a rotate behavior to give the cube some life
-	//var rotator = new Vizi.RotateBehavior({autoStart:true, duration:5});
-	//cube.addComponent(rotator);
-
 	glam.Transform.parse(docelt, cylinder);
 	glam.Animation.parse(docelt, cylinder);
 	glam.Input.add(docelt, cylinder);
 	glam.Material.addHandlers(docelt, cylinder);
 	
-    // Tilt the cube toward the viewer so we can see 3D-ness
-    // cube.transform.rotation.x = .5;
-
 	return cylinder;
 }

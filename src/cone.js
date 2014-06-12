@@ -18,7 +18,6 @@ glam.Cone.create = function(docelt, sceneobj) {
 	
 	var material = glam.Material.create(style);
 	
-	// Create the cube
 	var cone = new Vizi.Object;	
 	var visual = new Vizi.Visual(
 			{ geometry: new THREE.CylinderGeometry(0, radius, height, 16),
@@ -26,17 +25,10 @@ glam.Cone.create = function(docelt, sceneobj) {
 			});
 	cone.addComponent(visual);
 
-	// Add a rotate behavior to give the cube some life
-	//var rotator = new Vizi.RotateBehavior({autoStart:true, duration:5});
-	//cube.addComponent(rotator);
-
 	glam.Transform.parse(docelt, cone);
 	glam.Animation.parse(docelt, cone);
 	glam.Input.add(docelt, cone);
 	glam.Material.addHandlers(docelt, cone);
 	
-    // Tilt the cube toward the viewer so we can see 3D-ness
-    // cube.transform.rotation.x = .5;
-
 	return cone;
 }

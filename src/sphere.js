@@ -12,7 +12,6 @@ glam.Sphere.create = function(docelt, sceneobj) {
 			radius = style.radius;
 	}
 
-	// Create the cube
 	var sphere = new Vizi.Object;
 	var material = glam.Material.create(style, function(material) {
 		var visual = new Vizi.Visual(

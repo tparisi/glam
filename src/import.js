@@ -18,8 +18,6 @@ glam.Import.create = function(docelt, sceneobj) {
 		loader.loadScene(src);
 	}
 
-	// Tilt the cube toward the viewer so we can see 3D-ness
-    // cube.transform.rotation.x = .5;
 	glam.Transform.parse(docelt, obj);
 	glam.Animation.parse(docelt, obj);
 
