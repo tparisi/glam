@@ -53,13 +53,11 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 			tag = tag.toLowerCase();
 
 		var fn = null;
-		if (tag == "controller") {
-			this.initController(childelt);
-		}
-		else if (tag && glam.Viewer.types[tag] && (fn = glam.Viewer.types[tag].create) && typeof(fn) == "function") {
+
+		if (tag && glam.Viewer.types[tag] && (fn = glam.Viewer.types[tag].create) && typeof(fn) == "function") {
 			// console.log("    * found it in table!");
 			this.addFeatures(childelt);
-			var obj = fn.call(this, childelt, sceneobj);
+			var obj = fn.call(this, childelt, sceneobj, this.app);
 			childelt.glam = obj;
 			if (obj) {
 				sceneobj.addChild(obj);
@@ -111,65 +109,6 @@ glam.Viewer.prototype.addFeatures = function(docelt) {
 	}
 }
 
-glam.Viewer.prototype.initController = function(docelt) {
-	var on = true;
-	
-	var noheadlight = docelt.getAttribute("noheadlight");
-	if (noheadlight !== null) {
-		on = false;
-		this.app.controllerScript.headlightOn = false;
-	}
-	
-	var type = docelt.getAttribute("type");
-	if (type !== null) {
-		type = type.toLowerCase();
-		if (type == "fps") {
-			
-			var x = parseFloat(docelt.getAttribute('x')) || 0;
-			var y = parseFloat(docelt.getAttribute('y')) || 0;
-			var z = parseFloat(docelt.getAttribute('z')) || 0;
-			
-			var controller = Vizi.Prefabs.FirstPersonController({active:true, headlight:on});
-			var controllerScript = controller.getComponent(Vizi.FirstPersonControllerScript);
-			this.app.addObject(controller);
-
-			var object = new Vizi.Object;	
-			var camera = new Vizi.PerspectiveCamera();
-			object.addComponent(camera);
-			this.app.addObject(object);
-
-			controllerScript.camera = camera;
-			camera.active = true;
-			
-		}
-		else if (type == "rift") {
-			var controller = Vizi.Prefabs.RiftController({active:true, 
-				headlight:on,
-				mouseLook:false,
-				useVRJS : true,
-			});
-			var controllerScript = controller.getComponent(Vizi.RiftControllerScript);			
-			this.app.addObject(controller);
-
-			var object = new Vizi.Object;	
-			var camera = new Vizi.PerspectiveCamera();
-			object.addComponent(camera);
-			this.app.addObject(object);
-
-			controllerScript.camera = camera;
-			camera.active = true;
-			
-			if (this.app.controllerScript) {
-				this.app.controllerScript.enabled = false;
-			}
-			
-			this.app.controller = controller;
-			this.app.controllerScript = controllerScript;
-		}
-	}
-	
-}
-
 glam.Viewer.prototype.go = function() {
 	// Run it
 	this.initRenderer();
@@ -189,6 +128,7 @@ glam.Viewer.types = {
 		"background" : glam.Background,
 		"import" : glam.Import,
 		"camera" : glam.Camera,
+		"controller" : glam.Controller,
 		"text" : glam.Text,
 };
 
