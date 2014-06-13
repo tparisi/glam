@@ -9,7 +9,7 @@ glam.Input.add = function(docelt, obj) {
 					{
 						detail: {
 						},
-						bubbles: false,
+						bubbles: true,
 						cancelable: true
 					}
 				);
