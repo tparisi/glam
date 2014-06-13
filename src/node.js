@@ -30,5 +30,7 @@ glam.Node.getStyle = function(docelt) {
 		}
 	}
 	
+	docelt.glamStyle = style;
+	
 	return style;
 }
