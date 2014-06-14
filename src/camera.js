@@ -1,6 +1,6 @@
 glam.Camera = {};
 
-glam.Camera.create = function(docelt, sceneobj) {
+glam.Camera.create = function(docelt, sceneobj, app) {
 	
 	var style = glam.Node.getStyle(docelt);
 
@@ -18,10 +18,7 @@ glam.Camera.create = function(docelt, sceneobj) {
 	glam.Transform.parse(docelt, camera);
 	glam.Animation.parse(docelt, camera);
 
-	var controller = Vizi.Application.instance.controllerScript;
-	controller.camera = cam;
-	controller.enabled = true;
-	cam.active = true;
-
+	app.addCamera(cam, docelt.id);
+	
 	return camera;
 }

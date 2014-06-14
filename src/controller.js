@@ -52,6 +52,8 @@ glam.Controller.create = function(docelt, sceneobj, app) {
 				app.controllerScript.enabled = false;
 			}
 			
+			// hack because existing FPS or model controller
+			// will clobber our values
 			app.controller = controller;
 			app.controllerScript = controllerScript;
 		}

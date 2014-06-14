@@ -114,7 +114,20 @@ glam.Viewer.prototype.go = function() {
 	this.initRenderer();
 	this.initDefaultScene();
 	this.traverseScene();
+	this.prepareViewsAndControllers();
 	this.app.run();
+}
+
+glam.Viewer.prototype.prepareViewsAndControllers = function() {
+	
+	var cameras = this.app.cameras;
+	if (cameras && cameras.length) {
+		var cam = cameras[0];
+		var controller = Vizi.Application.instance.controllerScript;
+		controller.camera = cam;
+		controller.enabled = true;
+		cam.active = true;
+	}
 }
 
 // statics

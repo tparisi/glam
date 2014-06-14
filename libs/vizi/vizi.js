@@ -57818,6 +57818,32 @@ Vizi.Viewer.prototype.useCamera = function(id) {
 	}
 }
 
+Vizi.Viewer.prototype.addCamera = function(camera, id) {
+
+	this.cameras.push(camera);
+	this.cameraNames.push(id);
+
+}
+
+Vizi.Viewer.prototype.getCamera = function(id) {
+
+	var index = id;
+	
+	if (typeof(id) == "string") {
+		var cameraNames = this.cameraNames;
+		if (this.cameraNames) {
+			index = this.cameraNames.indexOf(id);
+		}
+	}
+
+	if (index >= 0 && this.cameras && this.cameras[index]) {
+		return this.cameras[index];
+	}
+	else {
+		return null;
+	}
+}
+
 Vizi.Viewer.prototype.toggleLight = function(index)
 {
 	if (this.lights && this.lights[index])
