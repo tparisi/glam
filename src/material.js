@@ -66,7 +66,7 @@ glam.Material.parseStyle = function(style) {
 
 	var wireframe;
 	if (style.hasOwnProperty("render-mode"))
-		wireframe = style["render-mode"] == "wireframe";
+		wireframe = (style["render-mode"] == "wireframe");
 	
 	var param = {
 	};
@@ -84,7 +84,7 @@ glam.Material.parseStyle = function(style) {
 		param.transparent = opacity < 1;
 	}
 	if (wireframe !== undefined) {
-		param.wireframe = true;
+		param.wireframe = wireframe;
 	}
 	if (reflectivity !== undefined)
 		param.reflectivity = reflectivity;

@@ -59,8 +59,18 @@ glam.Text.create = function(docelt, sceneobj) {
 	textGeo.computeVertexNormals();
 
 	var textmat = new THREE.MeshFaceMaterial( [ 
-	                    					new THREE.MeshPhongMaterial( { color: material.color.getHex(), envMap : material.envMap, shading: THREE.FlatShading } ), // front
-	                    					new THREE.MeshPhongMaterial( { color: material.color.getHex(), envMap : material.envMap, shading: THREE.SmoothShading } ) // side
+	                    					new THREE.MeshPhongMaterial( 
+	                    							{ color: material.color.getHex(), 
+	                    								envMap : material.envMap, 
+	                    								wireframe : material.wireframe,
+	                    								shading: THREE.FlatShading,
+	                    								} ), // front
+	                    					new THREE.MeshPhongMaterial( 
+	                    							{ color: material.color.getHex(), 
+	                    								envMap : material.envMap, 
+	                    								wireframe : material.wireframe,
+	                    								shading: THREE.SmoothShading,
+	                    								} ) // side
 	                    				] );
 
 
