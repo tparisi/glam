@@ -64,6 +64,18 @@ glam.Material.parseStyle = function(style) {
 	if (style.opacity)
 		opacity = parseFloat(style.opacity);
 
+	var side = THREE.DoubleSide;
+	if (style["backface-visibility"]) {
+		switch (style["backface-visibility"].toLowerCase()) {
+			case "visible" :
+				side = THREE.DoubleSide;
+				break;
+			case "hidden" :
+				side = THREE.FrontSide;
+				break;
+		}
+	}
+	
 	var wireframe;
 	if (style.hasOwnProperty("render-mode"))
 		wireframe = (style["render-mode"] == "wireframe");
@@ -90,6 +102,8 @@ glam.Material.parseStyle = function(style) {
 		param.reflectivity = reflectivity;
 	if (refractionRatio !== undefined)
 		param.refractionRatio = refractionRatio;
+
+	param.side = side;
 	
 	return param;
 }
