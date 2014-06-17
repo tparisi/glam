@@ -54,7 +54,7 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 
 		var fn = null;
 
-		if (tag && glam.Viewer.types[tag] && (fn = glam.Viewer.types[tag].create) && typeof(fn) == "function") {
+		if (tag && glam.Types.types[tag] && (fn = glam.Types.types[tag].create) && typeof(fn) == "function") {
 			// console.log("    * found it in table!");
 			this.addFeatures(childelt);
 			var obj = fn.call(this, childelt, sceneobj, this.app);
@@ -74,7 +74,7 @@ glam.Viewer.prototype.addNode = function(docelt) {
 	if (tag)
 		tag = tag.toLowerCase();
 	var fn = null;
-	if (tag && glam.Viewer.types[tag] && (fn = glam.Viewer.types[tag].create) && typeof(fn) == "function") {
+	if (tag && glam.Types.types[tag] && (fn = glam.Types.types[tag].create) && typeof(fn) == "function") {
 
 		this.addFeatures(docelt);
 		var obj = fn.call(this, docelt, this.scene);
@@ -129,23 +129,4 @@ glam.Viewer.prototype.prepareViewsAndControllers = function() {
 		cam.active = true;
 	}
 }
-
-// statics
-glam.Viewer.types = {
-		"cube" : glam.Cube,
-		"cone" : glam.Cone,
-		"cylinder" : glam.Cylinder,
-		"sphere" : glam.Sphere,
-		"rect" : glam.Rect,
-		"circle" : glam.Circle,
-		"arc" : glam.Arc,
-		"group" : glam.Group,
-		"animation" : glam.Animation,
-		"background" : glam.Background,
-		"import" : glam.Import,
-		"camera" : glam.Camera,
-		"controller" : glam.Controller,
-		"text" : glam.Text,
-};
-
 
