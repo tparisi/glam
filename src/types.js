@@ -27,6 +27,8 @@ glam.Types.parseVector3Array = function(element, vertices) {
 	var nums = text.split(" ");
 	
 	var i, len = nums.length;
+	if (len < 3)
+		return;
 	
 	for (i = 0; i < len; i += 3) {
 		
@@ -44,6 +46,8 @@ glam.Types.parseVector2Array = function(element, uvs) {
 	var nums = text.split(" ");
 	
 	var i, len = nums.length;
+	if (len < 2)
+		return;
 	
 	for (i = 0; i < len; i += 2) {
 		
@@ -57,6 +61,22 @@ glam.Types.parseVector2Array = function(element, uvs) {
 }
 
 glam.Types.parseColor3Array = function(element, colors) {
+	var text = element.textContent;
+	var nums = text.split(" ");
+	
+	var i, len = nums.length;
+	if (len < 3)
+		return;
+	
+	for (i = 0; i < len; i += 3) {
+		
+		var r = parseFloat(nums[i]), 
+			g = parseFloat(nums[i + 1]), 
+			b = parseFloat(nums[i + 2]);
+		
+		var c = new THREE.Color(r, g, b);
+		colors.push(c);
+	}
 
 }
 
@@ -66,6 +86,8 @@ glam.Types.parseFaceArray = function(element, faces) {
 	var nums = text.split(" ");
 	
 	var i, len = nums.length;
+	if (len < 1)
+		return;
 	
 	for (i = 0; i < len; i += 3) {
 		
@@ -84,6 +106,8 @@ glam.Types.parseUVArray = function(element, uvs) {
 	var nums = text.split(" ");
 	
 	var i, len = nums.length;
+	if (len < 6)
+		return;
 	
 	for (i = 0; i < len; i += 6) {
 		

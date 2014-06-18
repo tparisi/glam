@@ -18,14 +18,36 @@
 		shader:phong;
 	}
 		
-	glam {
-		display:none;
+	#mesh3 {
+		shader:phong;
 	}
+
+	#mesh4 {
+		shader:phong;
+	}
+	
 </style>
 <script>
 $(document).ready(function(){
 
 	glam.ready();
+
+	var meshes = document.getElementsByTagName('mesh');
+	for (var i = 0; i < meshes.length; i++) {
+		var mesh = meshes[i];
+		mesh.addEventListener('mouseover', function(event) {
+			document.body.style.cursor = 'pointer';
+		});
+		mesh.addEventListener('mouseout', function(event) {
+			document.body.style.cursor = 'auto';
+		});
+		mesh.addEventListener('click', function(event) {
+			event.target.geometry.vertices[1].set(.5, .5, -1).normalize();
+			event.target.geometry.vertices[3].set(-.5, .5, -1).normalize();
+			event.target.geometry.verticesNeedUpdate = true;
+		});
+	}
+	
 });
 
 </script>
@@ -37,7 +59,7 @@ glam - Simple scene with cube
 <div id="container" style="width:600px; height:600px;">
 <glam>
   <scene>
-    <group x='-2'>
+    <group x='-1' y='1'>
     	<!--  with normals per face -->
 		<mesh id="mesh1">
 			<vertices>-.5 -.5 0 .5 -.5 0 .5 .5 0 -.5 .5 0</vertices>
@@ -47,12 +69,32 @@ glam - Simple scene with cube
 			<faces>0 1 2 0 2 3</faces>
 		</mesh>
     </group>
-    <group>
+    <group x='1' y='1'>
     	<!--  with normals per vertex -->
 		<mesh id="mesh2" vertexNormals>
-			<vertices>-.5 -.5 0 .5 -.5 0 .5 .5 0 -.5 .5 0</vertices>
+			<vertices id="mesh2Verts">-.5 -.5 0 .5 -.5 0 .5 .5 0 -.5 .5 0</vertices>
 			<normals>0 1 1 0 1 1 0 0 1 0 0 1</normals>
 			<colors></colors>
+			<uvs>0 0 1 0 1 1 0 0 1 1 0 1</uvs>
+			<faces>0 1 2 0 2 3</faces>
+		</mesh>
+    </group>
+    <group x='-1' y='-1'>
+    	<!--  with colors per face -->
+		<mesh id="mesh3">
+			<vertices>-.5 -.5 0 .5 -.5 0 .5 .5 0 -.5 .5 0</vertices>
+			<normals>0 0 1 0 0 1 0 0 1 0 0 1</normals>
+			<colors>1 0 0 0 1 0</colors>
+			<uvs>0 0 1 0 1 1 0 0 1 1 0 1</uvs>
+			<faces>0 1 2 0 2 3</faces>
+		</mesh>
+    </group>
+    <group x='1' y='-1'>
+    	<!--  with colors per vertex -->
+		<mesh id="mesh4" vertexColors>
+			<vertices>-.5 -.5 0 .5 -.5 0 .5 .5 0 -.5 .5 0</vertices>
+			<normals>0 0 1 0 0 1 0 0 1 0 0 1</normals>
+			<colors>1 0 0 0 1 0 0 0 1 1 1 0</colors>
 			<uvs>0 0 1 0 1 1 0 0 1 1 0 1</uvs>
 			<faces>0 1 2 0 2 3</faces>
 		</mesh>

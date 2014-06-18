@@ -38,7 +38,7 @@ glam.Mesh.create = function(docelt, sceneobj) {
 			vertexColors : vertexColors,
 	};
 	
-	glam.Mesh.parse(docelt, geometry, param);
+	glam.Mesh.parse(docelt, geometry, material, param);
 	
 	var mesh = new THREE.Mesh(geometry, material);
 	
@@ -55,10 +55,14 @@ glam.Mesh.create = function(docelt, sceneobj) {
 	glam.Input.add(docelt, obj);
 	glam.Material.addHandlers(docelt, obj);
 	
+	// Is this the API?
+	docelt.geometry = geometry;
+	docelt.material = material;
+	
 	return obj;
 }
 
-glam.Mesh.parse = function(docelt, geometry, param) {
+glam.Mesh.parse = function(docelt, geometry, material, param) {
 
 	var verts = docelt.getElementsByTagName('vertices');
 	if (verts) {
@@ -66,12 +70,6 @@ glam.Mesh.parse = function(docelt, geometry, param) {
 		glam.Types.parseVector3Array(verts, geometry.vertices);
 	}
 	
-	var colors = docelt.getElementsByTagName('colors');
-	if (colors) {
-		colors = colors[0];
-		glam.Types.parseColor3Array(colors, geometry.colors);
-	}
-
 	var uvs = docelt.getElementsByTagName('uvs');
 	if (uvs) {
 		uvs = uvs[0];
@@ -121,6 +119,60 @@ glam.Mesh.parse = function(docelt, geometry, param) {
 			}
 		}
 	}
+	
+	var vertexColors = [];
+	var colors = docelt.getElementsByTagName('colors');
+	if (colors) {
+		colors = colors[0];
+		glam.Types.parseColor3Array(colors, vertexColors);
+
+		if (param.vertexColors) {
+
+			var i, len = geometry.faces.length;
+
+			for (i = 0; i < len; i++) {
+				
+				var face = geometry.faces[i];
+				if (face) {
+					var c = vertexColors[face.a];
+					if (c) {
+						face.vertexColors[0] = c.clone();
+					}
+					var c = vertexColors[face.b];
+					if (c) {
+						face.vertexColors[1] = c.clone();
+					}
+					var c = vertexColors[face.c];
+					if (c) {
+						face.vertexColors[2] = c.clone();
+					}
+				}
+			}
+
+			material.vertexColors = THREE.VertexColors;
+		}
+		else {
+			
+			var i, len = geometry.faces.length;
+
+			for (i = 0; i < len; i++) {
+				
+				var face = geometry.faces[i];
+				if (face) {
+					var c = vertexColors[i];
+					if (c) {
+						face.color.copy(c);
+					}
+				}
+			}
+			
+			material.vertexColors = THREE.FaceColors; 
+		}
+	
+		geometry.colorsNeedUpdate = true;
+		geometry.buffersNeedUpdate = true;
+	}
+
 
 }
 

@@ -66,6 +66,7 @@ glam.parser = {
 			}
 			glam.parser.addDocument(doc);
 			glam.documents[doc.id] = doc;
+			doc.style.display = 'none';
 		}
 		
 		var styles = document.head.getElementsByTagName("style");
