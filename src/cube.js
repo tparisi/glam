@@ -28,12 +28,6 @@ glam.Cube.create = function(docelt, sceneobj) {
 				material: material
 			});
 	cube.addComponent(visual);
-
-
-	glam.Transform.parse(docelt, cube);
-	glam.Animation.parse(docelt, cube);
-	glam.Input.add(docelt, cube);
-	glam.Material.addHandlers(docelt, cube);
 	
 	return cube;
 }

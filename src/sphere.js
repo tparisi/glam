@@ -30,10 +30,5 @@ glam.Sphere.create = function(docelt, sceneobj) {
 		sphere.addComponent(visual);
 	}
 	
-	glam.Transform.parse(docelt, sphere);
-	glam.Animation.parse(docelt, sphere);
-	glam.Input.add(docelt, sphere);
-	glam.Material.addHandlers(docelt, sphere);
-
 	return sphere;
 }

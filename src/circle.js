@@ -25,11 +25,6 @@ glam.Circle.create = function(docelt, sceneobj) {
 				material: material
 			});
 	circle.addComponent(visual);
-
-	glam.Transform.parse(docelt, circle);
-	glam.Animation.parse(docelt, circle);
-	glam.Input.add(docelt, circle);
-	glam.Material.addHandlers(docelt, circle);
 	
 	return circle;
 }

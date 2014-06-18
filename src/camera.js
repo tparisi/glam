@@ -15,9 +15,6 @@ glam.Camera.create = function(docelt, sceneobj, app) {
 	var cam = new Vizi.PerspectiveCamera();
 	camera.addComponent(cam);
 	
-	glam.Transform.parse(docelt, camera);
-	glam.Animation.parse(docelt, camera);
-
 	app.addCamera(cam, docelt.id);
 	
 	return camera;

@@ -49,12 +49,6 @@ glam.Mesh.create = function(docelt, sceneobj) {
 			});
 	obj.addComponent(visual);
 
-
-	glam.Transform.parse(docelt, obj);
-	glam.Animation.parse(docelt, obj);
-	glam.Input.add(docelt, obj);
-	glam.Material.addHandlers(docelt, obj);
-	
 	// Is this the API?
 	docelt.geometry = geometry;
 	docelt.material = material;

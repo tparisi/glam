@@ -18,9 +18,6 @@ glam.Import.create = function(docelt, sceneobj) {
 		loader.loadScene(src);
 	}
 
-	glam.Transform.parse(docelt, obj);
-	glam.Animation.parse(docelt, obj);
-
 	return obj;
 }
 

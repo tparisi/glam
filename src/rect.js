@@ -33,10 +33,5 @@ glam.Rect.create = function(docelt, sceneobj) {
 			});
 	rect.addComponent(visual);
 
-	glam.Transform.parse(docelt, rect);
-	glam.Animation.parse(docelt, rect);
-	glam.Input.add(docelt, rect);
-	glam.Material.addHandlers(docelt, rect);
-	
 	return rect;
 }

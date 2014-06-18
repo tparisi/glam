@@ -42,10 +42,5 @@ glam.Arc.create = function(docelt, sceneobj) {
 			});
 	arc.addComponent(visual);
 
-	glam.Transform.parse(docelt, arc);
-	glam.Animation.parse(docelt, arc);
-	glam.Input.add(docelt, arc);
-	glam.Material.addHandlers(docelt, arc);
-	
 	return arc;
 }

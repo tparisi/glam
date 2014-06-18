@@ -3,21 +3,21 @@ glam.Types = {
 
 // statics
 glam.Types.types = {
-		"cube" :  { ctor : glam.Cube },
-		"cone" :  { ctor : glam.Cone },
-		"cylinder" :  { ctor : glam.Cylinder },
-		"sphere" :  { ctor : glam.Sphere },
-		"rect" :  { ctor : glam.Rect },
-		"circle" :  { ctor : glam.Circle },
-		"arc" :  { ctor : glam.Arc },
-		"group" :  { ctor : glam.Group },
+		"cube" :  { ctor : glam.Cube, transform:true, animation:true, input:true, material:true },
+		"cone" :  { ctor : glam.Cone, transform:true, animation:true, input:true, material:true },
+		"cylinder" :  { ctor : glam.Cylinder, transform:true, animation:true, input:true, material:true },
+		"sphere" :  { ctor : glam.Sphere, transform:true, animation:true, input:true, material:true },
+		"rect" :  { ctor : glam.Rect, transform:true, animation:true, input:true, material:true },
+		"circle" :  { ctor : glam.Circle, transform:true, animation:true, input:true, material:true },
+		"arc" :  { ctor : glam.Arc, transform:true, animation:true, input:true, material:true },
+		"group" :  { ctor : glam.Group, transform:true, animation:true, input:true },
 		"animation" :  { ctor : glam.Animation },
 		"background" :  { ctor : glam.Background },
-		"import" :  { ctor : glam.Import },
-		"camera" :  { ctor : glam.Camera },
+		"import" :  { ctor : glam.Import, transform:true, animation:true },
+		"camera" :  { ctor : glam.Camera, transform:true, animation:true },
 		"controller" :  { ctor : glam.Controller },
-		"text" :  { ctor : glam.Text },
-		"mesh" :  { ctor : glam.Mesh },
+		"text" :  { ctor : glam.Text, transform:true, animation:true, input:true, material:true },
+		"mesh" :  { ctor : glam.Mesh, transform:true, animation:true, input:true, material:true },
 };
 
 

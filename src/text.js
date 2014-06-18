@@ -83,11 +83,5 @@ glam.Text.create = function(docelt, sceneobj) {
 
 	THREE.GeometryUtils.center(textGeo);
 	
-	glam.Transform.parse(docelt, text);
-	glam.Animation.parse(docelt, text);
-	glam.Input.add(docelt, text);
-	glam.Material.addHandlers(docelt, text);
-	
-
 	return text;
 }

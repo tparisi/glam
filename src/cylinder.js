@@ -24,11 +24,6 @@ glam.Cylinder.create = function(docelt, sceneobj) {
 				material: material
 			});
 	cylinder.addComponent(visual);
-
-	glam.Transform.parse(docelt, cylinder);
-	glam.Animation.parse(docelt, cylinder);
-	glam.Input.add(docelt, cylinder);
-	glam.Material.addHandlers(docelt, cylinder);
 	
 	return cylinder;
 }

@@ -56,10 +56,11 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 		var type = tag ? glam.Types.types[tag] : null;
 		if (type && type.ctor && (fn = type.ctor.create) && typeof(fn) == "function") {
 			// console.log("    * found it in table!");
-			this.addFeatures(childelt);
+			this.initGlam(childelt);
 			var obj = fn.call(this, childelt, sceneobj, this.app);
-			childelt.glam = obj;
 			if (obj) {
+				childelt.glam = obj;
+				this.addFeatures(childelt, obj, type);
 				sceneobj.addChild(obj);
 				this.traverse(childelt, obj);
 			}
@@ -77,11 +78,12 @@ glam.Viewer.prototype.addNode = function(docelt) {
 	var type = tag ? glam.Types.types[tag] : null;
 	if (type && type.ctor && (fn = type.ctor.create) && typeof(fn) == "function") {
 
-		this.addFeatures(docelt);
+		this.initGlam(docelt);
 		var obj = fn.call(this, docelt, this.scene);
 		
 		if (obj) {
 			docelt.glam = obj;
+			this.addFeatures(docelt, obj, type);
 			this.scene.addChild(obj);
 			this.traverse(docelt, obj);
 		}
@@ -96,7 +98,7 @@ glam.Viewer.prototype.removeNode = function(docelt) {
 	}
 }
 
-glam.Viewer.prototype.addFeatures = function(docelt) {
+glam.Viewer.prototype.initGlam = function(docelt) {
 
 	docelt.setAttributeHandlers = [];
 	docelt.onSetAttribute = function(attr, val) {
@@ -107,6 +109,25 @@ glam.Viewer.prototype.addFeatures = function(docelt) {
 				handler(attr, val);
 			}
 		}
+	}
+}
+
+glam.Viewer.prototype.addFeatures = function(docelt, obj, type) {
+
+	if (type.transform) {
+		glam.Transform.parse(docelt, obj);
+	}
+	
+	if (type.animation) {
+		glam.Animation.parse(docelt, obj);
+	}
+
+	if (type.input) {
+		glam.Input.add(docelt, obj);
+	}
+	
+	if (type.material) {
+		glam.Material.addHandlers(docelt, obj);
 	}
 }
 

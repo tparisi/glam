@@ -25,10 +25,5 @@ glam.Cone.create = function(docelt, sceneobj) {
 			});
 	cone.addComponent(visual);
 
-	glam.Transform.parse(docelt, cone);
-	glam.Animation.parse(docelt, cone);
-	glam.Input.add(docelt, cone);
-	glam.Material.addHandlers(docelt, cone);
-	
 	return cone;
 }
