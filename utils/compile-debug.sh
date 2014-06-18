@@ -15,6 +15,7 @@ SOURCES="../src/glam.js \
 ../src/import.js \
 ../src/input.js \
 ../src/material.js \
+../src/mesh.js \
 ../src/node.js \
 ../src/parser.js \
 ../src/rect.js \

@@ -1,0 +1,65 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+<script src="../build/glam.js" ></script>
+<title>glam - mesh tests</title>
+
+<style>
+	#mesh1 {
+		image:url(../images/flowers.jpg);
+		color-diffuse:lightgray;
+		shader:phong;
+	}
+
+	#mesh2 {
+		image:url(../images/parisi1.jpg);
+		shader:phong;
+	}
+		
+	glam {
+		display:none;
+	}
+</style>
+<script>
+$(document).ready(function(){
+
+	glam.ready();
+});
+
+</script>
+</head>
+<body>
+<!-- 
+glam - Simple scene with cube
+ -->
+<div id="container" style="width:600px; height:600px;">
+<glam>
+  <scene>
+    <group x='-2'>
+    	<!--  with normals per face -->
+		<mesh id="mesh1">
+			<vertices>-.5 -.5 0 .5 -.5 0 .5 .5 0 -.5 .5 0</vertices>
+			<normals>0 1 1 0 0 1</normals>
+			<colors></colors>
+			<uvs>0 0 1 0 1 1 0 0 1 1 0 1</uvs>
+			<faces>0 1 2 0 2 3</faces>
+		</mesh>
+    </group>
+    <group>
+    	<!--  with normals per vertex -->
+		<mesh id="mesh2" vertexNormals>
+			<vertices>-.5 -.5 0 .5 -.5 0 .5 .5 0 -.5 .5 0</vertices>
+			<normals>0 1 1 0 1 1 0 0 1 0 0 1</normals>
+			<colors></colors>
+			<uvs>0 0 1 0 1 1 0 0 1 1 0 1</uvs>
+			<faces>0 1 2 0 2 3</faces>
+		</mesh>
+    </group>
+  </scene>
+</glam>
+
+
+</body>
+</html>
