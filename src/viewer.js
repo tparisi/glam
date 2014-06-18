@@ -53,8 +53,8 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 			tag = tag.toLowerCase();
 
 		var fn = null;
-
-		if (tag && glam.Types.types[tag] && (fn = glam.Types.types[tag].create) && typeof(fn) == "function") {
+		var type = tag ? glam.Types.types[tag] : null;
+		if (type && type.ctor && (fn = type.ctor.create) && typeof(fn) == "function") {
 			// console.log("    * found it in table!");
 			this.addFeatures(childelt);
 			var obj = fn.call(this, childelt, sceneobj, this.app);
@@ -74,7 +74,8 @@ glam.Viewer.prototype.addNode = function(docelt) {
 	if (tag)
 		tag = tag.toLowerCase();
 	var fn = null;
-	if (tag && glam.Types.types[tag] && (fn = glam.Types.types[tag].create) && typeof(fn) == "function") {
+	var type = tag ? glam.Types.types[tag] : null;
+	if (type && type.ctor && (fn = type.ctor.create) && typeof(fn) == "function") {
 
 		this.addFeatures(docelt);
 		var obj = fn.call(this, docelt, this.scene);

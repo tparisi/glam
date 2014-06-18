@@ -3,21 +3,21 @@ glam.Types = {
 
 // statics
 glam.Types.types = {
-		"cube" : glam.Cube,
-		"cone" : glam.Cone,
-		"cylinder" : glam.Cylinder,
-		"sphere" : glam.Sphere,
-		"rect" : glam.Rect,
-		"circle" : glam.Circle,
-		"arc" : glam.Arc,
-		"group" : glam.Group,
-		"animation" : glam.Animation,
-		"background" : glam.Background,
-		"import" : glam.Import,
-		"camera" : glam.Camera,
-		"controller" : glam.Controller,
-		"text" : glam.Text,
-		"mesh" : glam.Mesh,
+		"cube" :  { ctor : glam.Cube },
+		"cone" :  { ctor : glam.Cone },
+		"cylinder" :  { ctor : glam.Cylinder },
+		"sphere" :  { ctor : glam.Sphere },
+		"rect" :  { ctor : glam.Rect },
+		"circle" :  { ctor : glam.Circle },
+		"arc" :  { ctor : glam.Arc },
+		"group" :  { ctor : glam.Group },
+		"animation" :  { ctor : glam.Animation },
+		"background" :  { ctor : glam.Background },
+		"import" :  { ctor : glam.Import },
+		"camera" :  { ctor : glam.Camera },
+		"controller" :  { ctor : glam.Controller },
+		"text" :  { ctor : glam.Text },
+		"mesh" :  { ctor : glam.Mesh },
 };
 
 
