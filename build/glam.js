@@ -60675,23 +60675,23 @@ glam.Types = {
 
 // statics
 glam.Types.types = {
-		"cube" :  { ctor : glam.Cube, transform:true, animation:true, input:true, visual:true },
-		"cone" :  { ctor : glam.Cone, transform:true, animation:true, input:true, visual:true },
-		"cylinder" :  { ctor : glam.Cylinder, transform:true, animation:true, input:true, visual:true },
-		"sphere" :  { ctor : glam.Sphere, transform:true, animation:true, input:true, visual:true },
-		"rect" :  { ctor : glam.Rect, transform:true, animation:true, input:true, visual:true },
-		"circle" :  { ctor : glam.Circle, transform:true, animation:true, input:true, visual:true },
-		"arc" :  { ctor : glam.Arc, transform:true, animation:true, input:true, visual:true },
-		"group" :  { ctor : glam.Group, transform:true, animation:true, input:true },
-		"animation" :  { ctor : glam.Animation },
-		"background" :  { ctor : glam.Background },
-		"import" :  { ctor : glam.Import, transform:true, animation:true },
-		"camera" :  { ctor : glam.Camera, transform:true, animation:true },
-		"controller" :  { ctor : glam.Controller },
-		"text" :  { ctor : glam.Text, transform:true, animation:true, input:true, visual:true },
-		"mesh" :  { ctor : glam.Mesh, transform:true, animation:true, input:true, visual:true },
-		"line" :  { ctor : glam.Line, transform:true, animation:true, visual:true },
-		"light" :  { ctor : glam.Light, transform:true, animation:true },
+		"cube" :  { cls : glam.Cube, transform:true, animation:true, input:true, visual:true },
+		"cone" :  { cls : glam.Cone, transform:true, animation:true, input:true, visual:true },
+		"cylinder" :  { cls : glam.Cylinder, transform:true, animation:true, input:true, visual:true },
+		"sphere" :  { cls : glam.Sphere, transform:true, animation:true, input:true, visual:true },
+		"rect" :  { cls : glam.Rect, transform:true, animation:true, input:true, visual:true },
+		"circle" :  { cls : glam.Circle, transform:true, animation:true, input:true, visual:true },
+		"arc" :  { cls : glam.Arc, transform:true, animation:true, input:true, visual:true },
+		"group" :  { cls : glam.Group, transform:true, animation:true, input:true },
+		"animation" :  { cls : glam.Animation },
+		"background" :  { cls : glam.Background },
+		"import" :  { cls : glam.Import, transform:true, animation:true },
+		"camera" :  { cls : glam.Camera, transform:true, animation:true },
+		"controller" :  { cls : glam.Controller },
+		"text" :  { cls : glam.Text, transform:true, animation:true, input:true, visual:true },
+		"mesh" :  { cls : glam.Mesh, transform:true, animation:true, input:true, visual:true },
+		"line" :  { cls : glam.Line, transform:true, animation:true, visual:true },
+		"light" :  { cls : glam.Light, transform:true, animation:true },
 };
 
 
@@ -60854,7 +60854,7 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 
 		var fn = null;
 		var type = tag ? glam.Types.types[tag] : null;
-		if (type && type.ctor && (fn = type.ctor.create) && typeof(fn) == "function") {
+		if (type && type.cls && (fn = type.cls.create) && typeof(fn) == "function") {
 			// console.log("    * found it in table!");
 			this.initGlam(childelt);
 			var obj = fn.call(this, childelt, this.app);
@@ -60876,7 +60876,7 @@ glam.Viewer.prototype.addNode = function(docelt) {
 		tag = tag.toLowerCase();
 	var fn = null;
 	var type = tag ? glam.Types.types[tag] : null;
-	if (type && type.ctor && (fn = type.ctor.create) && typeof(fn) == "function") {
+	if (type && type.cls && (fn = type.cls.create) && typeof(fn) == "function") {
 
 		this.initGlam(docelt);
 		var obj = fn.call(this, docelt, this.app);
