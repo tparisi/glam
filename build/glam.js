@@ -59595,9 +59595,69 @@ glam.Light.create = function(docelt, sceneobj, app) {
 	
 	return null;
 }
+glam.Line = {};
+
+glam.Line.create = function(docelt, sceneobj) {
+		
+	var style = glam.Node.getStyle(docelt);
+
+	if (style) {
+	}
+	
+	var material = glam.Material.create(style, null, "line");
+	
+	var geometry = new THREE.Geometry;
+	
+	glam.Line.parse(docelt, geometry, material);
+	
+	var line = new THREE.Line(geometry, material);
+	
+	var obj = new Vizi.Object;	
+	var visual = new Vizi.Visual(
+			{
+				object : line,
+			});
+	obj.addComponent(visual);
+
+	// Is this the API?
+	docelt.geometry = geometry;
+	docelt.material = material;
+	
+	return obj;
+}
+
+glam.Line.parse = function(docelt, geometry, material) {
+
+	var verts = docelt.getElementsByTagName('vertices');
+	if (verts) {
+		verts = verts[0];
+		glam.Types.parseVector3Array(verts, geometry.vertices);
+	}
+	
+	var vertexColors = [];
+	var colors = docelt.getElementsByTagName('colors');
+	if (colors) {
+		colors = colors[0];
+		if (colors) {
+			glam.Types.parseColor3Array(colors, vertexColors);
+	
+			var i, len = vertexColors.length;
+	
+			for (i = 0; i < len; i++) {			
+				var c = vertexColors[i];
+				geometry.colors.push(c.clone());
+			}
+	
+			material.vertexColors = THREE.VertexColors;
+		}
+	}
+
+
+}
+
 glam.Material = {};
 
-glam.Material.create = function(style, createCB) {
+glam.Material.create = function(style, createCB, objtype) {
 	var material = null;
 	
 	if (style) {
@@ -59610,6 +59670,9 @@ glam.Material.create = function(style, createCB) {
 				case "lambert" :
 					material = new THREE.MeshLambertMaterial(param);
 					break;
+				case "line" :
+					material = new THREE.LineBasicMaterial(param);
+					break;
 				case "basic" :
 				default :
 					material = new THREE.MeshBasicMaterial(param);
@@ -59618,6 +59681,14 @@ glam.Material.create = function(style, createCB) {
 		}
 		else if (style["shader-vertex"] && style["shader-fragment"] && style["shader-uniforms"]) {
 			material = glam.Material.createShaderMaterial(style, param, createCB);
+		}
+		else if (objtype == "line") {
+			if (style.dashed !== undefined) {
+				material = new THREE.LineBasicMaterial(param);
+			}
+			else {
+				material = new THREE.LineDashedMaterial(param);
+			}
 		}
 		else {
 			material = new THREE.MeshBasicMaterial(param);
@@ -59646,10 +59717,14 @@ glam.Material.parseStyle = function(style) {
 	
 	var envMap = glam.Material.tryParseEnvMap(style);
 	
+	var color;
 	var diffuse;
 	var specular;
 	var css = "";
 
+	if (css = style["color"]) {
+		color = new THREE.Color().setStyle(css).getHex();
+	}
 	if (css = style["color-diffuse"]) {
 		diffuse = new THREE.Color().setStyle(css).getHex();
 	}
@@ -59677,6 +59752,11 @@ glam.Material.parseStyle = function(style) {
 	if (style.hasOwnProperty("render-mode"))
 		wireframe = (style["render-mode"] == "wireframe");
 	
+	var linewidth;
+	if (style["line-width"]) {
+		linewidth = parseInt(style["line-width"]);
+	}
+		
 	var param = {
 	};
 	
@@ -59684,6 +59764,8 @@ glam.Material.parseStyle = function(style) {
 		param.map = THREE.ImageUtils.loadTexture(image);
 	if (envMap)
 		param.envMap = envMap;
+	if (color !== undefined)
+		param.color = color;
 	if (diffuse !== undefined)
 		param.color = diffuse;
 	if (specular !== undefined)
@@ -59694,6 +59776,9 @@ glam.Material.parseStyle = function(style) {
 	}
 	if (wireframe !== undefined) {
 		param.wireframe = wireframe;
+	}
+	if (linewidth !== undefined) {
+		param.linewidth = linewidth;
 	}
 	if (reflectivity !== undefined)
 		param.reflectivity = reflectivity;
@@ -59978,54 +60063,62 @@ glam.Mesh.parse = function(docelt, geometry, material, param) {
 	var verts = docelt.getElementsByTagName('vertices');
 	if (verts) {
 		verts = verts[0];
-		glam.Types.parseVector3Array(verts, geometry.vertices);
+		if (verts) {
+			glam.Types.parseVector3Array(verts, geometry.vertices);
+		}
 	}
 	
 	var uvs = docelt.getElementsByTagName('uvs');
 	if (uvs) {
 		uvs = uvs[0];
-		glam.Types.parseUVArray(uvs, geometry.faceVertexUvs[0]);
+		if (uvs) {
+			glam.Types.parseUVArray(uvs, geometry.faceVertexUvs[0]);
+		}
 	}
 
 	var faces = docelt.getElementsByTagName('faces');
 	if (faces) {
 		faces = faces[0];
-		glam.Types.parseFaceArray(faces, geometry.faces);
+		if (faces) {
+			glam.Types.parseFaceArray(faces, geometry.faces);
+		}
 	}
 
 	var vertexNormals = [];
 	var normals = docelt.getElementsByTagName('normals');
 	if (normals) {
 		normals = normals[0];
-		glam.Types.parseVector3Array(normals, vertexNormals);
-		
-		if (param.vertexNormals) {
+		if (normals) {
+			glam.Types.parseVector3Array(normals, vertexNormals);
 			
-			var i, len = geometry.faces.length;
-
-			for (i = 0; i < len; i++) {
+			if (param.vertexNormals) {
 				
-				var face = geometry.faces[i];
-				if (face) {
-					var norm = vertexNormals[face.a].normalize().clone();
-					face.vertexNormals[0] = norm;
-					var norm = vertexNormals[face.b].normalize().clone();
-					face.vertexNormals[1] = norm;
-					var norm = vertexNormals[face.c].normalize().clone();
-					face.vertexNormals[2] = norm;
+				var i, len = geometry.faces.length;
+	
+				for (i = 0; i < len; i++) {
+					
+					var face = geometry.faces[i];
+					if (face) {
+						var norm = vertexNormals[face.a].normalize().clone();
+						face.vertexNormals[0] = norm;
+						var norm = vertexNormals[face.b].normalize().clone();
+						face.vertexNormals[1] = norm;
+						var norm = vertexNormals[face.c].normalize().clone();
+						face.vertexNormals[2] = norm;
+					}
 				}
 			}
-		}
-		else {
-			
-			var i, len = geometry.faces.length;
-
-			for (i = 0; i < len; i++) {
+			else {
 				
-				var face = geometry.faces[i];
-				if (face) {
-					var norm = vertexNormals[i].normalize();
-					face.normal.copy(norm);
+				var i, len = geometry.faces.length;
+	
+				for (i = 0; i < len; i++) {
+					
+					var face = geometry.faces[i];
+					if (face) {
+						var norm = vertexNormals[i].normalize();
+						face.normal.copy(norm);
+					}
 				}
 			}
 		}
@@ -60035,56 +60128,56 @@ glam.Mesh.parse = function(docelt, geometry, material, param) {
 	var colors = docelt.getElementsByTagName('colors');
 	if (colors) {
 		colors = colors[0];
-		glam.Types.parseColor3Array(colors, vertexColors);
-
-		if (param.vertexColors) {
-
-			var i, len = geometry.faces.length;
-
-			for (i = 0; i < len; i++) {
-				
-				var face = geometry.faces[i];
-				if (face) {
-					var c = vertexColors[face.a];
-					if (c) {
-						face.vertexColors[0] = c.clone();
-					}
-					var c = vertexColors[face.b];
-					if (c) {
-						face.vertexColors[1] = c.clone();
-					}
-					var c = vertexColors[face.c];
-					if (c) {
-						face.vertexColors[2] = c.clone();
-					}
-				}
-			}
-
-			material.vertexColors = THREE.VertexColors;
-		}
-		else {
-			
-			var i, len = geometry.faces.length;
-
-			for (i = 0; i < len; i++) {
-				
-				var face = geometry.faces[i];
-				if (face) {
-					var c = vertexColors[i];
-					if (c) {
-						face.color.copy(c);
-					}
-				}
-			}
-			
-			material.vertexColors = THREE.FaceColors; 
-		}
+		if (colors) {
+			glam.Types.parseColor3Array(colors, vertexColors);
 	
-		geometry.colorsNeedUpdate = true;
-		geometry.buffersNeedUpdate = true;
+			if (param.vertexColors) {
+	
+				var i, len = geometry.faces.length;
+	
+				for (i = 0; i < len; i++) {
+					
+					var face = geometry.faces[i];
+					if (face) {
+						var c = vertexColors[face.a];
+						if (c) {
+							face.vertexColors[0] = c.clone();
+						}
+						var c = vertexColors[face.b];
+						if (c) {
+							face.vertexColors[1] = c.clone();
+						}
+						var c = vertexColors[face.c];
+						if (c) {
+							face.vertexColors[2] = c.clone();
+						}
+					}
+				}
+	
+				material.vertexColors = THREE.VertexColors;
+			}
+			else {
+				
+				var i, len = geometry.faces.length;
+	
+				for (i = 0; i < len; i++) {
+					
+					var face = geometry.faces[i];
+					if (face) {
+						var c = vertexColors[i];
+						if (c) {
+							face.color.copy(c);
+						}
+					}
+				}
+				
+				material.vertexColors = THREE.FaceColors; 
+			}
+		
+			geometry.colorsNeedUpdate = true;
+			geometry.buffersNeedUpdate = true;
+		}
 	}
-
-
 }
 
 glam.Node = {};
@@ -60564,6 +60657,7 @@ glam.Types.types = {
 		"controller" :  { ctor : glam.Controller },
 		"text" :  { ctor : glam.Text, transform:true, animation:true, input:true, material:true },
 		"mesh" :  { ctor : glam.Mesh, transform:true, animation:true, input:true, material:true },
+		"line" :  { ctor : glam.Line, transform:true, animation:true, material:true },
 		"light" :  { ctor : glam.Light, transform:true, animation:true },
 };
 

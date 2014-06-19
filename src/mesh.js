@@ -61,54 +61,62 @@ glam.Mesh.parse = function(docelt, geometry, material, param) {
 	var verts = docelt.getElementsByTagName('vertices');
 	if (verts) {
 		verts = verts[0];
-		glam.Types.parseVector3Array(verts, geometry.vertices);
+		if (verts) {
+			glam.Types.parseVector3Array(verts, geometry.vertices);
+		}
 	}
 	
 	var uvs = docelt.getElementsByTagName('uvs');
 	if (uvs) {
 		uvs = uvs[0];
-		glam.Types.parseUVArray(uvs, geometry.faceVertexUvs[0]);
+		if (uvs) {
+			glam.Types.parseUVArray(uvs, geometry.faceVertexUvs[0]);
+		}
 	}
 
 	var faces = docelt.getElementsByTagName('faces');
 	if (faces) {
 		faces = faces[0];
-		glam.Types.parseFaceArray(faces, geometry.faces);
+		if (faces) {
+			glam.Types.parseFaceArray(faces, geometry.faces);
+		}
 	}
 
 	var vertexNormals = [];
 	var normals = docelt.getElementsByTagName('normals');
 	if (normals) {
 		normals = normals[0];
-		glam.Types.parseVector3Array(normals, vertexNormals);
-		
-		if (param.vertexNormals) {
+		if (normals) {
+			glam.Types.parseVector3Array(normals, vertexNormals);
 			
-			var i, len = geometry.faces.length;
-
-			for (i = 0; i < len; i++) {
+			if (param.vertexNormals) {
 				
-				var face = geometry.faces[i];
-				if (face) {
-					var norm = vertexNormals[face.a].normalize().clone();
-					face.vertexNormals[0] = norm;
-					var norm = vertexNormals[face.b].normalize().clone();
-					face.vertexNormals[1] = norm;
-					var norm = vertexNormals[face.c].normalize().clone();
-					face.vertexNormals[2] = norm;
+				var i, len = geometry.faces.length;
+	
+				for (i = 0; i < len; i++) {
+					
+					var face = geometry.faces[i];
+					if (face) {
+						var norm = vertexNormals[face.a].normalize().clone();
+						face.vertexNormals[0] = norm;
+						var norm = vertexNormals[face.b].normalize().clone();
+						face.vertexNormals[1] = norm;
+						var norm = vertexNormals[face.c].normalize().clone();
+						face.vertexNormals[2] = norm;
+					}
 				}
 			}
-		}
-		else {
-			
-			var i, len = geometry.faces.length;
-
-			for (i = 0; i < len; i++) {
+			else {
 				
-				var face = geometry.faces[i];
-				if (face) {
-					var norm = vertexNormals[i].normalize();
-					face.normal.copy(norm);
+				var i, len = geometry.faces.length;
+	
+				for (i = 0; i < len; i++) {
+					
+					var face = geometry.faces[i];
+					if (face) {
+						var norm = vertexNormals[i].normalize();
+						face.normal.copy(norm);
+					}
 				}
 			}
 		}
@@ -118,55 +126,55 @@ glam.Mesh.parse = function(docelt, geometry, material, param) {
 	var colors = docelt.getElementsByTagName('colors');
 	if (colors) {
 		colors = colors[0];
-		glam.Types.parseColor3Array(colors, vertexColors);
-
-		if (param.vertexColors) {
-
-			var i, len = geometry.faces.length;
-
-			for (i = 0; i < len; i++) {
-				
-				var face = geometry.faces[i];
-				if (face) {
-					var c = vertexColors[face.a];
-					if (c) {
-						face.vertexColors[0] = c.clone();
-					}
-					var c = vertexColors[face.b];
-					if (c) {
-						face.vertexColors[1] = c.clone();
-					}
-					var c = vertexColors[face.c];
-					if (c) {
-						face.vertexColors[2] = c.clone();
-					}
-				}
-			}
-
-			material.vertexColors = THREE.VertexColors;
-		}
-		else {
-			
-			var i, len = geometry.faces.length;
-
-			for (i = 0; i < len; i++) {
-				
-				var face = geometry.faces[i];
-				if (face) {
-					var c = vertexColors[i];
-					if (c) {
-						face.color.copy(c);
-					}
-				}
-			}
-			
-			material.vertexColors = THREE.FaceColors; 
-		}
+		if (colors) {
+			glam.Types.parseColor3Array(colors, vertexColors);
 	
-		geometry.colorsNeedUpdate = true;
-		geometry.buffersNeedUpdate = true;
+			if (param.vertexColors) {
+	
+				var i, len = geometry.faces.length;
+	
+				for (i = 0; i < len; i++) {
+					
+					var face = geometry.faces[i];
+					if (face) {
+						var c = vertexColors[face.a];
+						if (c) {
+							face.vertexColors[0] = c.clone();
+						}
+						var c = vertexColors[face.b];
+						if (c) {
+							face.vertexColors[1] = c.clone();
+						}
+						var c = vertexColors[face.c];
+						if (c) {
+							face.vertexColors[2] = c.clone();
+						}
+					}
+				}
+	
+				material.vertexColors = THREE.VertexColors;
+			}
+			else {
+				
+				var i, len = geometry.faces.length;
+	
+				for (i = 0; i < len; i++) {
+					
+					var face = geometry.faces[i];
+					if (face) {
+						var c = vertexColors[i];
+						if (c) {
+							face.color.copy(c);
+						}
+					}
+				}
+				
+				material.vertexColors = THREE.FaceColors; 
+			}
+		
+			geometry.colorsNeedUpdate = true;
+			geometry.buffersNeedUpdate = true;
+		}
 	}
-
-
 }
 

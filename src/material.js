@@ -1,6 +1,6 @@
 glam.Material = {};
 
-glam.Material.create = function(style, createCB) {
+glam.Material.create = function(style, createCB, objtype) {
 	var material = null;
 	
 	if (style) {
@@ -13,6 +13,9 @@ glam.Material.create = function(style, createCB) {
 				case "lambert" :
 					material = new THREE.MeshLambertMaterial(param);
 					break;
+				case "line" :
+					material = new THREE.LineBasicMaterial(param);
+					break;
 				case "basic" :
 				default :
 					material = new THREE.MeshBasicMaterial(param);
@@ -21,6 +24,14 @@ glam.Material.create = function(style, createCB) {
 		}
 		else if (style["shader-vertex"] && style["shader-fragment"] && style["shader-uniforms"]) {
 			material = glam.Material.createShaderMaterial(style, param, createCB);
+		}
+		else if (objtype == "line") {
+			if (style.dashed !== undefined) {
+				material = new THREE.LineBasicMaterial(param);
+			}
+			else {
+				material = new THREE.LineDashedMaterial(param);
+			}
 		}
 		else {
 			material = new THREE.MeshBasicMaterial(param);
@@ -49,10 +60,14 @@ glam.Material.parseStyle = function(style) {
 	
 	var envMap = glam.Material.tryParseEnvMap(style);
 	
+	var color;
 	var diffuse;
 	var specular;
 	var css = "";
 
+	if (css = style["color"]) {
+		color = new THREE.Color().setStyle(css).getHex();
+	}
 	if (css = style["color-diffuse"]) {
 		diffuse = new THREE.Color().setStyle(css).getHex();
 	}
@@ -80,6 +95,11 @@ glam.Material.parseStyle = function(style) {
 	if (style.hasOwnProperty("render-mode"))
 		wireframe = (style["render-mode"] == "wireframe");
 	
+	var linewidth;
+	if (style["line-width"]) {
+		linewidth = parseInt(style["line-width"]);
+	}
+		
 	var param = {
 	};
 	
@@ -87,6 +107,8 @@ glam.Material.parseStyle = function(style) {
 		param.map = THREE.ImageUtils.loadTexture(image);
 	if (envMap)
 		param.envMap = envMap;
+	if (color !== undefined)
+		param.color = color;
 	if (diffuse !== undefined)
 		param.color = diffuse;
 	if (specular !== undefined)
@@ -97,6 +119,9 @@ glam.Material.parseStyle = function(style) {
 	}
 	if (wireframe !== undefined) {
 		param.wireframe = wireframe;
+	}
+	if (linewidth !== undefined) {
+		param.linewidth = linewidth;
 	}
 	if (reflectivity !== undefined)
 		param.reflectivity = reflectivity;
