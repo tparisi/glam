@@ -50,7 +50,7 @@
 	}
 
 	#dirLight1 {
-		color:gray;
+		color:white;
 	}
 	
 	#spotLight1 {
@@ -62,7 +62,7 @@
 	}
 
 	#pointLight2 {
-		color:purple;
+		color:yellow;
 	}
 
 	#ambLight1 {
@@ -86,8 +86,8 @@ glam - Simple scene with cube
 <glam>
   <scene>
   	<controller noheadlight></controller>
-  	<light id="dirLight1" type='directional'></light>
-  	<light id="spotLight1" type='spot' z='2' angle='15deg'></light>
+  	<light id="dirLight1" type='directional'  dz='0' dy='-1' dx='0'></light>
+  	<light id="spotLight1" type='spot' z='2' angle='15deg' ></light>
   	<light id="pointLight1" type='point' x='-2' z='2'></light>
   	<light id="pointLight2" type='point' x='2' z='0' animation="lightBounce"></light>
   	<light id="ambLight1" type='ambient'></light>

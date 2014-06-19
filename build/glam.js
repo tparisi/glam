@@ -59513,6 +59513,7 @@ glam.Light = {};
 glam.Light.DEFAULT_TYPE = "directional";
 glam.Light.DEFAULT_COLOR = "#ffffff";
 glam.Light.DEFAULT_ANGLE = "90deg";
+glam.Light.DEFAULT_DISTANCE = 0;
 
 glam.Light.create = function(docelt, sceneobj, app) {
 	
@@ -59523,6 +59524,18 @@ glam.Light.create = function(docelt, sceneobj, app) {
 	var type = docelt.getAttribute('type') || glam.Light.DEFAULT_TYPE;
 	var color = docelt.getAttribute('color') || glam.Light.DEFAULT_COLOR;
 	var angle = docelt.getAttribute('angle') || glam.Light.DEFAULT_ANGLE;
+	var distance = docelt.getAttribute('distance') || glam.Light.DEFAULT_DISTANCE;
+	
+	var direction = new THREE.Vector3(0, 0, -1);
+	
+	var dx = parseFloat(docelt.getAttribute('dx')) || 0;
+	var dy = parseFloat(docelt.getAttribute('dy')) || 0;
+	var dz = parseFloat(docelt.getAttribute('dz')) || 0;
+	if (dx || dy || dz) {
+		direction.set(dx, dy, dz);
+	}
+	
+	direction.normalize();
 	
 	var style = glam.Node.getStyle(docelt);
 
@@ -59536,6 +59549,9 @@ glam.Light.create = function(docelt, sceneobj, app) {
 		if (style.angle) {
 			angle = style.angle;
 		}
+		if (style.distance) {
+			distance = style.distance;
+		}
 	}
 
 	color = new THREE.Color().setStyle(color).getHex(); 
@@ -59544,6 +59560,8 @@ glam.Light.create = function(docelt, sceneobj, app) {
 	var param = {
 			color : color,
 			angle : angle,
+			direction : direction,
+			distance : distance,
 	};
 	
 	var obj = new Vizi.Object;
