@@ -1,0 +1,111 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+<script src="../build/glam.js" ></script>
+<script src="../fonts/gentilis_bold.typeface.js"></script>
+<script src="../fonts/gentilis_regular.typeface.js"></script>
+<script src="../fonts/optimer_bold.typeface.js"></script>
+<script src="../fonts/optimer_regular.typeface.js"></script>
+<script src="../fonts/helvetiker_bold.typeface.js"></script>
+<script src="../fonts/helvetiker_regular.typeface.js"></script>
+<script src="../fonts/droid/droid_sans_regular.typeface.js"></script>
+<script src="../fonts/droid/droid_sans_bold.typeface.js"></script>
+<script src="../fonts/droid/droid_serif_regular.typeface.js"></script>
+<script src="../fonts/droid/droid_serif_bold.typeface.js"></script>
+<title>glam - shapes, materials, groups and hierarchy</title>
+
+<style>
+
+	#texturedcube {
+		image:url(../images/ash_uvgrid01.jpg);
+	}
+
+	#cone1 {
+		color-diffuse:blue;
+		shader:phong;
+		radius:1;
+	}
+
+	#cylinder1 {
+		color-diffuse:green;
+		radius:1;
+		render-mode:wireframe;
+	}
+	
+	#sphere1 {
+		shader:phong;
+		color-diffuse:red;
+		color-specular:#004400;
+		opacity:.8;
+	}
+
+	#nestedGroup {
+	}
+
+	#text1 {
+		color-diffuse:cornflowerblue;
+		shader:phong;
+	}
+
+	#dirLight1 {
+		color:gray;
+	}
+	
+	#spotLight1 {
+		color:#44ff88;
+	}
+
+	#pointLight1 {
+		color:blue;
+	}
+
+	#pointLight2 {
+		color:magenta;
+	}
+
+	#ambLight1 {
+		color:#404000;
+	}
+	
+</style>
+<script>
+$(document).ready(function(){
+
+	glam.ready();
+});
+
+</script>
+</head>
+<body>
+<!-- 
+glam - Simple scene with cube
+ -->
+<div id="container" style="width:98%; height:98%;position:absolute;background:url(../images/slidebg.png);">
+<glam>
+  <scene>
+  	<controller noheadlight></controller>
+  	<light id="dirLight1" type='directional'></light>
+  	<light id="spotLight1" type='spot' z='2' angle='15deg'></light>
+  	<light id="pointLight1" type='point' x='-2' z='2'></light>
+  	<light id="pointLight2" type='point' x='2' z='-2'></light>
+  	<light id="ambLight1" type='ambient'></light>
+  	<group y='-1'>
+		<cube id="texturedcube" x="1.5" y='2' z='-5' depth='.5' height='1.5' ></cube>
+		<group id="aGroup" x="1" y=".5" z="-2" >
+			<sphere id="sphere1" radius='1.5'></sphere>
+			<group id="nestedGroup" x='-3' y='1' z='-5'>
+				<cone id="cone1" x='-1' y='-.5' z='2' rz='90deg'></cone>
+				<cylinder id="cylinder1"></cylinder>
+			</group>
+		</group>
+		<text id="text1" value="glam"></text>
+  	</group>
+  </scene>
+</glam>
+</div>
+
+
+</body>
+</html>

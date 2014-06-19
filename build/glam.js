@@ -59119,11 +59119,6 @@ glam.Arc.create = function(docelt, sceneobj) {
 			});
 	arc.addComponent(visual);
 
-	glam.Transform.parse(docelt, arc);
-	glam.Animation.parse(docelt, arc);
-	glam.Input.add(docelt, arc);
-	glam.Material.addHandlers(docelt, arc);
-	
 	return arc;
 }
 glam.Background = {};
@@ -59199,9 +59194,6 @@ glam.Camera.create = function(docelt, sceneobj, app) {
 	var cam = new Vizi.PerspectiveCamera();
 	camera.addComponent(cam);
 	
-	glam.Transform.parse(docelt, camera);
-	glam.Animation.parse(docelt, camera);
-
 	app.addCamera(cam, docelt.id);
 	
 	return camera;
@@ -59233,11 +59225,6 @@ glam.Circle.create = function(docelt, sceneobj) {
 				material: material
 			});
 	circle.addComponent(visual);
-
-	glam.Transform.parse(docelt, circle);
-	glam.Animation.parse(docelt, circle);
-	glam.Input.add(docelt, circle);
-	glam.Material.addHandlers(docelt, circle);
 	
 	return circle;
 }
@@ -59268,11 +59255,6 @@ glam.Cone.create = function(docelt, sceneobj) {
 			});
 	cone.addComponent(visual);
 
-	glam.Transform.parse(docelt, cone);
-	glam.Animation.parse(docelt, cone);
-	glam.Input.add(docelt, cone);
-	glam.Material.addHandlers(docelt, cone);
-	
 	return cone;
 }
 glam.Controller = {};
@@ -59368,12 +59350,6 @@ glam.Cube.create = function(docelt, sceneobj) {
 				material: material
 			});
 	cube.addComponent(visual);
-
-
-	glam.Transform.parse(docelt, cube);
-	glam.Animation.parse(docelt, cube);
-	glam.Input.add(docelt, cube);
-	glam.Material.addHandlers(docelt, cube);
 	
 	return cube;
 }
@@ -59403,11 +59379,6 @@ glam.Cylinder.create = function(docelt, sceneobj) {
 				material: material
 			});
 	cylinder.addComponent(visual);
-
-	glam.Transform.parse(docelt, cylinder);
-	glam.Animation.parse(docelt, cylinder);
-	glam.Input.add(docelt, cylinder);
-	glam.Material.addHandlers(docelt, cylinder);
 	
 	return cylinder;
 }
@@ -59473,8 +59444,6 @@ glam.Group.create = function(docelt, sceneobj) {
 	
 	// Create the group
 	var group = new Vizi.Object;
-	glam.Transform.parse(docelt, group);
-	glam.Animation.parse(docelt, group);
 	
 	return group;
 }
@@ -59497,9 +59466,6 @@ glam.Import.create = function(docelt, sceneobj) {
 		loader.addEventListener("loaded", loadCallback);
 		loader.loadScene(src);
 	}
-
-	glam.Transform.parse(docelt, obj);
-	glam.Animation.parse(docelt, obj);
 
 	return obj;
 }
@@ -59541,6 +59507,70 @@ glam.Input.add = function(docelt, obj) {
 		
 	obj.addComponent(picker);
 	
+}
+glam.Light = {};
+
+glam.Light.DEFAULT_TYPE = "directional";
+glam.Light.DEFAULT_COLOR = "#ffffff";
+glam.Light.DEFAULT_ANGLE = "90deg";
+
+glam.Light.create = function(docelt, sceneobj, app) {
+	
+	function parseAngle(t) {
+		return glam.Transform.parseRotation(t);
+	}
+		
+	var type = docelt.getAttribute('type') || glam.Light.DEFAULT_TYPE;
+	var color = docelt.getAttribute('color') || glam.Light.DEFAULT_COLOR;
+	var angle = docelt.getAttribute('angle') || glam.Light.DEFAULT_ANGLE;
+	
+	var style = glam.Node.getStyle(docelt);
+
+	if (style) {
+		if (style.type) {
+			type = style.type;
+		}
+		if (style.color) {
+			color = style.color;
+		}
+		if (style.angle) {
+			angle = style.angle;
+		}
+	}
+
+	color = new THREE.Color().setStyle(color).getHex(); 
+	angle = parseAngle(angle);
+	
+	var param = {
+			color : color,
+			angle : angle,
+	};
+	
+	var obj = new Vizi.Object;
+
+	var light = null;
+	switch (type.toLowerCase()) {
+	
+		case 'directional' :
+			light = new Vizi.DirectionalLight(param);
+			break;
+		case 'point' :
+			light = new Vizi.PointLight(param);
+			break;
+		case 'spot' :
+			light = new Vizi.SpotLight(param);
+			break;
+		case 'ambient' :
+			light = new Vizi.AmbientLight(param);
+			break;
+	}
+	
+	if (light) {
+		obj.addComponent(light);
+		return obj;
+	}
+	
+	return null;
 }
 glam.Material = {};
 
@@ -59913,12 +59943,6 @@ glam.Mesh.create = function(docelt, sceneobj) {
 			});
 	obj.addComponent(visual);
 
-
-	glam.Transform.parse(docelt, obj);
-	glam.Animation.parse(docelt, obj);
-	glam.Input.add(docelt, obj);
-	glam.Material.addHandlers(docelt, obj);
-	
 	// Is this the API?
 	docelt.geometry = geometry;
 	docelt.material = material;
@@ -60189,11 +60213,6 @@ glam.Rect.create = function(docelt, sceneobj) {
 			});
 	rect.addComponent(visual);
 
-	glam.Transform.parse(docelt, rect);
-	glam.Animation.parse(docelt, rect);
-	glam.Input.add(docelt, rect);
-	glam.Material.addHandlers(docelt, rect);
-	
 	return rect;
 }
 glam.renderer = {
@@ -60230,11 +60249,6 @@ glam.Sphere.create = function(docelt, sceneobj) {
 		sphere.addComponent(visual);
 	}
 	
-	glam.Transform.parse(docelt, sphere);
-	glam.Animation.parse(docelt, sphere);
-	glam.Input.add(docelt, sphere);
-	glam.Material.addHandlers(docelt, sphere);
-
 	return sphere;
 }
 glam.Style = function(docelt) {
@@ -60334,12 +60348,6 @@ glam.Text.create = function(docelt, sceneobj) {
 
 	THREE.GeometryUtils.center(textGeo);
 	
-	glam.Transform.parse(docelt, text);
-	glam.Animation.parse(docelt, text);
-	glam.Input.add(docelt, text);
-	glam.Material.addHandlers(docelt, text);
-	
-
 	return text;
 }
 glam.Transform = {};
@@ -60518,21 +60526,22 @@ glam.Types = {
 
 // statics
 glam.Types.types = {
-		"cube" :  { ctor : glam.Cube },
-		"cone" :  { ctor : glam.Cone },
-		"cylinder" :  { ctor : glam.Cylinder },
-		"sphere" :  { ctor : glam.Sphere },
-		"rect" :  { ctor : glam.Rect },
-		"circle" :  { ctor : glam.Circle },
-		"arc" :  { ctor : glam.Arc },
-		"group" :  { ctor : glam.Group },
+		"cube" :  { ctor : glam.Cube, transform:true, animation:true, input:true, material:true },
+		"cone" :  { ctor : glam.Cone, transform:true, animation:true, input:true, material:true },
+		"cylinder" :  { ctor : glam.Cylinder, transform:true, animation:true, input:true, material:true },
+		"sphere" :  { ctor : glam.Sphere, transform:true, animation:true, input:true, material:true },
+		"rect" :  { ctor : glam.Rect, transform:true, animation:true, input:true, material:true },
+		"circle" :  { ctor : glam.Circle, transform:true, animation:true, input:true, material:true },
+		"arc" :  { ctor : glam.Arc, transform:true, animation:true, input:true, material:true },
+		"group" :  { ctor : glam.Group, transform:true, animation:true, input:true },
 		"animation" :  { ctor : glam.Animation },
 		"background" :  { ctor : glam.Background },
-		"import" :  { ctor : glam.Import },
-		"camera" :  { ctor : glam.Camera },
+		"import" :  { ctor : glam.Import, transform:true, animation:true },
+		"camera" :  { ctor : glam.Camera, transform:true, animation:true },
 		"controller" :  { ctor : glam.Controller },
-		"text" :  { ctor : glam.Text },
-		"mesh" :  { ctor : glam.Mesh },
+		"text" :  { ctor : glam.Text, transform:true, animation:true, input:true, material:true },
+		"mesh" :  { ctor : glam.Mesh, transform:true, animation:true, input:true, material:true },
+		"light" :  { ctor : glam.Light, transform:true, animation:true },
 };
 
 
@@ -60697,10 +60706,11 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 		var type = tag ? glam.Types.types[tag] : null;
 		if (type && type.ctor && (fn = type.ctor.create) && typeof(fn) == "function") {
 			// console.log("    * found it in table!");
-			this.addFeatures(childelt);
+			this.initGlam(childelt);
 			var obj = fn.call(this, childelt, sceneobj, this.app);
-			childelt.glam = obj;
 			if (obj) {
+				childelt.glam = obj;
+				this.addFeatures(childelt, obj, type);
 				sceneobj.addChild(obj);
 				this.traverse(childelt, obj);
 			}
@@ -60718,11 +60728,12 @@ glam.Viewer.prototype.addNode = function(docelt) {
 	var type = tag ? glam.Types.types[tag] : null;
 	if (type && type.ctor && (fn = type.ctor.create) && typeof(fn) == "function") {
 
-		this.addFeatures(docelt);
+		this.initGlam(docelt);
 		var obj = fn.call(this, docelt, this.scene);
 		
 		if (obj) {
 			docelt.glam = obj;
+			this.addFeatures(docelt, obj, type);
 			this.scene.addChild(obj);
 			this.traverse(docelt, obj);
 		}
@@ -60737,7 +60748,7 @@ glam.Viewer.prototype.removeNode = function(docelt) {
 	}
 }
 
-glam.Viewer.prototype.addFeatures = function(docelt) {
+glam.Viewer.prototype.initGlam = function(docelt) {
 
 	docelt.setAttributeHandlers = [];
 	docelt.onSetAttribute = function(attr, val) {
@@ -60748,6 +60759,25 @@ glam.Viewer.prototype.addFeatures = function(docelt) {
 				handler(attr, val);
 			}
 		}
+	}
+}
+
+glam.Viewer.prototype.addFeatures = function(docelt, obj, type) {
+
+	if (type.transform) {
+		glam.Transform.parse(docelt, obj);
+	}
+	
+	if (type.animation) {
+		glam.Animation.parse(docelt, obj);
+	}
+
+	if (type.input) {
+		glam.Input.add(docelt, obj);
+	}
+	
+	if (type.material) {
+		glam.Material.addHandlers(docelt, obj);
 	}
 }
 

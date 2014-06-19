@@ -18,6 +18,7 @@ glam.Types.types = {
 		"controller" :  { ctor : glam.Controller },
 		"text" :  { ctor : glam.Text, transform:true, animation:true, input:true, material:true },
 		"mesh" :  { ctor : glam.Mesh, transform:true, animation:true, input:true, material:true },
+		"light" :  { ctor : glam.Light, transform:true, animation:true },
 };
 
 

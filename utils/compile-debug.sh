@@ -14,6 +14,7 @@ SOURCES="../src/glam.js \
 ../src/group.js \
 ../src/import.js \
 ../src/input.js \
+../src/light.js \
 ../src/material.js \
 ../src/mesh.js \
 ../src/node.js \
