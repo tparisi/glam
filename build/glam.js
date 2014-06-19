@@ -59514,6 +59514,7 @@ glam.Light.DEFAULT_TYPE = "directional";
 glam.Light.DEFAULT_COLOR = "#ffffff";
 glam.Light.DEFAULT_ANGLE = "90deg";
 glam.Light.DEFAULT_DISTANCE = 0;
+glam.Light.DEFAULT_EXPONENT = Vizi.SpotLight.DEFAULT_EXPONENT;
 
 glam.Light.create = function(docelt, sceneobj, app) {
 	
@@ -59525,6 +59526,7 @@ glam.Light.create = function(docelt, sceneobj, app) {
 	var color = docelt.getAttribute('color') || glam.Light.DEFAULT_COLOR;
 	var angle = docelt.getAttribute('angle') || glam.Light.DEFAULT_ANGLE;
 	var distance = docelt.getAttribute('distance') || glam.Light.DEFAULT_DISTANCE;
+	var exponent = docelt.getAttribute('exponent') || glam.Light.DEFAULT_EXPONENT;
 	
 	var direction = new THREE.Vector3(0, 0, -1);
 	
@@ -59556,12 +59558,15 @@ glam.Light.create = function(docelt, sceneobj, app) {
 
 	color = new THREE.Color().setStyle(color).getHex(); 
 	angle = parseAngle(angle);
+	distance = parseFloat(distance);
+	exponent = parseFloat(exponent);
 	
 	var param = {
 			color : color,
 			angle : angle,
 			direction : direction,
 			distance : distance,
+			exponent : exponent,
 	};
 	
 	var obj = new Vizi.Object;
