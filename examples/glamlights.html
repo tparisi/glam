@@ -62,7 +62,7 @@
 	}
 
 	#pointLight2 {
-		color:magenta;
+		color:purple;
 	}
 
 	#ambLight1 {
@@ -89,7 +89,7 @@ glam - Simple scene with cube
   	<light id="dirLight1" type='directional'></light>
   	<light id="spotLight1" type='spot' z='2' angle='15deg'></light>
   	<light id="pointLight1" type='point' x='-2' z='2'></light>
-  	<light id="pointLight2" type='point' x='2' z='-2'></light>
+  	<light id="pointLight2" type='point' x='2' z='0' animation="lightBounce"></light>
   	<light id="ambLight1" type='ambient'></light>
   	<group y='-1'>
 		<cube id="texturedcube" x="1.5" y='2' z='-5' depth='.5' height='1.5' ></cube>
@@ -102,6 +102,13 @@ glam - Simple scene with cube
 		</group>
 		<text id="text1" value="glam"></text>
   	</group>
+  	<animation id="lightBounce" duration="5s" iteration-count="infinite" timing-function="ease-in-out">
+		<keyframe time="0%" property="transform" value="translateY(-6);"></keyframe>
+		<keyframe time="25%" property="transform" value="translateY(0);"></keyframe>
+		<keyframe time="50%" property="transform" value="translateY(6);"></keyframe>
+		<keyframe time="75%" property="transform" value="translateY(0);"></keyframe>
+		<keyframe time="100%" property="transform" value="translateY(-6);"></keyframe>
+	</animation>
   </scene>
 </glam>
 </div>
