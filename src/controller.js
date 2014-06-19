@@ -1,6 +1,6 @@
 glam.Controller = {};
 
-glam.Controller.create = function(docelt, sceneobj, app) {
+glam.Controller.create = function(docelt, app) {
 	var on = true;
 	
 	var noheadlight = docelt.getAttribute("noheadlight");

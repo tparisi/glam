@@ -1,6 +1,6 @@
 glam.Line = {};
 
-glam.Line.create = function(docelt, sceneobj) {
+glam.Line.create = function(docelt) {
 		
 	var style = glam.Node.getStyle(docelt);
 

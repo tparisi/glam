@@ -1,6 +1,6 @@
 glam.Group = {};
 
-glam.Group.create = function(docelt, sceneobj) {
+glam.Group.create = function(docelt) {
 
 	var style = glam.Node.getStyle(docelt);
 	

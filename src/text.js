@@ -9,7 +9,7 @@ glam.Text.BEVEL_EPSILON = 0.0001;
 
 glam.Text.DEFAULT_VALUE = "glam.js",
 
-glam.Text.create = function(docelt, sceneobj) {
+glam.Text.create = function(docelt) {
 	var fontSize = docelt.getAttribute('fontSize') || glam.Text.DEFAULT_FONT_SIZE;
 	var fontDepth = docelt.getAttribute('fontDepth') || glam.Text.DEFAULT_FONT_DEPTH;
 	var fontBevel = docelt.getAttribute('fontBevel') || glam.Text.DEFAULT_FONT_BEVEL;

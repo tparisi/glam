@@ -2,7 +2,7 @@ glam.Mesh = {};
 glam.Mesh.VERTEX_NORMALS = false;
 glam.Mesh.VERTEX_COLORS = false;
 
-glam.Mesh.create = function(docelt, sceneobj) {
+glam.Mesh.create = function(docelt) {
 	
 	var vertexNormals = docelt.getAttribute('vertexNormals');
 	if (vertexNormals !== null) {

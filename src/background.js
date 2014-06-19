@@ -2,7 +2,7 @@ glam.Background = {};
 
 glam.Background.DEFAULT_BACKGROUND_TYPE = "box";
 
-glam.Background.create = function(docelt, sceneobj) {
+glam.Background.create = function(docelt) {
 	var type = docelt.getAttribute('background-type') || glam.Background.DEFAULT_BACKGROUND_TYPE;
 	type = docelt.getAttribute('type') || type;
 	

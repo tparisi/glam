@@ -5,7 +5,7 @@ glam.Arc.DEFAULT_RADIUS_SEGMENTS = 32;
 glam.Arc.DEFAULT_START_ANGLE = "0deg";
 glam.Arc.DEFAULT_END_ANGLE = "360deg";
 
-glam.Arc.create = function(docelt, sceneobj) {
+glam.Arc.create = function(docelt) {
 
 	function parseRotation(r) {
 		return glam.Transform.parseRotation(r);

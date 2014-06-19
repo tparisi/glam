@@ -3,7 +3,7 @@ glam.Cylinder = {};
 glam.Cylinder.DEFAULT_RADIUS = 2;
 glam.Cylinder.DEFAULT_HEIGHT = 2;
 
-glam.Cylinder.create = function(docelt, sceneobj) {
+glam.Cylinder.create = function(docelt) {
 	var radius = docelt.getAttribute('radius') || glam.Cylinder.DEFAULT_RADIUS;
 	var height = docelt.getAttribute('height') || glam.Cylinder.DEFAULT_HEIGHT;
 	

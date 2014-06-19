@@ -5,7 +5,7 @@ glam.Rect.DEFAULT_HEIGHT = 2;
 glam.Rect.DEFAULT_WIDTH_SEGMENTS = 1;
 glam.Rect.DEFAULT_HEIGHT_SEGMENTS = 1;
 
-glam.Rect.create = function(docelt, sceneobj) {
+glam.Rect.create = function(docelt) {
 	var width = docelt.getAttribute('width') || glam.Rect.DEFAULT_WIDTH;
 	var height = docelt.getAttribute('height') || glam.Rect.DEFAULT_HEIGHT;
 	var widthSegments = docelt.getAttribute('width') || glam.Rect.DEFAULT_WIDTH_SEGMENTS;

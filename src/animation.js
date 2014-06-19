@@ -6,7 +6,7 @@ glam.Animation.DEFAULT_TIMING_FUNCTION = "linear";
 glam.Animation.DEFAULT_FRAME_TIME = "0%";
 glam.Animation.DEFAULT_FRAME_PROPERTY = "transform";
 
-glam.Animation.create = function(docelt, sceneobj) {
+glam.Animation.create = function(docelt) {
 
 	var id = docelt.id;
 	var duration = docelt.getAttribute('duration') || glam.Animation.DEFAULT_DURATION;
@@ -122,7 +122,7 @@ glam.Animation.create = function(docelt, sceneobj) {
 	glam.Animation.callParseCallbacks(id, anim);
 }
 
-glam.Animation.createFrame = function(docelt, sceneobj) {
+glam.Animation.createFrame = function(docelt) {
 
 	var time = docelt.getAttribute('time') || glam.Animation.DEFAULT_FRAME_TIME;
 	var frametime = glam.Animation.parseFrameTime(time);

@@ -3,7 +3,7 @@ glam.Cone = {};
 glam.Cone.DEFAULT_RADIUS = 2;
 glam.Cone.DEFAULT_HEIGHT = 2;
 
-glam.Cone.create = function(docelt, sceneobj) {
+glam.Cone.create = function(docelt) {
 	var radius = docelt.getAttribute('radius') || glam.Cone.DEFAULT_RADIUS;
 	var height = docelt.getAttribute('height') || glam.Cone.DEFAULT_HEIGHT;
 	

@@ -6,7 +6,7 @@ glam.Light.DEFAULT_ANGLE = "90deg";
 glam.Light.DEFAULT_DISTANCE = 0;
 glam.Light.DEFAULT_EXPONENT = Vizi.SpotLight.DEFAULT_EXPONENT;
 
-glam.Light.create = function(docelt, sceneobj, app) {
+glam.Light.create = function(docelt, app) {
 	
 	function parseAngle(t) {
 		return glam.Transform.parseRotation(t);

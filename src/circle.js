@@ -3,7 +3,7 @@ glam.Circle = {};
 glam.Circle.DEFAULT_RADIUS = 2;
 glam.Circle.DEFAULT_RADIUS_SEGMENTS = 32;
 
-glam.Circle.create = function(docelt, sceneobj) {
+glam.Circle.create = function(docelt) {
 		
 	var radius = docelt.getAttribute('radius') || glam.Circle.DEFAULT_RADIUS;
 	var radiusSegments = docelt.getAttribute('radiusSegments') || glam.Circle.DEFAULT_RADIUS_SEGMENTS;

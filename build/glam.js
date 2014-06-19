@@ -58781,7 +58781,7 @@ glam.Animation.DEFAULT_TIMING_FUNCTION = "linear";
 glam.Animation.DEFAULT_FRAME_TIME = "0%";
 glam.Animation.DEFAULT_FRAME_PROPERTY = "transform";
 
-glam.Animation.create = function(docelt, sceneobj) {
+glam.Animation.create = function(docelt) {
 
 	var id = docelt.id;
 	var duration = docelt.getAttribute('duration') || glam.Animation.DEFAULT_DURATION;
@@ -58897,7 +58897,7 @@ glam.Animation.create = function(docelt, sceneobj) {
 	glam.Animation.callParseCallbacks(id, anim);
 }
 
-glam.Animation.createFrame = function(docelt, sceneobj) {
+glam.Animation.createFrame = function(docelt) {
 
 	var time = docelt.getAttribute('time') || glam.Animation.DEFAULT_FRAME_TIME;
 	var frametime = glam.Animation.parseFrameTime(time);
@@ -59082,7 +59082,7 @@ glam.Arc.DEFAULT_RADIUS_SEGMENTS = 32;
 glam.Arc.DEFAULT_START_ANGLE = "0deg";
 glam.Arc.DEFAULT_END_ANGLE = "360deg";
 
-glam.Arc.create = function(docelt, sceneobj) {
+glam.Arc.create = function(docelt) {
 
 	function parseRotation(r) {
 		return glam.Transform.parseRotation(r);
@@ -59125,7 +59125,7 @@ glam.Background = {};
 
 glam.Background.DEFAULT_BACKGROUND_TYPE = "box";
 
-glam.Background.create = function(docelt, sceneobj) {
+glam.Background.create = function(docelt) {
 	var type = docelt.getAttribute('background-type') || glam.Background.DEFAULT_BACKGROUND_TYPE;
 	type = docelt.getAttribute('type') || type;
 	
@@ -59179,7 +59179,7 @@ glam.Background.onSetAttribute = function(obj, docelt, attr, val) {
 }
 glam.Camera = {};
 
-glam.Camera.create = function(docelt, sceneobj, app) {
+glam.Camera.create = function(docelt, app) {
 	
 	var style = glam.Node.getStyle(docelt);
 
@@ -59203,7 +59203,7 @@ glam.Circle = {};
 glam.Circle.DEFAULT_RADIUS = 2;
 glam.Circle.DEFAULT_RADIUS_SEGMENTS = 32;
 
-glam.Circle.create = function(docelt, sceneobj) {
+glam.Circle.create = function(docelt) {
 		
 	var radius = docelt.getAttribute('radius') || glam.Circle.DEFAULT_RADIUS;
 	var radiusSegments = docelt.getAttribute('radiusSegments') || glam.Circle.DEFAULT_RADIUS_SEGMENTS;
@@ -59233,7 +59233,7 @@ glam.Cone = {};
 glam.Cone.DEFAULT_RADIUS = 2;
 glam.Cone.DEFAULT_HEIGHT = 2;
 
-glam.Cone.create = function(docelt, sceneobj) {
+glam.Cone.create = function(docelt) {
 	var radius = docelt.getAttribute('radius') || glam.Cone.DEFAULT_RADIUS;
 	var height = docelt.getAttribute('height') || glam.Cone.DEFAULT_HEIGHT;
 	
@@ -59259,7 +59259,7 @@ glam.Cone.create = function(docelt, sceneobj) {
 }
 glam.Controller = {};
 
-glam.Controller.create = function(docelt, sceneobj, app) {
+glam.Controller.create = function(docelt, app) {
 	var on = true;
 	
 	var noheadlight = docelt.getAttribute("noheadlight");
@@ -59326,7 +59326,7 @@ glam.Cube.DEFAULT_WIDTH = 2;
 glam.Cube.DEFAULT_HEIGHT = 2;
 glam.Cube.DEFAULT_DEPTH = 2;
 
-glam.Cube.create = function(docelt, sceneobj) {
+glam.Cube.create = function(docelt) {
 	var width = docelt.getAttribute('width') || glam.Cube.DEFAULT_WIDTH;
 	var height = docelt.getAttribute('height') || glam.Cube.DEFAULT_HEIGHT;
 	var depth = docelt.getAttribute('depth') || glam.Cube.DEFAULT_DEPTH;
@@ -59358,7 +59358,7 @@ glam.Cylinder = {};
 glam.Cylinder.DEFAULT_RADIUS = 2;
 glam.Cylinder.DEFAULT_HEIGHT = 2;
 
-glam.Cylinder.create = function(docelt, sceneobj) {
+glam.Cylinder.create = function(docelt) {
 	var radius = docelt.getAttribute('radius') || glam.Cylinder.DEFAULT_RADIUS;
 	var height = docelt.getAttribute('height') || glam.Cylinder.DEFAULT_HEIGHT;
 	
@@ -59438,7 +59438,7 @@ glam.document = {
 };
 glam.Group = {};
 
-glam.Group.create = function(docelt, sceneobj) {
+glam.Group.create = function(docelt) {
 
 	var style = glam.Node.getStyle(docelt);
 	
@@ -59449,7 +59449,7 @@ glam.Group.create = function(docelt, sceneobj) {
 }
 glam.Import = {};
 
-glam.Import.create = function(docelt, sceneobj) {
+glam.Import.create = function(docelt) {
 	var src = docelt.getAttribute('src');
 		
 	// Create the cube
@@ -59516,7 +59516,7 @@ glam.Light.DEFAULT_ANGLE = "90deg";
 glam.Light.DEFAULT_DISTANCE = 0;
 glam.Light.DEFAULT_EXPONENT = Vizi.SpotLight.DEFAULT_EXPONENT;
 
-glam.Light.create = function(docelt, sceneobj, app) {
+glam.Light.create = function(docelt, app) {
 	
 	function parseAngle(t) {
 		return glam.Transform.parseRotation(t);
@@ -59597,7 +59597,7 @@ glam.Light.create = function(docelt, sceneobj, app) {
 }
 glam.Line = {};
 
-glam.Line.create = function(docelt, sceneobj) {
+glam.Line.create = function(docelt) {
 		
 	var style = glam.Node.getStyle(docelt);
 
@@ -60020,7 +60020,7 @@ glam.Mesh = {};
 glam.Mesh.VERTEX_NORMALS = false;
 glam.Mesh.VERTEX_COLORS = false;
 
-glam.Mesh.create = function(docelt, sceneobj) {
+glam.Mesh.create = function(docelt) {
 	
 	var vertexNormals = docelt.getAttribute('vertexNormals');
 	if (vertexNormals !== null) {
@@ -60313,7 +60313,7 @@ glam.Rect.DEFAULT_HEIGHT = 2;
 glam.Rect.DEFAULT_WIDTH_SEGMENTS = 1;
 glam.Rect.DEFAULT_HEIGHT_SEGMENTS = 1;
 
-glam.Rect.create = function(docelt, sceneobj) {
+glam.Rect.create = function(docelt) {
 	var width = docelt.getAttribute('width') || glam.Rect.DEFAULT_WIDTH;
 	var height = docelt.getAttribute('height') || glam.Rect.DEFAULT_HEIGHT;
 	var widthSegments = docelt.getAttribute('width') || glam.Rect.DEFAULT_WIDTH_SEGMENTS;
@@ -60349,7 +60349,7 @@ glam.Sphere = {};
 
 glam.Sphere.DEFAULT_RADIUS = 2;
 
-glam.Sphere.create = function(docelt, sceneobj) {
+glam.Sphere.create = function(docelt) {
 	var radius = docelt.getAttribute('radius') || glam.Sphere.DEFAULT_RADIUS;
 	
 	var style = glam.Node.getStyle(docelt);
@@ -60402,7 +60402,7 @@ glam.Text.BEVEL_EPSILON = 0.0001;
 
 glam.Text.DEFAULT_VALUE = "glam.js",
 
-glam.Text.create = function(docelt, sceneobj) {
+glam.Text.create = function(docelt) {
 	var fontSize = docelt.getAttribute('fontSize') || glam.Text.DEFAULT_FONT_SIZE;
 	var fontDepth = docelt.getAttribute('fontDepth') || glam.Text.DEFAULT_FONT_DEPTH;
 	var fontBevel = docelt.getAttribute('fontBevel') || glam.Text.DEFAULT_FONT_BEVEL;
@@ -60857,7 +60857,7 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 		if (type && type.ctor && (fn = type.ctor.create) && typeof(fn) == "function") {
 			// console.log("    * found it in table!");
 			this.initGlam(childelt);
-			var obj = fn.call(this, childelt, sceneobj, this.app);
+			var obj = fn.call(this, childelt, this.app);
 			if (obj) {
 				childelt.glam = obj;
 				this.addFeatures(childelt, obj, type);
@@ -60879,7 +60879,7 @@ glam.Viewer.prototype.addNode = function(docelt) {
 	if (type && type.ctor && (fn = type.ctor.create) && typeof(fn) == "function") {
 
 		this.initGlam(docelt);
-		var obj = fn.call(this, docelt, this.scene);
+		var obj = fn.call(this, docelt, this.app);
 		
 		if (obj) {
 			docelt.glam = obj;

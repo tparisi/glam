@@ -1,6 +1,6 @@
 glam.Camera = {};
 
-glam.Camera.create = function(docelt, sceneobj, app) {
+glam.Camera.create = function(docelt, app) {
 	
 	var style = glam.Node.getStyle(docelt);
 
