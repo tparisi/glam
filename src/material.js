@@ -26,11 +26,11 @@ glam.Material.create = function(style, createCB, objtype) {
 			material = glam.Material.createShaderMaterial(style, param, createCB);
 		}
 		else if (objtype == "line") {
-			if (style.dashed !== undefined) {
-				material = new THREE.LineBasicMaterial(param);
+			if (param.dashSize !== undefined  || param.gapSize !== undefined) {
+				material = new THREE.LineDashedMaterial(param);
 			}
 			else {
-				material = new THREE.LineDashedMaterial(param);
+				material = new THREE.LineBasicMaterial(param);
 			}
 		}
 		else {
@@ -99,7 +99,17 @@ glam.Material.parseStyle = function(style) {
 	if (style["line-width"]) {
 		linewidth = parseInt(style["line-width"]);
 	}
-		
+	
+	var dashSize;
+	if (style["dash-size"]) {
+		dashSize = parseInt(style["dash-size"]);
+	}
+
+	var gapSize;
+	if (style["gap-size"]) {
+		gapSize = parseInt(style["gap-size"]);
+	}
+	
 	var param = {
 	};
 	
@@ -122,6 +132,12 @@ glam.Material.parseStyle = function(style) {
 	}
 	if (linewidth !== undefined) {
 		param.linewidth = linewidth;
+	}
+	if (dashSize !== undefined) {
+		param.dashSize = dashSize;
+	}
+	if (gapSize !== undefined) {
+		param.gapSize = gapSize;
 	}
 	if (reflectivity !== undefined)
 		param.reflectivity = reflectivity;
