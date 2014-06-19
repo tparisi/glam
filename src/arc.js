@@ -6,6 +6,10 @@ glam.Arc.DEFAULT_START_ANGLE = "0deg";
 glam.Arc.DEFAULT_END_ANGLE = "360deg";
 
 glam.Arc.create = function(docelt) {
+	return glam.Visual.create(docelt, glam.Arc);
+}
+
+glam.Arc.getAttributes = function(docelt, style, param) {
 
 	function parseRotation(r) {
 		return glam.Transform.parseRotation(r);
@@ -17,8 +21,6 @@ glam.Arc.create = function(docelt) {
 	var startAngle = docelt.getAttribute('startAngle') || glam.Arc.DEFAULT_START_ANGLE;
 	var endAngle = docelt.getAttribute('endAngle') || glam.Arc.DEFAULT_END_ANGLE;
 	
-	var style = glam.Node.getStyle(docelt);
-
 	if (style) {
 		if (style.radius)
 			radius = style.radius;
@@ -30,17 +32,23 @@ glam.Arc.create = function(docelt) {
 			endAngle = style.endAngle;
 	}
 	
+	radius = parseFloat(radius);
+	radiusSegments = parseInt(radiusSegments);
 	startAngle = parseRotation(startAngle);
 	endAngle = parseRotation(endAngle);
+
+	param.radius = radius;
+	param.radiusSegments = radiusSegments;
+	param.startAngle = startAngle;
+	param.endAngle = endAngle;
+}
+
+glam.Arc.createVisual = function(docelt, material, param) {
 	
-	var material = glam.Material.create(style);
-	
-	var arc = new Vizi.Object;	
 	var visual = new Vizi.Visual(
-			{ geometry: new THREE.CircleGeometry(radius, radiusSegments, startAngle, endAngle),
+			{ geometry: new THREE.CircleGeometry(param.radius, param.radiusSegments, param.startAngle, param.endAngle),
 				material: material
 			});
-	arc.addComponent(visual);
 
-	return arc;
+	return visual;
 }

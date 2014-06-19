@@ -4,6 +4,11 @@ glam.Mesh.VERTEX_COLORS = false;
 
 glam.Mesh.create = function(docelt) {
 	
+	return glam.Visual.create(docelt, glam.Mesh);
+}
+
+glam.Mesh.getAttributes = function(docelt, style, param) {
+	
 	var vertexNormals = docelt.getAttribute('vertexNormals');
 	if (vertexNormals !== null) {
 		vertexNormals = true;
@@ -20,8 +25,6 @@ glam.Mesh.create = function(docelt) {
 		vertexColors = glam.Mesh.VERTEX_COLORS;
 	}
 	
-	var style = glam.Node.getStyle(docelt);
-
 	if (style) {
 		if (style.vertexNormals)
 			vertexNormals = style.vertexNormals;
@@ -29,27 +32,23 @@ glam.Mesh.create = function(docelt) {
 			vertexColors = style.vertexColors;
 	}
 	
-	var material = glam.Material.create(style);
-	
+	param.vertexNormals = vertexNormals;
+	param.vertexColors = vertexColors;
+}
+
+glam.Mesh.createVisual = function(docelt, material, param) {
+
 	var geometry = new THREE.Geometry;
-	
-	var param = {
-			vertexNormals : vertexNormals,
-			vertexColors : vertexColors,
-	};
 	
 	glam.Mesh.parse(docelt, geometry, material, param);
 	
 	var mesh = new THREE.Mesh(geometry, material);
-	
-	var obj = new Vizi.Object;	
 	var visual = new Vizi.Visual(
 			{
 				object : mesh,
 			});
-	obj.addComponent(visual);
-
-	return obj;
+	
+	return visual;
 }
 
 glam.Mesh.parse = function(docelt, geometry, material, param) {

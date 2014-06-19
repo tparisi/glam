@@ -10,6 +10,11 @@ glam.Text.BEVEL_EPSILON = 0.0001;
 glam.Text.DEFAULT_VALUE = "glam.js",
 
 glam.Text.create = function(docelt) {
+	return glam.Visual.create(docelt, glam.Text);
+}
+
+glam.Text.getAttributes = function(docelt, style, param) {
+
 	var fontSize = docelt.getAttribute('fontSize') || glam.Text.DEFAULT_FONT_SIZE;
 	var fontDepth = docelt.getAttribute('fontDepth') || glam.Text.DEFAULT_FONT_DEPTH;
 	var fontBevel = docelt.getAttribute('fontBevel') || glam.Text.DEFAULT_FONT_BEVEL;
@@ -17,8 +22,6 @@ glam.Text.create = function(docelt) {
 	var bevelThickness = docelt.getAttribute('bevelThickness') || glam.Text.DEFAULT_BEVEL_THICKNESS;
 	var value = docelt.getAttribute('value') || glam.Text.DEFAULT_VALUE;
 	
-	var style = glam.Node.getStyle(docelt);
-
 	if (style) {
 		if (style["font-size"])
 			fontSize = style["font-size"];
@@ -46,10 +49,18 @@ glam.Text.create = function(docelt) {
 		bevelEnabled = true;
 	}
 	
-	var material = glam.Material.create(style);
+	param.value = value;
+	param.fontSize = fontSize;
+	param.fontDepth = fontDepth;
+	param.bevelSize = bevelSize;
+	param.bevelThickness = bevelThickness;
+	param.bevelEnabled = bevelEnabled;
+}
 
-	var height = fontDepth;
-	var size = fontSize;
+glam.Text.createVisual = function(docelt, material, param) {
+
+	var height = param.fontDepth;
+	var size = param.fontSize;
 	var hover = .3;
 	var curveSegments = 4;
 
@@ -57,7 +68,7 @@ glam.Text.create = function(docelt) {
 	weight = "bold", // normal bold
 	style = "normal"; // normal italic
 
-	var textGeo = new THREE.TextGeometry( value, {
+	var textGeo = new THREE.TextGeometry( param.value, {
 
 		size: size,
 		height: height,
@@ -67,9 +78,9 @@ glam.Text.create = function(docelt) {
 		weight: weight,
 		style: style,
 
-		bevelThickness: bevelThickness,
-		bevelSize: bevelSize,
-		bevelEnabled: bevelEnabled,
+		bevelThickness: param.bevelThickness,
+		bevelSize: param.bevelSize,
+		bevelEnabled: param.bevelEnabled,
 
 		material: 0,
 		extrudeMaterial: 1
@@ -95,14 +106,12 @@ glam.Text.create = function(docelt) {
 	                    				] );
 
 
-	var text = new Vizi.Object;	
 	var visual = new Vizi.Visual(
 			{ geometry: textGeo,
 				material: textmat
 			});
-	text.addComponent(visual);
 
 	THREE.GeometryUtils.center(textGeo);
 	
-	return text;
+	return visual;
 }

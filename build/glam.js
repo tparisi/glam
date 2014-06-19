@@ -59083,6 +59083,10 @@ glam.Arc.DEFAULT_START_ANGLE = "0deg";
 glam.Arc.DEFAULT_END_ANGLE = "360deg";
 
 glam.Arc.create = function(docelt) {
+	return glam.Visual.create(docelt, glam.Arc);
+}
+
+glam.Arc.getAttributes = function(docelt, style, param) {
 
 	function parseRotation(r) {
 		return glam.Transform.parseRotation(r);
@@ -59094,8 +59098,6 @@ glam.Arc.create = function(docelt) {
 	var startAngle = docelt.getAttribute('startAngle') || glam.Arc.DEFAULT_START_ANGLE;
 	var endAngle = docelt.getAttribute('endAngle') || glam.Arc.DEFAULT_END_ANGLE;
 	
-	var style = glam.Node.getStyle(docelt);
-
 	if (style) {
 		if (style.radius)
 			radius = style.radius;
@@ -59107,19 +59109,25 @@ glam.Arc.create = function(docelt) {
 			endAngle = style.endAngle;
 	}
 	
+	radius = parseFloat(radius);
+	radiusSegments = parseInt(radiusSegments);
 	startAngle = parseRotation(startAngle);
 	endAngle = parseRotation(endAngle);
+
+	param.radius = radius;
+	param.radiusSegments = radiusSegments;
+	param.startAngle = startAngle;
+	param.endAngle = endAngle;
+}
+
+glam.Arc.createVisual = function(docelt, material, param) {
 	
-	var material = glam.Material.create(style);
-	
-	var arc = new Vizi.Object;	
 	var visual = new Vizi.Visual(
-			{ geometry: new THREE.CircleGeometry(radius, radiusSegments, startAngle, endAngle),
+			{ geometry: new THREE.CircleGeometry(param.radius, param.radiusSegments, param.startAngle, param.endAngle),
 				material: material
 			});
-	arc.addComponent(visual);
 
-	return arc;
+	return visual;
 }
 glam.Background = {};
 
@@ -59204,29 +59212,36 @@ glam.Circle.DEFAULT_RADIUS = 2;
 glam.Circle.DEFAULT_RADIUS_SEGMENTS = 32;
 
 glam.Circle.create = function(docelt) {
-		
+	return glam.Visual.create(docelt, glam.Circle);
+}
+
+glam.Circle.getAttributes = function(docelt, style, param) {
+
 	var radius = docelt.getAttribute('radius') || glam.Circle.DEFAULT_RADIUS;
 	var radiusSegments = docelt.getAttribute('radiusSegments') || glam.Circle.DEFAULT_RADIUS_SEGMENTS;
 	
-	var style = glam.Node.getStyle(docelt);
-
 	if (style) {
 		if (style.radius)
 			radius = style.radius;
 		if (style.radiusSegments)
 			radiusSegments = style.radiusSegments;
 	}
+
+	radius = parseFloat(radius);
+	radiusSegments = parseInt(radiusSegments);
 	
-	var material = glam.Material.create(style);
+	param.radius = radius;
+	param.radiusSegments = radiusSegments;
+}
+
+glam.Circle.createVisual = function(docelt, material, param) {
 	
-	var circle = new Vizi.Object;	
 	var visual = new Vizi.Visual(
-			{ geometry: new THREE.CircleGeometry(radius, radiusSegments),
+			{ geometry: new THREE.CircleGeometry(param.radius, param.radiusSegments),
 				material: material
 			});
-	circle.addComponent(visual);
 	
-	return circle;
+	return visual;
 }
 glam.Cone = {};
 
@@ -59234,28 +59249,36 @@ glam.Cone.DEFAULT_RADIUS = 2;
 glam.Cone.DEFAULT_HEIGHT = 2;
 
 glam.Cone.create = function(docelt) {
+	return glam.Visual.create(docelt, glam.Cone);
+}
+
+glam.Cone.getAttributes = function(docelt, style, param) {
+
 	var radius = docelt.getAttribute('radius') || glam.Cone.DEFAULT_RADIUS;
 	var height = docelt.getAttribute('height') || glam.Cone.DEFAULT_HEIGHT;
 	
-	var style = glam.Node.getStyle(docelt);
-
 	if (style) {
 		if (style.radius)
 			radius = style.radius;
 		if (style.height)
 			height = style.height;
 	}
+
+	radius = parseFloat(radius);
+	height = parseFloat(height);
 	
-	var material = glam.Material.create(style);
+	param.radius = radius;
+	param.height = height;
+}
+
+glam.Cone.createVisual = function(docelt, material, param) {
 	
-	var cone = new Vizi.Object;	
 	var visual = new Vizi.Visual(
-			{ geometry: new THREE.CylinderGeometry(0, radius, height, 16),
+			{ geometry: new THREE.CylinderGeometry(0, param.radius, param.height, 16),
 				material: material
 			});
-	cone.addComponent(visual);
 
-	return cone;
+	return visual;
 }
 glam.Controller = {};
 
@@ -59327,12 +59350,15 @@ glam.Cube.DEFAULT_HEIGHT = 2;
 glam.Cube.DEFAULT_DEPTH = 2;
 
 glam.Cube.create = function(docelt) {
+	return glam.Visual.create(docelt, glam.Cube);
+}
+
+glam.Cube.getAttributes = function(docelt, style, param) {
+
 	var width = docelt.getAttribute('width') || glam.Cube.DEFAULT_WIDTH;
 	var height = docelt.getAttribute('height') || glam.Cube.DEFAULT_HEIGHT;
 	var depth = docelt.getAttribute('depth') || glam.Cube.DEFAULT_DEPTH;
 	
-	var style = glam.Node.getStyle(docelt);
-
 	if (style) {
 		if (style.width)
 			width = style.width
@@ -59342,16 +59368,23 @@ glam.Cube.create = function(docelt) {
 			depth = style.depth;
 	}
 	
-	var material = glam.Material.create(style);
+	width = parseFloat(width);
+	height = parseFloat(height);
+	depth = parseFloat(depth);
 	
-	var cube = new Vizi.Object;	
+	param.width = width;
+	param.height = height;
+	param.depth = depth;
+}
+
+glam.Cube.createVisual = function(docelt, material, param) {
+
 	var visual = new Vizi.Visual(
-			{ geometry: new THREE.CubeGeometry(width, height, depth),
+			{ geometry: new THREE.CubeGeometry(param.width, param.height, param.depth),
 				material: material
 			});
-	cube.addComponent(visual);
 	
-	return cube;
+	return visual;
 }
 glam.Cylinder = {};
 
@@ -59359,11 +59392,14 @@ glam.Cylinder.DEFAULT_RADIUS = 2;
 glam.Cylinder.DEFAULT_HEIGHT = 2;
 
 glam.Cylinder.create = function(docelt) {
+	return glam.Visual.create(docelt, glam.Cylinder);
+}
+
+glam.Cylinder.getAttributes = function(docelt, style, param) {
+
 	var radius = docelt.getAttribute('radius') || glam.Cylinder.DEFAULT_RADIUS;
 	var height = docelt.getAttribute('height') || glam.Cylinder.DEFAULT_HEIGHT;
 	
-	var style = glam.Node.getStyle(docelt);
-
 	if (style) {
 		if (style.radius)
 			radius = style.radius;
@@ -59371,16 +59407,20 @@ glam.Cylinder.create = function(docelt) {
 			height = style.height;
 	}
 	
-	var material = glam.Material.create(style);
-	
-	var cylinder = new Vizi.Object;	
+	radius = parseFloat(radius);
+	height = parseFloat(height);
+	param.radius = radius;
+	param.height = height;
+}	
+
+glam.Cylinder.createVisual = function(docelt, material, param) {
+
 	var visual = new Vizi.Visual(
-			{ geometry: new THREE.CylinderGeometry(radius, radius, height, 16),
+			{ geometry: new THREE.CylinderGeometry(param.radius, param.radius, param.height, 16),
 				material: material
 			});
-	cylinder.addComponent(visual);
 	
-	return cylinder;
+	return visual;
 }
 glam.document = {
 		
@@ -60022,6 +60062,11 @@ glam.Mesh.VERTEX_COLORS = false;
 
 glam.Mesh.create = function(docelt) {
 	
+	return glam.Visual.create(docelt, glam.Mesh);
+}
+
+glam.Mesh.getAttributes = function(docelt, style, param) {
+	
 	var vertexNormals = docelt.getAttribute('vertexNormals');
 	if (vertexNormals !== null) {
 		vertexNormals = true;
@@ -60038,8 +60083,6 @@ glam.Mesh.create = function(docelt) {
 		vertexColors = glam.Mesh.VERTEX_COLORS;
 	}
 	
-	var style = glam.Node.getStyle(docelt);
-
 	if (style) {
 		if (style.vertexNormals)
 			vertexNormals = style.vertexNormals;
@@ -60047,27 +60090,23 @@ glam.Mesh.create = function(docelt) {
 			vertexColors = style.vertexColors;
 	}
 	
-	var material = glam.Material.create(style);
-	
+	param.vertexNormals = vertexNormals;
+	param.vertexColors = vertexColors;
+}
+
+glam.Mesh.createVisual = function(docelt, material, param) {
+
 	var geometry = new THREE.Geometry;
-	
-	var param = {
-			vertexNormals : vertexNormals,
-			vertexColors : vertexColors,
-	};
 	
 	glam.Mesh.parse(docelt, geometry, material, param);
 	
 	var mesh = new THREE.Mesh(geometry, material);
-	
-	var obj = new Vizi.Object;	
 	var visual = new Vizi.Visual(
 			{
 				object : mesh,
 			});
-	obj.addComponent(visual);
-
-	return obj;
+	
+	return visual;
 }
 
 glam.Mesh.parse = function(docelt, geometry, material, param) {
@@ -60314,13 +60353,16 @@ glam.Rect.DEFAULT_WIDTH_SEGMENTS = 1;
 glam.Rect.DEFAULT_HEIGHT_SEGMENTS = 1;
 
 glam.Rect.create = function(docelt) {
+	return glam.Visual.create(docelt, glam.Rect);
+}
+
+glam.Rect.getAttributes = function(docelt, style, param) {
+
 	var width = docelt.getAttribute('width') || glam.Rect.DEFAULT_WIDTH;
 	var height = docelt.getAttribute('height') || glam.Rect.DEFAULT_HEIGHT;
 	var widthSegments = docelt.getAttribute('width') || glam.Rect.DEFAULT_WIDTH_SEGMENTS;
 	var heightSegments = docelt.getAttribute('height') || glam.Rect.DEFAULT_HEIGHT_SEGMENTS;
 	
-	var style = glam.Node.getStyle(docelt);
-
 	if (style) {
 		if (style.width)
 			width = style.width;
@@ -60332,16 +60374,25 @@ glam.Rect.create = function(docelt) {
 			heightSegments = style.heightSegments;
 	}
 	
-	var material = glam.Material.create(style);
-	
-	var rect = new Vizi.Object;	
+	width = parseFloat(width);
+	height = parseFloat(height);
+	widthSegments = parseInt(widthSegments);
+	heightSegments = parseInt(heightSegments);
+
+	param.width = width;
+	param.height = height;
+	param.widthSegments = widthSegments;
+	param.heightSegments = heightSegments;
+}
+
+glam.Rect.createVisual = function(docelt, material, param) {
+
 	var visual = new Vizi.Visual(
-			{ geometry: new THREE.PlaneGeometry(width, height, widthSegments, heightSegments),
+			{ geometry: new THREE.PlaneGeometry(param.width, param.height, param.widthSegments, param.heightSegments),
 				material: material
 			});
-	rect.addComponent(visual);
 
-	return rect;
+	return visual;
 }
 glam.renderer = {
 };
@@ -60350,34 +60401,31 @@ glam.Sphere = {};
 glam.Sphere.DEFAULT_RADIUS = 2;
 
 glam.Sphere.create = function(docelt) {
-	var radius = docelt.getAttribute('radius') || glam.Sphere.DEFAULT_RADIUS;
+	return glam.Visual.create(docelt, glam.Sphere);
+}
+
+glam.Sphere.getAttributes = function(docelt, style, param) {
 	
-	var style = glam.Node.getStyle(docelt);
+	var radius = docelt.getAttribute('radius') || glam.Sphere.DEFAULT_RADIUS;
 	
 	if (style) {
 		if (style.radius)
 			radius = style.radius;
 	}
 
-	var sphere = new Vizi.Object;
-	var material = glam.Material.create(style, function(material) {
-		var visual = new Vizi.Visual(
-				{ geometry: new THREE.SphereGeometry(radius, 32, 32),
-					material: material
-				});
-		sphere.addComponent(visual);
-		glam.Visual.addProperties(docelt, sphere);
-	});
+	radius = parseFloat(radius);
 	
-	if (material) {
-		var visual = new Vizi.Visual(
-				{ geometry: new THREE.SphereGeometry(radius, 32, 32),
-					material: material
-				});
-		sphere.addComponent(visual);
-	}
+	param.radius = radius;
+}
+
+glam.Sphere.createVisual = function(docelt, material, param) {
+
+	var visual = new Vizi.Visual(
+			{ geometry: new THREE.SphereGeometry(param.radius, 32, 32),
+				material: material
+			});
 	
-	return sphere;
+	return visual;
 }
 glam.Style = function(docelt) {
 
@@ -60403,6 +60451,11 @@ glam.Text.BEVEL_EPSILON = 0.0001;
 glam.Text.DEFAULT_VALUE = "glam.js",
 
 glam.Text.create = function(docelt) {
+	return glam.Visual.create(docelt, glam.Text);
+}
+
+glam.Text.getAttributes = function(docelt, style, param) {
+
 	var fontSize = docelt.getAttribute('fontSize') || glam.Text.DEFAULT_FONT_SIZE;
 	var fontDepth = docelt.getAttribute('fontDepth') || glam.Text.DEFAULT_FONT_DEPTH;
 	var fontBevel = docelt.getAttribute('fontBevel') || glam.Text.DEFAULT_FONT_BEVEL;
@@ -60410,8 +60463,6 @@ glam.Text.create = function(docelt) {
 	var bevelThickness = docelt.getAttribute('bevelThickness') || glam.Text.DEFAULT_BEVEL_THICKNESS;
 	var value = docelt.getAttribute('value') || glam.Text.DEFAULT_VALUE;
 	
-	var style = glam.Node.getStyle(docelt);
-
 	if (style) {
 		if (style["font-size"])
 			fontSize = style["font-size"];
@@ -60439,10 +60490,18 @@ glam.Text.create = function(docelt) {
 		bevelEnabled = true;
 	}
 	
-	var material = glam.Material.create(style);
+	param.value = value;
+	param.fontSize = fontSize;
+	param.fontDepth = fontDepth;
+	param.bevelSize = bevelSize;
+	param.bevelThickness = bevelThickness;
+	param.bevelEnabled = bevelEnabled;
+}
 
-	var height = fontDepth;
-	var size = fontSize;
+glam.Text.createVisual = function(docelt, material, param) {
+
+	var height = param.fontDepth;
+	var size = param.fontSize;
 	var hover = .3;
 	var curveSegments = 4;
 
@@ -60450,7 +60509,7 @@ glam.Text.create = function(docelt) {
 	weight = "bold", // normal bold
 	style = "normal"; // normal italic
 
-	var textGeo = new THREE.TextGeometry( value, {
+	var textGeo = new THREE.TextGeometry( param.value, {
 
 		size: size,
 		height: height,
@@ -60460,9 +60519,9 @@ glam.Text.create = function(docelt) {
 		weight: weight,
 		style: style,
 
-		bevelThickness: bevelThickness,
-		bevelSize: bevelSize,
-		bevelEnabled: bevelEnabled,
+		bevelThickness: param.bevelThickness,
+		bevelSize: param.bevelSize,
+		bevelEnabled: param.bevelEnabled,
 
 		material: 0,
 		extrudeMaterial: 1
@@ -60488,16 +60547,14 @@ glam.Text.create = function(docelt) {
 	                    				] );
 
 
-	var text = new Vizi.Object;	
 	var visual = new Vizi.Visual(
 			{ geometry: textGeo,
 				material: textmat
 			});
-	text.addComponent(visual);
 
 	THREE.GeometryUtils.center(textGeo);
 	
-	return text;
+	return visual;
 }
 glam.Transform = {};
 
@@ -60954,6 +61011,33 @@ glam.Viewer.prototype.prepareViewsAndControllers = function() {
 }
 
 glam.Visual = {};
+
+glam.Visual.create = function(docelt, cls) {
+
+	var param = {
+	};
+	
+	var style = glam.Node.getStyle(docelt);
+	
+	cls.getAttributes(docelt, style, param);
+	
+	var obj = new Vizi.Object;	
+	
+	var material = glam.Material.create(style, function(material) {
+		var visual = cls.createVisual(docelt, material, param);	
+		obj.addComponent(visual);
+		glam.Visual.addProperties(docelt, obj);
+	});
+	
+	if (material) {
+		var visual = cls.createVisual(docelt, material, param);	
+		obj.addComponent(visual);
+		glam.Visual.addProperties(docelt, obj);
+	}
+	
+	return obj;
+}
+
 
 glam.Visual.addProperties = function(docelt, obj) {
 

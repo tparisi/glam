@@ -5,12 +5,15 @@ glam.Cube.DEFAULT_HEIGHT = 2;
 glam.Cube.DEFAULT_DEPTH = 2;
 
 glam.Cube.create = function(docelt) {
+	return glam.Visual.create(docelt, glam.Cube);
+}
+
+glam.Cube.getAttributes = function(docelt, style, param) {
+
 	var width = docelt.getAttribute('width') || glam.Cube.DEFAULT_WIDTH;
 	var height = docelt.getAttribute('height') || glam.Cube.DEFAULT_HEIGHT;
 	var depth = docelt.getAttribute('depth') || glam.Cube.DEFAULT_DEPTH;
 	
-	var style = glam.Node.getStyle(docelt);
-
 	if (style) {
 		if (style.width)
 			width = style.width
@@ -20,14 +23,21 @@ glam.Cube.create = function(docelt) {
 			depth = style.depth;
 	}
 	
-	var material = glam.Material.create(style);
+	width = parseFloat(width);
+	height = parseFloat(height);
+	depth = parseFloat(depth);
 	
-	var cube = new Vizi.Object;	
+	param.width = width;
+	param.height = height;
+	param.depth = depth;
+}
+
+glam.Cube.createVisual = function(docelt, material, param) {
+
 	var visual = new Vizi.Visual(
-			{ geometry: new THREE.CubeGeometry(width, height, depth),
+			{ geometry: new THREE.CubeGeometry(param.width, param.height, param.depth),
 				material: material
 			});
-	cube.addComponent(visual);
 	
-	return cube;
+	return visual;
 }

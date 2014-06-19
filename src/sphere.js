@@ -3,32 +3,29 @@ glam.Sphere = {};
 glam.Sphere.DEFAULT_RADIUS = 2;
 
 glam.Sphere.create = function(docelt) {
-	var radius = docelt.getAttribute('radius') || glam.Sphere.DEFAULT_RADIUS;
+	return glam.Visual.create(docelt, glam.Sphere);
+}
+
+glam.Sphere.getAttributes = function(docelt, style, param) {
 	
-	var style = glam.Node.getStyle(docelt);
+	var radius = docelt.getAttribute('radius') || glam.Sphere.DEFAULT_RADIUS;
 	
 	if (style) {
 		if (style.radius)
 			radius = style.radius;
 	}
 
-	var sphere = new Vizi.Object;
-	var material = glam.Material.create(style, function(material) {
-		var visual = new Vizi.Visual(
-				{ geometry: new THREE.SphereGeometry(radius, 32, 32),
-					material: material
-				});
-		sphere.addComponent(visual);
-		glam.Visual.addProperties(docelt, sphere);
-	});
+	radius = parseFloat(radius);
 	
-	if (material) {
-		var visual = new Vizi.Visual(
-				{ geometry: new THREE.SphereGeometry(radius, 32, 32),
-					material: material
-				});
-		sphere.addComponent(visual);
-	}
+	param.radius = radius;
+}
+
+glam.Sphere.createVisual = function(docelt, material, param) {
+
+	var visual = new Vizi.Visual(
+			{ geometry: new THREE.SphereGeometry(param.radius, 32, 32),
+				material: material
+			});
 	
-	return sphere;
+	return visual;
 }
