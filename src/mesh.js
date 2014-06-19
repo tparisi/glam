@@ -26,7 +26,7 @@ glam.Mesh.create = function(docelt, sceneobj) {
 		if (style.vertexNormals)
 			vertexNormals = style.vertexNormals;
 		if (style.vertexColors)
-			vertexColors = vertexColors.height;
+			vertexColors = style.vertexColors;
 	}
 	
 	var material = glam.Material.create(style);
