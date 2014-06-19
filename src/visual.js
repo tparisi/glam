@@ -1,6 +1,6 @@
 glam.Visual = {};
 
-glam.Visual.add = function(docelt, obj) {
+glam.Visual.addProperties = function(docelt, obj) {
 
 	var visuals = obj.getComponents(Vizi.Visual);
 	var visual = visuals[0];

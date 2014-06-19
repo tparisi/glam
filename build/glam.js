@@ -60366,7 +60366,7 @@ glam.Sphere.create = function(docelt, sceneobj) {
 					material: material
 				});
 		sphere.addComponent(visual);
-		glam.Visual.add(docelt, sphere);
+		glam.Visual.addProperties(docelt, sphere);
 	});
 	
 	if (material) {
@@ -60927,7 +60927,7 @@ glam.Viewer.prototype.addFeatures = function(docelt, obj, type) {
 	}
 	
 	if (type.visual) {
-		glam.Visual.add(docelt, obj);
+		glam.Visual.addProperties(docelt, obj);
 		glam.Material.addHandlers(docelt, obj);
 	}
 }
@@ -60955,7 +60955,7 @@ glam.Viewer.prototype.prepareViewsAndControllers = function() {
 
 glam.Visual = {};
 
-glam.Visual.add = function(docelt, obj) {
+glam.Visual.addProperties = function(docelt, obj) {
 
 	var visuals = obj.getComponents(Vizi.Visual);
 	var visual = visuals[0];
