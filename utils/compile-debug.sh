@@ -27,7 +27,9 @@ SOURCES="../src/glam.js \
 ../src/text.js \
 ../src/transform.js \
 ../src/types.js \
-../src/viewer.js"
+../src/viewer.js \
+../src/visual.js"
+
 LIBS="../libs/parsecss/jquery.parsecss.js \
 ../libs/vizi/vizi.js"
 

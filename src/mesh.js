@@ -49,10 +49,6 @@ glam.Mesh.create = function(docelt, sceneobj) {
 			});
 	obj.addComponent(visual);
 
-	// Is this the API?
-	docelt.geometry = geometry;
-	docelt.material = material;
-	
 	return obj;
 }
 

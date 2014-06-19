@@ -19,7 +19,7 @@ glam.Sphere.create = function(docelt, sceneobj) {
 					material: material
 				});
 		sphere.addComponent(visual);
-		
+		glam.Visual.add(docelt, sphere);
 	});
 	
 	if (material) {
