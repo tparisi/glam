@@ -33,4 +33,7 @@ SOURCES="../src/glam.js \
 LIBS="../libs/parsecss/jquery.parsecss.js \
 ../libs/vizi/vizi.js"
 
-cat $LIBS $SOURCES > $OUTPUT
+FONTS="../fonts/helvetiker_bold.typeface.js \
+../fonts/helvetiker_regular.typeface.js"
+
+cat $LIBS $SOURCES $FONTS > $OUTPUT

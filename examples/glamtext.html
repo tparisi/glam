@@ -4,16 +4,6 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <script src="../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
 <script src="../build/glam.js" ></script>
-<script src="../fonts/gentilis_bold.typeface.js"></script>
-<script src="../fonts/gentilis_regular.typeface.js"></script>
-<script src="../fonts/optimer_bold.typeface.js"></script>
-<script src="../fonts/optimer_regular.typeface.js"></script>
-<script src="../fonts/helvetiker_bold.typeface.js"></script>
-<script src="../fonts/helvetiker_regular.typeface.js"></script>
-<script src="../fonts/droid/droid_sans_regular.typeface.js"></script>
-<script src="../fonts/droid/droid_sans_bold.typeface.js"></script>
-<script src="../fonts/droid/droid_serif_regular.typeface.js"></script>
-<script src="../fonts/droid/droid_serif_bold.typeface.js"></script>
 
 <title>glam - Text</title>
 
@@ -24,19 +14,25 @@
 		font-bevel:bevel;
 		bevel-size:.01;
 		bevel-thickness:.02;
+		font-family:helvetica;
+		font-weight:bold;
 	}
 
 	#text2 {
 		color:goldenrod;
 		shader:lambert;
 		font-bevel:bevel;
+		font-depth:0.5;
 		bevel-size:.01;
 		bevel-thickness:.02;
+		/* this next one is broken - font not loaded - just for testing */
+		font-family:Optima;
+		font-weight:bold;
 	}
 
 	#text3 {
 		color:firebrick;
-		shader:lambert;
+		shader:basic;
 		font-depth:0;
 		font-size:.5;
 	}
@@ -44,6 +40,7 @@
 	#text4 {
 		color:white;
 		shader:phong;
+		font-weight:bold;
 		font-bevel:none;
 		bevel-size:.01;
 		bevel-thickness:.02;
