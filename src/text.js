@@ -7,7 +7,7 @@ glam.Text.DEFAULT_BEVEL_SIZE = .01;
 glam.Text.DEFAULT_BEVEL_THICKNESS = .02;
 glam.Text.BEVEL_EPSILON = 0.0001;
 
-glam.Text.DEFAULT_VALUE = "glam.js",
+glam.Text.DEFAULT_VALUE = "",
 
 glam.Text.create = function(docelt) {
 	return glam.Visual.create(docelt, glam.Text);
@@ -15,12 +15,19 @@ glam.Text.create = function(docelt) {
 
 glam.Text.getAttributes = function(docelt, style, param) {
 
+	// Font stuff
+	// for now: helvetiker, optimer - typeface.js stuff
+	// could also do: gentilis, droid sans, droid serif but the files are big.
+	var fontFamily = "optimer";
+	var fontWeight = "bold"; // normal bold
+	var fontStyle = "normal"; // normal italic
+
+	// Size, depth, bevel etc.
 	var fontSize = docelt.getAttribute('fontSize') || glam.Text.DEFAULT_FONT_SIZE;
 	var fontDepth = docelt.getAttribute('fontDepth') || glam.Text.DEFAULT_FONT_DEPTH;
 	var fontBevel = docelt.getAttribute('fontBevel') || glam.Text.DEFAULT_FONT_BEVEL;
 	var bevelSize = docelt.getAttribute('bevelSize') || glam.Text.DEFAULT_BEVEL_SIZE;
 	var bevelThickness = docelt.getAttribute('bevelThickness') || glam.Text.DEFAULT_BEVEL_THICKNESS;
-	var value = docelt.getAttribute('value') || glam.Text.DEFAULT_VALUE;
 	
 	if (style) {
 		if (style["font-size"])
@@ -48,6 +55,13 @@ glam.Text.getAttributes = function(docelt, style, param) {
 		bevelThickness = bevelSize = glam.Text.BEVEL_EPSILON;
 		bevelEnabled = true;
 	}
+
+	// The text value
+	var value = docelt.getAttribute('value') || glam.Text.DEFAULT_VALUE;
+
+	if (!value) {
+		value = docelt.textContent;
+	}
 	
 	param.value = value;
 	param.fontSize = fontSize;
@@ -55,28 +69,28 @@ glam.Text.getAttributes = function(docelt, style, param) {
 	param.bevelSize = bevelSize;
 	param.bevelThickness = bevelThickness;
 	param.bevelEnabled = bevelEnabled;
+	param.fontFamily = fontFamily;
+	param.fontWeight = fontWeight;
+	param.fontStyle = fontStyle;
 }
 
 glam.Text.createVisual = function(docelt, material, param) {
 
-	var height = param.fontDepth;
-	var size = param.fontSize;
-	var hover = .3;
+	if (!param.value) {
+		return null;
+	}
+	
 	var curveSegments = 4;
-
-	font = "optimer", // helvetiker, optimer, gentilis, droid sans, droid serif
-	weight = "bold", // normal bold
-	style = "normal"; // normal italic
 
 	var textGeo = new THREE.TextGeometry( param.value, {
 
-		size: size,
-		height: height,
-		curveSegments: curveSegments,
+		font: param.fontFamily,
+		weight: param.fontWeight,
+		style: param.fontStyle,
 
-		font: font,
-		weight: weight,
-		style: style,
+		size: param.fontSize,
+		height: param.fontDepth,
+		curveSegments: curveSegments,
 
 		bevelThickness: param.bevelThickness,
 		bevelSize: param.bevelSize,
@@ -90,20 +104,13 @@ glam.Text.createVisual = function(docelt, material, param) {
 	textGeo.computeBoundingBox();
 	textGeo.computeVertexNormals();
 
-	var textmat = new THREE.MeshFaceMaterial( [ 
-	                    					new THREE.MeshPhongMaterial( 
-	                    							{ color: material.color.getHex(), 
-	                    								envMap : material.envMap, 
-	                    								wireframe : material.wireframe,
-	                    								shading: THREE.FlatShading,
-	                    								} ), // front
-	                    					new THREE.MeshPhongMaterial( 
-	                    							{ color: material.color.getHex(), 
-	                    								envMap : material.envMap, 
-	                    								wireframe : material.wireframe,
-	                    								shading: THREE.SmoothShading,
-	                    								} ) // side
-	                    				] );
+	var frontMaterial = material.clone();
+	frontMaterial.shading = THREE.FlatShading;
+	var extrudeMaterial = material.clone();
+	extrudeMaterial.shading = THREE.SmoothShading;
+	var textmat = new THREE.MeshFaceMaterial( [ frontMaterial,  // front
+	                                            extrudeMaterial // side
+	                                            ]);
 
 
 	var visual = new Vizi.Visual(

@@ -12,25 +12,25 @@ glam.Visual.create = function(docelt, cls) {
 	var obj = new Vizi.Object;	
 	
 	var material = glam.Material.create(style, function(material) {
-		var visual = cls.createVisual(docelt, material, param);	
-		obj.addComponent(visual);
-		glam.Visual.addProperties(docelt, obj);
+		glam.Visual.createVisual(obj, cls, docelt, material, param);
 	});
 	
 	if (material) {
-		var visual = cls.createVisual(docelt, material, param);	
-		obj.addComponent(visual);
-		glam.Visual.addProperties(docelt, obj);
+		glam.Visual.createVisual(obj, cls, docelt, material, param);
 	}
 	
 	return obj;
 }
 
+glam.Visual.createVisual = function(obj, cls, docelt, material, param) {
+	var visual = cls.createVisual(docelt, material, param);	
+	if (visual) {
+		obj.addComponent(visual);
+		glam.Visual.addProperties(docelt, visual);
+	}
+}
 
-glam.Visual.addProperties = function(docelt, obj) {
-
-	var visuals = obj.getComponents(Vizi.Visual);
-	var visual = visuals[0];
+glam.Visual.addProperties = function(docelt, visual) {
 
 	if (visual) {
 		// Is this the API?	

@@ -15,16 +15,46 @@
 <script src="../fonts/droid/droid_serif_regular.typeface.js"></script>
 <script src="../fonts/droid/droid_serif_bold.typeface.js"></script>
 
-<title>glam - Simple scene with cube</title>
+<title>glam - Text</title>
 
 <style>
 	#text1 {
-		color-diffuse:cornflowerblue;
+		color:cornflowerblue;
 		shader:phong;
 		font-bevel:bevel;
 		bevel-size:.01;
 		bevel-thickness:.02;
 	}
+
+	#text2 {
+		color:goldenrod;
+		shader:lambert;
+		font-bevel:bevel;
+		bevel-size:.01;
+		bevel-thickness:.02;
+	}
+
+	#text3 {
+		color:firebrick;
+		shader:lambert;
+		font-depth:0;
+		font-size:.5;
+	}
+
+	#text4 {
+		color:white;
+		shader:phong;
+		font-bevel:none;
+		bevel-size:.01;
+		bevel-thickness:.02;
+		envmap-right:url(../images/envmap/2-POSITIVE_X.jpg);
+		envmap-left:url(../images/envmap/2-NEGATIVE_X.jpg);
+		envmap-top:url(../images/envmap/2-POSITIVE_Y.jpg);
+		envmap-bottom:url(../images/envmap/2-NEGATIVE_Y.jpg);
+		envmap-front:url(../images/envmap/2-POSITIVE_Z.jpg);
+		envmap-back:url(../images/envmap/2-NEGATIVE_Z.jpg);
+	}
+
 </style>
 <script>
 $(document).ready(function(){
@@ -35,14 +65,23 @@ $(document).ready(function(){
 </script>
 </head>
 <body>
-<!-- 
-glam - Simple scene with cube
- -->
 <div id="container" style="width:98%; height:98%;position:absolute;background:url(../images/slidebg.png);">
 <glam>
   <scene>
-	<text id="text1" value="glam" x='' animation="animRotateY"></text>
+	<text x='-1' y='1' id="text1" value='glam'animation="animRotateY"></text>
+	<text id="text2" x='1' y='-1' z='1'>GLAM!</text>
+	<group x='1' y='1' rz='30deg'>
+		<text id="text3" animation="animRotateY2">got glam?</text>
+	</group>
+	<group x='-1' y='-1.5' z='-2'>
+		<text id="text4" animation="animRotateY2">G.L.A.M</text>
+	</group>
   	<animation id="animRotateY" duration="4s" iteration-count="infinite" timing-function="ease-in-out">
+		<keyframe time="0%" property="transform" value="rotateY(0deg);"></keyframe>
+		<keyframe time="50%" property="transform" value="rotateY(180deg);"></keyframe>
+		<keyframe time="100%" property="transform" value="rotateY(360deg);"></keyframe>
+	</animation>
+  	<animation id="animRotateY2" duration="5s" iteration-count="infinite" timing-function="linear">
 		<keyframe time="0%" property="transform" value="rotateY(0deg);"></keyframe>
 		<keyframe time="50%" property="transform" value="rotateY(180deg);"></keyframe>
 		<keyframe time="100%" property="transform" value="rotateY(360deg);"></keyframe>

@@ -8,6 +8,7 @@ glam.Material.create = function(style, createCB, objtype) {
 		if (style.shader) {
 			switch (style.shader.toLowerCase()) {
 				case "phong" :
+				case "blinn" :
 					material = new THREE.MeshPhongMaterial(param);
 					break;
 				case "lambert" :
