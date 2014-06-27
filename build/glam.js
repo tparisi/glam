@@ -59525,7 +59525,7 @@ glam.Input.add = function(docelt, obj) {
 					{
 						detail: {
 						},
-						bubbles: false,
+						bubbles: true,
 						cancelable: true
 					}
 				);
@@ -60331,6 +60331,7 @@ glam.parser = {
 			glam.parser.addDocument(doc);
 			glam.documents[doc.id] = doc;
 			doc.style.display = 'none';
+			glam.parser.addEventHandlers(doc);
 		}
 		
 		var styles = document.head.getElementsByTagName("style");
@@ -60343,6 +60344,36 @@ glam.parser = {
 						}
 					);
 		}
+	},
+	
+	addEventHandlers : function(elt) {
+
+		// Trap all mouse events to keep page from going bonkers
+		elt.addEventListener("mouseover", function(event) {
+			event.preventDefault();
+			event.stopPropagation();
+		});
+		elt.addEventListener("mouseout", function(event) {
+			event.preventDefault();
+			event.stopPropagation();
+		});
+		elt.addEventListener("mousedown", function(event) {
+			event.preventDefault();
+			event.stopPropagation();
+		});
+		elt.addEventListener("mouseup", function(event) {
+			event.preventDefault();
+			event.stopPropagation();
+		});
+		elt.addEventListener("mousemove", function(event) {
+			event.preventDefault();
+			event.stopPropagation();
+		});
+		elt.addEventListener("click", function(event) {
+			event.preventDefault();
+			event.stopPropagation();
+		});
+		
 	},
 };
 
