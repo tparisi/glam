@@ -20,6 +20,7 @@ glam.Types.types = {
 		"mesh" :  { cls : glam.Mesh, transform:true, animation:true, input:true, visual:true },
 		"line" :  { cls : glam.Line, transform:true, animation:true, visual:true },
 		"light" :  { cls : glam.Light, transform:true, animation:true },
+		"particles" :  { cls : glam.Particles, transform:true, animation:true },
 };
 
 
