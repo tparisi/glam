@@ -1,25 +1,25 @@
-goog.provide('glam.ParticleSystemScript');
+goog.provide('Vizi.ParticleSystemScript');
 goog.require('Vizi.Script');
 
-glam.ParticleSystemPrefab = function(param) {
+Vizi.ParticleSystem = function(param) {
 
 	param = param || {};
 	
 	var obj = new Vizi.Object;
 
-	var pScript = new glam.ParticleSystemScript();
+	var pScript = new Vizi.ParticleSystemScript(param);
 	obj.addComponent(pScript);
-	
-	var emitter = new glam.ParticleEmitter();
-	obj.addComponent(emitter);
 	
 	return obj;
 }
 
 
-glam.ParticleSystemScript = function(param) {
+Vizi.ParticleSystemScript = function(param) {
 	Vizi.Script.call(this, param);
 
+	this.texture = param.texture || null;
+	this.maxAge = param.maxAge || Vizi.ParticleSystemScript.DEFAULT_MAX_AGE;
+	
 	this._active = true;
 	
     Object.defineProperties(this, {
@@ -35,18 +35,13 @@ glam.ParticleSystemScript = function(param) {
 
 }
 
-goog.inherits(glam.ParticleSystemScript, Vizi.Script);
+goog.inherits(Vizi.ParticleSystemScript, Vizi.Script);
 
-glam.ParticleSystemScript.prototype.realize = function()
+Vizi.ParticleSystemScript.prototype.realize = function()
 {
-	var texture = null;
-	var maxAge = 5;
-
-	texture = THREE.ImageUtils.loadTexture('../images/smokeparticle.png');
-	
     this.particleGroup = new ShaderParticleGroup({
-        texture: texture,
-        maxAge: maxAge,
+        texture: this.texture,
+        maxAge: this.maxAge,
       });
     
     this.initEmitters();
@@ -58,9 +53,9 @@ glam.ParticleSystemScript.prototype.realize = function()
 
 }
 
-glam.ParticleSystemScript.prototype.initEmitters = function() {
+Vizi.ParticleSystemScript.prototype.initEmitters = function() {
 	
-	var emitters = this._object.getComponents(glam.ParticleEmitter);
+	var emitters = this._object.getComponents(Vizi.ParticleEmitter);
 	
 	var i = 0, len = emitters.length;
 	
@@ -73,7 +68,7 @@ glam.ParticleSystemScript.prototype.initEmitters = function() {
     this.emitters = emitters;
 }
 
-glam.ParticleSystemScript.prototype.setActive = function(active) {
+Vizi.ParticleSystemScript.prototype.setActive = function(active) {
 
 	var emitters = this.emitters;
 	if (!emitters)
@@ -89,6 +84,9 @@ glam.ParticleSystemScript.prototype.setActive = function(active) {
     this._active = active;
 }
 
-glam.ParticleSystemScript.prototype.update = function() {
+Vizi.ParticleSystemScript.prototype.update = function() {
     return this.particleGroup.tick();
 }
+
+Vizi.ParticleSystemScript.DEFAULT_MAX_AGE = 1;
+

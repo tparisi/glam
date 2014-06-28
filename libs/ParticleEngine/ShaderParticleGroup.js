@@ -622,10 +622,10 @@ ShaderParticleGroup.shaders = {
             'vec4 rotatedTexture = texture2D( texture, rotatedUV );',
 
             'if( colorize == 1 ) {',
-                'gl_FragColor = vColor * rotatedTexture;',
+                'gl_FragColor = vColor;',
             '}',
             'else {',
-                'gl_FragColor = rotatedTexture;',
+                'gl_FragColor = vColor sdf;',
             '}',
         '}'
     ].join('\n')
