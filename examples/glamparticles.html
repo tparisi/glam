@@ -4,10 +4,11 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <script src="../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
 <script src="../build/glam.js" ></script>
-<title>glam - eight line cube</title>
+<title>glam - particle system</title>
 
 <style>
 	#particles_1 {
+		image:url(../images/smokeparticle.png);
 	}
 </style>
 <script>
@@ -19,14 +20,12 @@ $(document).ready(function(){
 </script>
 </head>
 <body>
-<!-- 
-glam - Simple scene with cube
- -->
 <div id="container" style="width:600px; height:600px;background-color:black;">
 <glam>
   <scene>
-	<particles z='-50' id="particles_1">
-		<emitter></emitter>
+	<particles z='-50' maxAge='10' id="particles_1">
+		<emitter particlesPerSecond='50' size='20' sizeEnd='10' opacityStart='0.2' 
+		opacityMiddle='0.4' opacityEnd='0.1' ay='3' vy='10' sx='3' sy='1' sz='3' color-start="yellow"></emitter>
 	</particles>
   </scene>
 </glam>

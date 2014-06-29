@@ -61290,6 +61290,8 @@ glam.Particles.create = function(docelt) {
 
 	var style = glam.Node.getStyle(docelt);
 	
+	var mparam = glam.Material.parseStyle(style);
+	
 	var param = {};
 	glam.Particles.getAttributes(docelt, style, param);
 	
@@ -61309,35 +61311,37 @@ glam.Particles.create = function(docelt) {
 
 	*/
 
+	param.texture = mparam.map;
+	
 	var ps = Vizi.ParticleSystem(param);
 
 	var pscript = ps.getComponent(Vizi.ParticleSystemScript);
 	
-	glam.Particles.initParticleSystem(docelt, ps, param);
+	glam.Particles.parseEmitters(docelt, ps);
 	
 	pscript.active = true;
 	return ps;
 }
 
 glam.Particles.getAttributes = function(docelt, style, param) {
-	param.texture = THREE.ImageUtils.loadTexture('../images/smokeparticle.png');
-	param.maxAge = 5;
+	var maxAge = docelt.getAttribute('maxAge') || glam.Particles.DEFAULT_MAX_AGE;
+	param.maxAge = parseFloat(maxAge);
 }
 
-glam.Particles.initParticleSystem = function(docelt, ps, param) {
+glam.Particles.parseEmitters = function(docelt, ps) {
 	var emitters = docelt.getElementsByTagName('emitter');
 	if (emitters) {
 		var i, len = emitters.length;
 		for (i = 0; i < len; i++) {
 			
-			var eparam = {
+			var param = {
 			};
 			
 			var emitter = emitters[0];
 			if (emitter) {
-				glam.Particles.parseEmitter(emitter, eparam);
+				glam.Particles.parseEmitter(emitter, param);
 
-				var pe = new Vizi.ParticleEmitter(eparam);
+				var pe = new Vizi.ParticleEmitter(param);
 				ps.addComponent(pe);
 			}
 		}
@@ -61345,18 +61349,54 @@ glam.Particles.initParticleSystem = function(docelt, ps, param) {
 }
 
 glam.Particles.parseEmitter = function(emitter, param) {
-	param.size = 20,
-	param.sizeEnd = 10,
-	param.colorStart = new THREE.Color(1, 1, 0),
-	param.colorEnd = new THREE.Color(0, 1, 0),
-	param.particlesPerSecond = 50,
-	param.opacityStart = 0.2,
-	param.opacityMiddle = 0.4,
-	param.opacityEnd = 0.0,
-	param.acceleration = new THREE.Vector3(0, 3, 0),
-	param.velocity = new THREE.Vector3(0, 10, 0),
-	param.accelerationSpread = new THREE.Vector3(3, 1, 3)
+	
+	var size = parseFloat(emitter.getAttribute('size'));
+	var sizeEnd = parseFloat(emitter.getAttribute('sizeEnd'));
+	var particlesPerSecond = parseInt(emitter.getAttribute('particlesPerSecond'));
+	var opacityStart = parseFloat(emitter.getAttribute('opacityStart'));
+	var opacityMiddle = parseFloat(emitter.getAttribute('opacityMiddle'));
+	var opacityEnd = parseFloat(emitter.getAttribute('opacityEnd'));
+	
+	var colorStart, colorEnd;
+	if (css = emitter.getAttribute('color-start')) {
+		param.colorStart = new THREE.Color().setStyle(css);
+	}
+	if (css = emitter.getAttribute('color-end')) {
+		param.colorEnd = new THREE.Color().setStyle(css);
+	}
+	
+	var t = {
+	};
+	
+	t.ax = parseFloat(emitter.getAttribute('ax')) || 0;
+	t.ay = parseFloat(emitter.getAttribute('ay')) || 0;
+	t.az = parseFloat(emitter.getAttribute('az')) || 0;
+	t.vx = parseFloat(emitter.getAttribute('vx')) || 0;
+	t.vy = parseFloat(emitter.getAttribute('vy')) || 0;
+	t.vz = parseFloat(emitter.getAttribute('vz')) || 0;
+	t.sx = parseFloat(emitter.getAttribute('sx')) || 0;
+	t.sy = parseFloat(emitter.getAttribute('sy')) || 0;
+	t.sz = parseFloat(emitter.getAttribute('sz')) || 0;
+
+	param.size = size;
+	param.sizeEnd = sizeEnd;
+	if (colorStart !== undefined) {
+		param.colorStart = new THREE.Color(1, 1, 0);
+	}
+	if (colorEnd !== undefined) {
+		param.colorEnd = new THREE.Color(0, 1, 0);
+	}	
+	param.particlesPerSecond = particlesPerSecond;	
+	param.opacityStart = opacityStart;
+	param.opacityMiddle = opacityMiddle;
+	param.opacityEnd = opacityEnd;
+	param.acceleration = new THREE.Vector3(t.ax, t.ay, t.az),
+	param.velocity = new THREE.Vector3(t.vx, t.vy, t.vy),
+	param.accelerationSpread = new THREE.Vector3(t.sx, t.sy, t.sz)
 }
+
+glam.Particles.DEFAULT_MAX_AGE = 1;
+
 goog.provide('Vizi.ParticleEmitter');
 goog.require('Vizi.Component');
 
