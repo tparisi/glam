@@ -73,10 +73,10 @@ glam.Particles.parseEmitter = function(emitter, param) {
 	
 	var colorStart, colorEnd;
 	if (css = emitter.getAttribute('color-start')) {
-		param.colorStart = new THREE.Color().setStyle(css);
+		colorStart = new THREE.Color().setStyle(css);
 	}
 	if (css = emitter.getAttribute('color-end')) {
-		param.colorEnd = new THREE.Color().setStyle(css);
+		colorEnd = new THREE.Color().setStyle(css);
 	}
 	
 	var t = {
@@ -95,10 +95,10 @@ glam.Particles.parseEmitter = function(emitter, param) {
 	param.size = size;
 	param.sizeEnd = sizeEnd;
 	if (colorStart !== undefined) {
-		param.colorStart = new THREE.Color(1, 1, 0);
+		param.colorStart = colorStart;
 	}
 	if (colorEnd !== undefined) {
-		param.colorEnd = new THREE.Color(0, 1, 0);
+		param.colorEnd = colorEnd;
 	}	
 	param.particlesPerSecond = particlesPerSecond;	
 	param.opacityStart = opacityStart;
