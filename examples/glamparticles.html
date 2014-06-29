@@ -23,11 +23,13 @@ $(document).ready(function(){
 <div id="container" style="width:600px; height:600px;background-color:black;">
 <glam>
   <scene>
-	<particles z='-50' maxAge='10' id="particles_1">
-		<emitter particlesPerSecond='50' size='20' sizeEnd='10' opacityStart='0.2' 
-		opacityMiddle='0.4' opacityEnd='0.1' velocity='0 10 0' acceleration='0 3 0' 
-		positionSpread='4 7 4' accelerationSpread='3 1 3' colorStart="yellow"></emitter>
-	</particles>
+    <group z='-50'>
+		<particles maxAge='2' id="particles_1">
+			<emitter particlesPerSecond='50' size='20' sizeEnd='10' opacityStart='0.2' 
+			opacityMiddle='0.4' opacityEnd='0.1' velocity='0 10 0' acceleration='0 3 0' 
+			positionSpread='4 7 4' accelerationSpread='3 1 3' colorStart="yellow"></emitter>
+		</particles>
+    </group>
   </scene>
 </glam>
 
