@@ -32,9 +32,6 @@ glam.Transform.parse = function(docelt, obj) {
 }
 
 glam.Transform.parseStyle = function(style, t) {
-	function parseRotation(r) {
-		return glam.Transform.parseRotation(r);
-	}
 	
 	if (style) {
 		if (style.x) {
@@ -47,13 +44,13 @@ glam.Transform.parseStyle = function(style, t) {
 			t.z = parseFloat(style.z);
 		}
 		if (style.rx) {
-			t.rx = parseRotation(style.rx);
+			t.rx = glam.Transform.parseRotation(style.rx);
 		}
 		if (style.ry) {
-			t.ry = parseRotation(style.ry);
+			t.ry = glam.Transform.parseRotation(style.ry);
 		}
 		if (style.rz) {
-			t.rz = parseRotation(style.rz);
+			t.rz = glam.Transform.parseRotation(style.rz);
 		}
 		if (style.sx) {
 			t.sx = parseFloat(style.sx);
@@ -64,48 +61,8 @@ glam.Transform.parseStyle = function(style, t) {
 		if (style.sz) {
 			t.sz = parseFloat(style.sz);
 		}
-		if (style.transform) {
-			var transforms = style.transform.split(" ");
-			var i, len = transforms.length;
-			for (i = 0; i < len; i++) {
-				var transform = transforms[i];
-				var op = transform.split("(")[0];
-				var regExp = /\(([^)]+)\)/;
-				var matches = regExp.exec(transform);
-				var value = matches[1];
-				
-				
-				switch(op) {
-					case "translateX" :
-						t.x = parseFloat(value);
-						break;
-					case "translateY" :
-						t.y = parseFloat(value);
-						break;
-					case "translateZ" :
-						t.z = parseFloat(value);
-						break;
-					case "rotateX" :
-						t.rx = parseRotation(value);
-						break;
-					case "rotateY" :
-						t.ry = parseRotation(value);
-						break;
-					case "rotateZ" :
-						t.rz = parseRotation(value);
-						break;
-					case "scaleX" :
-						t.sx = parseFloat(value);
-						break;
-					case "scaleY" :
-						t.sy = parseFloat(value);
-						break;
-					case "scaleZ" :
-						t.sz = parseFloat(value);
-						break;
-				}
-				
-			}
+		if (style.transform) {			
+			glam.Transform.parseTransform(style.transform, t);
 		}
 	}
 }
@@ -134,6 +91,50 @@ glam.Transform.parseRotation = function(r) {
 	}
 	
 	return parseFloat(r);
+}
+
+glam.Transform.parseTransform = function(str, t) {
+
+	var transforms = str.split(" ");
+	var i, len = transforms.length;
+	for (i = 0; i < len; i++) {
+		var transform = transforms[i];
+		var op = transform.split("(")[0];
+		var regExp = /\(([^)]+)\)/;
+		var matches = regExp.exec(transform);
+		var value = matches[1];
+		
+		
+		switch(op) {
+			case "translateX" :
+				t.x = parseFloat(value);
+				break;
+			case "translateY" :
+				t.y = parseFloat(value);
+				break;
+			case "translateZ" :
+				t.z = parseFloat(value);
+				break;
+			case "rotateX" :
+				t.rx = glam.Transform.parseRotation(value);
+				break;
+			case "rotateY" :
+				t.ry = glam.Transform.parseRotation(value);
+				break;
+			case "rotateZ" :
+				t.rz = glam.Transform.parseRotation(value);
+				break;
+			case "scaleX" :
+				t.sx = parseFloat(value);
+				break;
+			case "scaleY" :
+				t.sy = parseFloat(value);
+				break;
+			case "scaleZ" :
+				t.sz = parseFloat(value);
+				break;
+		}		
+	}
 }
 
 glam.Transform.onSetAttribute = function(obj, docelt, attr, val) {
