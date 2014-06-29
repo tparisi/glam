@@ -44,6 +44,21 @@ glam.Types.parseVector3Array = function(element, vertices) {
 	}
 }
 
+glam.Types.parseVector3 = function(text, vec) {
+
+	var nums = text.split(" ");
+	
+	var i, len = nums.length;
+	if (len < 3)
+		return;
+	
+	var x = parseFloat(nums[0]), 
+		y = parseFloat(nums[1]), 
+		z = parseFloat(nums[2]);
+	
+	vec.set(x, y, z);
+}
+
 glam.Types.parseVector2Array = function(element, uvs) {
 	var text = element.textContent;
 	var nums = text.split(" ");

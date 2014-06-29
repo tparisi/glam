@@ -61351,7 +61351,6 @@ glam.Particles.parseEmitter = function(emitter, param) {
 	    
 	var size = parseFloat(emitter.getAttribute('size'));
 	var sizeEnd = parseFloat(emitter.getAttribute('sizeEnd'));
-	var positionSpread = parseFloat(emitter.getAttribute('positionSpread'));
 	var particlesPerSecond = parseInt(emitter.getAttribute('particlesPerSecond'));
 	var opacityStart = parseFloat(emitter.getAttribute('opacityStart'));
 	var opacityMiddle = parseFloat(emitter.getAttribute('opacityMiddle'));
@@ -61365,18 +61364,43 @@ glam.Particles.parseEmitter = function(emitter, param) {
 		colorEnd = new THREE.Color().setStyle(css);
 	}
 	
-	var t = {
-	};
+	var vx = parseFloat(emitter.getAttribute('vx')) || 0;
+	var vy = parseFloat(emitter.getAttribute('vy')) || 0;
+	var vz = parseFloat(emitter.getAttribute('vz')) || 0;
+	var ax = parseFloat(emitter.getAttribute('ax')) || 0;
+	var ay = parseFloat(emitter.getAttribute('ay')) || 0;
+	var az = parseFloat(emitter.getAttribute('az')) || 0;
+	var psx = parseFloat(emitter.getAttribute('psx')) || 0;
+	var psy = parseFloat(emitter.getAttribute('psy')) || 0;
+	var psz = parseFloat(emitter.getAttribute('psz')) || 0;
+	var asx = parseFloat(emitter.getAttribute('asx')) || 0;
+	var asy = parseFloat(emitter.getAttribute('asy')) || 0;
+	var asz = parseFloat(emitter.getAttribute('asz')) || 0;
+
+	var velocity = new THREE.Vector3(vx, vy, vz);
+	var acceleration = new THREE.Vector3(ax, ay, az);
+	var positionSpread = new THREE.Vector3(psx, psy, psz);
+	var accelerationSpread = new THREE.Vector3(asx, asy, asz);
+
+	var vel = emitter.getAttribute('velocity');
+	if (vel) {
+		glam.Types.parseVector3(vel, velocity);
+	}
 	
-	t.ax = parseFloat(emitter.getAttribute('ax')) || 0;
-	t.ay = parseFloat(emitter.getAttribute('ay')) || 0;
-	t.az = parseFloat(emitter.getAttribute('az')) || 0;
-	t.vx = parseFloat(emitter.getAttribute('vx')) || 0;
-	t.vy = parseFloat(emitter.getAttribute('vy')) || 0;
-	t.vz = parseFloat(emitter.getAttribute('vz')) || 0;
-	t.sx = parseFloat(emitter.getAttribute('sx')) || 0;
-	t.sy = parseFloat(emitter.getAttribute('sy')) || 0;
-	t.sz = parseFloat(emitter.getAttribute('sz')) || 0;
+	var accel = emitter.getAttribute('acceleration');
+	if (accel) {
+		glam.Types.parseVector3(accel, acceleration);
+	}
+	
+	var posSpread = emitter.getAttribute('positionSpread');
+	if (posSpread) {
+		glam.Types.parseVector3(posSpread, positionSpread);
+	}
+
+	var accelSpread = emitter.getAttribute('accelerationSpread');
+	if (accelSpread) {
+		glam.Types.parseVector3(accelSpread, accelerationSpread);
+	}
 
 	param.size = size;
 	param.sizeEnd = sizeEnd;
@@ -61386,14 +61410,14 @@ glam.Particles.parseEmitter = function(emitter, param) {
 	if (colorEnd !== undefined) {
 		param.colorEnd = colorEnd;
 	}	
-	param.positionSpread = positionSpread;
 	param.particlesPerSecond = particlesPerSecond;	
 	param.opacityStart = opacityStart;
 	param.opacityMiddle = opacityMiddle;
 	param.opacityEnd = opacityEnd;
-	param.acceleration = new THREE.Vector3(t.ax, t.ay, t.az),
-	param.velocity = new THREE.Vector3(t.vx, t.vy, t.vy),
-	param.accelerationSpread = new THREE.Vector3(t.sx, t.sy, t.sz)
+	param.velocity = velocity;
+	param.acceleration = acceleration;
+	param.positionSpread = positionSpread;
+	param.accelerationSpread = accelerationSpread; 
 }
 
 glam.Particles.DEFAULT_MAX_AGE = 1;
@@ -61410,14 +61434,14 @@ Vizi.ParticleEmitter = function(param) {
 	var sizeEnd = this.param.sizeEnd || Vizi.ParticleEmitter.DEFAULT_SIZE_END;
 	var colorStart = this.param.colorStart || Vizi.ParticleEmitter.DEFAULT_COLOR_START;
 	var colorEnd = this.param.colorEnd || Vizi.ParticleEmitter.DEFAULT_COLOR_END;
-	var positionSpread = this.param.positionSpread || Vizi.ParticleEmitter.DEFAULT_POSITION_SPREAD;
 	var particlesPerSecond = this.param.particlesPerSecond || Vizi.ParticleEmitter.DEFAULT_PARTICLES_PER_SECOND;
 	var opacityStart = this.param.opacityStart || Vizi.ParticleEmitter.DEFAULT_OPACITY_START;
 	var opacityMiddle = this.param.opacityMiddle || Vizi.ParticleEmitter.DEFAULT_OPACITY_MIDDLE;
 	var opacityEnd = this.param.opacityEnd || Vizi.ParticleEmitter.DEFAULT_OPACITY_END;
-	var acceleration = this.param.acceleration || Vizi.ParticleEmitter.DEFAULT_ACCELERATION;
-	var accelerationSpread = this.param.accelerationSpread || Vizi.ParticleEmitter.DEFAULT_ACCELERATION_SPREAD;
 	var velocity = this.param.velocity || Vizi.ParticleEmitter.DEFAULT_VELOCITY;
+	var acceleration = this.param.acceleration || Vizi.ParticleEmitter.DEFAULT_ACCELERATION;
+	var positionSpread = this.param.positionSpread || Vizi.ParticleEmitter.DEFAULT_POSITION_SPREAD;
+	var accelerationSpread = this.param.accelerationSpread || Vizi.ParticleEmitter.DEFAULT_ACCELERATION_SPREAD;
 
 	this._active = false;
 
@@ -61426,14 +61450,14 @@ Vizi.ParticleEmitter = function(param) {
         sizeEnd: sizeEnd,
         colorStart: colorStart,
         colorEnd: colorEnd,
-        positionSpread: positionSpread,
         particlesPerSecond: particlesPerSecond,
         opacityStart: opacityStart,
         opacityMiddle: opacityMiddle,
         opacityEnd: opacityEnd,
-        acceleration: acceleration,
-        accelerationSpread: accelerationSpread,
         velocity: velocity,
+        acceleration: acceleration,
+        positionSpread: positionSpread,
+        accelerationSpread: accelerationSpread,
       });
 	
     Object.defineProperties(this, {
@@ -61475,14 +61499,14 @@ Vizi.ParticleEmitter.DEFAULT_SIZE = 1;
 Vizi.ParticleEmitter.DEFAULT_SIZE_END = 1;
 Vizi.ParticleEmitter.DEFAULT_COLOR_START = new THREE.Color;
 Vizi.ParticleEmitter.DEFAULT_COLOR_END = new THREE.Color;
-Vizi.ParticleEmitter.DEFAULT_POSITION_SPREAD = new THREE.Vector3(0, 0, 0);
 Vizi.ParticleEmitter.DEFAULT_PARTICLES_PER_SECOND = 10;
 Vizi.ParticleEmitter.DEFAULT_OPACITY_START = 0.1;
 Vizi.ParticleEmitter.DEFAULT_OPACITY_MIDDLE = 0.5;
 Vizi.ParticleEmitter.DEFAULT_OPACITY_END = 0.0;
-Vizi.ParticleEmitter.DEFAULT_ACCELERATION = new THREE.Vector3(0, 1, 0);
-Vizi.ParticleEmitter.DEFAULT_ACCELERATION_SPREAD = new THREE.Vector3(0, 1, 0);
 Vizi.ParticleEmitter.DEFAULT_VELOCITY = new THREE.Vector3(0, 10, 0);
+Vizi.ParticleEmitter.DEFAULT_ACCELERATION = new THREE.Vector3(0, 1, 0);
+Vizi.ParticleEmitter.DEFAULT_POSITION_SPREAD = new THREE.Vector3(0, 0, 0);
+Vizi.ParticleEmitter.DEFAULT_ACCELERATION_SPREAD = new THREE.Vector3(0, 1, 0);
 
 
 goog.provide('Vizi.ParticleSystemScript');
@@ -62054,6 +62078,21 @@ glam.Types.parseVector3Array = function(element, vertices) {
 		var vec = new THREE.Vector3(x, y, z);
 		vertices.push(vec);
 	}
+}
+
+glam.Types.parseVector3 = function(text, vec) {
+
+	var nums = text.split(" ");
+	
+	var i, len = nums.length;
+	if (len < 3)
+		return;
+	
+	var x = parseFloat(nums[0]), 
+		y = parseFloat(nums[1]), 
+		z = parseFloat(nums[2]);
+	
+	vec.set(x, y, z);
 }
 
 glam.Types.parseVector2Array = function(element, uvs) {
