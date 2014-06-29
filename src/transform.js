@@ -14,6 +14,10 @@ glam.Transform.parse = function(docelt, obj) {
 	t.sx = parseFloat(docelt.getAttribute('sx')) || 1;
 	t.sy = parseFloat(docelt.getAttribute('sy')) || 1;
 	t.sz = parseFloat(docelt.getAttribute('sz')) || 1;
+	var transform = docelt.getAttribute('transform');
+	if (transform) {
+		glam.Transform.parseTransform(transform, t);
+	}
 
 	if (docelt.id) {
 		var style = glam.getStyle("#" + docelt.id);

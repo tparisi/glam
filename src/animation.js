@@ -131,8 +131,7 @@ glam.Animation.createFrame = function(docelt) {
 	
 	if (property == "transform") {
 		var t = {};
-		var s = { transform : value };
-		glam.Transform.parseStyle(s, t);
+		glam.Transform.parseTransform(value, t);
 
 		return {
 			time : frametime,
