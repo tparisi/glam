@@ -63,9 +63,10 @@ glam.Particles.parseEmitters = function(docelt, ps) {
 }
 
 glam.Particles.parseEmitter = function(emitter, param) {
-	
+	    
 	var size = parseFloat(emitter.getAttribute('size'));
 	var sizeEnd = parseFloat(emitter.getAttribute('sizeEnd'));
+	var positionSpread = parseFloat(emitter.getAttribute('positionSpread'));
 	var particlesPerSecond = parseInt(emitter.getAttribute('particlesPerSecond'));
 	var opacityStart = parseFloat(emitter.getAttribute('opacityStart'));
 	var opacityMiddle = parseFloat(emitter.getAttribute('opacityMiddle'));
@@ -100,6 +101,7 @@ glam.Particles.parseEmitter = function(emitter, param) {
 	if (colorEnd !== undefined) {
 		param.colorEnd = colorEnd;
 	}	
+	param.positionSpread = positionSpread;
 	param.particlesPerSecond = particlesPerSecond;	
 	param.opacityStart = opacityStart;
 	param.opacityMiddle = opacityMiddle;

@@ -61348,9 +61348,10 @@ glam.Particles.parseEmitters = function(docelt, ps) {
 }
 
 glam.Particles.parseEmitter = function(emitter, param) {
-	
+	    
 	var size = parseFloat(emitter.getAttribute('size'));
 	var sizeEnd = parseFloat(emitter.getAttribute('sizeEnd'));
+	var positionSpread = parseFloat(emitter.getAttribute('positionSpread'));
 	var particlesPerSecond = parseInt(emitter.getAttribute('particlesPerSecond'));
 	var opacityStart = parseFloat(emitter.getAttribute('opacityStart'));
 	var opacityMiddle = parseFloat(emitter.getAttribute('opacityMiddle'));
@@ -61385,6 +61386,7 @@ glam.Particles.parseEmitter = function(emitter, param) {
 	if (colorEnd !== undefined) {
 		param.colorEnd = colorEnd;
 	}	
+	param.positionSpread = positionSpread;
 	param.particlesPerSecond = particlesPerSecond;	
 	param.opacityStart = opacityStart;
 	param.opacityMiddle = opacityMiddle;
@@ -61408,6 +61410,7 @@ Vizi.ParticleEmitter = function(param) {
 	var sizeEnd = this.param.sizeEnd || Vizi.ParticleEmitter.DEFAULT_SIZE_END;
 	var colorStart = this.param.colorStart || Vizi.ParticleEmitter.DEFAULT_COLOR_START;
 	var colorEnd = this.param.colorEnd || Vizi.ParticleEmitter.DEFAULT_COLOR_END;
+	var positionSpread = this.param.positionSpread || Vizi.ParticleEmitter.DEFAULT_POSITION_SPREAD;
 	var particlesPerSecond = this.param.particlesPerSecond || Vizi.ParticleEmitter.DEFAULT_PARTICLES_PER_SECOND;
 	var opacityStart = this.param.opacityStart || Vizi.ParticleEmitter.DEFAULT_OPACITY_START;
 	var opacityMiddle = this.param.opacityMiddle || Vizi.ParticleEmitter.DEFAULT_OPACITY_MIDDLE;
@@ -61419,11 +61422,11 @@ Vizi.ParticleEmitter = function(param) {
 	this._active = false;
 
 	this.object = new ShaderParticleEmitter({
-        positionSpread: new THREE.Vector3(4, 7, 4),
 		size: size,
         sizeEnd: sizeEnd,
         colorStart: colorStart,
         colorEnd: colorEnd,
+        positionSpread: positionSpread,
         particlesPerSecond: particlesPerSecond,
         opacityStart: opacityStart,
         opacityMiddle: opacityMiddle,
@@ -61472,6 +61475,7 @@ Vizi.ParticleEmitter.DEFAULT_SIZE = 1;
 Vizi.ParticleEmitter.DEFAULT_SIZE_END = 1;
 Vizi.ParticleEmitter.DEFAULT_COLOR_START = new THREE.Color;
 Vizi.ParticleEmitter.DEFAULT_COLOR_END = new THREE.Color;
+Vizi.ParticleEmitter.DEFAULT_POSITION_SPREAD = new THREE.Vector3(0, 0, 0);
 Vizi.ParticleEmitter.DEFAULT_PARTICLES_PER_SECOND = 10;
 Vizi.ParticleEmitter.DEFAULT_OPACITY_START = 0.1;
 Vizi.ParticleEmitter.DEFAULT_OPACITY_MIDDLE = 0.5;
