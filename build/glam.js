@@ -61316,7 +61316,7 @@ glam.Particles.create = function(docelt) {
 
 	var pscript = ps.getComponent(Vizi.ParticleSystemScript);
 	
-	glam.Particles.parseEmitters(docelt, ps);
+	glam.Particles.parse(docelt, ps);
 	
 	pscript.active = true;
 	return ps;
@@ -61327,7 +61327,8 @@ glam.Particles.getAttributes = function(docelt, style, param) {
 	param.maxAge = parseFloat(maxAge);
 }
 
-glam.Particles.parseEmitters = function(docelt, ps) {
+glam.Particles.parse = function(docelt, ps) {
+	// Any emitters?
 	var emitters = docelt.getElementsByTagName('emitter');
 	if (emitters) {
 		var i, len = emitters.length;
@@ -61345,6 +61346,18 @@ glam.Particles.parseEmitters = function(docelt, ps) {
 			}
 		}
 	}
+	
+	// Or just static vertices...? Not working yet
+	var verts = docelt.getElementsByTagName('vertices');
+	if (verts) {
+		verts = verts[0];
+		if (verts) {
+			var visual = ps.getComponent(Vizi.Visual);
+			var geometry = visual.geometry;
+			glam.Types.parseVector3Array(verts, geometry.vertices);
+		}
+	}
+	
 }
 
 glam.Particles.parseEmitter = function(emitter, param) {
@@ -61518,6 +61531,19 @@ Vizi.ParticleSystem = function(param) {
 	
 	var obj = new Vizi.Object;
 
+	var texture = param.texture || null;
+	var maxAge = param.maxAge || Vizi.ParticleSystemScript.DEFAULT_MAX_AGE;
+
+	var particleGroup = new ShaderParticleGroup({
+        texture: texture,
+        maxAge: maxAge,
+      });
+	    
+    var visual = new Vizi.Visual({object:particleGroup.mesh});
+    obj.addComponent(visual);
+    
+	param.particleGroup = particleGroup;
+	
 	var pScript = new Vizi.ParticleSystemScript(param);
 	obj.addComponent(pScript);
 	
@@ -61528,8 +61554,7 @@ Vizi.ParticleSystem = function(param) {
 Vizi.ParticleSystemScript = function(param) {
 	Vizi.Script.call(this, param);
 
-	this.texture = param.texture || null;
-	this.maxAge = param.maxAge || Vizi.ParticleSystemScript.DEFAULT_MAX_AGE;
+	this.particleGroup = param.particleGroup;
 	
 	this._active = true;
 	
@@ -61550,17 +61575,7 @@ goog.inherits(Vizi.ParticleSystemScript, Vizi.Script);
 
 Vizi.ParticleSystemScript.prototype.realize = function()
 {
-    this.particleGroup = new ShaderParticleGroup({
-        texture: this.texture,
-        maxAge: this.maxAge,
-      });
-    
     this.initEmitters();
-
-    var obj = new Vizi.Object;
-    var visual = new Vizi.Visual({object:this.particleGroup.mesh});
-    obj.addComponent(visual);
-    this._object.addChild(obj);
 
 }
 

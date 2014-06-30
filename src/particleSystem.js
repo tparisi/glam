@@ -7,6 +7,19 @@ Vizi.ParticleSystem = function(param) {
 	
 	var obj = new Vizi.Object;
 
+	var texture = param.texture || null;
+	var maxAge = param.maxAge || Vizi.ParticleSystemScript.DEFAULT_MAX_AGE;
+
+	var particleGroup = new ShaderParticleGroup({
+        texture: texture,
+        maxAge: maxAge,
+      });
+	    
+    var visual = new Vizi.Visual({object:particleGroup.mesh});
+    obj.addComponent(visual);
+    
+	param.particleGroup = particleGroup;
+	
 	var pScript = new Vizi.ParticleSystemScript(param);
 	obj.addComponent(pScript);
 	
@@ -17,8 +30,7 @@ Vizi.ParticleSystem = function(param) {
 Vizi.ParticleSystemScript = function(param) {
 	Vizi.Script.call(this, param);
 
-	this.texture = param.texture || null;
-	this.maxAge = param.maxAge || Vizi.ParticleSystemScript.DEFAULT_MAX_AGE;
+	this.particleGroup = param.particleGroup;
 	
 	this._active = true;
 	
@@ -39,17 +51,7 @@ goog.inherits(Vizi.ParticleSystemScript, Vizi.Script);
 
 Vizi.ParticleSystemScript.prototype.realize = function()
 {
-    this.particleGroup = new ShaderParticleGroup({
-        texture: this.texture,
-        maxAge: this.maxAge,
-      });
-    
     this.initEmitters();
-
-    var obj = new Vizi.Object;
-    var visual = new Vizi.Visual({object:this.particleGroup.mesh});
-    obj.addComponent(visual);
-    this._object.addChild(obj);
 
 }
 

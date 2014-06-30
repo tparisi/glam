@@ -31,7 +31,7 @@ glam.Particles.create = function(docelt) {
 
 	var pscript = ps.getComponent(Vizi.ParticleSystemScript);
 	
-	glam.Particles.parseEmitters(docelt, ps);
+	glam.Particles.parse(docelt, ps);
 	
 	pscript.active = true;
 	return ps;
@@ -42,7 +42,8 @@ glam.Particles.getAttributes = function(docelt, style, param) {
 	param.maxAge = parseFloat(maxAge);
 }
 
-glam.Particles.parseEmitters = function(docelt, ps) {
+glam.Particles.parse = function(docelt, ps) {
+	// Any emitters?
 	var emitters = docelt.getElementsByTagName('emitter');
 	if (emitters) {
 		var i, len = emitters.length;
@@ -60,6 +61,18 @@ glam.Particles.parseEmitters = function(docelt, ps) {
 			}
 		}
 	}
+	
+	// Or just static vertices...? Not working yet
+	var verts = docelt.getElementsByTagName('vertices');
+	if (verts) {
+		verts = verts[0];
+		if (verts) {
+			var visual = ps.getComponent(Vizi.Visual);
+			var geometry = visual.geometry;
+			glam.Types.parseVector3Array(verts, geometry.vertices);
+		}
+	}
+	
 }
 
 glam.Particles.parseEmitter = function(emitter, param) {

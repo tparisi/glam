@@ -10,6 +10,12 @@
 	#particles_1 {
 		image:url(../images/smokeparticle.png);
 	}
+	#particles_2 {
+		image:url(../images/firefly.png);
+	}
+	#particles_3 {
+		image:url(../images/Star02.png);
+	}
 </style>
 <script>
 $(document).ready(function(){
@@ -20,7 +26,7 @@ $(document).ready(function(){
 </script>
 </head>
 <body>
-<div id="container" style="width:600px; height:600px;background-color:black;">
+<div id="container" style="width:98%; height:98%;position:absolute;background:url(../images/slidebg.png);">
 <glam>
   <scene>
     <group z='-50'>
@@ -30,6 +36,25 @@ $(document).ready(function(){
 			positionSpread='4 7 4' accelerationSpread='3 1 3' colorStart="yellow"></emitter>
 		</particles>
     </group>
+    <group x='-5' z='-10'>
+		<particles maxAge='2' id="particles_2">
+			<emitter particlesPerSecond='10' size='2' sizeEnd='1' opacityStart='0.2' 
+			opacityMiddle='0.4' opacityEnd='0.2' velocity='0 2 0' acceleration='0 1 0' 
+			positionSpread='1 1 1' accelerationSpread='5 0 5' colorStart="white"></emitter>
+		</particles>
+    </group>
+    <group x='5' y='2' z='-10'>
+		<particles maxAge='2' id="particles_3" animation="animRotateY">
+			<emitter particlesPerSecond='100' size='2' sizeEnd='1' opacityStart='0.2' 
+			opacityMiddle='0.4' opacityEnd='0.2' velocity='2 0 0' acceleration='0 -1 0' 
+			positionSpread='0 0 0' accelerationSpread='1 1 1' colorStart="red" colorEnd="yellow"></emitter>
+		</particles>
+    </group>
+  	<animation id="animRotateY" duration="2s" iteration-count="infinite" timing-function="linear">
+		<keyframe time="0%" property="transform" value="rotateY(0deg);"></keyframe>
+		<keyframe time="50%" property="transform" value="rotateY(-180deg);"></keyframe>
+		<keyframe time="100%" property="transform" value="rotateY(-360deg);"></keyframe>
+	</animation>
   </scene>
 </glam>
 
