@@ -19,7 +19,7 @@
 	#stars {
 		image:url(../images/Star02.png);
 	}
-	#water {
+	#rain {
 		image:url(../images/smokeparticle.png);
 	}
 </style>
@@ -82,16 +82,16 @@ $(document).ready(function(){
 			positionSpread='0 0 0' accelerationSpread='1 1 1' colorStart="red" colorEnd="yellow"></emitter>
 		</particles>
     </group>
-    <group x='-5' z='-10'>
-		<particles maxAge='2' id="water">
-			<emitter particlesPerSecond='50' size='10' sizeEnd='5' opacityStart='0.2' 
-			opacityMiddle='0.4' opacityEnd='0.1' velocity='0 -2.5 0' acceleration='0 -3 0' 
-			positionSpread='.5 -3.5 .5' accelerationSpread='.5 -.5 .5' colorStart="lightblue" colorEnd="lightblue"
+    <group x='-5' y='2'>
+		<particles maxAge='2' id="rain">
+			<emitter particlesPerSecond='100' size='.1' sizeEnd='.5' opacityStart='1' 
+			opacityMiddle='0.5' opacityEnd='0.5' velocity='0 -3.5 0' acceleration='0 -3 0' 
+			positionSpread='30 -3.5 5' accelerationSpread='.5 -.5 .5' colorStart="blue" colorEnd="lightblue"
 			blendin='normal'></emitter>
 		</particles>
     </group>
     <group>
-		<particles id="stars" size='.5' animation="">
+		<particles id="stars" size='.5' animation="animRotateYSlow">
 			<vertices></vertices>
 		</particles>
     </group>
