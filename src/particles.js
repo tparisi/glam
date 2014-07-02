@@ -142,6 +142,30 @@ glam.Particles.parseEmitter = function(emitter, param) {
 		glam.Types.parseVector3(accelSpread, accelerationSpread);
 	}
 
+	var blending = THREE.NoBlending;
+	var blend = emitter.getAttribute('blending') || "";
+	switch (blend.toLowerCase()) {
+	
+		case "normal" :
+			blending = THREE.NormalBlending;
+			break;
+		case "additive" :
+			blending = THREE.AdditiveBlending;
+			break;
+		case "subtractive" :
+			blending = THREE.SubtractiveBlending;
+			break;
+		case "multiply" :
+			blending = THREE.MultiplyBlending;
+			break;
+		case "custom" :
+			blending = THREE.CustomBlending;
+			break;
+		case "none" :
+		default :
+			break;
+	}
+	
 	param.size = size;
 	param.sizeEnd = sizeEnd;
 	if (colorStart !== undefined) {
@@ -158,6 +182,7 @@ glam.Particles.parseEmitter = function(emitter, param) {
 	param.acceleration = acceleration;
 	param.positionSpread = positionSpread;
 	param.accelerationSpread = accelerationSpread; 
+	param.blending = blending;
 }
 
 glam.Particles.addEmitters = function(emitters, ps) {

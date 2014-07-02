@@ -7,17 +7,20 @@
 <title>glam - particle system</title>
 
 <style>
-	#particles_1 {
+	#fire {
 		image:url(../images/smokeparticle.png);
 	}
-	#particles_2 {
+	#bubbles {
 		image:url(../images/firefly.png);
 	}
-	#particles_3 {
+	#sparks {
 		image:url(../images/Star02.png);
 	}
-	#particles_4 {
+	#stars {
 		image:url(../images/Star02.png);
+	}
+	#water {
+		image:url(../images/smokeparticle.png);
 	}
 </style>
 <script>
@@ -25,7 +28,7 @@ $(document).ready(function(){
 
 	glam.ready();
 
-	var p4 = document.getElementById("particles_4");
+	var p4 = document.getElementById("stars");
 	if (p4) {
 		var geometry = p4.geometry;
 		var material = p4.material;
@@ -58,28 +61,37 @@ $(document).ready(function(){
   <scene>
   	<camera z='10'></camera>
     <group>
-		<particles maxAge='2' id="particles_1">
+		<particles maxAge='2' id="fire">
 			<emitter particlesPerSecond='50' size='10' sizeEnd='5' opacityStart='0.2' 
 			opacityMiddle='0.4' opacityEnd='0.1' velocity='0 2.5 0' acceleration='0 3 0' 
-			positionSpread='2 3.5 2' accelerationSpread='1.5 .5 1.5' colorStart="yellow"></emitter>
+			positionSpread='2 3.5 2' accelerationSpread='1.5 .5 1.5' colorStart="yellow"
+			blending='additive' ></emitter>
 		</particles>
     </group>
     <group x='-5'>
-		<particles maxAge='2' id="particles_2">
+		<particles maxAge='2' id="bubbles">
 			<emitter particlesPerSecond='10' size='2' sizeEnd='1' opacityStart='0.2' 
 			opacityMiddle='0.4' opacityEnd='0.2' velocity='0 2 0' acceleration='0 1 0' 
 			positionSpread='1 1 1' accelerationSpread='5 0 5' colorStart="white"></emitter>
 		</particles>
     </group>
     <group x='5' y='2'>
-		<particles maxAge='2' id="particles_3" animation="animRotateY">
+		<particles maxAge='2' id="sparks" animation="animRotateY">
 			<emitter particlesPerSecond='100' size='2' sizeEnd='1' opacityStart='0.2' 
 			opacityMiddle='0.4' opacityEnd='0.2' velocity='2 0 0' acceleration='0 -1 0' 
 			positionSpread='0 0 0' accelerationSpread='1 1 1' colorStart="red" colorEnd="yellow"></emitter>
 		</particles>
     </group>
+    <group x='-5' z='-10'>
+		<particles maxAge='2' id="water">
+			<emitter particlesPerSecond='50' size='10' sizeEnd='5' opacityStart='0.2' 
+			opacityMiddle='0.4' opacityEnd='0.1' velocity='0 -2.5 0' acceleration='0 -3 0' 
+			positionSpread='.5 -3.5 .5' accelerationSpread='.5 -.5 .5' colorStart="lightblue" colorEnd="lightblue"
+			blendin='normal'></emitter>
+		</particles>
+    </group>
     <group>
-		<particles id="particles_4" size='.5' animation="animRotateYSlow">
+		<particles id="stars" size='.5' animation="">
 			<vertices></vertices>
 		</particles>
     </group>

@@ -61435,6 +61435,30 @@ glam.Particles.parseEmitter = function(emitter, param) {
 		glam.Types.parseVector3(accelSpread, accelerationSpread);
 	}
 
+	var blending = THREE.NoBlending;
+	var blend = emitter.getAttribute('blending') || "";
+	switch (blend.toLowerCase()) {
+	
+		case "normal" :
+			blending = THREE.NormalBlending;
+			break;
+		case "additive" :
+			blending = THREE.AdditiveBlending;
+			break;
+		case "subtractive" :
+			blending = THREE.SubtractiveBlending;
+			break;
+		case "multiply" :
+			blending = THREE.MultiplyBlending;
+			break;
+		case "custom" :
+			blending = THREE.CustomBlending;
+			break;
+		case "none" :
+		default :
+			break;
+	}
+	
 	param.size = size;
 	param.sizeEnd = sizeEnd;
 	if (colorStart !== undefined) {
@@ -61451,6 +61475,7 @@ glam.Particles.parseEmitter = function(emitter, param) {
 	param.acceleration = acceleration;
 	param.positionSpread = positionSpread;
 	param.accelerationSpread = accelerationSpread; 
+	param.blending = blending;
 }
 
 glam.Particles.addEmitters = function(emitters, ps) {
@@ -61483,6 +61508,7 @@ Vizi.ParticleEmitter = function(param) {
 	var acceleration = this.param.acceleration || Vizi.ParticleEmitter.DEFAULT_ACCELERATION;
 	var positionSpread = this.param.positionSpread || Vizi.ParticleEmitter.DEFAULT_POSITION_SPREAD;
 	var accelerationSpread = this.param.accelerationSpread || Vizi.ParticleEmitter.DEFAULT_ACCELERATION_SPREAD;
+	var blending = this.param.blending || Vizi.ParticleEmitter.DEFAULT_BLENDING;
 
 	this._active = false;
 
@@ -61499,6 +61525,7 @@ Vizi.ParticleEmitter = function(param) {
         acceleration: acceleration,
         positionSpread: positionSpread,
         accelerationSpread: accelerationSpread,
+        blending: blending,
       });
 	
     Object.defineProperties(this, {
@@ -61548,6 +61575,7 @@ Vizi.ParticleEmitter.DEFAULT_VELOCITY = new THREE.Vector3(0, 10, 0);
 Vizi.ParticleEmitter.DEFAULT_ACCELERATION = new THREE.Vector3(0, 1, 0);
 Vizi.ParticleEmitter.DEFAULT_POSITION_SPREAD = new THREE.Vector3(0, 0, 0);
 Vizi.ParticleEmitter.DEFAULT_ACCELERATION_SPREAD = new THREE.Vector3(0, 1, 0);
+Vizi.ParticleEmitter.DEFAULT_BLENDING = THREE.NoBlending;
 
 
 goog.provide('Vizi.ParticleSystemScript');
@@ -61565,7 +61593,8 @@ Vizi.ParticleSystem = function(param) {
 	var visual = null;
 	if (param.geometry) {
 		
-		var material = new THREE.ParticleSystemMaterial({color:param.color, size:param.size, map:param.map,
+		var color = (param.color !== undefined) ? param.color : Vizi.ParticleSystem.DEFAULT_COLOR;
+		var material = new THREE.ParticleSystemMaterial({color:color, size:param.size, map:param.map,
 			transparent: (param.map !== null), vertexColors: (param.geometry.colors.length > 0)});
 		var ps = new THREE.ParticleSystem(param.geometry, material);
 
@@ -61660,6 +61689,7 @@ Vizi.ParticleSystemScript.prototype.update = function() {
 	}
 }
 
+Vizi.ParticleSystem.DEFAULT_COLOR = 0xffffff;
 Vizi.ParticleSystemScript.DEFAULT_MAX_AGE = 1;
 
 glam.Rect = {};

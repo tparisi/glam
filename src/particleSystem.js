@@ -13,7 +13,8 @@ Vizi.ParticleSystem = function(param) {
 	var visual = null;
 	if (param.geometry) {
 		
-		var material = new THREE.ParticleSystemMaterial({color:param.color, size:param.size, map:param.map,
+		var color = (param.color !== undefined) ? param.color : Vizi.ParticleSystem.DEFAULT_COLOR;
+		var material = new THREE.ParticleSystemMaterial({color:color, size:param.size, map:param.map,
 			transparent: (param.map !== null), vertexColors: (param.geometry.colors.length > 0)});
 		var ps = new THREE.ParticleSystem(param.geometry, material);
 
@@ -108,5 +109,6 @@ Vizi.ParticleSystemScript.prototype.update = function() {
 	}
 }
 
+Vizi.ParticleSystem.DEFAULT_COLOR = 0xffffff;
 Vizi.ParticleSystemScript.DEFAULT_MAX_AGE = 1;
 

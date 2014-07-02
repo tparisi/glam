@@ -18,6 +18,7 @@ Vizi.ParticleEmitter = function(param) {
 	var acceleration = this.param.acceleration || Vizi.ParticleEmitter.DEFAULT_ACCELERATION;
 	var positionSpread = this.param.positionSpread || Vizi.ParticleEmitter.DEFAULT_POSITION_SPREAD;
 	var accelerationSpread = this.param.accelerationSpread || Vizi.ParticleEmitter.DEFAULT_ACCELERATION_SPREAD;
+	var blending = this.param.blending || Vizi.ParticleEmitter.DEFAULT_BLENDING;
 
 	this._active = false;
 
@@ -34,6 +35,7 @@ Vizi.ParticleEmitter = function(param) {
         acceleration: acceleration,
         positionSpread: positionSpread,
         accelerationSpread: accelerationSpread,
+        blending: blending,
       });
 	
     Object.defineProperties(this, {
@@ -83,5 +85,6 @@ Vizi.ParticleEmitter.DEFAULT_VELOCITY = new THREE.Vector3(0, 10, 0);
 Vizi.ParticleEmitter.DEFAULT_ACCELERATION = new THREE.Vector3(0, 1, 0);
 Vizi.ParticleEmitter.DEFAULT_POSITION_SPREAD = new THREE.Vector3(0, 0, 0);
 Vizi.ParticleEmitter.DEFAULT_ACCELERATION_SPREAD = new THREE.Vector3(0, 1, 0);
+Vizi.ParticleEmitter.DEFAULT_BLENDING = THREE.NoBlending;
 
 
