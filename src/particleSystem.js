@@ -13,8 +13,8 @@ Vizi.ParticleSystem = function(param) {
 	var visual = null;
 	if (param.geometry) {
 		
-		var material = new THREE.ParticleSystemMaterial({color:0x00ff00, size:param.size, map:param.map,
-			transparent: (param.map !== null)});
+		var material = new THREE.ParticleSystemMaterial({color:param.color, size:param.size, map:param.map,
+			transparent: (param.map !== null), vertexColors: (param.geometry.colors.length > 0)});
 		var ps = new THREE.ParticleSystem(param.geometry, material);
 
 		if (param.map)

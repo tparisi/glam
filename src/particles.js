@@ -13,7 +13,8 @@ glam.Particles.create = function(docelt) {
 	// Throw in the texture from the material
 	param.map = mparam.map;      // for static geometry-based
 	param.texture = mparam.map;  // for dynamic emitter-based
-
+	param.color = mparam.color;
+	
 	// Parse the child elements
 	var elts = glam.Particles.parse(docelt);
 	
