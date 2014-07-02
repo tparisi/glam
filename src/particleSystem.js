@@ -10,12 +10,28 @@ Vizi.ParticleSystem = function(param) {
 	var texture = param.texture || null;
 	var maxAge = param.maxAge || Vizi.ParticleSystemScript.DEFAULT_MAX_AGE;
 
-	var particleGroup = new ShaderParticleGroup({
-        texture: texture,
-        maxAge: maxAge,
-      });
-	    
-    var visual = new Vizi.Visual({object:particleGroup.mesh});
+	var visual = null;
+	if (param.geometry) {
+		
+		var material = new THREE.ParticleSystemMaterial({color:0x00ff00, size:param.size, map:param.map,
+			transparent: (param.map !== null)});
+		var ps = new THREE.ParticleSystem(param.geometry, material);
+
+		if (param.map)
+			ps.sortParticles = true;
+		
+	    visual = new Vizi.Visual({object:ps});
+	}
+	else {
+		
+		var particleGroup = new ShaderParticleGroup({
+	        texture: texture,
+	        maxAge: maxAge,
+	      });
+		    
+	    visual = new Vizi.Visual({object:particleGroup.mesh});
+	}
+	
     obj.addComponent(visual);
     
 	param.particleGroup = particleGroup;
@@ -87,7 +103,9 @@ Vizi.ParticleSystemScript.prototype.setActive = function(active) {
 }
 
 Vizi.ParticleSystemScript.prototype.update = function() {
-    return this.particleGroup.tick();
+	if (this.particleGroup) {
+		this.particleGroup.tick();
+	}
 }
 
 Vizi.ParticleSystemScript.DEFAULT_MAX_AGE = 1;

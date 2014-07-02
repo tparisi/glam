@@ -16,11 +16,30 @@
 	#particles_3 {
 		image:url(../images/Star02.png);
 	}
+	#particles_4 {
+		image:url(../images/Star02.png);
+	}
 </style>
 <script>
 $(document).ready(function(){
 
 	glam.ready();
+
+	var p4 = document.getElementById("particles_4");
+	if (p4) {
+		var geometry = p4.geometry;
+
+		for (var i = 0; i < 1000; i++) {
+
+			var x = (0.5 - Math.random()) * 50;
+			var y = (0.5 - Math.random()) * 50;
+			var z = (0.5 - Math.random()) * 50;
+			var vert = new THREE.Vector3(x, y, z);
+			geometry.vertices.push(vert);
+		}
+
+		geometry.verticesNeedUpdate = true;
+	}
 });
 
 </script>
@@ -29,28 +48,39 @@ $(document).ready(function(){
 <div id="container" style="width:98%; height:98%;position:absolute;background:url(../images/slidebg.png);">
 <glam>
   <scene>
-    <group z='-50'>
+  	<camera z='10'></camera>
+    <group>
 		<particles maxAge='2' id="particles_1">
-			<emitter particlesPerSecond='50' size='20' sizeEnd='10' opacityStart='0.2' 
-			opacityMiddle='0.4' opacityEnd='0.1' velocity='0 10 0' acceleration='0 3 0' 
-			positionSpread='4 7 4' accelerationSpread='3 1 3' colorStart="yellow"></emitter>
+			<emitter particlesPerSecond='50' size='10' sizeEnd='5' opacityStart='0.2' 
+			opacityMiddle='0.4' opacityEnd='0.1' velocity='0 2.5 0' acceleration='0 3 0' 
+			positionSpread='2 3.5 2' accelerationSpread='1.5 .5 1.5' colorStart="yellow"></emitter>
 		</particles>
     </group>
-    <group x='-5' z='-10'>
+    <group x='-5'>
 		<particles maxAge='2' id="particles_2">
 			<emitter particlesPerSecond='10' size='2' sizeEnd='1' opacityStart='0.2' 
 			opacityMiddle='0.4' opacityEnd='0.2' velocity='0 2 0' acceleration='0 1 0' 
 			positionSpread='1 1 1' accelerationSpread='5 0 5' colorStart="white"></emitter>
 		</particles>
     </group>
-    <group x='5' y='2' z='-10'>
+    <group x='5' y='2'>
 		<particles maxAge='2' id="particles_3" animation="animRotateY">
 			<emitter particlesPerSecond='100' size='2' sizeEnd='1' opacityStart='0.2' 
 			opacityMiddle='0.4' opacityEnd='0.2' velocity='2 0 0' acceleration='0 -1 0' 
 			positionSpread='0 0 0' accelerationSpread='1 1 1' colorStart="red" colorEnd="yellow"></emitter>
 		</particles>
     </group>
+    <group>
+		<particles id="particles_4" size='.5' animation="">
+			<vertices></vertices>
+		</particles>
+    </group>
   	<animation id="animRotateY" duration="2s" iteration-count="infinite" timing-function="linear">
+		<keyframe time="0%" property="transform" value="rotateY(0deg);"></keyframe>
+		<keyframe time="50%" property="transform" value="rotateY(-180deg);"></keyframe>
+		<keyframe time="100%" property="transform" value="rotateY(-360deg);"></keyframe>
+	</animation>
+  	<animation id="animRotateYSlow" duration="200s" iteration-count="infinite" timing-function="linear">
 		<keyframe time="0%" property="transform" value="rotateY(0deg);"></keyframe>
 		<keyframe time="50%" property="transform" value="rotateY(-180deg);"></keyframe>
 		<keyframe time="100%" property="transform" value="rotateY(-360deg);"></keyframe>

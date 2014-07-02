@@ -61298,44 +61298,54 @@ glam.Particles.create = function(docelt) {
 	var style = glam.Node.getStyle(docelt);
 	
 	var mparam = glam.Material.parseStyle(style);
-	
+
+	// Parse the attributes
 	var param = {};
 	glam.Particles.getAttributes(docelt, style, param);
 	
+	// Throw in the texture from the material
+	param.map = mparam.map;      // for static geometry-based
+	param.texture = mparam.map;  // for dynamic emitter-based
 
-	/*
-	var size = this.param.size || 20;
-	var sizeEnd = this.param.sizeEnd || 10;
-	var colorStart = this.param.colorStart || new THREE.Color(1, 1, 0);
-	var colorEnd = this.param.colorEnd || new THREE.Color(0, 1, 0);
-	var particlesPerSecond = this.param.particlesPerSecond || 50;
-	var opacityStart = this.param.opacityStart || 0.2;
-	var opacityMiddle = this.param.opacityMiddle || 0.4;
-	var opacityEnd = this.param.opacityEnd || 0.0;
-	        acceleration: new THREE.Vector3(0, 3, 0),
-	        velocity: new THREE.Vector3(0, 10, 0),
-	        accelerationSpread: new THREE.Vector3(3, 1, 3)
-
-	*/
-
-	param.texture = mparam.map;
+	// Parse the child elements
+	var elts = glam.Particles.parse(docelt);
 	
+	// Got geometry in there? Pass it on
+	param.geometry = elts.geometry;
+
+	// Create the particle system
 	var ps = Vizi.ParticleSystem(param);
 
-	var pscript = ps.getComponent(Vizi.ParticleSystemScript);
+	// Got emitters in there? Add them
+	glam.Particles.addEmitters(elts.emitters, ps);
+
+	// Bind the properties
+	var visual = ps.getComponent(Vizi.Visual);
+	docelt.geometry = visual.geometry;
+	docelt.material = visual.material;
 	
-	glam.Particles.parse(docelt, ps);
-	
+	// Start it
+	var pscript = ps.getComponent(Vizi.ParticleSystemScript);	
 	pscript.active = true;
 	return ps;
 }
 
 glam.Particles.getAttributes = function(docelt, style, param) {
 	var maxAge = docelt.getAttribute('maxAge') || glam.Particles.DEFAULT_MAX_AGE;
+	var size = parseFloat(docelt.getAttribute('size'));
+
 	param.maxAge = parseFloat(maxAge);
+	param.size = size;
 }
 
-glam.Particles.parse = function(docelt, ps) {
+glam.Particles.parse = function(docelt) {
+	
+	var result = {
+			geometry : null,
+			emitters : [
+			            ],
+	};
+	
 	// Any emitters?
 	var emitters = docelt.getElementsByTagName('emitter');
 	if (emitters) {
@@ -61345,12 +61355,12 @@ glam.Particles.parse = function(docelt, ps) {
 			var param = {
 			};
 			
-			var emitter = emitters[0];
+			var emitter = emitters[i];
 			if (emitter) {
 				glam.Particles.parseEmitter(emitter, param);
 
 				var pe = new Vizi.ParticleEmitter(param);
-				ps.addComponent(pe);
+				result.emitters.push(pe);
 			}
 		}
 	}
@@ -61360,12 +61370,13 @@ glam.Particles.parse = function(docelt, ps) {
 	if (verts) {
 		verts = verts[0];
 		if (verts) {
-			var visual = ps.getComponent(Vizi.Visual);
-			var geometry = visual.geometry;
+			var geometry = new THREE.Geometry;
 			glam.Types.parseVector3Array(verts, geometry.vertices);
+			result.geometry = geometry;
 		}
 	}
 	
+	return result;
 }
 
 glam.Particles.parseEmitter = function(emitter, param) {
@@ -61439,6 +61450,14 @@ glam.Particles.parseEmitter = function(emitter, param) {
 	param.acceleration = acceleration;
 	param.positionSpread = positionSpread;
 	param.accelerationSpread = accelerationSpread; 
+}
+
+glam.Particles.addEmitters = function(emitters, ps) {
+	
+	var i, len = emitters.length;
+	for (i = 0; i < len; i++) {
+		ps.addComponent(emitters[i]);
+	}
 }
 
 glam.Particles.DEFAULT_MAX_AGE = 1;
@@ -61542,12 +61561,28 @@ Vizi.ParticleSystem = function(param) {
 	var texture = param.texture || null;
 	var maxAge = param.maxAge || Vizi.ParticleSystemScript.DEFAULT_MAX_AGE;
 
-	var particleGroup = new ShaderParticleGroup({
-        texture: texture,
-        maxAge: maxAge,
-      });
-	    
-    var visual = new Vizi.Visual({object:particleGroup.mesh});
+	var visual = null;
+	if (param.geometry) {
+		
+		var material = new THREE.ParticleSystemMaterial({color:0x00ff00, size:param.size, map:param.map,
+			transparent: (param.map !== null)});
+		var ps = new THREE.ParticleSystem(param.geometry, material);
+
+		if (param.map)
+			ps.sortParticles = true;
+		
+	    visual = new Vizi.Visual({object:ps});
+	}
+	else {
+		
+		var particleGroup = new ShaderParticleGroup({
+	        texture: texture,
+	        maxAge: maxAge,
+	      });
+		    
+	    visual = new Vizi.Visual({object:particleGroup.mesh});
+	}
+	
     obj.addComponent(visual);
     
 	param.particleGroup = particleGroup;
@@ -61619,7 +61654,9 @@ Vizi.ParticleSystemScript.prototype.setActive = function(active) {
 }
 
 Vizi.ParticleSystemScript.prototype.update = function() {
-    return this.particleGroup.tick();
+	if (this.particleGroup) {
+		this.particleGroup.tick();
+	}
 }
 
 Vizi.ParticleSystemScript.DEFAULT_MAX_AGE = 1;
