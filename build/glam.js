@@ -60878,8 +60878,15 @@ glam.Material.parseUniforms = function(uniformsText, param) {
 		
 		if (type == "f")
 			value = parseFloat(value);
-		else if (type == "t")
-			value = param.envMap; // hack hack
+		else if (type == "t") {
+			value = value.toLowerCase();
+			if (value == "envmap") {
+				value = param.envMap;
+			}
+			else if (value == "texture" || value == "map") {
+				value = param.map;
+			}
+		}
 		
 		var uniform =  {
 			type : type,
