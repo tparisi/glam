@@ -6,6 +6,7 @@ SOURCES="../src/glam.js \
 ../src/background.js \
 ../src/camera.js \
 ../src/circle.js \
+../src/classList.js \
 ../src/cone.js \
 ../src/controller.js \
 ../src/cube.js \
@@ -29,6 +30,7 @@ SOURCES="../src/glam.js \
 ../src/style.js \
 ../src/text.js \
 ../src/transform.js \
+../src/transition.js \
 ../src/types.js \
 ../src/viewer.js \
 ../src/visual.js"

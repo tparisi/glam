@@ -2,9 +2,9 @@ glam.Mesh = {};
 glam.Mesh.VERTEX_NORMALS = false;
 glam.Mesh.VERTEX_COLORS = false;
 
-glam.Mesh.create = function(docelt) {
+glam.Mesh.create = function(docelt, style) {
 	
-	return glam.Visual.create(docelt, glam.Mesh);
+	return glam.Visual.create(docelt, style, glam.Mesh);
 }
 
 glam.Mesh.getAttributes = function(docelt, style, param) {

@@ -3,8 +3,8 @@ glam.Circle = {};
 glam.Circle.DEFAULT_RADIUS = 2;
 glam.Circle.DEFAULT_RADIUS_SEGMENTS = 32;
 
-glam.Circle.create = function(docelt) {
-	return glam.Visual.create(docelt, glam.Circle);
+glam.Circle.create = function(docelt, style) {
+	return glam.Visual.create(docelt, style, glam.Circle);
 }
 
 glam.Circle.getAttributes = function(docelt, style, param) {

@@ -1,9 +1,7 @@
 glam.Line = {};
 
-glam.Line.create = function(docelt) {
+glam.Line.create = function(docelt, style) {
 		
-	var style = glam.Node.getStyle(docelt);
-
 	if (style) {
 	}
 	

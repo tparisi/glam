@@ -1,9 +1,7 @@
 glam.Particles = {};
 
-glam.Particles.create = function(docelt) {
+glam.Particles.create = function(docelt, style) {
 
-	var style = glam.Node.getStyle(docelt);
-	
 	var mparam = glam.Material.parseStyle(style);
 
 	// Parse the attributes

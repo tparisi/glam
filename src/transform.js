@@ -1,6 +1,6 @@
 glam.Transform = {};
 
-glam.Transform.parse = function(docelt, obj) {
+glam.Transform.parse = function(docelt, style, obj) {
 	
 	var t = {
 	};
@@ -19,11 +19,8 @@ glam.Transform.parse = function(docelt, obj) {
 		glam.Transform.parseTransform(transform, t);
 	}
 
-	if (docelt.id) {
-		var style = glam.getStyle("#" + docelt.id);
-		if (style) {
-			glam.Transform.parseStyle(style, t);
-		}
+	if (style) {
+		glam.Transform.parseStyle(style, t);
 	}
 	
 	obj.transform.position.set(t.x, t.y, t.z);

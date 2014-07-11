@@ -5,8 +5,8 @@ glam.Arc.DEFAULT_RADIUS_SEGMENTS = 32;
 glam.Arc.DEFAULT_START_ANGLE = "0deg";
 glam.Arc.DEFAULT_END_ANGLE = "360deg";
 
-glam.Arc.create = function(docelt) {
-	return glam.Visual.create(docelt, glam.Arc);
+glam.Arc.create = function(docelt, style) {
+	return glam.Visual.create(docelt, style, glam.Arc);
 }
 
 glam.Arc.getAttributes = function(docelt, style, param) {

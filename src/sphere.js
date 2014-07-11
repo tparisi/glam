@@ -2,8 +2,8 @@ glam.Sphere = {};
 
 glam.Sphere.DEFAULT_RADIUS = 2;
 
-glam.Sphere.create = function(docelt) {
-	return glam.Visual.create(docelt, glam.Sphere);
+glam.Sphere.create = function(docelt, style) {
+	return glam.Visual.create(docelt, style, glam.Sphere);
 }
 
 glam.Sphere.getAttributes = function(docelt, style, param) {

@@ -3,8 +3,8 @@ glam.Cylinder = {};
 glam.Cylinder.DEFAULT_RADIUS = 2;
 glam.Cylinder.DEFAULT_HEIGHT = 2;
 
-glam.Cylinder.create = function(docelt) {
-	return glam.Visual.create(docelt, glam.Cylinder);
+glam.Cylinder.create = function(docelt, style) {
+	return glam.Visual.create(docelt, style, glam.Cylinder);
 }
 
 glam.Cylinder.getAttributes = function(docelt, style, param) {

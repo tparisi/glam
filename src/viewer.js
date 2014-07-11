@@ -57,10 +57,11 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 		if (type && type.cls && (fn = type.cls.create) && typeof(fn) == "function") {
 			// console.log("    * found it in table!");
 			this.initGlam(childelt);
-			var obj = fn.call(this, childelt, this.app);
+			var style = glam.Node.getStyle(childelt);
+			var obj = fn.call(this, childelt, style, this.app);
 			if (obj) {
 				childelt.glam = obj;
-				this.addFeatures(childelt, obj, type);
+				this.addFeatures(childelt, style, obj, type);
 				sceneobj.addChild(obj);
 				this.traverse(childelt, obj);
 			}
@@ -79,11 +80,12 @@ glam.Viewer.prototype.addNode = function(docelt) {
 	if (type && type.cls && (fn = type.cls.create) && typeof(fn) == "function") {
 
 		this.initGlam(docelt);
-		var obj = fn.call(this, docelt, this.app);
+		var style = glam.Node.getStyle(docelt);
+		var obj = fn.call(this, docelt, style, this.app);
 		
 		if (obj) {
 			docelt.glam = obj;
-			this.addFeatures(docelt, obj, type);
+			this.addFeatures(docelt, style, obj, type);
 			this.scene.addChild(obj);
 			this.traverse(docelt, obj);
 		}
@@ -112,10 +114,10 @@ glam.Viewer.prototype.initGlam = function(docelt) {
 	}
 }
 
-glam.Viewer.prototype.addFeatures = function(docelt, obj, type) {
+glam.Viewer.prototype.addFeatures = function(docelt, style, obj, type) {
 
 	if (type.transform) {
-		glam.Transform.parse(docelt, obj);
+		glam.Transform.parse(docelt, style, obj);
 	}
 	
 	if (type.animation) {

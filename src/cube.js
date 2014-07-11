@@ -4,8 +4,8 @@ glam.Cube.DEFAULT_WIDTH = 2;
 glam.Cube.DEFAULT_HEIGHT = 2;
 glam.Cube.DEFAULT_DEPTH = 2;
 
-glam.Cube.create = function(docelt) {
-	return glam.Visual.create(docelt, glam.Cube);
+glam.Cube.create = function(docelt, style) {
+	return glam.Visual.create(docelt, style, glam.Cube);
 }
 
 glam.Cube.getAttributes = function(docelt, style, param) {

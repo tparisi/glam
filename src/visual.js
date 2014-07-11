@@ -1,11 +1,9 @@
 glam.Visual = {};
 
-glam.Visual.create = function(docelt, cls) {
+glam.Visual.create = function(docelt, style, cls) {
 
 	var param = {
 	};
-	
-	var style = glam.Node.getStyle(docelt);
 	
 	cls.getAttributes(docelt, style, param);
 	

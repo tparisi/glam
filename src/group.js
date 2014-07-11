@@ -1,9 +1,7 @@
 glam.Group = {};
 
-glam.Group.create = function(docelt) {
+glam.Group.create = function(docelt, style) {
 
-	var style = glam.Node.getStyle(docelt);
-	
 	// Create the group
 	var group = new Vizi.Object;
 	

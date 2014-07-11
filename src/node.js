@@ -2,6 +2,9 @@ glam.Node = {};
 
 glam.Node.getStyle = function(docelt) {
 	
+	var glamClassList = new glam.ClassList(docelt);
+	docelt.glamClassList = glamClassList;
+	
 	var style = new glam.Style(docelt);
 	
 	if (docelt.id) {
@@ -14,12 +17,15 @@ glam.Node.getStyle = function(docelt) {
 		klass = docelt['class'];
 	
 	if (klass) {
+		
 		var klasses = klass.split(" ");
 		for (klassname in klasses) {
 			var kls = klasses[klassname];
 			if (kls) {
 				var styl = glam.getStyle("." + kls);
 				style.addProperties(styl);
+				
+				glamClassList.add(kls);
 			}
 		}
 	}

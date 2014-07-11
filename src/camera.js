@@ -1,9 +1,7 @@
 glam.Camera = {};
 
-glam.Camera.create = function(docelt, app) {
+glam.Camera.create = function(docelt, style, app) {
 	
-	var style = glam.Node.getStyle(docelt);
-
 	if (style) {
 		if (style.radius)
 			radius = style.radius;

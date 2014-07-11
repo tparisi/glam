@@ -1,6 +1,6 @@
 glam.Import = {};
 
-glam.Import.create = function(docelt) {
+glam.Import.create = function(docelt, style) {
 	var src = docelt.getAttribute('src');
 		
 	// Create the cube

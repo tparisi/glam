@@ -3,8 +3,8 @@ glam.Cone = {};
 glam.Cone.DEFAULT_RADIUS = 2;
 glam.Cone.DEFAULT_HEIGHT = 2;
 
-glam.Cone.create = function(docelt) {
-	return glam.Visual.create(docelt, glam.Cone);
+glam.Cone.create = function(docelt, style) {
+	return glam.Visual.create(docelt, style, glam.Cone);
 }
 
 glam.Cone.getAttributes = function(docelt, style, param) {

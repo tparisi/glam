@@ -5,8 +5,8 @@ glam.Rect.DEFAULT_HEIGHT = 2;
 glam.Rect.DEFAULT_WIDTH_SEGMENTS = 1;
 glam.Rect.DEFAULT_HEIGHT_SEGMENTS = 1;
 
-glam.Rect.create = function(docelt) {
-	return glam.Visual.create(docelt, glam.Rect);
+glam.Rect.create = function(docelt, style) {
+	return glam.Visual.create(docelt, style, glam.Rect);
 }
 
 glam.Rect.getAttributes = function(docelt, style, param) {

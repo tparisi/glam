@@ -13,8 +13,8 @@ glam.Text.BEVEL_EPSILON = 0.0001;
 
 glam.Text.DEFAULT_VALUE = "",
 
-glam.Text.create = function(docelt) {
-	return glam.Visual.create(docelt, glam.Text);
+glam.Text.create = function(docelt, style) {
+	return glam.Visual.create(docelt, style, glam.Text);
 }
 
 glam.Text.getAttributes = function(docelt, style, param) {
