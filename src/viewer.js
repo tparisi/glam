@@ -122,6 +122,7 @@ glam.Viewer.prototype.addFeatures = function(docelt, style, obj, type) {
 	
 	if (type.animation) {
 		glam.Animation.parse(docelt, obj);
+		glam.Transition.parse(docelt, style, obj);
 	}
 
 	if (type.input) {
