@@ -59717,7 +59717,13 @@ ShaderParticleEmitter.prototype = {
     disable: function() {
         this.alive = 0;
     }
-};
+};/**
+ * @fileoverview glam namespace and globals
+ * 
+ * @author Tony Parisi
+ */
+
+
 
 glam = {
 
@@ -59767,6 +59773,12 @@ glam.getAnimation = function(id) {
 	return glam.animations[id];
 }
 
+
+/**
+ * @fileoverview animation parser/implementation
+ * 
+ * @author Tony Parisi
+ */
 
 glam.Animation = {};
 
@@ -60069,6 +60081,12 @@ glam.Animation.callParseCallbacks = function(id, anim) {
 		}
 	}
 }
+/**
+ * @fileoverview 2D arc parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Arc = {};
 
 glam.Arc.DEFAULT_RADIUS = 2;
@@ -60123,6 +60141,12 @@ glam.Arc.createVisual = function(docelt, material, param) {
 
 	return visual;
 }
+/**
+ * @fileoverview background parser/implementation. supports skyboxes and skyspheres
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Background = {};
 
 glam.Background.DEFAULT_BACKGROUND_TYPE = "box";
@@ -60177,6 +60201,12 @@ glam.Background.onSetAttribute = function(obj, docelt, attr, val) {
 			break;
 	}
 }
+/**
+ * @fileoverview camera parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Camera = {};
 
 glam.Camera.create = function(docelt, style, app) {
@@ -60196,6 +60226,12 @@ glam.Camera.create = function(docelt, style, app) {
 	
 	return camera;
 }
+/**
+ * @fileoverview 2D circle parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Circle = {};
 
 glam.Circle.DEFAULT_RADIUS = 2;
@@ -60233,6 +60269,12 @@ glam.Circle.createVisual = function(docelt, material, param) {
 	
 	return visual;
 }
+/**
+ * @fileoverview class list - emulate DOM classList property for glam
+ * 
+ * @author Tony Parisi
+ */
+
 glam.ClassList = function(docelt) {
 	this.docelt = docelt;
 	Array.call(this);
@@ -60254,6 +60296,12 @@ glam.ClassList.prototype.remove = function(item) {
 		this.splice(i, 1)
 	}
 }
+
+/**
+ * @fileoverview cone primitive parser/implementation
+ * 
+ * @author Tony Parisi
+ */
 
 glam.Cone = {};
 
@@ -60292,6 +60340,12 @@ glam.Cone.createVisual = function(docelt, material, param) {
 
 	return visual;
 }
+/**
+ * @fileoverview controller parser/implementation. supports model, FPS and Rift
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Controller = {};
 
 glam.Controller.create = function(docelt, style, app) {
@@ -60355,6 +60409,12 @@ glam.Controller.create = function(docelt, style, app) {
 	
 	return null;
 }
+/**
+ * @fileoverview cube primitive parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Cube = {};
 
 glam.Cube.DEFAULT_WIDTH = 2;
@@ -60398,6 +60458,12 @@ glam.Cube.createVisual = function(docelt, material, param) {
 	
 	return visual;
 }
+/**
+ * @fileoverview cylinder parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Cylinder = {};
 
 glam.Cylinder.DEFAULT_RADIUS = 2;
@@ -60434,6 +60500,12 @@ glam.Cylinder.createVisual = function(docelt, material, param) {
 	
 	return visual;
 }
+/**
+ * @fileoverview glam document class
+ * 
+ * @author Tony Parisi
+ */
+
 glam.document = {
 		
 	scenes : {},
@@ -60488,6 +60560,12 @@ glam.document = {
 		}
 	},
 };
+/**
+ * @fileoverview grouping element parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Group = {};
 
 glam.Group.create = function(docelt, style) {
@@ -60497,6 +60575,12 @@ glam.Group.create = function(docelt, style) {
 	
 	return group;
 }
+/**
+ * @fileoverview model import parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Import = {};
 
 glam.Import.create = function(docelt, style) {
@@ -60524,6 +60608,12 @@ glam.Import.onLoadComplete = function(obj, data, url) {
 
 	obj.addChild(data.scene);
 }
+/**
+ * @fileoverview mouse input implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Input = {};
 
 glam.Input.add = function(docelt, obj) {
@@ -60558,6 +60648,12 @@ glam.Input.add = function(docelt, obj) {
 	obj.addComponent(picker);
 	
 }
+/**
+ * @fileoverview light parser/implementation. supports point, spot, directional, ambient
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Light = {};
 
 glam.Light.DEFAULT_TYPE = "directional";
@@ -60643,6 +60739,12 @@ glam.Light.create = function(docelt, style, app) {
 	
 	return null;
 }
+/**
+ * @fileoverview line primitive parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Line = {};
 
 glam.Line.create = function(docelt, style) {
@@ -60700,6 +60802,12 @@ glam.Line.parse = function(docelt, geometry, material) {
 
 
 }
+
+/**
+ * @fileoverview material parser/implementation
+ * 
+ * @author Tony Parisi
+ */
 
 glam.Material = {};
 
@@ -61070,6 +61178,12 @@ glam.Material.onSetAttribute = function(obj, docelt, attr, val) {
 			break;
 	}
 }
+/**
+ * @fileoverview mesh parser/implementation. currently only supports triangle sets
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Mesh = {};
 glam.Mesh.VERTEX_NORMALS = false;
 glam.Mesh.VERTEX_COLORS = false;
@@ -61245,6 +61359,12 @@ glam.Mesh.parse = function(docelt, geometry, material, param) {
 	}
 }
 
+/**
+ * @fileoverview base node class
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Node = {};
 
 
@@ -61301,6 +61421,12 @@ glam.Node.getStyle = function(docelt) {
 	
 	return style;
 }
+/**
+ * @fileoverview parser base; see also viewer.js
+ * 
+ * @author Tony Parisi
+ */
+
 glam.parser = {
 		
 	addDocument : function(doc)
@@ -61415,6 +61541,12 @@ glam.parser = {
 		
 	},
 };
+
+/**
+ * @fileoverview particle system parser/implementation
+ * 
+ * @author Tony Parisi
+ */
 
 glam.Particles = {};
 
@@ -61815,6 +61947,12 @@ Vizi.ParticleSystemScript.prototype.update = function() {
 Vizi.ParticleSystem.DEFAULT_COLOR = 0xffffff;
 Vizi.ParticleSystemScript.DEFAULT_MAX_AGE = 1;
 
+/**
+ * @fileoverview 2D rectangle parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Rect = {};
 
 glam.Rect.DEFAULT_WIDTH = 2;
@@ -61864,8 +62002,20 @@ glam.Rect.createVisual = function(docelt, material, param) {
 
 	return visual;
 }
+/**
+ * @fileoverview renderer parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.renderer = {
 };
+/**
+ * @fileoverview sphere primitive parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Sphere = {};
 
 glam.Sphere.DEFAULT_RADIUS = 2;
@@ -61897,6 +62047,12 @@ glam.Sphere.createVisual = function(docelt, material, param) {
 	
 	return visual;
 }
+/**
+ * @fileoverview styles support - emulate built-in DOM style object
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Style = function(docelt) {
 
 	this.docelt = docelt;
@@ -61929,6 +62085,12 @@ glam.Style.prototype.addPropertiesFromString = function(str) {
 	
 	this.addProperties(props);
 }
+/**
+ * @fileoverview text primitive parser/implementation. only supports helvetiker and optimer fonts right now.
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Text = {};
 
 glam.Text.DEFAULT_FONT_SIZE = 1;
@@ -62092,6 +62254,12 @@ glam.Text.createVisual = function(docelt, material, param) {
 	
 	return visual;
 }
+/**
+ * @fileoverview transform properties parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Transform = {};
 
 glam.Transform.parse = function(docelt, style, obj) {
@@ -62265,6 +62433,12 @@ glam.Transform.onSetAttribute = function(obj, docelt, attr, val) {
 		
 	}
 }
+/**
+ * @fileoverview transition parser/implementation - still WIP
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Transition = {};
 
 glam.Transition.DEFAULT_DURATION = glam.Animation.DEFAULT_DURATION;
@@ -62305,6 +62479,12 @@ glam.Transition.parse = function(docelt, style, obj) {
 	}
 	
 }
+/**
+ * @fileoverview built-in types and utilities to support glam parser
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Types = {
 };
 
@@ -62449,6 +62629,12 @@ glam.Types.parseUVArray = function(element, uvs) {
 	}
 
 }
+/**
+ * @fileoverview viewer - creates WebGL (Three.js/Vizi scene) by traversing document
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Viewer = function(doc) {
 
 	this.document = doc;
@@ -62592,6 +62778,12 @@ glam.Viewer.prototype.prepareViewsAndControllers = function() {
 		cam.active = true;
 	}
 }
+
+/**
+ * @fileoverview visual base type - used by all thing seen on screen
+ * 
+ * @author Tony Parisi
+ */
 
 glam.Visual = {};
 
