@@ -1,3 +1,9 @@
+/**
+ * @fileoverview styles support - emulate built-in DOM style object
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Style = function(docelt) {
 
 	this.docelt = docelt;

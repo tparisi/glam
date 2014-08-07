@@ -1,3 +1,9 @@
+/**
+ * @fileoverview background parser/implementation. supports skyboxes and skyspheres
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Background = {};
 
 glam.Background.DEFAULT_BACKGROUND_TYPE = "box";

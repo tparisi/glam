@@ -1,3 +1,9 @@
+/**
+ * @fileoverview base node class
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Node = {};
 
 

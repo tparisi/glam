@@ -1,3 +1,9 @@
+/**
+ * @fileoverview text primitive parser/implementation. only supports helvetiker and optimer fonts right now.
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Text = {};
 
 glam.Text.DEFAULT_FONT_SIZE = 1;

@@ -1,3 +1,9 @@
+/**
+ * @fileoverview sphere primitive parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Sphere = {};
 
 glam.Sphere.DEFAULT_RADIUS = 2;

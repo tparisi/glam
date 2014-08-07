@@ -1,3 +1,9 @@
+/**
+ * @fileoverview cone primitive parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Cone = {};
 
 glam.Cone.DEFAULT_RADIUS = 2;

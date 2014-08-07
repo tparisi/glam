@@ -1,3 +1,9 @@
+/**
+ * @fileoverview cylinder parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Cylinder = {};
 
 glam.Cylinder.DEFAULT_RADIUS = 2;

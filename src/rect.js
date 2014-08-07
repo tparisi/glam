@@ -1,3 +1,9 @@
+/**
+ * @fileoverview 2D rectangle parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Rect = {};
 
 glam.Rect.DEFAULT_WIDTH = 2;

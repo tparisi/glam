@@ -1,3 +1,9 @@
+/**
+ * @fileoverview transition parser/implementation - still WIP
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Transition = {};
 
 glam.Transition.DEFAULT_DURATION = glam.Animation.DEFAULT_DURATION;

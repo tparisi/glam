@@ -1,3 +1,9 @@
+/**
+ * @fileoverview cube primitive parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Cube = {};
 
 glam.Cube.DEFAULT_WIDTH = 2;

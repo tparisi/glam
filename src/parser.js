@@ -1,3 +1,9 @@
+/**
+ * @fileoverview parser base; see also viewer.js
+ * 
+ * @author Tony Parisi
+ */
+
 glam.parser = {
 		
 	addDocument : function(doc)

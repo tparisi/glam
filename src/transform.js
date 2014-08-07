@@ -1,3 +1,9 @@
+/**
+ * @fileoverview transform properties parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Transform = {};
 
 glam.Transform.parse = function(docelt, style, obj) {

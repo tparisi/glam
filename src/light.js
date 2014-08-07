@@ -1,3 +1,9 @@
+/**
+ * @fileoverview light parser/implementation. supports point, spot, directional, ambient
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Light = {};
 
 glam.Light.DEFAULT_TYPE = "directional";

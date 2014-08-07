@@ -1,3 +1,9 @@
+/**
+ * @fileoverview mesh parser/implementation. currently only supports triangle sets
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Mesh = {};
 glam.Mesh.VERTEX_NORMALS = false;
 glam.Mesh.VERTEX_COLORS = false;

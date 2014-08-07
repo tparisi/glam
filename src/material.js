@@ -1,3 +1,9 @@
+/**
+ * @fileoverview material parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Material = {};
 
 glam.Material.create = function(style, createCB, objtype) {

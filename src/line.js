@@ -1,3 +1,9 @@
+/**
+ * @fileoverview line primitive parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Line = {};
 
 glam.Line.create = function(docelt, style) {

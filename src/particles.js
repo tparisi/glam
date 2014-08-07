@@ -1,3 +1,9 @@
+/**
+ * @fileoverview particle system parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Particles = {};
 
 glam.Particles.create = function(docelt, style) {

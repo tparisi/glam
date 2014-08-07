@@ -1,3 +1,9 @@
+/**
+ * @fileoverview grouping element parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Group = {};
 
 glam.Group.create = function(docelt, style) {

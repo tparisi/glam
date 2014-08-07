@@ -1,3 +1,9 @@
+/**
+ * @fileoverview animation parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Animation = {};
 
 glam.Animation.DEFAULT_DURATION = "1s";

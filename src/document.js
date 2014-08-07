@@ -1,3 +1,9 @@
+/**
+ * @fileoverview glam document class
+ * 
+ * @author Tony Parisi
+ */
+
 glam.document = {
 		
 	scenes : {},

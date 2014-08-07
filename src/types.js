@@ -1,3 +1,9 @@
+/**
+ * @fileoverview built-in types and utilities to support glam parser
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Types = {
 };
 

@@ -1,3 +1,9 @@
+/**
+ * @fileoverview camera parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Camera = {};
 
 glam.Camera.create = function(docelt, style, app) {

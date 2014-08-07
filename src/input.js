@@ -1,3 +1,9 @@
+/**
+ * @fileoverview mouse input implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Input = {};
 
 glam.Input.add = function(docelt, obj) {

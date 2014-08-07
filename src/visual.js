@@ -1,3 +1,9 @@
+/**
+ * @fileoverview visual base type - used by all thing seen on screen
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Visual = {};
 
 glam.Visual.create = function(docelt, style, cls) {

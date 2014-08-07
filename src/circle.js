@@ -1,3 +1,9 @@
+/**
+ * @fileoverview 2D circle parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Circle = {};
 
 glam.Circle.DEFAULT_RADIUS = 2;

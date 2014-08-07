@@ -1,3 +1,9 @@
+/**
+ * @fileoverview controller parser/implementation. supports model, FPS and Rift
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Controller = {};
 
 glam.Controller.create = function(docelt, style, app) {

@@ -1,3 +1,9 @@
+/**
+ * @fileoverview 2D arc parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Arc = {};
 
 glam.Arc.DEFAULT_RADIUS = 2;

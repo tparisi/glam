@@ -1,3 +1,9 @@
+/**
+ * @fileoverview class list - emulate DOM classList property for glam
+ * 
+ * @author Tony Parisi
+ */
+
 glam.ClassList = function(docelt) {
 	this.docelt = docelt;
 	Array.call(this);

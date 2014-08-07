@@ -1,3 +1,9 @@
+/**
+ * @fileoverview viewer - creates WebGL (Three.js/Vizi scene) by traversing document
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Viewer = function(doc) {
 
 	this.document = doc;

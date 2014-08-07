@@ -1,3 +1,9 @@
+/**
+ * @fileoverview model import parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
 glam.Import = {};
 
 glam.Import.create = function(docelt, style) {
