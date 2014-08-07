@@ -61247,6 +61247,21 @@ glam.Mesh.parse = function(docelt, geometry, material, param) {
 
 glam.Node = {};
 
+
+glam.Node.init = function(docelt) {
+
+	docelt.setAttributeHandlers = [];
+	docelt.onSetAttribute = function(attr, val) {
+		var i, len = docelt.setAttributeHandlers.length;
+		for (i = 0; i < len; i++) {
+			var handler = docelt.setAttributeHandlers[i];
+			if (handler) {
+				handler(attr, val);
+			}
+		}
+	}
+}
+
 glam.Node.getStyle = function(docelt) {
 	
 	var glamClassList = new glam.ClassList(docelt);
@@ -62467,7 +62482,7 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 		var type = tag ? glam.Types.types[tag] : null;
 		if (type && type.cls && (fn = type.cls.create) && typeof(fn) == "function") {
 			// console.log("    * found it in table!");
-			this.initGlam(childelt);
+			glam.Node.init(childelt);
 			var style = glam.Node.getStyle(childelt);
 			var obj = fn.call(this, childelt, style, this.app);
 			if (obj) {
@@ -62490,7 +62505,7 @@ glam.Viewer.prototype.addNode = function(docelt) {
 	var type = tag ? glam.Types.types[tag] : null;
 	if (type && type.cls && (fn = type.cls.create) && typeof(fn) == "function") {
 
-		this.initGlam(docelt);
+		glam.Node.init(docelt);
 		var style = glam.Node.getStyle(docelt);
 		var obj = fn.call(this, docelt, style, this.app);
 		
@@ -62508,20 +62523,6 @@ glam.Viewer.prototype.removeNode = function(docelt) {
 	var obj = docelt.glam;
 	if (obj) {
 		obj._parent.removeChild(obj);
-	}
-}
-
-glam.Viewer.prototype.initGlam = function(docelt) {
-
-	docelt.setAttributeHandlers = [];
-	docelt.onSetAttribute = function(attr, val) {
-		var i, len = docelt.setAttributeHandlers.length;
-		for (i = 0; i < len; i++) {
-			var handler = docelt.setAttributeHandlers[i];
-			if (handler) {
-				handler(attr, val);
-			}
-		}
 	}
 }
 

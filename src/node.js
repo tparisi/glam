@@ -1,5 +1,20 @@
 glam.Node = {};
 
+
+glam.Node.init = function(docelt) {
+
+	docelt.setAttributeHandlers = [];
+	docelt.onSetAttribute = function(attr, val) {
+		var i, len = docelt.setAttributeHandlers.length;
+		for (i = 0; i < len; i++) {
+			var handler = docelt.setAttributeHandlers[i];
+			if (handler) {
+				handler(attr, val);
+			}
+		}
+	}
+}
+
 glam.Node.getStyle = function(docelt) {
 	
 	var glamClassList = new glam.ClassList(docelt);
