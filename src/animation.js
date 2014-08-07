@@ -160,7 +160,7 @@ glam.Animation.parseTime = function(time) {
 	
 	var index = time.indexOf("s");
 	if (index != -1)
-		return parseFloat(time.split("s")[0] * 1000);
+		return parseFloat(time.split("s")[0]) * 1000;
 	
 }
 
