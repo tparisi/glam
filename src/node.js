@@ -45,6 +45,11 @@ glam.Node.getStyle = function(docelt) {
 		}
 	}
 	
+	var styl = docelt.getAttribute("style");
+	if (styl) {
+		style.addPropertiesFromString(styl);
+	}
+	
 	docelt.glamStyle = style;
 	
 	return style;
