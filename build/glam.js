@@ -62084,14 +62084,31 @@ glam.Sphere.createVisual = function(docelt, material, param) {
 glam.Style = function(docelt) {
 
 	this.docelt = docelt;
+	this._properties = {
+	};
 }
 
 glam.Style.prototype = new Object;
 
 glam.Style.prototype.addProperties = function(props) {
 	for (p in props) {
-		this[p] = props[p];
+		this.addProperty(p, props[p]);
 	}
+}
+
+glam.Style.prototype.addProperty = function(propName, propValue) {
+
+	this._properties[propName] = propValue;
+	
+	Object.defineProperty(this, propName, {
+			enumerable : true,
+	        get: function() {
+	            return this._properties[propName];
+	        },
+	        set: function(v) {
+	        	this._properties[propName] = v;
+	        }
+		});
 }
 
 glam.Style.prototype.addPropertiesFromString = function(str) {
