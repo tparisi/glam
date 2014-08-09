@@ -9,6 +9,9 @@ glam.Node = {};
 
 glam.Node.init = function(docelt) {
 
+	docelt.glam = {
+	};
+	
 	docelt.setAttributeHandlers = [];
 	docelt.onSetAttribute = function(attr, val) {
 		var i, len = docelt.setAttributeHandlers.length;
@@ -24,7 +27,7 @@ glam.Node.init = function(docelt) {
 glam.Node.getStyle = function(docelt) {
 	
 	var glamClassList = new glam.ClassList(docelt);
-	docelt.glamClassList = glamClassList;
+	docelt.glam.classList = glamClassList;
 	
 	var style = new glam.Style(docelt);
 	
@@ -56,7 +59,7 @@ glam.Node.getStyle = function(docelt) {
 		style.addPropertiesFromString(styl);
 	}
 	
-	docelt.glamStyle = style;
+	docelt.glam.style = style;
 	
 	return style;
 }
