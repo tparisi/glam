@@ -66,7 +66,7 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 			var style = glam.Node.getStyle(childelt);
 			var obj = fn.call(this, childelt, style, this.app);
 			if (obj) {
-				childelt.glam = obj;
+				childelt.glam.object = obj;
 				this.addFeatures(childelt, style, obj, type);
 				sceneobj.addChild(obj);
 				this.traverse(childelt, obj);
@@ -90,7 +90,7 @@ glam.Viewer.prototype.addNode = function(docelt) {
 		var obj = fn.call(this, docelt, style, this.app);
 		
 		if (obj) {
-			docelt.glam = obj;
+			docelt.glam.object = obj;
 			this.addFeatures(docelt, style, obj, type);
 			this.scene.addChild(obj);
 			this.traverse(docelt, obj);
@@ -100,7 +100,7 @@ glam.Viewer.prototype.addNode = function(docelt) {
 
 glam.Viewer.prototype.removeNode = function(docelt) {
 
-	var obj = docelt.glam;
+	var obj = docelt.glam.object;
 	if (obj) {
 		obj._parent.removeChild(obj);
 	}

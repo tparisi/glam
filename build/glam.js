@@ -61398,6 +61398,9 @@ glam.Node = {};
 
 glam.Node.init = function(docelt) {
 
+	docelt.glam = {
+	};
+	
 	docelt.setAttributeHandlers = [];
 	docelt.onSetAttribute = function(attr, val) {
 		var i, len = docelt.setAttributeHandlers.length;
@@ -61413,7 +61416,7 @@ glam.Node.init = function(docelt) {
 glam.Node.getStyle = function(docelt) {
 	
 	var glamClassList = new glam.ClassList(docelt);
-	docelt.glamClassList = glamClassList;
+	docelt.glam.classList = glamClassList;
 	
 	var style = new glam.Style(docelt);
 	
@@ -61445,7 +61448,7 @@ glam.Node.getStyle = function(docelt) {
 		style.addPropertiesFromString(styl);
 	}
 	
-	docelt.glamStyle = style;
+	docelt.glam.style = style;
 	
 	return style;
 }
@@ -62748,7 +62751,7 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 			var style = glam.Node.getStyle(childelt);
 			var obj = fn.call(this, childelt, style, this.app);
 			if (obj) {
-				childelt.glam = obj;
+				childelt.glam.object = obj;
 				this.addFeatures(childelt, style, obj, type);
 				sceneobj.addChild(obj);
 				this.traverse(childelt, obj);
@@ -62772,7 +62775,7 @@ glam.Viewer.prototype.addNode = function(docelt) {
 		var obj = fn.call(this, docelt, style, this.app);
 		
 		if (obj) {
-			docelt.glam = obj;
+			docelt.glam.object = obj;
 			this.addFeatures(docelt, style, obj, type);
 			this.scene.addChild(obj);
 			this.traverse(docelt, obj);
@@ -62782,7 +62785,7 @@ glam.Viewer.prototype.addNode = function(docelt) {
 
 glam.Viewer.prototype.removeNode = function(docelt) {
 
-	var obj = docelt.glam;
+	var obj = docelt.glam.object;
 	if (obj) {
 		obj._parent.removeChild(obj);
 	}
