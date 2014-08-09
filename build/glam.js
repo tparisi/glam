@@ -60182,7 +60182,7 @@ glam.Background.create = function(docelt, style) {
 
 glam.Background.addHandlers = function(docelt, obj) {
 
-	docelt.setAttributeHandlers.push(function(attr, val) {
+	docelt.glam.setAttributeHandlers.push(function(attr, val) {
 		glam.Background.onSetAttribute(obj, docelt, attr, val);
 	});
 }
@@ -61192,7 +61192,7 @@ glam.Material.getShaderMaterialLoading = function(vsurl, fsurl) {
 
 glam.Material.addHandlers = function(docelt, obj) {
 
-	docelt.setAttributeHandlers.push(function(attr, val) {
+	docelt.glam.setAttributeHandlers.push(function(attr, val) {
 		glam.Material.onSetAttribute(obj, docelt, attr, val);
 	});
 }
@@ -61401,11 +61401,11 @@ glam.Node.init = function(docelt) {
 	docelt.glam = {
 	};
 	
-	docelt.setAttributeHandlers = [];
-	docelt.onSetAttribute = function(attr, val) {
-		var i, len = docelt.setAttributeHandlers.length;
+	docelt.glam.setAttributeHandlers = [];
+	docelt.glam.onSetAttribute = function(attr, val) {
+		var i, len = docelt.glam.setAttributeHandlers.length;
 		for (i = 0; i < len; i++) {
-			var handler = docelt.setAttributeHandlers[i];
+			var handler = docelt.glam.setAttributeHandlers[i];
 			if (handler) {
 				handler(attr, val);
 			}
@@ -61481,7 +61481,7 @@ glam.parser = {
 		    	}
 		    }
 		    else if (mutation.type == "attributes") {
-		    	var onSetAttribute = mutation.target.onSetAttribute;
+		    	var onSetAttribute = mutation.target.glam ? mutation.target.glam.onSetAttribute : null;
 		    	if (onSetAttribute) {
 		    		var attr = mutation.attributeName;
 		    		var val = mutation.target.getAttribute(attr);
@@ -62343,7 +62343,7 @@ glam.Transform.parse = function(docelt, style, obj) {
 	obj.transform.rotation.set(t.rx, t.ry, t.rz);
 	obj.transform.scale.set(t.sx, t.sy, t.sz);
 	
-	docelt.setAttributeHandlers.push(function(attr, val) {
+	docelt.glam.setAttributeHandlers.push(function(attr, val) {
 		glam.Transform.onSetAttribute(obj, docelt, attr, val);
 	});
 }

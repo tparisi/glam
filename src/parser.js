@@ -27,7 +27,7 @@ glam.parser = {
 		    	}
 		    }
 		    else if (mutation.type == "attributes") {
-		    	var onSetAttribute = mutation.target.onSetAttribute;
+		    	var onSetAttribute = mutation.target.glam ? mutation.target.glam.onSetAttribute : null;
 		    	if (onSetAttribute) {
 		    		var attr = mutation.attributeName;
 		    		var val = mutation.target.getAttribute(attr);

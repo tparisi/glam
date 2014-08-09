@@ -39,7 +39,7 @@ glam.Background.create = function(docelt, style) {
 
 glam.Background.addHandlers = function(docelt, obj) {
 
-	docelt.setAttributeHandlers.push(function(attr, val) {
+	docelt.glam.setAttributeHandlers.push(function(attr, val) {
 		glam.Background.onSetAttribute(obj, docelt, attr, val);
 	});
 }

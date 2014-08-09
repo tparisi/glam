@@ -359,7 +359,7 @@ glam.Material.getShaderMaterialLoading = function(vsurl, fsurl) {
 
 glam.Material.addHandlers = function(docelt, obj) {
 
-	docelt.setAttributeHandlers.push(function(attr, val) {
+	docelt.glam.setAttributeHandlers.push(function(attr, val) {
 		glam.Material.onSetAttribute(obj, docelt, attr, val);
 	});
 }
