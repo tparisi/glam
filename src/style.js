@@ -9,6 +9,8 @@ glam.Style = function(docelt) {
 	this.docelt = docelt;
 	this._properties = {
 	};
+	
+	this.setPropertyHandlers = [];
 }
 
 glam.Style.prototype = new Object;
@@ -58,4 +60,12 @@ glam.Style.prototype.addPropertiesFromString = function(str) {
 glam.Style.prototype.onPropertyChanged = function(propName, propValue) {
 
 	console.log(this.docelt.id, "property", propName, "value changed to", propValue);
+
+	var i, len = this.setPropertyHandlers.length;
+	for (i = 0; i < len; i++) {
+		var handler = this.setPropertyHandlers[i];
+		if (handler) {
+			handler(propName, propValue);
+		}
+	}
 }

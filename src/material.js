@@ -357,10 +357,14 @@ glam.Material.getShaderMaterialLoading = function(vsurl, fsurl) {
 	return (entry && entry.loading);
 }
 
-glam.Material.addHandlers = function(docelt, obj) {
+glam.Material.addHandlers = function(docelt, style, obj) {
 
 	docelt.glam.setAttributeHandlers.push(function(attr, val) {
 		glam.Material.onSetAttribute(obj, docelt, attr, val);
+	});
+	
+	style.setPropertyHandlers.push(function(attr, val) {
+		glam.Material.onSetProperty(obj, docelt, attr, val);
 	});
 }
 
@@ -368,6 +372,18 @@ glam.Material.onSetAttribute = function(obj, docelt, attr, val) {
 
 	var material = obj.visuals[0].material;
 	switch (attr) {
+		case "color" :
+		case "colorDiffuse" :
+			material.color.setStyle(val);
+			break;
+	}
+}
+
+glam.Material.onSetProperty = function(obj, docelt, attr, val) {
+
+	var material = obj.visuals[0].material;
+	switch (attr) {
+		case "color" :
 		case "color-diffuse" :
 			material.color.setStyle(val);
 			break;

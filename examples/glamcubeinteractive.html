@@ -10,6 +10,7 @@
 	#photocube {
 		image:url(../images/flowers.jpg);
 		rx:30deg;
+		color:white;
 	}
 
 </style>
@@ -26,11 +27,11 @@ $(document).ready(function(){
 
 	photocube.addEventListener("mouseover", function(event) {
 		stat.innerHTML = 'OVER';
-		photocube.setAttribute('color-diffuse', 'red');
+		photocube.glam.style.color = 'red';
 	});
 	photocube.addEventListener("mouseout", function(event) {
 		stat.innerHTML = 'OUT';
-		photocube.setAttribute('color-diffuse', 'white');
+		photocube.setAttribute('color', 'white');
 	});
 	photocube.addEventListener("mousedown", function(event) {
 		stat.innerHTML = 'DOWN';

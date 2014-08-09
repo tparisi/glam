@@ -123,7 +123,7 @@ glam.Viewer.prototype.addFeatures = function(docelt, style, obj, type) {
 	
 	if (type.visual) {
 		glam.Visual.addProperties(docelt, obj);
-		glam.Material.addHandlers(docelt, obj);
+		glam.Material.addHandlers(docelt, style, obj);
 	}
 }
 

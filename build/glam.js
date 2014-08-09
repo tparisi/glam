@@ -60173,16 +60173,20 @@ glam.Background.create = function(docelt, style) {
 		skysphereScript.texture = param.envMap;
 	}
 
-	glam.Background.addHandlers(docelt, background);
+	glam.Background.addHandlers(docelt, style, background);
 	
 	Vizi.Application.instance.addObject(background);
 	
 	return null;
 }
 
-glam.Background.addHandlers = function(docelt, obj) {
+glam.Background.addHandlers = function(docelt, style, obj) {
 
 	docelt.glam.setAttributeHandlers.push(function(attr, val) {
+		glam.Background.onSetAttribute(obj, docelt, attr, val);
+	});
+	
+	style.setPropertyHandlers.push(function(attr, val) {
 		glam.Background.onSetAttribute(obj, docelt, attr, val);
 	});
 }
@@ -61190,10 +61194,14 @@ glam.Material.getShaderMaterialLoading = function(vsurl, fsurl) {
 	return (entry && entry.loading);
 }
 
-glam.Material.addHandlers = function(docelt, obj) {
+glam.Material.addHandlers = function(docelt, style, obj) {
 
 	docelt.glam.setAttributeHandlers.push(function(attr, val) {
 		glam.Material.onSetAttribute(obj, docelt, attr, val);
+	});
+	
+	style.setPropertyHandlers.push(function(attr, val) {
+		glam.Material.onSetProperty(obj, docelt, attr, val);
 	});
 }
 
@@ -61201,6 +61209,18 @@ glam.Material.onSetAttribute = function(obj, docelt, attr, val) {
 
 	var material = obj.visuals[0].material;
 	switch (attr) {
+		case "color" :
+		case "colorDiffuse" :
+			material.color.setStyle(val);
+			break;
+	}
+}
+
+glam.Material.onSetProperty = function(obj, docelt, attr, val) {
+
+	var material = obj.visuals[0].material;
+	switch (attr) {
+		case "color" :
 		case "color-diffuse" :
 			material.color.setStyle(val);
 			break;
@@ -62089,6 +62109,8 @@ glam.Style = function(docelt) {
 	this.docelt = docelt;
 	this._properties = {
 	};
+	
+	this.setPropertyHandlers = [];
 }
 
 glam.Style.prototype = new Object;
@@ -62138,6 +62160,14 @@ glam.Style.prototype.addPropertiesFromString = function(str) {
 glam.Style.prototype.onPropertyChanged = function(propName, propValue) {
 
 	console.log(this.docelt.id, "property", propName, "value changed to", propValue);
+
+	var i, len = this.setPropertyHandlers.length;
+	for (i = 0; i < len; i++) {
+		var handler = this.setPropertyHandlers[i];
+		if (handler) {
+			handler(propName, propValue);
+		}
+	}
 }
 /**
  * @fileoverview text primitive parser/implementation. only supports helvetiker and optimer fonts right now.
@@ -62344,6 +62374,10 @@ glam.Transform.parse = function(docelt, style, obj) {
 	obj.transform.scale.set(t.sx, t.sy, t.sz);
 	
 	docelt.glam.setAttributeHandlers.push(function(attr, val) {
+		glam.Transform.onSetAttribute(obj, docelt, attr, val);
+	});
+
+	style.setPropertyHandlers.push(function(attr, val) {
 		glam.Transform.onSetAttribute(obj, docelt, attr, val);
 	});
 }
@@ -62808,7 +62842,7 @@ glam.Viewer.prototype.addFeatures = function(docelt, style, obj, type) {
 	
 	if (type.visual) {
 		glam.Visual.addProperties(docelt, obj);
-		glam.Material.addHandlers(docelt, obj);
+		glam.Material.addHandlers(docelt, style, obj);
 	}
 }
 

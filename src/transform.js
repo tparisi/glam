@@ -36,6 +36,10 @@ glam.Transform.parse = function(docelt, style, obj) {
 	docelt.glam.setAttributeHandlers.push(function(attr, val) {
 		glam.Transform.onSetAttribute(obj, docelt, attr, val);
 	});
+
+	style.setPropertyHandlers.push(function(attr, val) {
+		glam.Transform.onSetAttribute(obj, docelt, attr, val);
+	});
 }
 
 glam.Transform.parseStyle = function(style, t) {

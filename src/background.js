@@ -30,16 +30,20 @@ glam.Background.create = function(docelt, style) {
 		skysphereScript.texture = param.envMap;
 	}
 
-	glam.Background.addHandlers(docelt, background);
+	glam.Background.addHandlers(docelt, style, background);
 	
 	Vizi.Application.instance.addObject(background);
 	
 	return null;
 }
 
-glam.Background.addHandlers = function(docelt, obj) {
+glam.Background.addHandlers = function(docelt, style, obj) {
 
 	docelt.glam.setAttributeHandlers.push(function(attr, val) {
+		glam.Background.onSetAttribute(obj, docelt, attr, val);
+	});
+	
+	style.setPropertyHandlers.push(function(attr, val) {
 		glam.Background.onSetAttribute(obj, docelt, attr, val);
 	});
 }
