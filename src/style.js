@@ -30,6 +30,7 @@ glam.Style.prototype.addProperty = function(propName, propValue) {
 	        },
 	        set: function(v) {
 	        	this._properties[propName] = v;
+	        	this.onPropertyChanged(propName, v);
 	        }
 		});
 }
@@ -52,4 +53,9 @@ glam.Style.prototype.addPropertiesFromString = function(str) {
 	}
 	
 	this.addProperties(props);
+}
+
+glam.Style.prototype.onPropertyChanged = function(propName, propValue) {
+
+	console.log(this.docelt.id, "property", propName, "value changed to", propValue);
 }
