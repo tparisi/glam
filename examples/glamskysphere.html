@@ -26,7 +26,7 @@ $(document).ready(function(){
 
 		var pic = views.options[views.selectedIndex].value;	
 		var src = '../images/spherepano/' + pic;
-		skysphere.setAttribute('envmap', src);
+		skysphere.glam.style.envmap = src;
 		
 	}
 

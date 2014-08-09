@@ -373,6 +373,7 @@ glam.Material.onSetAttribute = function(obj, docelt, attr, val) {
 	var material = obj.visuals[0].material;
 	switch (attr) {
 		case "color" :
+		case "color-diffuse" :
 		case "colorDiffuse" :
 			material.color.setStyle(val);
 			break;
@@ -385,6 +386,7 @@ glam.Material.onSetProperty = function(obj, docelt, attr, val) {
 	switch (attr) {
 		case "color" :
 		case "color-diffuse" :
+		case "colorDiffuse" :
 			material.color.setStyle(val);
 			break;
 	}

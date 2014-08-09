@@ -61210,6 +61210,7 @@ glam.Material.onSetAttribute = function(obj, docelt, attr, val) {
 	var material = obj.visuals[0].material;
 	switch (attr) {
 		case "color" :
+		case "color-diffuse" :
 		case "colorDiffuse" :
 			material.color.setStyle(val);
 			break;
@@ -61222,6 +61223,7 @@ glam.Material.onSetProperty = function(obj, docelt, attr, val) {
 	switch (attr) {
 		case "color" :
 		case "color-diffuse" :
+		case "colorDiffuse" :
 			material.color.setStyle(val);
 			break;
 	}
@@ -62111,6 +62113,7 @@ glam.Style = function(docelt) {
 	};
 	
 	this.setPropertyHandlers = [];
+	this.defineStandardProperties();
 }
 
 glam.Style.prototype = new Object;
@@ -62123,18 +62126,9 @@ glam.Style.prototype.addProperties = function(props) {
 
 glam.Style.prototype.addProperty = function(propName, propValue) {
 
+	this.defineProperty(propName, propValue);
+
 	this._properties[propName] = propValue;
-	
-	Object.defineProperty(this, propName, {
-			enumerable : true,
-	        get: function() {
-	            return this._properties[propName];
-	        },
-	        set: function(v) {
-	        	this._properties[propName] = v;
-	        	this.onPropertyChanged(propName, v);
-	        }
-		});
 }
 
 glam.Style.prototype.addPropertiesFromString = function(str) {
@@ -62159,7 +62153,7 @@ glam.Style.prototype.addPropertiesFromString = function(str) {
 
 glam.Style.prototype.onPropertyChanged = function(propName, propValue) {
 
-	console.log(this.docelt.id, "property", propName, "value changed to", propValue);
+	// console.log(this.docelt.id, "property", propName, "value changed to", propValue);
 
 	var i, len = this.setPropertyHandlers.length;
 	for (i = 0; i < len; i++) {
@@ -62169,6 +62163,88 @@ glam.Style.prototype.onPropertyChanged = function(propName, propValue) {
 		}
 	}
 }
+
+glam.Style.prototype.defineProperty = function(propName, propValue) {
+	Object.defineProperty(this, propName, {
+			enumerable : true,
+			configurable : true,
+	        get: function() {
+	            return this._properties[propName];
+	        },
+	        set: function(v) {
+	        	this._properties[propName] = v;
+	        	this.onPropertyChanged(propName, v);
+	        }
+		});
+}
+
+glam.Style.prototype.defineStandardProperties = function() {
+
+	var props = glam.Style._standardProperties
+	var propName;
+	for (propName in props) {
+		var propValue = props[propName];
+		this.defineProperty(propName, propValue)
+	}
+}
+
+glam.Style._standardProperties = {
+		"angle" : "",
+		"backface-visibility" : "visible",
+		"background-type" : "",
+		"bevel-size" : "",
+		"bevel-thickness" : "",
+		"color" : "",
+		"color-diffuse" : "",
+		"colorDiffuse" : "",
+		"color-specular" : "",
+		"colorSpecular" : "",
+		"dash-size" : "",
+		"depth" : "",
+		"distance" : "",
+		"end-angle" : "",
+		"envmap" : "",
+		"envmap-back" : "",
+		"envmap-bottom" : "",
+		"envmap-front" : "",
+		"envmap-left" : "",
+		"envmap-right" : "",
+		"envmap-top" : "",
+		"font-bevel" : "",
+		"font-depth" : "",
+		"font-family" : "",
+		"font-size" : "",
+		"font-style" : "",
+		"font-weight" : "",
+		"gap-size" : "",
+		"height" : "",
+		"line-width" : "",
+		"image" : "",
+		"opacity" : "",
+		"radius" : "",
+		"radius-segments" : "",
+		"reflectivity" : "",
+		"refraction-ratio" : "",
+		"render-mode" : "",
+		"rx" : "",
+		"ry" : "",
+		"rz" : "",
+		"shader" : "phong",
+		"shader-fragment" : "",
+		"shader-uniforms" : "",
+		"shader-vertex" : "",
+		"start-angle" : "",
+		"sx" : "",
+		"sy" : "",
+		"sz" : "",
+		"vertex-colors" : "",
+		"vertex-normals" : "",
+		"width" : "",
+		"x" : "",
+		"y" : "",
+		"z" : "",
+};
+
 /**
  * @fileoverview text primitive parser/implementation. only supports helvetiker and optimer fonts right now.
  * 
