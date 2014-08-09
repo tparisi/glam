@@ -58,7 +58,6 @@ header h1 {
 }
 
 header h1:before {
-  content: "./ ";
   font-size: 24px;
 }
 
