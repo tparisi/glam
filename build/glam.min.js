@@ -200,6 +200,16 @@
         url = url.replace(/^url\(|\)$/gi, '').replace(/^["']|["']$/g, ''); // remove the url('...') wrapper
         $.get(url, function(str) { $.parsecss(str, callback) });
       }
+    }else if (type=='-webkit-keyframes' || type=='-moz-keyframes' || type=='keyframes'){
+        var kfName = split.shift();
+        var css = restore(split.join(' '));
+        css = css.substr(1, css.length - 2); // strip {}
+        $.parsecss(css, function(keyframes) {
+        	console.log("Parsed keyframes: ", keyframes);
+        	var ret = {};
+        	ret[kfName] = keyframes;
+        	callback(ret);
+        })
     }
   }
 		
