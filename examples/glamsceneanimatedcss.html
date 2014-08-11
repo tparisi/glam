@@ -43,12 +43,16 @@
 	}
 
 	@-webkit-keyframes kfRotateY {
-	  from {
-	    -webkit-transform: rotateY(0deg);
+	  0% {
+	    -webkit-transform: rotateY(0deg) translateY(0);
 	  }
 	
-	  to {
-	   -webkit-transform: rotateY(360deg);
+	  50% {
+	   -webkit-transform: rotateY(180deg) translateY(3);
+	  }
+	  
+	  100% {
+	   -webkit-transform: rotateY(360deg) translateY(0);
 	  }
 	}
 	
@@ -93,7 +97,7 @@ glam - Simple scene with cube
 <glam>
   <scene>
   	<group y='-1'>
-		<cube id="texturedcube" x="1.5" y='2' z='-5' depth='.5' height='1.5' animation="animRotateY"></cube>
+		<cube id="texturedcube" class="animRotateY" x="1.5" y='2' z='-5' depth='.5' height='1.5'></cube>
 		<group id="aGroup" x="1" y=".5" z="-2" >
 			<sphere id="sphere1" radius='1.5' animation="animFade"></sphere>
 			<group id="nestedGroup" x='-3' y='1' z='-5'>
