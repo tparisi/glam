@@ -56,18 +56,30 @@
 	  }
 	}
 	
-	@-webkit-keyframes kfShake {
+	@-webkit-keyframes kfRotateZ {
+	  from {
+	    -webkit-transform: rotateZ(0deg);
+	  }
+	
+	  to {
+	   -webkit-transform: rotateZ(360deg);
+	  }
+	}
+
+	@-webkit-keyframes kfFade {
 	  0% {
-	    -webkit-transform:translate3d(0, 0, 0) rotateZ(0deg);
+	    opacity:1;
+	    color-diffuse:red;
 	  }
-	  25% {
-	    -webkit-transform: translate3d(0, -20px, 0) rotateZ(20deg);
-	  }
+	
 	  50% {
-	    -webkit-transform: translate3d(0, 0, 0) rotateZ(-20deg);
+	    opacity:.5;
+	    color-diffuse:green;
 	  }
+	  
 	  100% {
-	    -webkit-transform: translate3d(0, -20px, 0) rotateZ(-20deg);
+	    opacity:1;
+	    color-diffuse:red;
 	  }
 	}
 
@@ -79,6 +91,22 @@
 	  -webkit-animation-timing-function:linear;
 	}
 
+	.animRotateZ
+	 {
+	  -webkit-animation-duration: 5s;
+	  -webkit-animation-name: kfRotateZ;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:linear;
+	}
+
+	
+	.animFade
+	 {
+	  -webkit-animation-duration: 1s;
+	  -webkit-animation-name: kfFade;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
 
 </style>
 <script>
@@ -99,29 +127,14 @@ glam - Simple scene with cube
   	<group y='-1'>
 		<cube id="texturedcube" class="animRotateY" x="1.5" y='2' z='-5' depth='.5' height='1.5'></cube>
 		<group id="aGroup" x="1" y=".5" z="-2" >
-			<sphere id="sphere1" radius='1.5' animation="animFade"></sphere>
+			<sphere id="sphere1" class="animFade" radius='1.5'></sphere>
 			<group id="nestedGroup" x='-3' y='1' z='-5'>
 				<cone id="cone1" x='-1' y='-.5' z='2' rz='90deg'></cone>
-				<cylinder id="cylinder1" animation="animRotateZ"></cylinder>
+				<cylinder class="animRotateZ" id="cylinder1"></cylinder>
 			</group>
 		</group>
 		<text id="text1" value="glam"></text>
   	</group>
-  	<animation id="animRotateY" duration="2s" iteration-count="infinite" timing-function="ease-in-out">
-		<keyframe time="0%" property="transform" value="translateY(0) rotateY(0deg);"></keyframe>
-		<keyframe time="50%" property="transform" value="translateY(3) rotateY(180deg);"></keyframe>
-		<keyframe time="100%" property="transform" value="translateY(0) rotateY(360deg);"></keyframe>
-	</animation>
-  	<animation id="animRotateZ" duration="5s" iteration-count="infinite" timing-function="linear">
-		<keyframe time="0%" property="transform" value="rotateZ(0deg);"></keyframe>
-		<keyframe time="50%" property="transform" value="rotateZ(180deg);"></keyframe>
-		<keyframe time="100%" property="transform" value="rotateZ(360deg);"></keyframe>
-	</animation>
-  	<animation id="animFade" duration="1s" iteration-count="infinite" timing-function="ease-in-out">
-		<keyframe time="0%" property="material" value="opacity:1;color-diffuse:red;"></keyframe>
-		<keyframe time="50%" property="material" value="opacity:.5;color-diffuse:green;"></keyframe>
-		<keyframe time="100%" property="material" value="opacity:1;color-diffuse:red;"></keyframe>
-	</animation>
   </scene>
 </glam>
 </div>
