@@ -12,23 +12,6 @@
 		rx:30deg;
 	}
 
-	@-webkit-keyframes kfRotateY {
-	  from {
-	    -webkit-transform: rotateY(0deg);
-	  }
-	
-	  to {
-	   -webkit-transform: rotateY(360deg);
-	  }
-	}
-	.animRotateY
-	 {
-	  -webkit-animation-duration: 10s;
-	  -webkit-animation-name: kfRotateY;
-	  -webkit-animation-iteration-count: infinite;
-	  -webkit-animation-timing-function:linear;
-	}
-
 </style>
 <script>
 $(document).ready(function(){
@@ -45,7 +28,12 @@ glam - Simple scene with cube
 <div id="container" style="width:600px; height:600px;">
 <glam>
   <scene>
-	<cube id="photocube" class="animRotateY"></cube>
+	<cube id="photocube" animation="animRotateY"></cube>
+  	<animation id="animRotateY" duration="10s" iteration-count="infinite" timing-function="linear">
+		<keyframe time="0%" property="transform" value="rotateY(0deg);"></keyframe>
+		<keyframe time="50%" property="transform" value="rotateY(180deg);"></keyframe>
+		<keyframe time="100%" property="transform" value="rotateY(360deg);"></keyframe>
+	</animation>
   </scene>
 </glam>
 </div>
