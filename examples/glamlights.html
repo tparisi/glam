@@ -61,6 +61,35 @@
 		color:#404000;
 	}
 	
+	@-webkit-keyframes kfBounce {
+	  0% {
+	    transform:translateY(-6);
+	  }
+	
+	  25% {
+	    transform:translateY(0);
+	  }
+	  
+	  50% {
+	    transform:translateY(6);
+	  }
+	  
+	  75% {
+	    transform:translateY(0);
+	  }
+	  
+	  100% {
+	    transform:translateY(-6);
+	  }
+	}
+	
+	.lightBounce {
+	  animation-duration: 5s;
+	  animation-name: kfBounce;
+	  animation-iteration-count: infinite;
+	  animation-timing-function:ease-in-out;
+	}
+	
 </style>
 <script>
 $(document).ready(function(){
@@ -81,7 +110,7 @@ glam - Simple scene with cube
   	<light id="dirLight1" type='directional'  dz='0' dy='-1' dx='0'></light>
   	<light id="spotLight1" type='spot' z='2' angle='15deg' exponent='1' ></light>
   	<light id="pointLight1" type='point' x='-2' z='2'></light>
-  	<light id="pointLight2" type='point' x='2' z='0' animation="lightBounce"></light>
+  	<light id="pointLight2" type='point' x='2' z='0' class="lightBounce"></light>
   	<light id="ambLight1" type='ambient'></light>
   	<group y='-1'>
 		<cube id="texturedcube" x="1.5" y='2' z='-5' depth='.5' height='1.5' ></cube>
@@ -94,13 +123,6 @@ glam - Simple scene with cube
 		</group>
 		<text id="text1" value="glam"></text>
   	</group>
-  	<animation id="lightBounce" duration="5s" iteration-count="infinite" timing-function="ease-in-out">
-		<keyframe time="0%" property="transform" value="translateY(-6);"></keyframe>
-		<keyframe time="25%" property="transform" value="translateY(0);"></keyframe>
-		<keyframe time="50%" property="transform" value="translateY(6);"></keyframe>
-		<keyframe time="75%" property="transform" value="translateY(0);"></keyframe>
-		<keyframe time="100%" property="transform" value="translateY(-6);"></keyframe>
-	</animation>
   </scene>
 </glam>
 </div>
