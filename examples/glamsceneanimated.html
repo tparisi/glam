@@ -42,6 +42,72 @@
 		font-weight:bold;
 	}
 
+	@-webkit-keyframes kfRotateY {
+	  0% {
+	    -webkit-transform: rotateY(0deg) translateY(0);
+	  }
+	
+	  50% {
+	   -webkit-transform: rotateY(180deg) translateY(3);
+	  }
+	  
+	  100% {
+	   -webkit-transform: rotateY(360deg) translateY(0);
+	  }
+	}
+	
+	@-webkit-keyframes kfRotateZ {
+	  from {
+	    -webkit-transform: rotateZ(0deg);
+	  }
+	
+	  to {
+	   -webkit-transform: rotateZ(360deg);
+	  }
+	}
+
+	@-webkit-keyframes kfFade {
+	  0% {
+	    opacity:1;
+	    color-diffuse:red;
+	  }
+	
+	  50% {
+	    opacity:.5;
+	    color-diffuse:green;
+	  }
+	  
+	  100% {
+	    opacity:1;
+	    color-diffuse:red;
+	  }
+	}
+
+	.animRotateY
+	 {
+	  -webkit-animation-duration: 2s;
+	  -webkit-animation-name: kfRotateY;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
+
+	.animRotateZ
+	 {
+	  -webkit-animation-duration: 5s;
+	  -webkit-animation-name: kfRotateZ;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:linear;
+	}
+
+	
+	.animFade
+	 {
+	  -webkit-animation-duration: 1s;
+	  -webkit-animation-name: kfFade;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
+
 </style>
 <script>
 $(document).ready(function(){
@@ -59,31 +125,16 @@ glam - Simple scene with cube
 <glam>
   <scene>
   	<group y='-1'>
-		<cube id="texturedcube" x="1.5" y='2' z='-5' depth='.5' height='1.5' animation="animRotateY"></cube>
+		<cube id="texturedcube" class="animRotateY" x="1.5" y='2' z='-5' depth='.5' height='1.5'></cube>
 		<group id="aGroup" x="1" y=".5" z="-2" >
-			<sphere id="sphere1" radius='1.5' animation="animFade"></sphere>
+			<sphere id="sphere1" class="animFade" radius='1.5'></sphere>
 			<group id="nestedGroup" x='-3' y='1' z='-5'>
 				<cone id="cone1" x='-1' y='-.5' z='2' rz='90deg'></cone>
-				<cylinder id="cylinder1" animation="animRotateZ"></cylinder>
+				<cylinder class="animRotateZ" id="cylinder1"></cylinder>
 			</group>
 		</group>
 		<text id="text1" value="glam"></text>
   	</group>
-  	<animation id="animRotateY" duration="2s" iteration-count="infinite" timing-function="ease-in-out">
-		<keyframe time="0%" property="transform" value="translateY(0) rotateY(0deg);"></keyframe>
-		<keyframe time="50%" property="transform" value="translateY(3) rotateY(180deg);"></keyframe>
-		<keyframe time="100%" property="transform" value="translateY(0) rotateY(360deg);"></keyframe>
-	</animation>
-  	<animation id="animRotateZ" duration="5s" iteration-count="infinite" timing-function="linear">
-		<keyframe time="0%" property="transform" value="rotateZ(0deg);"></keyframe>
-		<keyframe time="50%" property="transform" value="rotateZ(180deg);"></keyframe>
-		<keyframe time="100%" property="transform" value="rotateZ(360deg);"></keyframe>
-	</animation>
-  	<animation id="animFade" duration="1s" iteration-count="infinite" timing-function="ease-in-out">
-		<keyframe time="0%" property="material" value="opacity:1;color-diffuse:red;"></keyframe>
-		<keyframe time="50%" property="material" value="opacity:.5;color-diffuse:green;"></keyframe>
-		<keyframe time="100%" property="material" value="opacity:1;color-diffuse:red;"></keyframe>
-	</animation>
   </scene>
 </glam>
 </div>
