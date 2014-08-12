@@ -22,6 +22,31 @@
 	#rain {
 		image:url(../images/smokeparticle.png);
 	}
+	@-webkit-keyframes kfRotateY {
+	  from {
+	    -webkit-transform: rotateY(0deg);
+	  }
+	
+	  to {
+	   -webkit-transform: rotateY(-360deg);
+	  }
+	}
+	.animRotateY
+	 {
+	  -webkit-animation-duration: 2s;
+	  -webkit-animation-name: kfRotateY;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:linear;
+	}
+	.animRotateYSlow
+	 {
+	  -webkit-animation-duration: 200s;
+	  -webkit-animation-name: kfRotateY;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:linear;
+	}
+	
+	
 </style>
 <script>
 $(document).ready(function(){
@@ -76,7 +101,7 @@ $(document).ready(function(){
 		</particles>
     </group>
     <group x='5' y='2'>
-		<particles maxAge='2' id="sparks" animation="animRotateY">
+		<particles maxAge='2' id="sparks" class="animRotateY">
 			<emitter particlesPerSecond='100' size='2' sizeEnd='1' opacityStart='0.2' 
 			opacityMiddle='0.4' opacityEnd='0.2' velocity='2 0 0' acceleration='0 -1 0' 
 			positionSpread='0 0 0' accelerationSpread='1 1 1' colorStart="red" colorEnd="yellow"></emitter>
@@ -91,20 +116,10 @@ $(document).ready(function(){
 		</particles>
     </group>
     <group>
-		<particles id="stars" size='.5' animation="animRotateYSlow">
+		<particles id="stars" size='.5' class="animRotateYSlow">
 			<vertices></vertices>
 		</particles>
     </group>
-  	<animation id="animRotateY" duration="2s" iteration-count="infinite" timing-function="linear">
-		<keyframe time="0%" property="transform" value="rotateY(0deg);"></keyframe>
-		<keyframe time="50%" property="transform" value="rotateY(-180deg);"></keyframe>
-		<keyframe time="100%" property="transform" value="rotateY(-360deg);"></keyframe>
-	</animation>
-  	<animation id="animRotateYSlow" duration="200s" iteration-count="infinite" timing-function="linear">
-		<keyframe time="0%" property="transform" value="rotateY(0deg);"></keyframe>
-		<keyframe time="50%" property="transform" value="rotateY(-180deg);"></keyframe>
-		<keyframe time="100%" property="transform" value="rotateY(-360deg);"></keyframe>
-	</animation>
   </scene>
 </glam>
 

@@ -52,6 +52,31 @@
 		envmap-back:url(../images/envmap/2-NEGATIVE_Z.jpg);
 	}
 
+	@-webkit-keyframes kfRotateY {
+	  from {
+	    -webkit-transform: rotateY(0deg);
+	  }
+	
+	  to {
+	   -webkit-transform: rotateY(360deg);
+	  }
+	}
+
+	.animRotateY
+	 {
+	  -webkit-animation-duration: 4s;
+	  -webkit-animation-name: kfRotateY;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
+	.animRotateY2
+	 {
+	  -webkit-animation-duration: 5s;
+	  -webkit-animation-name: kfRotateY;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:linear;
+	}
+
 </style>
 <script>
 $(document).ready(function(){
@@ -68,21 +93,11 @@ $(document).ready(function(){
 	<text x='-1' y='1' id="text1" value='glam'animation="animRotateY"></text>
 	<text id="text2" x='1' y='-1' z='1'>GLAM!</text>
 	<group x='1' y='1' rz='30deg'>
-		<text id="text3" animation="animRotateY2">got glam?</text>
+		<text id="text3" class="animRotateY">got glam?</text>
 	</group>
 	<group x='-1' y='-1.5' z='-2'>
-		<text id="text4" animation="animRotateY2">G.L.A.M</text>
+		<text id="text4" class="animRotateY2">G.L.A.M</text>
 	</group>
-  	<animation id="animRotateY" duration="4s" iteration-count="infinite" timing-function="ease-in-out">
-		<keyframe time="0%" property="transform" value="rotateY(0deg);"></keyframe>
-		<keyframe time="50%" property="transform" value="rotateY(180deg);"></keyframe>
-		<keyframe time="100%" property="transform" value="rotateY(360deg);"></keyframe>
-	</animation>
-  	<animation id="animRotateY2" duration="5s" iteration-count="infinite" timing-function="linear">
-		<keyframe time="0%" property="transform" value="rotateY(0deg);"></keyframe>
-		<keyframe time="50%" property="transform" value="rotateY(180deg);"></keyframe>
-		<keyframe time="100%" property="transform" value="rotateY(360deg);"></keyframe>
-	</animation>
   </scene>
 </glam>
 
