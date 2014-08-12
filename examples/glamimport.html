@@ -7,16 +7,6 @@
 <title>glam - Imported scene with skybox background</title>
 
 <style>
-	#cube1 {
-		color-diffuse:lightgray;
-		envmap-right:url(../images/sky35/rightcity.jpg);
-		envmap-left:url(../images/sky35/leftcity.jpg);
-		envmap-top:url(../images/sky35/topcity.jpg);
-		envmap-bottom:url(../images/sky35/botcity.jpg);
-		envmap-front:url(../images/sky35/frontcity.jpg);
-		envmap-back:url(../images/sky35/backcity.jpg);
-		shader:phong;
-	}
 	
 	#sb1 {
 		background-type:box;
@@ -26,6 +16,31 @@
 		envmap-bottom:url(../images/sky35/botcity.jpg);
 		envmap-front:url(../images/sky35/frontcity.jpg);
 		envmap-back:url(../images/sky35/backcity.jpg);
+	}
+	
+	@-webkit-keyframes kfFly {
+	  0% {
+	    transform:translateX(0) translateY(0) translateZ(0) rotateY(0deg);
+	  }
+	
+	  50% {
+	    transform:translateX(-50) translateY(100) translateZ(-100) rotateY(-180deg);
+	  }
+	  
+	  75% {
+	    transform:translateX(0) translateY(50) translateZ(100) rotateY(-360deg);
+	  }
+	  
+	  100% {
+	    transform:translateX(0) translateY(0) translateZ(0) rotateY(-360deg);
+	  }
+	}
+	
+	.animFly {
+	  animation-duration: 20s;
+	  animation-name: kfFly;
+	  animation-iteration-count: infinite;
+	  animation-timing-function:ease-in-out;
 	}
 	
 </style>
@@ -40,21 +55,12 @@ $(document).ready(function(){
 </script>
 </head>
 <body>
-<!-- 
-glam - Simple scene with cube
- -->
 <div id="container" style="width:98%; height:98%;position:absolute;">
 <glam>
   <scene>
 	<background id="sb1"></background>
 	<import id="imported_scene" src="../models/futurgo_city/futurgo_city.dae" ></import>
-	<camera y='10' animation="animFly"></camera>
-  	<animation id="animFly" duration="20s" iteration-count="infinite" timing-function="ease-in-out">
-		<keyframe time="0%" property="transform" value="translateX(0) translateY(0) translateZ(0); rotateY(0deg);"></keyframe>
-		<keyframe time="50%" property="transform" value="translateX(-50) translateY(100) translateZ(-100); rotateY(-180deg);"></keyframe>
-		<keyframe time="75%" property="transform" value="translateX(0) translateY(50) translateZ(100); rotateY(-360deg);"></keyframe>
-		<keyframe time="100%" property="transform" value="translateX(0) translateY(0) translateZ(0); rotateY(-360deg);"></keyframe>
-	</animation>
+	<camera y='10' class="animFly"></camera>
   </scene>
 </glam>
 </div>
