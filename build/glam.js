@@ -61230,6 +61230,11 @@ glam.Material.parseStyle = function(style) {
 	if (style.image) {
 		image = glam.Material.parseUrl(style.image);
 	}
+
+	var normalMap = "";
+	if (style["map-normal"]) {
+		normalMap = glam.Material.parseUrl(style["map-normal"]);
+	}
 	
 	var reflectivity;
 	if (style.reflectivity)
@@ -61260,7 +61265,7 @@ glam.Material.parseStyle = function(style) {
 	if (style.opacity)
 		opacity = parseFloat(style.opacity);
 
-	var side = THREE.DoubleSide;
+	var side = THREE.FrontSide;
 	if (style["backface-visibility"]) {
 		switch (style["backface-visibility"].toLowerCase()) {
 			case "visible" :
@@ -61298,6 +61303,8 @@ glam.Material.parseStyle = function(style) {
 		param.map = THREE.ImageUtils.loadTexture(image);
 	if (envMap)
 		param.envMap = envMap;
+	if (normalMap)
+		param.normalMap = THREE.ImageUtils.loadTexture(normalMap);
 	if (color !== undefined)
 		param.color = color;
 	if (diffuse !== undefined)
