@@ -29,7 +29,7 @@ glam.Material.create = function(style, createCB, objtype) {
 					break;
 			}
 		}
-		else if (style["shader-vertex"] && style["shader-fragment"] && style["shader-uniforms"]) {
+		else if (style["vertex-shader"] && style["fragment-shader"] && style["shader-uniforms"]) {
 			material = glam.Material.createShaderMaterial(style, param, createCB);
 		}
 		else if (objtype == "line") {
@@ -210,8 +210,8 @@ glam.Material.createShaderMaterial = function(style, param, createCB) {
 		glam.Material.callShaderMaterialCallbacks(vsurl, fsurl);
 	}
 	
-	var vs = style["shader-vertex"];
-	var fs = style["shader-fragment"];
+	var vs = style["vertex-shader"];
+	var fs = style["fragment-shader"];
 	var uniforms = glam.Material.parseUniforms(style["shader-uniforms"], param);
 
 	var vsurl = glam.Material.parseUrl(vs);
