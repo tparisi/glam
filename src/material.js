@@ -58,8 +58,8 @@ glam.Material.parseStyle = function(style) {
 	}
 
 	var normalMap = "";
-	if (style["image-normal"]) {
-		normalMap = glam.Material.parseUrl(style["image-normal"]);
+	if (style["normal-image"]) {
+		normalMap = glam.Material.parseUrl(style["normal-image"]);
 	}
 	
 	var reflectivity;
@@ -173,26 +173,26 @@ glam.Material.parseUrl = function(image) {
 glam.Material.tryParseEnvMap = function(style) {
 	var urls = [];
 	
-	if (style["envmap-right"])
-		urls.push(glam.Material.parseUrl(style["envmap-right"]));
-	if (style["envmap-left"])
-		urls.push(glam.Material.parseUrl(style["envmap-left"]));
-	if (style["envmap-top"])
-		urls.push(glam.Material.parseUrl(style["envmap-top"]));
-	if (style["envmap-bottom"])
-		urls.push(glam.Material.parseUrl(style["envmap-bottom"]));
-	if (style["envmap-front"])
-		urls.push(glam.Material.parseUrl(style["envmap-front"]));
-	if (style["envmap-back"])
-		urls.push(glam.Material.parseUrl(style["envmap-back"]));
+	if (style["cube-image-right"])
+		urls.push(glam.Material.parseUrl(style["cube-image-right"]));
+	if (style["cube-image-left"])
+		urls.push(glam.Material.parseUrl(style["cube-image-left"]));
+	if (style["cube-image-top"])
+		urls.push(glam.Material.parseUrl(style["cube-image-top"]));
+	if (style["cube-image-bottom"])
+		urls.push(glam.Material.parseUrl(style["cube-image-bottom"]));
+	if (style["cube-image-front"])
+		urls.push(glam.Material.parseUrl(style["cube-image-front"]));
+	if (style["cube-image-back"])
+		urls.push(glam.Material.parseUrl(style["cube-image-back"]));
 	
 	if (urls.length == 6) {
 		var cubeTexture = THREE.ImageUtils.loadTextureCube( urls );
 		return cubeTexture;
 	}
 	
-	if (style["envmap"])
-		return THREE.ImageUtils.loadTexture(glam.Material.parseUrl(style["envmap"]), THREE.SphericalRefractionMapping);
+	if (style["sphere-image"])
+		return THREE.ImageUtils.loadTexture(glam.Material.parseUrl(style["sphere-image"]), THREE.SphericalRefractionMapping);
 	
 	return null;
 }
@@ -282,7 +282,7 @@ glam.Material.parseUniforms = function(uniformsText, param) {
 			value = parseFloat(value);
 		else if (type == "t") {
 			value = value.toLowerCase();
-			if (value == "envmap") {
+			if (value == "cube") {
 				value = param.envMap;
 			}
 			else if (value == "texture" || value == "map") {

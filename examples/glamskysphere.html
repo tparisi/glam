@@ -9,7 +9,7 @@
 <style>
 	
 	#ss1 {
-		envmap:url(../images/spherepano/pan0.jpg);
+		sphere-image:url(../images/spherepano/pan0.jpg);
 	}
 	
 </style>
@@ -26,7 +26,7 @@ $(document).ready(function(){
 
 		var pic = views.options[views.selectedIndex].value;	
 		var src = '../images/spherepano/' + pic;
-		skysphere.glam.style.envmap = src;
+		skysphere.glam.style.sphereImage = src;
 		
 	}
 

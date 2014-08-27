@@ -51,7 +51,8 @@ glam.Background.addHandlers = function(docelt, style, obj) {
 glam.Background.onSetAttribute = function(obj, docelt, attr, val) {
 
 	switch (attr) {
-		case "envmap" :
+		case "sphere-image" :
+		case "sphereImage" :
 			var skysphereScript = obj.getComponent(Vizi.SkysphereScript);
 			if (skysphereScript) {
 				var envMap = THREE.ImageUtils.loadTexture(val);

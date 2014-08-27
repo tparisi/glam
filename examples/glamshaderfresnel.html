@@ -9,12 +9,12 @@
 <style>
 
 	.skybox {
-		envmap-right:url(../images/Park2/posx.jpg);
-		envmap-left:url(../images/Park2/negx.jpg);
-		envmap-top:url(../images/Park2/posy.jpg);
-		envmap-bottom:url(../images/Park2/negy.jpg);
-		envmap-front:url(../images/Park2/posz.jpg);
-		envmap-back:url(../images/Park2/negz.jpg);
+		cube-image-right:url(../images/Park2/posx.jpg);
+		cube-image-left:url(../images/Park2/negx.jpg);
+		cube-image-top:url(../images/Park2/posy.jpg);
+		cube-image-bottom:url(../images/Park2/negy.jpg);
+		cube-image-front:url(../images/Park2/posz.jpg);
+		cube-image-back:url(../images/Park2/negz.jpg);
 	}
 	
 	.bubble {
@@ -22,7 +22,7 @@
 		color-diffuse:lightgray;
 		shader-vertex:url(../shaders/fresnel.vs);
 		shader-fragment:url(../shaders/fresnel.fs);
-		shader-uniforms:mRefractionRatio f 1.02 mFresnelBias f 0.1 mFresnelPower f 2.0 mFresnelScale f 1.0 tCube t envmap;
+		shader-uniforms:mRefractionRatio f 1.02 mFresnelBias f 0.1 mFresnelPower f 2.0 mFresnelScale f 1.0 tCube t cube;
 	}
 
 	@-webkit-keyframes kfBB1 {

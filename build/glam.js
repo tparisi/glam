@@ -60531,7 +60531,8 @@ glam.Background.addHandlers = function(docelt, style, obj) {
 glam.Background.onSetAttribute = function(obj, docelt, attr, val) {
 
 	switch (attr) {
-		case "envmap" :
+		case "sphere-image" :
+		case "sphereImage" :
 			var skysphereScript = obj.getComponent(Vizi.SkysphereScript);
 			if (skysphereScript) {
 				var envMap = THREE.ImageUtils.loadTexture(val);
@@ -61232,8 +61233,8 @@ glam.Material.parseStyle = function(style) {
 	}
 
 	var normalMap = "";
-	if (style["image-normal"]) {
-		normalMap = glam.Material.parseUrl(style["image-normal"]);
+	if (style["normal-image"]) {
+		normalMap = glam.Material.parseUrl(style["normal-image"]);
 	}
 	
 	var reflectivity;
@@ -61347,26 +61348,26 @@ glam.Material.parseUrl = function(image) {
 glam.Material.tryParseEnvMap = function(style) {
 	var urls = [];
 	
-	if (style["envmap-right"])
-		urls.push(glam.Material.parseUrl(style["envmap-right"]));
-	if (style["envmap-left"])
-		urls.push(glam.Material.parseUrl(style["envmap-left"]));
-	if (style["envmap-top"])
-		urls.push(glam.Material.parseUrl(style["envmap-top"]));
-	if (style["envmap-bottom"])
-		urls.push(glam.Material.parseUrl(style["envmap-bottom"]));
-	if (style["envmap-front"])
-		urls.push(glam.Material.parseUrl(style["envmap-front"]));
-	if (style["envmap-back"])
-		urls.push(glam.Material.parseUrl(style["envmap-back"]));
+	if (style["cube-image-right"])
+		urls.push(glam.Material.parseUrl(style["cube-image-right"]));
+	if (style["cube-image-left"])
+		urls.push(glam.Material.parseUrl(style["cube-image-left"]));
+	if (style["cube-image-top"])
+		urls.push(glam.Material.parseUrl(style["cube-image-top"]));
+	if (style["cube-image-bottom"])
+		urls.push(glam.Material.parseUrl(style["cube-image-bottom"]));
+	if (style["cube-image-front"])
+		urls.push(glam.Material.parseUrl(style["cube-image-front"]));
+	if (style["cube-image-back"])
+		urls.push(glam.Material.parseUrl(style["cube-image-back"]));
 	
 	if (urls.length == 6) {
 		var cubeTexture = THREE.ImageUtils.loadTextureCube( urls );
 		return cubeTexture;
 	}
 	
-	if (style["envmap"])
-		return THREE.ImageUtils.loadTexture(glam.Material.parseUrl(style["envmap"]), THREE.SphericalRefractionMapping);
+	if (style["sphere-image"])
+		return THREE.ImageUtils.loadTexture(glam.Material.parseUrl(style["sphere-image"]), THREE.SphericalRefractionMapping);
 	
 	return null;
 }
@@ -61456,7 +61457,7 @@ glam.Material.parseUniforms = function(uniformsText, param) {
 			value = parseFloat(value);
 		else if (type == "t") {
 			value = value.toLowerCase();
-			if (value == "envmap") {
+			if (value == "cube") {
 				value = param.envMap;
 			}
 			else if (value == "texture" || value == "map") {
@@ -62343,13 +62344,14 @@ glam.Style._standardProperties = {
 		"depth" : "",
 		"distance" : "",
 		"end-angle" : "",
-		"envmap" : "",
-		"envmap-back" : "",
-		"envmap-bottom" : "",
-		"envmap-front" : "",
-		"envmap-left" : "",
-		"envmap-right" : "",
-		"envmap-top" : "",
+		"cube-image-back" : "",
+		"cube-image-bottom" : "",
+		"cube-image-front" : "",
+		"cube-image-left" : "",
+		"cube-image-right" : "",
+		"cube-image-top" : "",
+		"sphere-image" : "",
+		"sphereImage" : "",
 		"font-bevel" : "",
 		"font-depth" : "",
 		"font-family" : "",
