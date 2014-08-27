@@ -61242,6 +61242,11 @@ glam.Material.parseStyle = function(style) {
 		bumpMap = glam.Material.parseUrl(style["bump-image"]);
 	}
 
+	var specularMap = "";
+	if (style["specular-image"]) {
+		specularMap = glam.Material.parseUrl(style["specular-image"]);
+	}
+
 	var reflectivity;
 	if (style.reflectivity)
 		reflectivity = parseFloat(style.reflectivity);
@@ -61313,6 +61318,8 @@ glam.Material.parseStyle = function(style) {
 		param.normalMap = THREE.ImageUtils.loadTexture(normalMap);
 	if (bumpMap)
 		param.bumpMap = THREE.ImageUtils.loadTexture(bumpMap);
+	if (specularMap)
+		param.specularMap = THREE.ImageUtils.loadTexture(specularMap);
 	if (color !== undefined)
 		param.color = color;
 	if (diffuse !== undefined)
@@ -62220,6 +62227,8 @@ glam.renderer = {
 glam.Sphere = {};
 
 glam.Sphere.DEFAULT_RADIUS = 2;
+glam.Sphere.DEFAULT_WIDTH_SEGMENTS = 32;
+glam.Sphere.DEFAULT_HEIGHT_SEGMENTS = 32;
 
 glam.Sphere.create = function(docelt, style) {
 	return glam.Visual.create(docelt, style, glam.Sphere);
@@ -62228,21 +62237,31 @@ glam.Sphere.create = function(docelt, style) {
 glam.Sphere.getAttributes = function(docelt, style, param) {
 	
 	var radius = docelt.getAttribute('radius') || glam.Sphere.DEFAULT_RADIUS;
+	var widthSegments = docelt.getAttribute('width-segments') || glam.Sphere.DEFAULT_WIDTH_SEGMENTS;
+	var heightSegments = docelt.getAttribute('height-segments') || glam.Sphere.DEFAULT_HEIGHT_SEGMENTS;
 	
 	if (style) {
 		if (style.radius)
 			radius = style.radius;
+		if (style.widthSegments || style["width-segments"])
+			widthSegments = style.widthSegments || style["width-segments"];
+		if (style.heightSegments || style["height-segments"])
+			heightSegments = style.heightSegments || style["height-segments"];
 	}
 
 	radius = parseFloat(radius);
+	widthSegments = parseInt(widthSegments);
+	heightSegments = parseInt(heightSegments);
 	
 	param.radius = radius;
+	param.widthSegments = widthSegments;
+	param.heightSegments = heightSegments;
 }
 
 glam.Sphere.createVisual = function(docelt, material, param) {
 
 	var visual = new Vizi.Visual(
-			{ geometry: new THREE.SphereGeometry(param.radius, 32, 32),
+			{ geometry: new THREE.SphereGeometry(param.radius, param.widthSegments, param.heightSegments),
 				material: material
 			});
 	
@@ -62371,9 +62390,12 @@ glam.Style._standardProperties = {
 		"image" : "",
 		"normal-image" : "",
 		"bump-image" : "",
+		"specular-image" : "",
 		"opacity" : "",
 		"radius" : "",
 		"radius-segments" : "",
+		"width-segments" : "",
+		"height-segments" : "",
 		"reflectivity" : "",
 		"refraction-ratio" : "",
 		"render-mode" : "",
