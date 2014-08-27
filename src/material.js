@@ -61,7 +61,12 @@ glam.Material.parseStyle = function(style) {
 	if (style["normal-image"]) {
 		normalMap = glam.Material.parseUrl(style["normal-image"]);
 	}
-	
+
+	var bumpMap = "";
+	if (style["bump-image"]) {
+		bumpMap = glam.Material.parseUrl(style["bump-image"]);
+	}
+
 	var reflectivity;
 	if (style.reflectivity)
 		reflectivity = parseFloat(style.reflectivity);
@@ -131,6 +136,8 @@ glam.Material.parseStyle = function(style) {
 		param.envMap = envMap;
 	if (normalMap)
 		param.normalMap = THREE.ImageUtils.loadTexture(normalMap);
+	if (bumpMap)
+		param.bumpMap = THREE.ImageUtils.loadTexture(bumpMap);
 	if (color !== undefined)
 		param.color = color;
 	if (diffuse !== undefined)
