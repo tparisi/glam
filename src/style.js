@@ -118,6 +118,7 @@ glam.Style._standardProperties = {
 		"height" : "",
 		"line-width" : "",
 		"image" : "",
+		"image-normal" : "",
 		"opacity" : "",
 		"radius" : "",
 		"radius-segments" : "",

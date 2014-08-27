@@ -58,8 +58,8 @@ glam.Material.parseStyle = function(style) {
 	}
 
 	var normalMap = "";
-	if (style["map-normal"]) {
-		normalMap = glam.Material.parseUrl(style["map-normal"]);
+	if (style["image-normal"]) {
+		normalMap = glam.Material.parseUrl(style["image-normal"]);
 	}
 	
 	var reflectivity;
