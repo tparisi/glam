@@ -61255,10 +61255,10 @@ glam.Material.parseStyle = function(style) {
 	if (css = style["color"]) {
 		color = new THREE.Color().setStyle(css).getHex();
 	}
-	if (css = style["color-diffuse"]) {
+	if (css = style["diffuse-color"]) {
 		diffuse = new THREE.Color().setStyle(css).getHex();
 	}
-	if (css = style["color-specular"]) {
+	if (css = style["specular-color"]) {
 		specular = new THREE.Color().setStyle(css).getHex();
 	}
 	
@@ -61555,8 +61555,8 @@ glam.Material.onSetAttribute = function(obj, docelt, attr, val) {
 	var material = obj.visuals[0].material;
 	switch (attr) {
 		case "color" :
-		case "color-diffuse" :
-		case "colorDiffuse" :
+		case "diffuse-color" :
+		case "diffuseColor" :
 			material.color.setStyle(val);
 			break;
 	}
@@ -61567,8 +61567,8 @@ glam.Material.onSetProperty = function(obj, docelt, attr, val) {
 	var material = obj.visuals[0].material;
 	switch (attr) {
 		case "color" :
-		case "color-diffuse" :
-		case "colorDiffuse" :
+		case "diffuse-color" :
+		case "diffuseColor" :
 			material.color.setStyle(val);
 			break;
 	}
@@ -62336,10 +62336,10 @@ glam.Style._standardProperties = {
 		"bevel-size" : "",
 		"bevel-thickness" : "",
 		"color" : "",
-		"color-diffuse" : "",
-		"colorDiffuse" : "",
-		"color-specular" : "",
-		"colorSpecular" : "",
+		"diffuse-color" : "",
+		"diffuseColor" : "",
+		"specular-color" : "",
+		"specularColor" : "",
 		"dash-size" : "",
 		"depth" : "",
 		"distance" : "",

@@ -13,13 +13,13 @@
 	}
 
 	#cone1 {
-		color-diffuse:blue;
+		diffuse-color:blue;
 		radius:1;
 		shader:phong;
 	}
 
 	#cylinder1 {
-		color-diffuse:green;
+		diffuse-color:green;
 		radius:1;
 		render-mode:wireframe;
 	}
@@ -27,8 +27,8 @@
 	#sphere1 {
 		radius:1.5;
 		shader:phong;
-		color-diffuse:red;
-		color-specular:#004400;
+		diffuse-color:red;
+		specular-color:#004400;
 		opacity:.8;
 	}
 
@@ -36,7 +36,7 @@
 	}
 
 	#text1 {
-		color-diffuse:cornflowerblue;
+		diffuse-color:cornflowerblue;
 		shader:phong;
 		font-bevel:bevel;
 		font-weight:bold;
@@ -69,17 +69,17 @@
 	@-webkit-keyframes kfFade {
 	  0% {
 	    opacity:1;
-	    color-diffuse:red;
+	    diffuse-color:red;
 	  }
 	
 	  50% {
 	    opacity:.5;
-	    color-diffuse:green;
+	    diffuse-color:green;
 	  }
 	  
 	  100% {
 	    opacity:1;
-	    color-diffuse:red;
+	    diffuse-color:red;
 	  }
 	}
 

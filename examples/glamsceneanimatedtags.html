@@ -13,13 +13,13 @@
 	}
 
 	#cone1 {
-		color-diffuse:blue;
+		diffuse-color:blue;
 		radius:1;
 		shader:phong;
 	}
 
 	#cylinder1 {
-		color-diffuse:green;
+		diffuse-color:green;
 		radius:1;
 		render-mode:wireframe;
 	}
@@ -27,8 +27,8 @@
 	#sphere1 {
 		radius:1.5;
 		shader:phong;
-		color-diffuse:red;
-		color-specular:#004400;
+		diffuse-color:red;
+		specular-color:#004400;
 		opacity:.8;
 	}
 
@@ -36,7 +36,7 @@
 	}
 
 	#text1 {
-		color-diffuse:cornflowerblue;
+		diffuse-color:cornflowerblue;
 		shader:phong;
 		font-bevel:bevel;
 		font-weight:bold;
@@ -80,9 +80,9 @@ glam - Simple scene with cube
 		<keyframe time="100%" property="transform" value="rotateZ(360deg);"></keyframe>
 	</animation>
   	<animation id="animFade" duration="1s" iteration-count="infinite" timing-function="ease-in-out">
-		<keyframe time="0%" property="material" value="opacity:1;color-diffuse:red;"></keyframe>
-		<keyframe time="50%" property="material" value="opacity:.5;color-diffuse:green;"></keyframe>
-		<keyframe time="100%" property="material" value="opacity:1;color-diffuse:red;"></keyframe>
+		<keyframe time="0%" property="material" value="opacity:1;diffuse-color:red;"></keyframe>
+		<keyframe time="50%" property="material" value="opacity:.5;diffuse-color:green;"></keyframe>
+		<keyframe time="100%" property="material" value="opacity:1;diffuse-color:red;"></keyframe>
 	</animation>
   </scene>
 </glam>
