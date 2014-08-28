@@ -61469,6 +61469,11 @@ glam.Material.parseUniforms = function(uniformsText, param) {
 		
 		if (type == "f")
 			value = parseFloat(value);
+		if (type == "c") {
+			var c = new THREE.Color();
+			c.setStyle(value);
+			value = c;
+		}
 		else if (type == "t") {
 			value = value.toLowerCase();
 			if (value == "cube") {
@@ -62920,6 +62925,22 @@ glam.Types.parseColor3Array = function(element, colors) {
 		colors.push(c);
 	}
 
+}
+
+
+glam.Types.parseColor3 = function(text, c) {
+
+	var nums = text.split(" ");
+	
+	var i, len = nums.length;
+	if (len < 3)
+		return;
+	
+	var r = parseFloat(nums[0]), 
+		g = parseFloat(nums[1]), 
+		b = parseFloat(nums[2]);
+	
+	c.setRGB(r, g, b);
 }
 
 glam.Types.parseFaceArray = function(element, faces) {

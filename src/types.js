@@ -104,6 +104,22 @@ glam.Types.parseColor3Array = function(element, colors) {
 
 }
 
+
+glam.Types.parseColor3 = function(text, c) {
+
+	var nums = text.split(" ");
+	
+	var i, len = nums.length;
+	if (len < 3)
+		return;
+	
+	var r = parseFloat(nums[0]), 
+		g = parseFloat(nums[1]), 
+		b = parseFloat(nums[2]);
+	
+	c.setRGB(r, g, b);
+}
+
 glam.Types.parseFaceArray = function(element, faces) {
 	
 	var text = element.textContent;

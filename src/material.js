@@ -294,6 +294,11 @@ glam.Material.parseUniforms = function(uniformsText, param) {
 		
 		if (type == "f")
 			value = parseFloat(value);
+		if (type == "c") {
+			var c = new THREE.Color();
+			c.setStyle(value);
+			value = c;
+		}
 		else if (type == "t") {
 			value = value.toLowerCase();
 			if (value == "cube") {
