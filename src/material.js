@@ -85,6 +85,7 @@ glam.Material.parseStyle = function(style) {
 	var color;
 	var diffuse;
 	var specular;
+	var ambient;
 	var css = "";
 
 	if (css = style["color"]) {
@@ -95,6 +96,9 @@ glam.Material.parseStyle = function(style) {
 	}
 	if (css = style["specular-color"]) {
 		specular = new THREE.Color().setStyle(css).getHex();
+	}
+	if (css = style["ambient-color"]) {
+		ambient = new THREE.Color().setStyle(css).getHex();
 	}
 	
 	var opacity;
@@ -151,6 +155,8 @@ glam.Material.parseStyle = function(style) {
 		param.color = diffuse;
 	if (specular !== undefined)
 		param.specular = specular;
+	if (ambient !== undefined)
+		param.ambient = ambient;
 	if (opacity !== undefined) {
 		param.opacity = opacity;
 		param.transparent = opacity < 1;
@@ -304,8 +310,10 @@ glam.Material.parseUniforms = function(uniformsText, param) {
 			if (value == "cube") {
 				value = param.envMap;
 			}
-			else if (value == "texture" || value == "map") {
-				value = param.map;
+			else {
+				var image = glam.Material.parseUrl(value);
+				value = THREE.ImageUtils.loadTexture(image);
+				value.wrapS = value.wrapT = THREE.Repeat;
 			}
 		}
 		
