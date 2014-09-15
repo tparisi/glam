@@ -8,6 +8,11 @@
 <title>glam - Text</title>
 
 <style>
+	body{
+		margin: 0px;
+		background-color: #000;
+	}
+
 	#text1 {
 		color:cornflowerblue;
 		shader:phong;
@@ -87,7 +92,7 @@ $(document).ready(function(){
 </script>
 </head>
 <body>
-<div id="container" style="width:98%; height:98%;position:absolute;background:url(../images/slidebg.png);">
+<div id="container" style="width:98%; height:98%;position:absolute;">
 <glam>
   <scene>
 	<text x='-1' y='1' id="text1" value='glam'animation="animRotateY"></text>
