@@ -1,0 +1,204 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+<script src="../build/glam.min.js" ></script>
+<title>glam - fresnel shader</title>
+
+<style>
+	body{
+		margin: 0px;
+		background-color: #000;
+	}
+
+
+	.skybox {
+		cube-image-right:url(../site/images/pattern1.svg);
+		cube-image-left:url(../site/images/pattern2.svg);
+		cube-image-top:url(../site/images/pattern3.svg);
+		cube-image-bottom:url(../site/images/pattern4.svg);
+		cube-image-front:url(../site/images/pattern5.svg);
+		cube-image-back:url(../site/images/pattern6.svg);
+	}
+	
+	.bubble {
+		radius:.7;
+		diffuse-color:lightgray;
+		vertex-shader:url(../shaders/fresnel.vs);
+		fragment-shader:url(../shaders/fresnel.fs);
+		shader-uniforms:mRefractionRatio f 1.02 mFresnelBias f 0.1 mFresnelPower f 2.0 mFresnelScale f 1.0 tCube t cube;
+	}
+
+	@-webkit-keyframes kfBB1 {
+	  0% {
+	    -webkit-transform: translateY(-6);
+	  }
+	
+	  50% {
+	   -webkit-transform: translateY(0);
+	  }
+	  
+	  100% {
+	   -webkit-transform: translateY(6);
+	  }
+	}
+
+	@-webkit-keyframes kfBB2 {
+	  0% {
+	    -webkit-transform: translateY(0);
+	  }
+	
+	  50% {
+	   -webkit-transform: translateY(2);
+	  }
+	  
+	  100% {
+	   -webkit-transform: translateY(0);
+	  }
+	}
+
+	@-webkit-keyframes kfBB3 {
+	  0% {
+	    -webkit-transform: translateY(-2);
+	  }
+	
+	  50% {
+	   -webkit-transform: translateY(0);
+	  }
+	  
+	  100% {
+	   -webkit-transform: translateY(-2);
+	  }
+	}
+
+	.bubbleBounce
+	 {
+	  -webkit-animation-duration: 20s;
+	  -webkit-animation-name: kfBB1;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
+
+	.bubbleBounce2
+	 {
+	  -webkit-animation-duration: 5s;
+	  -webkit-animation-name: kfBB2;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
+
+	.bubbleBounce3
+	 {
+	  -webkit-animation-duration: 8s;
+	  -webkit-animation-name: kfBB3;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
+
+	#sb1 {
+		background-type:box;
+	}
+
+	#glamcube {
+		opacity:.8;
+		vertex-shader:url(../shaders/MirrorShader.vs);
+		fragment-shader:url(../shaders/MirrorShader.fs);
+		shader-uniforms:tDiffuse t url(../site/images/pattern6.svg) side i 1;
+		rx:30deg;
+	}
+
+	@-webkit-keyframes kfRotateY {
+	  from {
+	    -webkit-transform: rotateY(0deg);
+	  }
+	
+	  to {
+	   -webkit-transform: rotateY(360deg);
+	  }
+	}
+
+
+	.animRotateY
+	 {
+	  -webkit-animation-duration: 10s;
+	  -webkit-animation-name: kfRotateY;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:linear;
+	}
+
+
+
+	#sphere1 {	
+		opacity:.8;
+		vertex-shader:url(../shaders/MirrorShader.vs);
+		fragment-shader:url(../shaders/MirrorShader.fs);
+		shader-uniforms:tDiffuse t url(../site/images/pattern6.svg) side i 1;
+	}
+
+	
+</style>
+<script>
+
+function addBubbles(scene) {
+
+	var i, len = 50;
+
+	for (i = 0; i < len; i++) {
+
+		var x = -6 + (Math.random() * 12);
+		var y = -6 + (Math.random() * 12);
+		var z = -6 + (Math.random() * 12);
+
+		var groupelt = document.createElement('group');
+		
+		groupelt.setAttribute('x', x);
+		groupelt.setAttribute('z', z);
+		groupelt.setAttribute('y', y);
+		
+		var sphereelt = document.createElement('sphere');
+		var animClass = i % 3 ? 'bubbleBounce' : (i % 2 ? 'bubbleBounce2' : 'bubbleBounce3');
+		sphereelt.setAttribute('class', "bubble skybox " + animClass);
+
+		groupelt.appendChild(sphereelt);
+		
+		scene.appendChild(groupelt);
+		
+	}
+}
+
+$(document).ready(function(){
+
+	glam.ready();
+	var scene = document.getElementsByTagName('scene')[0];
+	addBubbles(scene);
+});
+
+</script>
+</head>
+<body>
+<!-- 
+glam - Simple scene with cube
+ -->
+<div id="container" style="width:98%; height:98%;position:absolute;">
+<glam>
+  <scene>
+	<background id="sb1" class="skybox"></background>
+	<cube id="glamcube" class="animRotateY"></cube>
+	<group y ='1' z='-3'>
+		<sphere id="sphere1" radius='1.5'></sphere>
+		<sphere class="bubble skybox bubbleBounce"></sphere>
+		<sphere x='-1' z='-2' class="bubble skybox bubbleBounce2"></sphere>
+	</group>
+	<group x='2' y ='.5' z='-2'>
+		<sphere class="bubble skybox bubbleBounce"></sphere>
+		<sphere x='-1' z='-2' class="bubble skybox bubbleBounce2"></sphere>
+	</group>
+	<sphere class="bubble skybox bubbleBounce"></sphere>
+	<sphere x='-1' z='-2' class="bubble skybox bubbleBounce2"></sphere>
+  </scene>
+</glam>
+</div>
+
+</body>
+</html>

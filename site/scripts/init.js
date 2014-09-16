@@ -44,7 +44,7 @@ function detectmob() {
 
 
 function scrollToContent(loc){
-    $('html').velocity("scroll", { duration: 1500, easing: "spring", offset: $(loc).offset().top - 55  });
+    $('html').velocity("scroll", { duration: 1500, easing: "easeInSine", offset: $(loc).offset().top - 55  });
     $('#menuContent').collapse('hide');
 }
 
