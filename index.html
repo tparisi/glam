@@ -33,7 +33,10 @@
       'site/scripts/jquery.lazyload.min'
       ],
       velocity:[
-      'site/scripts/jquery.velocity.min'
+      'site/scripts/velocity.min'
+      ],
+      velocityui:[
+      'site/scripts/velocity.ui.min'
       ],
       bPopup:[
       'site/scripts/jquery.bpopup.min'
@@ -44,8 +47,8 @@
       }
       });
       require(['jquery',], function($){
-      require(['bootstrap', 'touch', 'lazyloader', 'velocity', 'bPopup'], function($) {
-      require(['site/scripts/init.js'], function($) {
+      require(['bootstrap', 'touch', 'lazyloader', 'bPopup'], function($) {
+      require(['velocity', 'velocityui', 'site/scripts/init.js'], function($, velocity) {
       });
       });
       });
@@ -136,6 +139,7 @@
         .thumbnail{
           background-color: transparent;
           border: solid 1px #fff;
+          display: none;
         }
         .thumbnail p{
           color: #fff !important;
@@ -187,6 +191,8 @@
           width: 100%;
           float: left;
         }
+
+        #main_content{display: none}
 
       </style>
       <title>glamJS</title>
