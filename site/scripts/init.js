@@ -100,7 +100,7 @@ $(function() {
             scrollToContent($(this).attr('href'));
         });
 
-        $(".col-md-4 div").velocity("transition.slideUpBigIn", { complete: function(){
+        $(".col-md-3 div").velocity("transition.slideUpBigIn", { complete: function(){
             $("img").lazyload({effect:'fadeIn'});
         } });
         
