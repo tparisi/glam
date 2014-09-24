@@ -34,7 +34,7 @@ glam.Cylinder.getAttributes = function(docelt, style, param) {
 glam.Cylinder.createVisual = function(docelt, material, param) {
 
 	var visual = new Vizi.Visual(
-			{ geometry: new THREE.CylinderGeometry(param.radius, param.radius, param.height, 16),
+			{ geometry: new THREE.CylinderGeometry(param.radius, param.radius, param.height, 32),
 				material: material
 			});
 	
