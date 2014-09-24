@@ -12,6 +12,7 @@ SOURCES="../src/glam.js \
 ../src/cube.js \
 ../src/cylinder.js \
 ../src/document.js \
+../src/effect.js \
 ../src/group.js \
 ../src/import.js \
 ../src/input.js \

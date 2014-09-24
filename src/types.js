@@ -27,6 +27,7 @@ glam.Types.types = {
 		"line" :  { cls : glam.Line, transform:true, animation:true, visual:true },
 		"light" :  { cls : glam.Light, transform:true, animation:true },
 		"particles" :  { cls : glam.Particles, transform:true, animation:true },
+		"effect" :  { cls : glam.Effect, },
 };
 
 
