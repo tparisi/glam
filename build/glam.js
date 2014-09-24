@@ -59068,6 +59068,7 @@ glam.document = {
 
 glam.Effect = {};
 
+glam.Effect.DEFAULT_BLOOM_STRENGTH = 1;
 glam.Effect.DEFAULT_FILM_GRAYSCALE = 0;
 glam.Effect.DEFAULT_FILM_SCANLINECOUNT = 512;
 glam.Effect.DEFAULT_FILM_INTENSITY = 0.5;
@@ -59083,7 +59084,12 @@ glam.Effect.create = function(docelt, style, app) {
 	switch (type) {
 
 		case "Bloom" :
-			effect = new Vizi.Effect(new THREE.BloomPass);
+			var strength = glam.Effect.DEFAULT_BLOOM_STRENGTH;
+			var str = docelt.getAttribute("strength");
+			if (str != undefined) {
+				strength = parseFloat(str);
+			}
+			effect = new Vizi.Effect(new THREE.BloomPass(strength));
 			break;
 
 		case "Film" :
@@ -59118,6 +59124,11 @@ glam.Effect.create = function(docelt, style, app) {
 }
 
 glam.Effect.parseAttributes = function(docelt, effect, style) {
+	
+	var disabled = docelt.getAttribute("disabled");
+	if (disabled != undefined) {
+		effect.pass.enabled = false;
+	}
 	
 	var uniforms = effect.pass.uniforms;
 	
