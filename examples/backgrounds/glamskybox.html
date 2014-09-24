@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+<script src="../../build/glam.min.js" ></script>
+<title>glam - Scene with skybox background and environment map</title>
+
+<style>
+	body{
+		margin: 0px;
+		background-color: #000;
+	}
+
+	#cube1 {
+		diffuse-color:lightgray;
+		cube-image-right:url(../../images/sky35/rightcity.jpg);
+		cube-image-left:url(../../images/sky35/leftcity.jpg);
+		cube-image-top:url(../../images/sky35/topcity.jpg);
+		cube-image-bottom:url(../../images/sky35/botcity.jpg);
+		cube-image-front:url(../../images/sky35/frontcity.jpg);
+		cube-image-back:url(../../images/sky35/backcity.jpg);
+		shader:phong;
+	}
+	
+	#sb1 {
+		background-type:box;
+		cube-image-right:url(../../images/sky35/rightcity.jpg);
+		cube-image-left:url(../../images/sky35/leftcity.jpg);
+		cube-image-top:url(../../images/sky35/topcity.jpg);
+		cube-image-bottom:url(../../images/sky35/botcity.jpg);
+		cube-image-front:url(../../images/sky35/frontcity.jpg);
+		cube-image-back:url(../../images/sky35/backcity.jpg);
+	}
+	
+</style>
+<script>
+$(document).ready(function(){
+
+	glam.ready();
+});
+
+</script>
+</head>
+<body>
+<!-- 
+glam - Simple scene with cube
+ -->
+<div id="container" style="width:98%; height:98%;position:absolute;">
+<glam>
+  <scene>
+	<background id="sb1"></background>
+	<cube id="cube1"></cube>
+  </scene>
+</glam>
+</div>
+
+
+</body>
+</html>

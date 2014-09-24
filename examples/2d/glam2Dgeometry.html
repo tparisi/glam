@@ -1,0 +1,74 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+<script src="../../build/glam.min.js" ></script>
+<title>glam - 2D shapes</title>
+
+<style>
+	body{
+		margin: 0px;
+		background-color: #000;
+	}
+
+	#rect1 {
+		image:url(../../images/ash_uvgrid01.jpg);
+		diffuse-color:blue;
+		shader:phong;
+		backface-visibility:visible;
+	}
+
+	#rect2 {
+		image:url(../../images/flowers.jpg);
+		shader:phong;
+		backface-visibility:hidden;
+	}
+	
+	#circle1 {
+		image:url(../../images/ash_uvgrid01.jpg);
+		radius:.75;
+		backface-visibility:visible;
+	}
+
+	#arc1 {
+		radius:.75;
+		diffuse-color:goldenrod;
+		startAngle:60deg;
+		endAngle:240deg;
+		backface-visibility:visible;
+	}
+
+</style>
+<script>
+$(document).ready(function(){
+
+	glam.ready();
+});
+
+</script>
+</head>
+<body>
+<!-- 
+glam - Simple scene with cube
+ -->
+<div id="container" style="width:98%; height:98%;position:absolute;">
+<glam>
+  <scene>
+  	<rect id="rect1"></rect>
+  	<group x='1' y='1' z='-3'>
+	  	<rect id="rect2" width='5' height'1'></rect>
+  	</group>
+  	<group x='-1' y='-1' z='-2'>
+	  	<circle id="circle1" radius='1' ></circle>
+  	</group>
+  	<group x='-1' y='1' z='1'>
+	  	<arc id="arc1"></arc>
+  	</group>
+  </scene>
+</glam>
+</div>
+
+
+</body>
+</html>
