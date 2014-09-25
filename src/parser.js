@@ -80,9 +80,9 @@ glam.parser = {
 		var len = styles.length;
 		for (i = 0; i < len; i++)
 		{
-            if (!styles[i].childNodes.length) {
-                continue;
-            }
+			if (!styles[i].childNodes.length) {
+				continue;
+			}
 			$.parsecss(styles[i].childNodes[0].data,
 					function(css) {
 							glam.parser.addStyle(css);
