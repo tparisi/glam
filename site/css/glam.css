@@ -59,7 +59,7 @@ body,.navbar{padding:0;margin:0;font-family:'Oswald',sans-serif;color:#fff;backg
       .glamBG{
         float: left;
         width: 100%;
-        background-image:url('/site/images/bg.jpg');
+        background-image:url('/glam/site/images/bg.jpg');
         background-size: cover;
       }
 
@@ -82,22 +82,22 @@ body,.navbar{padding:0;margin:0;font-family:'Oswald',sans-serif;color:#fff;backg
       }
 
       .dImage1{
-        background-image: url('/site/images/demo/bubblepop.jpg' );
+        background-image: url('/glam/site/images/demo/bubblepop.jpg' );
       }
 
       .dImage2{
-         background-image: url('/site/images/demo/glamcubeanimated.jpg' );
+         background-image: url('/glam/site/images/demo/glamcubeanimated.jpg' );
          background-size: 20%;
         
       }
 
       .dImage3{
-         background-image: url('/site/images/demo/glamcity.jpg' );
+         background-image: url('/glam/site/images/demo/glamcity.jpg' );
         
       }
 
       .dImage4{
-         background-image: url('/site/images/demo/glamsceneanimatedeffects.jpg' );
+         background-image: url('/glam/site/images/demo/glamsceneanimatedeffects.jpg' );
          background-size: 85%;
         
       }
