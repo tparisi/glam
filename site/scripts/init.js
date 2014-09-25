@@ -88,7 +88,7 @@ $(function() {
     
  
 
-    define(['holder'], function(holder) {
+    define(['holder', 'velocity'], function(holder, velocity) {
         this.compositionComplete = function () { // EXECUTES AFTER DOM UPDATE
                 holder.run({
                     domain: "holder.canvas",
