@@ -50,6 +50,14 @@ function scrollToContent(loc){
 
 
 $(function() {
+    var bgHeight = $(window).height() - 320;
+    if(bgHeight >= 584){
+        $('.glamBG').height($(window).height() - 320);
+    }else{
+        $('.glamBG').height(584);
+    }
+    
+
     var _bPop;
     var _bPopSource;
 
@@ -99,6 +107,10 @@ $(function() {
             e.preventDefault();
             scrollToContent($(this).attr('href'));
         });
+        $(' .demoLnk').on('click, tap', function(e) {
+            e.preventDefault();
+        $('html').velocity("scroll", { duration: 1500, easing: "easeInSine", offset: $($(this).attr('href')).offset().top - 55  });
+         });
 
         $(".col-md-3 div").velocity("transition.slideUpBigIn", { complete: function(){
             $("img").lazyload({effect:'fadeIn'});
@@ -107,11 +119,12 @@ $(function() {
 
      });
 
-    $('[data-url]').on('click, tap', function(e){
-        console.log($(this).attr('data-url'));
+    $('.thumbnail').on('click, tap', function(e){
+        currentID = $(this).find('[data-source]');
+        currentID = $(currentID).data('source');
         if(detectmob()){
             window.open(
-                $(this).data("url"),
+                $(this).find('a').data("url"),
                 '_blank'
             )
         }else{
@@ -127,20 +140,91 @@ $(function() {
                $('.popup, .b-iframe').width($(window).width());
 
                $('.popup').append("<div class='closePopUp'>X</div>");
+               $('.popup').append("<div class='viewSource'>Source</div>");
+
                 $('.closePopUp').on('click, tap', function(){
                 _bPop.close();
                 });
+
+                $('.viewSource').on('click, tap', function(){
+                _bPop.close();
+                setTimeout(callSourceHack, 500);
+                });
+
             },
             onClose: function(){
                 $('body').not('iframe body').css('overflow', 'scroll');
             },
-            loadUrl: $(this).attr('data-url')
+            loadUrl: $(this).find('a').data("url")
             });
         }
 
     });
 
 
+    callSourceHack = function(){
+         _bPopSource =  $('.popup').bPopup({
+                    content:'iframe',
+                    fadeSpeed: 'fast',
+                    escClose:true,
+                    opacity:0,
+                    position:[0,50],
+                    loadCallback: function() {
+                       $('body').not('iframe body').css('overflow', 'hidden');
+                       $('.popup, .b-iframe').height($(window).height());
+                       $('.popup, .b-iframe').width($(window).width());
+                       $('iframe').height(2000);
+                       $('.popup, .b-iframe').css('overflow', 'scroll');
+
+                       $('.popup').append("<div class='closePopUp'>X</div>");
+
+                        $('.closePopUp').on('click, tap', function(){
+                        _bPopSource.close();
+                        });
+                    },
+                    onClose:function(){
+                       $('body').not('iframe body').css('overflow', 'scroll');
+                    },
+                    loadUrl: 'source.html#' + currentID
+                    });
+    }
+
+    $('[data-url]').on('click', function(e){
+        currentID = $(this).find('[data-source]');
+        currentID = $(currentID).data('source');
+        
+         _bPop =  $('.popup').bPopup({
+            fadeSpeed: 'fast',
+            content:'iframe',
+            escClose:true,
+            opacity:0,
+            position:[20,50],
+            loadCallback: function() {
+               $('body').not('iframe body').css('overflow', 'hidden');
+               $('.popup, .b-iframe').height($(window).height());
+               $('.popup, .b-iframe').width($(window).width());
+
+               $('.popup').append("<div class='closePopUp'>X</div>");
+                $('.popup').append("<div class='viewSource'>Source</div>");
+                $('.closePopUp').on('click, tap', function(){
+                _bPop.close();
+                });
+
+                $('.viewSource').on('click, tap', function(){
+                _bPop.close();
+                setTimeout(callSourceHack, 500);
+                });
+
+            },
+            onClose: function(){
+                $('body').not('iframe body').css('overflow', 'scroll');
+            },
+            loadUrl: $(this).data("url")
+            });
+
+    });
+
+/*
     $('[data-source]').on('click, tap', function(e){
         if(detectmob()){
              window.open(
@@ -162,6 +246,7 @@ $(function() {
                $('.popup, .b-iframe').css('overflow', 'scroll');
 
                $('.popup').append("<div class='closePopUp'>X</div>");
+
                 $('.closePopUp').on('click, tap', function(){
                 _bPopSource.close();
                 });
@@ -173,7 +258,7 @@ $(function() {
             });
         }
 
-    });
+    });*/
     
              
 
