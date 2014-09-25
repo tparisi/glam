@@ -7,7 +7,6 @@
     <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1">
     <meta name="HandheldFriendly" content="True">
     <meta name="MobileOptimized" content="320">
-
     <link href="site/css/glam.min.css" rel="stylesheet" media="screen">
     <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" class="holderjs">
     <link href='http://fonts.googleapis.com/css?family=Oswald:400,700,300' rel='stylesheet' type='text/css'>
@@ -66,13 +65,178 @@
 
         GL markup Language site by #SeaCloud9
         -->
-      <title>GLaM -> GL MarkUP</title>
+      <title><glam/></title>
+
+      <style type="text/css">
+      .imgT{
+        float:left;
+        width:100%;
+        text-align: center;
+      }
+      .type{
+        float:left;
+        width:100%;
+        text-align: center;
+        border-radius: 4px;
+        background-color: #fff;
+        color: #000;
+        padding: 3px 12px;
+      }
+
+      .btn-glam{
+        width: 100%;
+        float: left;
+        padding: 3px 12px;
+      }
+
+      .btn{
+        display: none;
+      }
+
+      .caption p{
+        display: none;
+      }
+
+      .demoBtn{
+        float: left;
+        width: 100%;
+        clear: both;
+        display: block;
+        box-sizing: border-box;
+      }
+      .thumbnail{
+        cursor: pointer;
+      }
+      .thumbnail img{
+        margin-bottom: 15px;
+        margin-top: 6px;
+      }
+
+      .logoLnk{
+        font-size: 22px;
+        letter-spacing: 2px;
+
+      }
+
+      .glamBG{
+        float: left;
+        width: 100%;
+        background-image:url('site/images/bg.jpg');
+        background-size: cover;
+      }
+
+      .dContainer{
+        background:black; width:150px; height:150px;-webkit-transform: rotate(45deg);-moz-transform: rotate(45deg);transform: rotate(45deg);
+        overflow: hidden;
+        margin-top: 90px;
+      }
+
+      .dImage{
+        margin-left: -80px;
+        margin-top: -40px;
+        float: left;
+        width: 400px;
+        height: 400px;
+        background-size: cover;
+        transform: rotate(-45deg);
+        -webkit-transform: rotate(-45deg);
+        -moz-transform: rotate(-45deg);
+      }
+
+      .dImage1{
+        background-image: url('site/images/demo/bubblepop.jpg' );
+      }
+
+      .dImage2{
+         background-image: url('site/images/demo/glamcubeanimated.jpg' );
+         background-size: 20%;
+        
+      }
+
+      .dImage3{
+         background-image: url('site/images/demo/glamcity.jpg' );
+        
+      }
+
+      .dImage4{
+         background-image: url('site/images/demo/glamsceneanimatedeffects.jpg' );
+         background-size: 85%;
+        
+      }
+
+      .dWaraper{
+        float:right; width:100%; text-align:center;
+        position: relative;
+      }
+
+      .d1{
+        margin-left: 220px;
+        margin-top: -28px;
+      }
+
+      .d2{
+        margin-top: -151px;
+        margin-right: 224px;
+      }
+
+      .d3{
+        margin-top: -30px;
+      }
+
+  
+      .glamBG{
+        min-height: 584px;
+        position: relative;
+      }
+
+      .glHdrTxt{
+        position: absolute;
+        width: 100%;
+        z-index: 99;
+        left: -255px;
+        top: 60px;
+      }
+
+      .glHdrTxt h2{
+         font-size: 40px; 
+      }
+
+      .popup{
+        width: 100%;
+        left: 0px !important;
+      }
+
+      @media screen and (max-device-width: 876px) {
+        .glamBG, .demoLnk{display: none}
+      }
+
+      .viewSource{
+        position: absolute;
+        right: 80px;
+        top: 20px;
+        color: #fff;
+        font-weight: 700;
+        font-size: 22px;
+        padding: 5px;
+        border: solid 1px #FA06A2;
+        border-radius: 4px;
+        cursor: pointer;
+        background-color: #000;
+      }
+
+
+      </style>
     </head>
     <body class='glamBody'>
       <header>
         <nav class="navbar navbar-inverse navbar-fixed-top">
           <div class="navbar-header">
-            <a class="navbar-brand" data-source='glambumpmap' >glam</a>
+            <a class="navbar-brand logoLnk" > &lt; glam /&gt; </a>
+
+            <a class="demoLnk navbar-brand logoLnk" href="#featured"  > Featured Demos </a>
+            <a class="demoLnk navbar-brand logoLnk"  href="#examples" > Examples </a>
+
+
             <button type="button" class="navbar-toggle positionRelative" data-toggle="collapse" data-target=".navbar-collapse">
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
@@ -82,69 +246,62 @@
                   <option value="bubblepop">
                     bubblepop
                   </option>
-                  <option value="glam2Dgeometry">
-                    glam2Dgeometry
-                  </option>
-                  <option value="glambumpmap">
-                    glambumpmap
-                  </option>
                   <option value="glamcity">
                     glamcity
-                  </option>
-                  <option value="glamcityvr">
-                    glamcityvr
-                  </option>
-                  <option value="glamcube">
-                    glamcube
                   </option>
                   <option value="glamcubeanimated">
                     glamcubeanimated
                   </option>
-                  <option value="glamcubebowie">
-                    glamcubebowie
+                  <option value="glamsceneanimatedeffects">
+                    glamsceneanimatedeffects
                   </option>
-                  <option value="glamcubeinteractive">
-                    glamcubeinteractive
-                  </option>
-                  <option value="glamcubestyle">
-                    glamcubestyle
-                  </option>
-                  <option value="glamimport">
-                    glamimport
-                  </option>
-                  <option value="glamlights">
-                    glamlights
-                  </option>
+                  
 
-                  <option value="glamlines">
-                    glamlines
-                  </option>
-                  <option value="glammesh">
-                    glammesh
-                  </option>
-                  <option value="glamparticles">
-                    glamparticles
+
+                  <option value="glamcube">
+                    glamcube
                   </option>
                   <option value="glamscene">
                     glamscene
                   </option>
+                  <option value="glamcubeanimated">
+                    glamcubeanimated
+                  </option>
                   <option value="glamsceneanimated">
                     glamsceneanimated
                   </option>
-                  <option value="glamsceneanimatedtags">
-                    glamsceneanimatedtags
+                  <option value="glamcubeinteractive">
+                    glamcubeinteractive
                   </option>
-                  <option value="glamscenecss">
-                    glamscenecss
+                  <option value="glammesh">
+                    glammesh
+                  </option>
+                  <option value="glamlines">
+                    glamlines
+                  </option>
+                  <option value="glamtext">
+                    glamtext
+                  </option>
+                  <option value="glamparticles">
+                    glamparticles
+                  </option>
+                  <option value="glamimport">
+                    glamimport
+                  </option>
+                  <option value="glambumpmap">
+                    glambumpmap
+                  </option>
+                  <option value="glamearth">
+                    glamearth
+                  </option>
+                  <option value="glamspecularmap">
+                    glamspecularmap
                   </option>
                   <option value="glamshaderfresnel">
                     glamshaderfresnel
                   </option>
-                  <option value="glamshaderfresnelvr">
-                    glamshaderfresnelvr
-                  </option>
-                  <option value="glamshadertoon">
-                    glamshadertoon
+                  <option value="glamsun">
+                    glamsun
                   </option>
                   <option value="glamskybox">
                     glamskybox
@@ -152,36 +309,20 @@
                   <option value="glamskysphere">
                     glamskysphere
                   </option>
-
+                  <option value="glamcubeeffects">
+                    glamcubeeffects
+                  </option>
+                  <option value="glamsceneanimatedeffects">
+                    glamsceneanimatedeffects
+                  </option>
+                  <option value="glamcityvr">
+                    glamcityvr
+                  </option>
+                  <option value="glamshaderfresnelvr">
+                    glamshaderfresnelvr
+                  </option>
                   <option value="glamskyspherevr">
                     glamskyspherevr
-                  </option>
-                  <option value="glamsolarsystem">
-                    glamsolarsystem
-                  </option>
-                  <option value="glamspecularmap">
-                    glamspecularmap
-                  </option>
-                  <option value="glamsun">
-                    glamsun
-                  </option>
-                  <option value="glamtext">
-                    glamtext
-                  </option>
-                  <option value="glamtransitions">
-                    glamtransitions
-                  </option>
-                  <option value="vizicube">
-                    vizicube
-                  </option>
-                  <option value="home">
-                    Home
-                  </option>
-                  <option value="about">
-                    About
-                  </option>
-                  <option value="contact">
-                    Contact
                   </option>
                 </select>
               </div>
@@ -190,36 +331,32 @@
           <div class="navbar-collapse collapse" id="menuContent">
             <ul class="nav navbar-nav">
               <li><a href='#bubblepop'>bubblepop</a></li>
-              <li><a href='#glam2Dgeometry'>glam2Dgeometry</a></li>
-              <li><a href='#glambumpmap'>glambumpmap</a></li>
               <li><a href='#glamcity'>glamcity</a></li>
-              <li><a href='#glamcityvr'>glamcityvr</a></li>
-              <li><a href='#glamcube'>glamcube</a></li>
               <li><a href='#glamcubeanimated'>glamcubeanimated</a></li>
-              <li><a href='#glamcubebowie'>glamcubebowie</a></li>
-              <li><a href='#glamcubeinteractive'>glamcubeinteractive</a></li>
-              <li><a href='#glamcubestyle'>glamcubestyle</a></li>
-              <li><a href='#glamimport'>glamimport</a></li>
-              <li><a href='#glamlights'>glamlights</a></li>
-              <li><a href='#glamlines'>glamlines</a></li>
-              <li><a href='#glammesh'>glammesh</a></li>
-              <li><a href='#glamparticles'>glamparticles</a></li>
+              <li><a href='#glamsceneanimatedeffects'>glamsceneanimatedeffects</a></li>
+
+              <li><a href='#glamcube'>glamcube</a></li>
               <li><a href='#glamscene'>glamscene</a></li>
+              <li><a href='#glamcubeanimated'>glamcubeanimated</a></li>
               <li><a href='#glamsceneanimated'>glamsceneanimated</a></li>
-              <li><a href='#glamsceneanimatedtags'>glamsceneanimatedtags</a></li>
-              <li><a href='#glamscenecss'>glamscenecss</a></li>
+              <li><a href='#glamcubeinteractive'>glamcubeinteractive</a></li>
+              <li><a href='#glammesh'>glammesh</a></li>
+              <li><a href='#glamlines'>glamlines</a></li>
+              <li><a href='#glamtext'>glamtext</a></li>
+              <li><a href='#glamparticles'>glamparticles</a></li>
+              <li><a href='#glamimport'>glamimport</a></li>
+              <li><a href='#glambumpmap'>glambumpmap</a></li>
+              <li><a href='#glamearth'>glamearth</a></li>
+              <li><a href='#glamspecularmap'>glamspecularmap</a></li>
               <li><a href='#glamshaderfresnel'>glamshaderfresnel</a></li>
-              <li><a href='#glamshaderfresnelvr'>glamshaderfresnelvr</a></li>
-              <li><a href='#glamshadertoon'>glamshadertoon</a></li>
+              <li><a href='#glamsun'>glamsun</a></li> 
               <li><a href='#glamskybox'>glamskybox</a></li>
               <li><a href='#glamskysphere'>glamskysphere</a></li>
+              <li><a href='#glamcubeeffects'>glamcubeeffects</a></li>
+              <li><a href='#glamsceneanimatedeffects'>glamsceneanimatedeffects</a></li>
+              <li><a href='#glamcityvr'>glamcityvr</a></li>
+              <li><a href='#glamshaderfresnelvr'>glamshaderfresnelvr</a></li>
               <li><a href='#glamskyspherevr'>glamskyspherevr</a></li>
-              <li><a href='#glamsolarsystem'>glamsolarsystem</a></li>
-              <li><a href='#glamspecularmap'>glamspecularmap</a></li>
-              <li><a href='#glamsun'>glamsun</a></li>
-              <li><a href='#glamtext'>glamtext</a></li>
-              <li><a href='#glamtransitions'>glamtransitions</a></li>
-              <li><a href='#vizicube'>vizicube</a></li>
               <li class="active"><a href='#' >Home</a></li>
               <li><a href="#about">About</a></li>
               <li><a href="#contact">Contact</a></li>
@@ -229,8 +366,39 @@
         <div class="container-fluid">
           Current viewport width:<span id="monitor"></span>
         </div>
-        <div class="container">
-          <h2>GL and Markup</h2>
+        <header class="glamBG">
+          
+
+          <div class="dWaraper">
+            <div class="glHdrTxt">
+            <h2>&lt; glam /&gt;<br/>
+              GL and Markup</h2>
+          </div>
+            <center>
+            <div class="dContainer" data-url='demos/bubblepop.html'>
+              <div class="dImage dImage1" data-source="bubblepop" >&nbsp;</div>
+            </div>
+
+            <div class="dContainer d1" data-url='demos/glamcity.html'>
+              <div class="dImage dImage3" data-source="glamcity">&nbsp;</div>
+            </div>
+             </center>
+             <center>
+            <div class="dContainer d2" data-url='demos/glamsceneanimatedeffects.html'>
+              <div class="dImage dImage4" data-source="glamcubeanimated">&nbsp;</div>
+            </div>
+
+            <div class="dContainer d3" data-url='demos/glamcubeanimated.html'>
+              <div class="dImage dImage2" data-source="glamcubeanimated">&nbsp;</div>
+            </div>
+             </center>
+
+          </header>
+
+
+        <div class="container-fluid">
+          <h2 style="display:none">GL and Markup</h2>
+          
           <section id="downloads">
             <a href="https://github.com/tparisi/glam/zipball/master" class="btn">Download as .zip</a>
             <a href="https://github.com/tparisi/glam/tarball/master" class="btn">Download as .tar.gz</a>
@@ -239,364 +407,356 @@
         </div>
       </header>
       <div class="container">
-        <section class="row">
+        <section class="row" id="featured">
 
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamsun" >
-            <img class='lazy' data-original="site/images/demo/glamsun.jpg" data-src="holder.js/300x200/#000:#fff/text:glam/glam" alt="glamsun">
-            <div class="caption">
-              <h3  class="Uppercase">glamsun</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamsun.html' class="btn btn-glam" role="button">View</a> <a data-source='glamsun'  class="btn btn-glam" role="button">Source</a></p>
-            </div>
-          </div>
-        </div>
-
-       
-        <div class="col-sm-6 col-md-3">
+          <div class="col-sm-6 col-md-3">
           <div class="thumbnail" id="bubblepop" >
+            <div class="imgT">
+              <div class="type">Featured Demo</div>
             <img class='lazy' data-original="site/images/demo/bubblepop.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="bubblepop">
-            <div class="caption">
-              <h3 class="Uppercase">bubblepop</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/bubblepop.html' class="btn btn-glam" role="button">View</a> <a data-source='bubblepop'  class="btn btn-glam" role="button">Source</a></p>
             </div>
-          </div>
-        </div>
-
-
-         <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glambumpmap" >
-            <img class='lazy' data-original="site/images/demo/glambumpmap.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glambumpmap">
             <div class="caption">
-              <h3  class="Uppercase">glambumpmap</h3>
+              <h3  class="Uppercase">bubblepop</h3>
               <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glambumpmap.html' class="btn btn-glam" role="button">View</a> <a data-source='glambumpmap' class="btn btn-glam" role="button">Source</a></p>
             </div>
+            <a data-url='demos/bubblepop.html' class="btn btn-glam" role="button">View</a> <a data-source='bubblepop'  class="btn btn-glam" role="button">Source</a>
           </div>
         </div>
 
         <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamskybox" >
-            <img class='lazy' data-original="site/images/demo/glamskybox.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamskybox">
-            <div class="caption">
-              <h3  class="Uppercase">glamskybox</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamskybox.html' class="btn btn-glam" role="button">View</a> <a data-source='glamskybox'  class="btn btn-glam" role="button">Source</a></p>
-            </div>
-          </div>
-        </div>
-
-
-         <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamcity" >
-            <img class='lazy' data-original="site/images/demo/glamcity.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamcity">
-            <div class="caption">
-              <h3  class="Uppercase">glamcity</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamcity.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcity'  class="btn btn-glam" role="button">Source</a></p>
-            </div>
-          </div>
-        </div>
-
-
-         <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamcityvr" >
-            <img class='lazy' data-original="site/images/demo/glamcityvr.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamcityvr">
-            <div class="caption">
-              <h3  class="Uppercase">glamcityvr</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamcityvr.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcityvr'  class="btn btn-glam" role="button">Source</a></p>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glam2Dgeometry" >
-            <img class='lazy' data-original="site/images/demo/glam2Dgeometry.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glam2Dgeometry">
-            <div class="caption">
-              <h3  class="Uppercase">glam2Dgeometry</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glam2Dgeometry.html' class="btn btn-glam" role="button">View</a> <a data-source='glambumpmap'  class="btn btn-glam" role="button">Source</a></p>
-            </div>
-          </div>
-        </div>
-
-         <div class="col-sm-6 col-md-3">
           <div class="thumbnail" id="glamcube" >
-            <img class='lazy' data-original="site/images/demo/glamcube.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamcube">
-            <div class="caption">
-              <h3  class="Uppercase">glamcube</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamcube.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcube'  class="btn btn-glam" role="button">Source</a></p>
+            <div class="imgT">
+              <div class="type">Featured Demo</div>
+            <img class='lazy' data-original="site/images/demo/glamcity.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamcity">
             </div>
+            <div class="caption">
+              <h3  class="Uppercase">city</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='demos/glamcity.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcity'  class="btn btn-glam" role="button">Source</a>
           </div>
         </div>
 
-
-         <div class="col-sm-6 col-md-3">
+        <div class="col-sm-6 col-md-3">
           <div class="thumbnail" id="glamcubeanimated" >
-            <img class='lazy' data-original="site/images/demo/glamcubeanimated.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamcubeanimated">
-            <div class="caption">
-              <h3  class="Uppercase">glamcubeanimated</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamcubeanimated.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcubeanimated'  class="btn btn-glam" role="button">Source</a></p>
+            <div class="imgT">
+              <div class="type">Featured Demo</div>
+            <img class='lazy' data-original="site/images/demo/glamcubeanimated.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamcube">
             </div>
-          </div>
-        </div>
-
-
-         <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamcubebowie" >
-            <img class='lazy' data-original="site/images/demo/glamcubebowie.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamcubebowie">
             <div class="caption">
-              <h3  class="Uppercase">glamcubebowie</h3>
+              <h3  class="Uppercase">cube animated</h3>
               <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamcubebowie.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcubebowie'  class="btn btn-glam" role="button">Source</a></p>
             </div>
+            <a data-url='demos/glamcubeanimated.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcubeanimated'  class="btn btn-glam" role="button">Source</a>
           </div>
         </div>
 
         <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamcubeinteractive" >
-            <img class='lazy' data-original="site/images/demo/glamcubeinteractive.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamcubeinteractive">
-            <div class="caption">
-              <h3  class="Uppercase">glamcubeinteractive</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamcubeinteractive.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcubeinteractive'  class="btn btn-glam" role="button">Source</a></p>
+          <div class="thumbnail" id="glamsceneanimatedeffects" >
+            <div class="imgT">
+              <div class="type">Featured Demo</div>
+            <img class='lazy' data-original="site/images/demo/glamsceneanimatedeffects.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamsceneanimatedeffects">
             </div>
+            <div class="caption">
+              <h3  class="Uppercase">scene animated</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='demos/glamsceneanimatedeffects.html' class="btn btn-glam" role="button">View</a> <a data-source='glamsceneanimatedeffects'  class="btn btn-glam" role="button">Source</a>
           </div>
         </div>
 
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamcubestyle" >
-            <img class='lazy' data-original="site/images/demo/glamcube.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamcubestyle">
-            <div class="caption">
-              <h3  class="Uppercase">glamcubestyle</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamcubestyle.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcubestyle'  class="btn btn-glam" role="button">Source</a></p>
+        </section>
+
+        <section class="row" id="examples">
+
+          <div class="col-sm-6 col-md-3">
+          <div class="thumbnail" id="glamcube" >
+            <div class="imgT">
+              <div class="type">basic</div>
+            <img class='lazy' data-original="site/images/demo/glamcube.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamcube">
             </div>
+            <div class="caption">
+              <h3  class="Uppercase">cube</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='examples/basic/glamcube.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcube'  class="btn btn-glam" role="button">Source</a>
           </div>
         </div>
-
-
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamimport" >
-            <img class='lazy' data-original="site/images/demo/glamcity.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamimport">
-            <div class="caption">
-              <h3  class="Uppercase">glamimport</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamimport.html' class="btn btn-glam" role="button">View</a> <a data-source='glamimport'  class="btn btn-glam" role="button">Source</a></p>
-            </div>
-          </div>
-        </div>
-
-
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamlights" >
-            <img class='lazy' data-original="site/images/demo/glamlights.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamlights">
-            <div class="caption">
-              <h3  class="Uppercase">glamlights</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamlights.html' class="btn btn-glam" role="button">View</a> <a data-source='glamlights'  class="btn btn-glam" role="button">Source</a></p>
-            </div>
-          </div>
-        </div>
-
-
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamlines" >
-            <img class='lazy' data-original="site/images/demo/glamlines.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamlines">
-            <div class="caption">
-              <h3  class="Uppercase">glamlines</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamlines.html' class="btn btn-glam" role="button">View</a> <a data-source='glamlines'  class="btn btn-glam" role="button">Source</a></p>
-            </div>
-          </div>
-        </div>
-
-
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glammesh" >
-            <img class='lazy' data-original="site/images/demo/glammesh.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glammesh">
-            <div class="caption">
-              <h3  class="Uppercase">glammesh</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glammesh.html' class="btn btn-glam" role="button">View</a> <a data-source='glammesh'  class="btn btn-glam" role="button">Source</a></p>
-            </div>
-          </div>
-        </div>
-
-
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamparticles" >
-            <img class='lazy' data-original="site/images/demo/glamparticles.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamparticles">
-            <div class="caption">
-              <h3  class="Uppercase">glamparticles</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamparticles.html' class="btn btn-glam" role="button">View</a> <a data-source='glamparticles'  class="btn btn-glam" role="button">Source</a></p>
-            </div>
-          </div>
-        </div>
-
-
         <div class="col-sm-6 col-md-3">
           <div class="thumbnail" id="glamscene" >
+            <div class="imgT">
+              <div class="type">hierarchy</div>
             <img class='lazy' data-original="site/images/demo/glamscene.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamscene">
+           </div>
             <div class="caption">
-              <h3  class="Uppercase">glamscene</h3>
+              <h3  class="Uppercase">scene</h3>
               <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamscene.html' class="btn btn-glam" role="button">View</a> <a data-source='glamscene'  class="btn btn-glam" role="button">Source</a></p>
             </div>
+            <a data-url='examples/hierarchy/glamscene.html' class="btn btn-glam" role="button">View</a> <a data-source='glamscene'  class="btn btn-glam" role="button">Source</a>
           </div>
         </div>
-
+        <div class="col-sm-6 col-md-3">
+          <div class="thumbnail" id="glamcubeanimated" >
+            <div class="imgT">
+              <div class="type">animation</div>
+            <img class='lazy' data-original="site/images/demo/glamcubeanimated.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamcubeanimated">
+            </div>
+            <div class="caption">
+              <h3  class="Uppercase">cube animated</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='examples/animation/glamcubeanimated.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcubeanimated'  class="btn btn-glam" role="button">Source</a>
+          </div>
+        </div>
         <div class="col-sm-6 col-md-3">
           <div class="thumbnail" id="glamsceneanimated" >
+            <div class="imgT">
+              <div class="type">animation</div>
             <img class='lazy' data-original="site/images/demo/glamsceneanimated.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamsceneanimated">
-            <div class="caption">
-              <h3  class="Uppercase">glamsceneanimated</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamsceneanimated.html' class="btn btn-glam" role="button">View</a> <a data-source='glamsceneanimated'  class="btn btn-glam" role="button">Source</a></p>
             </div>
+            <div class="caption">
+              <h3  class="Uppercase">scene animated</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='examples/animation/glamsceneanimated.html' class="btn btn-glam" role="button">View</a> <a data-source='glamsceneanimated'  class="btn btn-glam" role="button">Source</a>
           </div>
         </div>
-
-
         <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamsceneanimatedtags" >
-            <img class='lazy' data-original="site/images/demo/glamsceneanimated.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamsceneanimatedtags">
-            <div class="caption">
-              <h3  class="Uppercase">glamsceneanimatedtags</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamsceneanimatedtags.html' class="btn btn-glam" role="button">View</a> <a data-source='glamsceneanimatedtags'  class="btn btn-glam" role="button">Source</a></p>
+          <div class="thumbnail" id="glamcubeinteractive" >
+             <div class="imgT">
+              <div class="type">interaction</div>
+            <img class='lazy' data-original="site/images/demo/glamcubeinteractive.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamcubeinteractive">
             </div>
+            <div class="caption">
+              <h3  class="Uppercase">cube interactive</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='examples/interaction/glamcubeinteractive.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcubeinteractive'  class="btn btn-glam" role="button">Source</a>
           </div>
         </div>
-
         <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamscenecss" >
-            <img class='lazy' data-original="site/images/demo/glamscenecss.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamscenecss">
-            <div class="caption">
-              <h3  class="Uppercase">glamscenecss</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamscenecss.html' class="btn btn-glam" role="button">View</a> <a data-source='glamscenecss'  class="btn btn-glam" role="button">Source</a></p>
+          <div class="thumbnail" id="glammesh" >
+            <div class="imgT">
+              <div class="type">visuals</div>
+            <img class='lazy' data-original="site/images/demo/glammesh.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glammesh">
             </div>
+            <div class="caption">
+              <h3  class="Uppercase">mesh</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='examples/visuals/glammesh.html' class="btn btn-glam" role="button">View</a> <a data-source='glammesh'  class="btn btn-glam" role="button">Source</a>
           </div>
         </div>
-
         <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamshaderfresnel" >
-            <img class='lazy' data-original="site/images/demo/bubblepop.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamshaderfresnel">
-            <div class="caption">
-              <h3  class="Uppercase">glamshaderfresnel</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamshaderfresnel.html' class="btn btn-glam" role="button">View</a> <a data-source='glamshaderfresnel'  class="btn btn-glam" role="button">Source</a></p>
+          <div class="thumbnail" id="glamlines" >
+            <div class="imgT">
+              <div class="type">visuals</div>
+            <img class='lazy' data-original="site/images/demo/glamlines.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamlines">
             </div>
+            <div class="caption">
+              <h3  class="Uppercase">lines</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='examples/visuals/glamlines.html' class="btn btn-glam" role="button">View</a> <a data-source='glamlines'  class="btn btn-glam" role="button">Source</a>
           </div>
         </div>
-
-
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamshaderfresnelvr" >
-            <img class='lazy' data-original="site/images/demo/glamshaderfresnelvr.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamshaderfresnelvr">
-            <div class="caption">
-              <h3  class="Uppercase">glamshaderfresnelvr</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamshaderfresnelvr.html' class="btn btn-glam" role="button">View</a> <a data-source='glamshaderfresnelvr'  class="btn btn-glam" role="button">Source</a></p>
-            </div>
-          </div>
-        </div>
-
-
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamshadertoon" >
-            <img class='lazy' data-original="site/images/demo/glamshadertoon.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamshadertoon">
-            <div class="caption">
-              <h3  class="Uppercase">glamshadertoon</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamshadertoon.html' class="btn btn-glam" role="button">View</a> <a data-source='glamshadertoon'  class="btn btn-glam" role="button">Source</a></p>
-            </div>
-          </div>
-        </div>
-
-
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamskysphere" >
-            <img class='lazy' data-original="site/images/demo/glamskysphere.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamskysphere">
-            <div class="caption">
-              <h3  class="Uppercase">glamskysphere</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamskysphere.html' class="btn btn-glam" role="button">View</a> <a data-source='glamskysphere'  class="btn btn-glam" role="button">Source</a></p>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamskyspherevr" >
-            <img class='lazy' data-original="site/images/demo/glamskyspherevr.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamskyspherevr">
-            <div class="caption">
-              <h3  class="Uppercase">glamskyspherevr</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamskyspherevr.html' class="btn btn-glam" role="button">View</a> <a data-source='glamskyspherevr'  class="btn btn-glam" role="button">Source</a></p>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamsolarsystem" >
-            <img class='lazy' data-original="site/images/demo/glamsolarsystem.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamsolarsystem">
-            <div class="caption">
-              <h3  class="Uppercase">glamsolarsystem</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamsolarsystem.html' class="btn btn-glam" role="button">View</a> <a data-source='glamsolarsystem'  class="btn btn-glam" role="button">Source</a></p>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamspecularmap" >
-            <img class='lazy' data-original="site/images/demo/glamspecularmap.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamspecularmap">
-            <div class="caption">
-              <h3  class="Uppercase">glamspecularmap</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamspecularmap.html' class="btn btn-glam" role="button">View</a> <a data-source='glamspecularmap'  class="btn btn-glam" role="button">Source</a></p>
-            </div>
-          </div>
-        </div>
-
-        
         <div class="col-sm-6 col-md-3">
           <div class="thumbnail" id="glamtext" >
+            <div class="imgT">
+              <div class="type">visuals</div>
             <img class='lazy' data-original="site/images/demo/glamtext.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamtext">
+          </div>
             <div class="caption">
-              <h3  class="Uppercase">glamtext</h3>
+              <h3  class="Uppercase">text</h3>
               <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamtext.html' class="btn btn-glam" role="button">View</a> <a data-source='glamtext'  class="btn btn-glam" role="button">Source</a></p>
             </div>
+            <a data-url='examples/visuals/glamtext.html' class="btn btn-glam" role="button">View</a> <a data-source='glamtext'  class="btn btn-glam" role="button">Source</a>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="thumbnail" id="glamparticles" >
+            <div class="imgT">
+              <div class="type">visuals</div>
+            <img class='lazy' data-original="site/images/demo/glamparticles.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamparticles">
+            </div>
+            <div class="caption">
+              <h3  class="Uppercase">particles</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='examples/visuals/glamparticles.html' class="btn btn-glam" role="button">View</a> <a data-source='glamparticles'  class="btn btn-glam" role="button">Source</a>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="thumbnail" id="glamimport" >
+            <div class="imgT">
+              <div class="type">visuals</div>
+            <img class='lazy' data-original="site/images/demo/glamcity.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamimport">
+            </div>
+            <div class="caption">
+              <h3  class="Uppercase">import</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='examples/imports/glamimport.html' class="btn btn-glam" role="button">View</a> <a data-source='glamimport'  class="btn btn-glam" role="button">Source</a>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="thumbnail" id="glambumpmap" >
+            <div class="imgT">
+              <div class="type">materials</div>
+            <img class='lazy' data-original="site/images/demo/glambumpmap.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glambumpmap">
+            </div>
+            <div class="caption">
+              <h3  class="Uppercase">bump map</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='examples/materials/glambumpmap.html' class="btn btn-glam" role="button">View</a> <a data-source='glambumpmap' class="btn btn-glam" role="button">Source</a>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="thumbnail" id="glamearth" >
+            <div class="imgT">
+              <div class="type">materials</div>
+            <img class='lazy' data-original="site/images/demo/glamearth.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamearth">
+            </div>
+            <div class="caption">
+              <h3  class="Uppercase">earth</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='examples/materials/glamearth.html' class="btn btn-glam" role="button">View</a> <a data-source='glamearth' class="btn btn-glam" role="button">Source</a>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="thumbnail" id="glamspecularmap" >
+            <div class="imgT">
+              <div class="type">materials</div>
+            <img class='lazy' data-original="site/images/demo/glamspecularmap.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamspecularmap">
+            </div>
+            <div class="caption">
+              <h3  class="Uppercase">specular map</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='examples/materials/glamspecularmap.html' class="btn btn-glam" role="button">View</a> <a data-source='glamspecularmap'  class="btn btn-glam" role="button">Source</a>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="thumbnail" id="glamshaderfresnel" >
+            <div class="imgT">
+              <div class="type">shaders</div>
+            <img class='lazy' data-original="site/images/demo/bubblepop.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamshaderfresnel">
+            </div>
+            <div class="caption">
+              <h3  class="Uppercase">fresnel</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='examples/shaders/glamshaderfresnel.html' class="btn btn-glam" role="button">View</a> <a data-source='glamshaderfresnel'  class="btn btn-glam" role="button">Source</a>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="thumbnail" id="glamsun" >
+            <div class="imgT">
+              <div class="type">shaders</div>
+            <img class='lazy' data-original="site/images/demo/glamsun.jpg" data-src="holder.js/300x200/#000:#fff/text:glam/glam" alt="glamsun">
+            </div>
+            <div class="caption">
+              <h3  class="Uppercase">sun</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='examples/shaders/glamsun.html' class="btn btn-glam" role="button">View</a> <a data-source='glamsun'  class="btn btn-glam" role="button">Source</a>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="thumbnail" id="glamskybox" >
+            <div class="imgT">
+              <div class="type">backgrounds</div>
+            <img class='lazy' data-original="site/images/demo/glamskybox.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamskybox">
+            </div>
+            <div class="caption">
+              <h3  class="Uppercase">sky box</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='examples/backgrounds/glamskybox.html' class="btn btn-glam" role="button">View</a> <a data-source='glamskybox'  class="btn btn-glam" role="button">Source</a>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="thumbnail" id="glamskysphere" >
+            <div class="imgT">
+              <div class="type">backgrounds</div>
+            <img class='lazy' data-original="site/images/demo/glamskysphere.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamskysphere">
+            </div>
+            <div class="caption">
+              <h3  class="Uppercase">sky sphere</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='examples/backgrounds/glamskysphere.html' class="btn btn-glam" role="button">View</a> <a data-source='glamskysphere'  class="btn btn-glam" role="button">Source</a>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="thumbnail" id="glamcubeeffects" >
+            <div class="imgT">
+              <div class="type">effects</div>
+            <img class='lazy' data-original="site/images/demo/glamcubeeffects.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamcubeeffects">
+            </div>
+            <div class="caption">
+              <h3  class="Uppercase">Cube</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='examples/effects/glamcubeeffects.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcubeeffects'  class="btn btn-glam" role="button">Source</a>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="thumbnail" id="glamsceneanimatedeffects" >
+            <div class="imgT">
+              <div class="type">effects</div>
+            <img class='lazy' data-original="site/images/demo/glamsceneanimatedeffects.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamsceneanimatedeffects">
+            </div>
+            <div class="caption">
+              <h3  class="Uppercase">Scene Animated</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='examples/effects/glamsceneanimatedeffects.html' class="btn btn-glam" role="button">View</a> <a data-source='glamsceneanimatedeffects'  class="btn btn-glam" role="button">Source</a>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="thumbnail" id="glamcityvr" >
+            <div class="imgT">
+              <div class="type">vr</div>
+            <img class='lazy' data-original="site/images/demo/glamcityvr.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamcityvr">
+            </div>
+            <div class="caption">
+              <h3  class="Uppercase">city</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='examples/vr/glamcityvr.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcityvr'  class="btn btn-glam" role="button">Source</a>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="thumbnail" id="glamshaderfresnelvr" >
+            <div class="imgT">
+              <div class="type">vr</div>
+            <img class='lazy' data-original="site/images/demo/glamshaderfresnelvr.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamshaderfresnelvr">
+            </div>
+            <div class="caption">
+              <h3  class="Uppercase">shader fresnel</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              
+            </div>
+            <a data-url='examples/vr/glamshaderfresnelvr.html' class="btn btn-glam" role="button">View</a> <a data-source='glamshaderfresnelvr'  class="btn btn-glam" role="button">Source</a>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="thumbnail" id="glamskyspherevr" >
+            <div class="imgT">
+              <div class="type">vr</div>
+            <img class='lazy' data-original="site/images/demo/glamskyspherevr.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamskyspherevr">
+            </div>
+            <div class="caption">
+              <h3  class="Uppercase">sky sphere</h3>
+              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+            </div>
+            <a data-url='examples/glamskyspherevr.html' class="btn btn-glam" role="button">View</a> <a data-source='glamskyspherevr'  class="btn btn-glam" role="button">Source</a>
           </div>
         </div>
 
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="glamtransitions" >
-            <img class='lazy' data-original="site/images/demo/glamcube.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="glamtransitions">
-            <div class="caption">
-              <h3  class="Uppercase">glamtransitions</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/glamtransitions.html' class="btn btn-glam" role="button">View</a> <a data-source='glamtransitions'  class="btn btn-glam" role="button">Source</a></p>
-            </div>
-          </div>
-        </div>
-         <div class="col-sm-6 col-md-3">
-          <div class="thumbnail" id="vizicube" >
-            <img class='lazy' data-original="site/images/demo/glamcube.jpg" data-src="holder.js/300x300/#000:#fff/text:glam/glam" alt="vizicube">
-            <div class="caption">
-              <h3  class="Uppercase">vizicube</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
-              <p><a data-url='examples/vizicube.html' class="btn btn-glam" role="button">View</a> <a data-source='vizicube'  class="btn btn-glam" role="button">Source</a></p>
-            </div>
-          </div>
-        </div>
 
       
       </section>
