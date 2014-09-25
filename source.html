@@ -3271,6 +3271,283 @@
 
 
 <span style="color: #f92672">&lt;/html&gt;</span>
+
+</pre></div>
+
+</div>
+
+<div class="glamsceneanimatedeffects display0">
+<div style="background: #272822; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;"><pre style="margin: 0; line-height: 125%"><span style="color: #75715e">&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot; &quot;http://www.w3.org/TR/html4/loose.dtd&quot;&gt;</span>
+<span style="color: #f92672">&lt;html&gt;</span>
+<span style="color: #f92672">&lt;head&gt;</span>
+<span style="color: #f92672">&lt;meta</span> <span style="color: #a6e22e">http-equiv=</span><span style="color: #e6db74">&quot;Content-Type&quot;</span> <span style="color: #a6e22e">content=</span><span style="color: #e6db74">&quot;text/html; charset=UTF-8&quot;</span><span style="color: #f92672">&gt;</span>
+<span style="color: #f92672">&lt;script </span><span style="color: #a6e22e">src=</span><span style="color: #e6db74">&quot;../libs/jquery-1.9.1/jquery-1.9.1.js&quot;</span><span style="color: #f92672">&gt;&lt;/script&gt;</span>
+<span style="color: #f92672">&lt;script </span><span style="color: #a6e22e">src=</span><span style="color: #e6db74">&quot;../build/glam.min.js&quot;</span> <span style="color: #f92672">&gt;&lt;/script&gt;</span>
+<span style="color: #f92672">&lt;title&gt;</span>glam - scene with multiple animations<span style="color: #f92672">&lt;/title&gt;</span>
+
+<span style="color: #f92672">&lt;style&gt;</span>
+
+  <span style="color: #f92672">body</span><span style="color: #f8f8f2">{</span>
+    <span style="color: #66d9ef">margin</span><span style="color: #f92672">:</span> <span style="color: #ae81ff">0px</span><span style="color: #f8f8f2">;</span>
+    <span style="color: #66d9ef">background-color</span><span style="color: #f92672">:</span> <span style="color: #ae81ff">#000</span><span style="color: #f8f8f2">;</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #a6e22e">#fire</span> <span style="color: #f8f8f2">{</span>
+    <span style="color: #f8f8f2">image</span><span style="color: #f92672">:</span><span style="color: #e6db74">url(../images/smokeparticle.png)</span><span style="color: #f8f8f2">;</span>
+  <span style="color: #f8f8f2">}</span>
+  <span style="color: #a6e22e">#bubbles</span> <span style="color: #f8f8f2">{</span>
+    <span style="color: #f8f8f2">image</span><span style="color: #f92672">:</span><span style="color: #e6db74">url(../images/firefly.png)</span><span style="color: #f8f8f2">;</span>
+  <span style="color: #f8f8f2">}</span>
+  <span style="color: #a6e22e">#sparks</span> <span style="color: #f8f8f2">{</span>
+    <span style="color: #f8f8f2">image</span><span style="color: #f92672">:</span><span style="color: #e6db74">url(../images/Star02.png)</span><span style="color: #f8f8f2">;</span>
+  <span style="color: #f8f8f2">}</span>
+  <span style="color: #a6e22e">#stars</span> <span style="color: #f8f8f2">{</span>
+    <span style="color: #f8f8f2">image</span><span style="color: #f92672">:</span><span style="color: #e6db74">url(../images/Star02.png)</span><span style="color: #f8f8f2">;</span>
+  <span style="color: #f8f8f2">}</span>
+  <span style="color: #a6e22e">#rain</span> <span style="color: #f8f8f2">{</span>
+    <span style="color: #f8f8f2">image</span><span style="color: #f92672">:</span><span style="color: #e6db74">url(../images/smokeparticle.png)</span><span style="color: #f8f8f2">;</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #a6e22e">#texturedcube</span> <span style="color: #f8f8f2">{</span>
+    <span style="color: #f8f8f2">image</span><span style="color: #f92672">:</span><span style="color: #e6db74">url(../images/ash_uvgrid01.jpg)</span><span style="color: #f8f8f2">;</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #a6e22e">#cone1</span> <span style="color: #f8f8f2">{</span>
+    <span style="color: #66d9ef">color</span><span style="color: #f92672">:</span><span style="color: #f8f8f2">blue;</span>
+    <span style="color: #f8f8f2">radius</span><span style="color: #f92672">:</span><span style="color: #ae81ff">1</span><span style="color: #f8f8f2">;</span>
+    <span style="color: #f8f8f2">shader</span><span style="color: #f92672">:</span><span style="color: #f8f8f2">phong;</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #a6e22e">#cylinder1</span> <span style="color: #f8f8f2">{</span>
+    <span style="color: #66d9ef">color</span><span style="color: #f92672">:</span><span style="color: #f8f8f2">green;</span>
+    <span style="color: #f8f8f2">radius</span><span style="color: #f92672">:</span><span style="color: #ae81ff">1</span><span style="color: #f8f8f2">;</span>
+    <span style="color: #f8f8f2">render</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">mode</span><span style="color: #f92672">:</span><span style="color: #f8f8f2">wireframe;</span>
+  <span style="color: #f8f8f2">}</span>
+  
+  <span style="color: #a6e22e">#sphere1</span> <span style="color: #f8f8f2">{</span>
+    <span style="color: #f8f8f2">radius</span><span style="color: #f92672">:</span><span style="color: #ae81ff">1</span><span style="color: #f92672">.</span><span style="color: #ae81ff">5</span><span style="color: #f8f8f2">;</span>
+    <span style="color: #f8f8f2">shader</span><span style="color: #f92672">:</span><span style="color: #f8f8f2">phong;</span>
+    <span style="color: #f8f8f2">diffuse</span><span style="color: #f92672">-</span><span style="color: #66d9ef">color</span><span style="color: #f92672">:</span><span style="color: #f8f8f2">red;</span>
+    <span style="color: #f8f8f2">specular</span><span style="color: #f92672">-</span><span style="color: #66d9ef">color</span><span style="color: #f92672">:</span><span style="color: #ae81ff">#004400</span><span style="color: #f8f8f2">;</span>
+    <span style="color: #66d9ef">opacity</span><span style="color: #f92672">:.</span><span style="color: #ae81ff">8</span><span style="color: #f8f8f2">;</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #a6e22e">#nestedGroup</span> <span style="color: #f8f8f2">{</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #a6e22e">#text1</span> <span style="color: #f8f8f2">{</span>
+    <span style="color: #f8f8f2">diffuse</span><span style="color: #f92672">-</span><span style="color: #66d9ef">color</span><span style="color: #f92672">:</span><span style="color: #f8f8f2">cornflowerblue;</span>
+    <span style="color: #f8f8f2">shader</span><span style="color: #f92672">:</span><span style="color: #f8f8f2">phong;</span>
+    <span style="color: #66d9ef">font</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">bevel</span><span style="color: #f92672">:</span><span style="color: #f8f8f2">bevel;</span>
+    <span style="color: #66d9ef">font-weight</span><span style="color: #f92672">:</span><span style="color: #66d9ef">bold</span><span style="color: #f8f8f2">;</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #66d9ef">@-webkit-keyframes</span> <span style="color: #f92672">kfRotateY</span> <span style="color: #f8f8f2">{</span>
+    <span style="color: #f92672">0%</span> <span style="color: #f8f8f2">{</span>
+      <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">transform</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">rotateY(</span><span style="color: #ae81ff">0</span><span style="color: #f8f8f2">deg)</span> <span style="color: #f8f8f2">translateY(</span><span style="color: #ae81ff">0</span><span style="color: #f8f8f2">);</span>
+    <span style="color: #f8f8f2">}</span>
+  
+    <span style="color: #f92672">50%</span> <span style="color: #f8f8f2">{</span>
+     <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">transform</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">rotateY(</span><span style="color: #ae81ff">180</span><span style="color: #f8f8f2">deg)</span> <span style="color: #f8f8f2">translateY(</span><span style="color: #ae81ff">3</span><span style="color: #f8f8f2">);</span>
+    <span style="color: #f8f8f2">}</span>
+    
+    <span style="color: #f92672">100%</span> <span style="color: #f8f8f2">{</span>
+     <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">transform</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">rotateY(</span><span style="color: #ae81ff">360</span><span style="color: #f8f8f2">deg)</span> <span style="color: #f8f8f2">translateY(</span><span style="color: #ae81ff">0</span><span style="color: #f8f8f2">);</span>
+    <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+  
+  <span style="color: #66d9ef">@-webkit-keyframes</span> <span style="color: #f92672">kfRotateZ</span> <span style="color: #f8f8f2">{</span>
+    <span style="color: #f92672">from</span> <span style="color: #f8f8f2">{</span>
+      <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">transform</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">rotateZ(</span><span style="color: #ae81ff">0</span><span style="color: #f8f8f2">deg);</span>
+    <span style="color: #f8f8f2">}</span>
+  
+    <span style="color: #f92672">to</span> <span style="color: #f8f8f2">{</span>
+     <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">transform</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">rotateZ(</span><span style="color: #ae81ff">360</span><span style="color: #f8f8f2">deg);</span>
+    <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #66d9ef">@-webkit-keyframes</span> <span style="color: #f92672">kfFade</span> <span style="color: #f8f8f2">{</span>
+    <span style="color: #f92672">0%</span> <span style="color: #f8f8f2">{</span>
+      <span style="color: #66d9ef">opacity</span><span style="color: #f92672">:</span><span style="color: #ae81ff">1</span><span style="color: #f8f8f2">;</span>
+      <span style="color: #66d9ef">color</span><span style="color: #f92672">:</span><span style="color: #f8f8f2">red;</span>
+    <span style="color: #f8f8f2">}</span>
+  
+    <span style="color: #f92672">50%</span> <span style="color: #f8f8f2">{</span>
+      <span style="color: #66d9ef">opacity</span><span style="color: #f92672">:.</span><span style="color: #ae81ff">5</span><span style="color: #f8f8f2">;</span>
+      <span style="color: #66d9ef">color</span><span style="color: #f92672">:</span><span style="color: #f8f8f2">green;</span>
+    <span style="color: #f8f8f2">}</span>
+    
+    <span style="color: #f92672">100%</span> <span style="color: #f8f8f2">{</span>
+      <span style="color: #66d9ef">opacity</span><span style="color: #f92672">:</span><span style="color: #ae81ff">1</span><span style="color: #f8f8f2">;</span>
+      <span style="color: #66d9ef">color</span><span style="color: #f92672">:</span><span style="color: #f8f8f2">red;</span>
+    <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #a6e22e">.animRotateY</span>
+   <span style="color: #f8f8f2">{</span>
+    <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">animation</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">duration</span><span style="color: #f92672">:</span> <span style="color: #ae81ff">2s</span><span style="color: #f8f8f2">;</span>
+    <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">animation</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">name</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">kfRotateY;</span>
+    <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">animation</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">iteration</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">count</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">infinite;</span>
+    <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">animation</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">timing</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">function</span><span style="color: #f92672">:</span><span style="color: #f8f8f2">ease</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">in</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">out;</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #a6e22e">.animRotateZ</span>
+   <span style="color: #f8f8f2">{</span>
+    <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">animation</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">duration</span><span style="color: #f92672">:</span> <span style="color: #ae81ff">5s</span><span style="color: #f8f8f2">;</span>
+    <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">animation</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">name</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">kfRotateZ;</span>
+    <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">animation</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">iteration</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">count</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">infinite;</span>
+    <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">animation</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">timing</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">function</span><span style="color: #f92672">:</span><span style="color: #f8f8f2">linear;</span>
+  <span style="color: #f8f8f2">}</span>
+
+  
+  <span style="color: #a6e22e">.animFade</span>
+   <span style="color: #f8f8f2">{</span>
+    <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">animation</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">duration</span><span style="color: #f92672">:</span> <span style="color: #ae81ff">1s</span><span style="color: #f8f8f2">;</span>
+    <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">animation</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">name</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">kfFade;</span>
+    <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">animation</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">iteration</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">count</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">infinite;</span>
+    <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">animation</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">timing</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">function</span><span style="color: #f92672">:</span><span style="color: #f8f8f2">ease</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">in</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">out;</span>
+  <span style="color: #f8f8f2">}</span>
+
+<span style="color: #f92672">&lt;/style&gt;</span>
+<span style="color: #f92672">&lt;script&gt;</span>
+<span style="color: #a6e22e">$</span><span style="color: #f8f8f2">(document).</span><span style="color: #a6e22e">ready</span><span style="color: #f8f8f2">(</span><span style="color: #66d9ef">function</span><span style="color: #f8f8f2">(){</span>
+
+  <span style="color: #a6e22e">glam</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">ready</span><span style="color: #f8f8f2">();</span>
+<span style="color: #f8f8f2">});</span>
+
+<span style="color: #f92672">&lt;/script&gt;</span>
+<span style="color: #f92672">&lt;/head&gt;</span>
+<span style="color: #f92672">&lt;body&gt;</span>
+<span style="color: #75715e">&lt;!-- </span>
+<span style="color: #75715e">glam - Simple scene with cube</span>
+<span style="color: #75715e"> --&gt;</span>
+<span style="color: #f92672">&lt;div</span> <span style="color: #a6e22e">id=</span><span style="color: #e6db74">&quot;container&quot;</span> <span style="color: #a6e22e">style=</span><span style="color: #e6db74">&quot;width:98%; height:98%;position:absolute;&quot;</span><span style="color: #f92672">&gt;</span>
+<span style="color: #f92672">&lt;glam&gt;</span>
+  <span style="color: #f92672">&lt;scene&gt;</span>
+    <span style="color: #f92672">&lt;group</span> <span style="color: #a6e22e">y=</span><span style="color: #e6db74">&#39;-1&#39;</span><span style="color: #f92672">&gt;</span>
+    <span style="color: #f92672">&lt;cube</span> <span style="color: #a6e22e">id=</span><span style="color: #e6db74">&quot;texturedcube&quot;</span> <span style="color: #a6e22e">class=</span><span style="color: #e6db74">&quot;animRotateY&quot;</span> <span style="color: #a6e22e">x=</span><span style="color: #e6db74">&quot;1.5&quot;</span> <span style="color: #a6e22e">y=</span><span style="color: #e6db74">&#39;2&#39;</span> <span style="color: #a6e22e">z=</span><span style="color: #e6db74">&#39;-5&#39;</span> <span style="color: #a6e22e">depth=</span><span style="color: #e6db74">&#39;.5&#39;</span> <span style="color: #a6e22e">height=</span><span style="color: #e6db74">&#39;1.5&#39;</span><span style="color: #f92672">&gt;&lt;/cube&gt;</span>
+    <span style="color: #f92672">&lt;group</span> <span style="color: #a6e22e">id=</span><span style="color: #e6db74">&quot;aGroup&quot;</span> <span style="color: #a6e22e">x=</span><span style="color: #e6db74">&quot;1&quot;</span> <span style="color: #a6e22e">y=</span><span style="color: #e6db74">&quot;.5&quot;</span> <span style="color: #a6e22e">z=</span><span style="color: #e6db74">&quot;-2&quot;</span> <span style="color: #f92672">&gt;</span>
+      <span style="color: #f92672">&lt;sphere</span> <span style="color: #a6e22e">id=</span><span style="color: #e6db74">&quot;sphere1&quot;</span> <span style="color: #a6e22e">class=</span><span style="color: #e6db74">&quot;animFade&quot;</span> <span style="color: #a6e22e">radius=</span><span style="color: #e6db74">&#39;1.5&#39;</span><span style="color: #f92672">&gt;&lt;/sphere&gt;</span>
+      <span style="color: #f92672">&lt;group</span> <span style="color: #a6e22e">id=</span><span style="color: #e6db74">&quot;nestedGroup&quot;</span> <span style="color: #a6e22e">x=</span><span style="color: #e6db74">&#39;-3&#39;</span> <span style="color: #a6e22e">y=</span><span style="color: #e6db74">&#39;1&#39;</span> <span style="color: #a6e22e">z=</span><span style="color: #e6db74">&#39;-5&#39;</span><span style="color: #f92672">&gt;</span>
+        <span style="color: #f92672">&lt;cone</span> <span style="color: #a6e22e">id=</span><span style="color: #e6db74">&quot;cone1&quot;</span> <span style="color: #a6e22e">x=</span><span style="color: #e6db74">&#39;-1&#39;</span> <span style="color: #a6e22e">y=</span><span style="color: #e6db74">&#39;-.5&#39;</span> <span style="color: #a6e22e">z=</span><span style="color: #e6db74">&#39;2&#39;</span> <span style="color: #a6e22e">rz=</span><span style="color: #e6db74">&#39;90deg&#39;</span><span style="color: #f92672">&gt;&lt;/cone&gt;</span>
+        <span style="color: #f92672">&lt;cylinder</span> <span style="color: #a6e22e">class=</span><span style="color: #e6db74">&quot;animRotateZ&quot;</span> <span style="color: #a6e22e">id=</span><span style="color: #e6db74">&quot;cylinder1&quot;</span><span style="color: #f92672">&gt;&lt;/cylinder&gt;</span>
+      <span style="color: #f92672">&lt;/group&gt;</span>
+    <span style="color: #f92672">&lt;/group&gt;</span>
+    <span style="color: #f92672">&lt;text</span> <span style="color: #a6e22e">id=</span><span style="color: #e6db74">&quot;text1&quot;</span><span style="color: #f92672">&gt;</span>glam is HOT<span style="color: #f92672">&lt;/text&gt;</span>
+    <span style="color: #f92672">&lt;/group&gt;</span>
+    <span style="color: #f92672">&lt;group&gt;</span>
+    <span style="color: #f92672">&lt;particles</span> <span style="color: #a6e22e">maxAge=</span><span style="color: #e6db74">&#39;2&#39;</span> <span style="color: #a6e22e">id=</span><span style="color: #e6db74">&quot;fire&quot;</span><span style="color: #f92672">&gt;</span>
+      <span style="color: #f92672">&lt;emitter</span> <span style="color: #a6e22e">particlesPerSecond=</span><span style="color: #e6db74">&#39;50&#39;</span> <span style="color: #a6e22e">size=</span><span style="color: #e6db74">&#39;10&#39;</span> <span style="color: #a6e22e">sizeEnd=</span><span style="color: #e6db74">&#39;5&#39;</span> <span style="color: #a6e22e">opacityStart=</span><span style="color: #e6db74">&#39;0.2&#39;</span> 
+      <span style="color: #a6e22e">opacityMiddle=</span><span style="color: #e6db74">&#39;0.4&#39;</span> <span style="color: #a6e22e">opacityEnd=</span><span style="color: #e6db74">&#39;0.1&#39;</span> <span style="color: #a6e22e">velocity=</span><span style="color: #e6db74">&#39;0 2.5 0&#39;</span> <span style="color: #a6e22e">acceleration=</span><span style="color: #e6db74">&#39;0 3 0&#39;</span> 
+      <span style="color: #a6e22e">positionSpread=</span><span style="color: #e6db74">&#39;2 3.5 2&#39;</span> <span style="color: #a6e22e">accelerationSpread=</span><span style="color: #e6db74">&#39;1.5 .5 1.5&#39;</span> <span style="color: #a6e22e">colorStart=</span><span style="color: #e6db74">&quot;yellow&quot;</span>
+      <span style="color: #a6e22e">blending=</span><span style="color: #e6db74">&#39;additive&#39;</span> <span style="color: #f92672">&gt;&lt;/emitter&gt;</span>
+    <span style="color: #f92672">&lt;/particles&gt;</span>
+    <span style="color: #f92672">&lt;/group&gt;</span>
+    <span style="color: #f92672">&lt;group</span> <span style="color: #a6e22e">x=</span><span style="color: #e6db74">&#39;-5&#39;</span><span style="color: #f92672">&gt;</span>
+    <span style="color: #f92672">&lt;particles</span> <span style="color: #a6e22e">maxAge=</span><span style="color: #e6db74">&#39;2&#39;</span> <span style="color: #a6e22e">id=</span><span style="color: #e6db74">&quot;bubbles&quot;</span><span style="color: #f92672">&gt;</span>
+      <span style="color: #f92672">&lt;emitter</span> <span style="color: #a6e22e">particlesPerSecond=</span><span style="color: #e6db74">&#39;10&#39;</span> <span style="color: #a6e22e">size=</span><span style="color: #e6db74">&#39;2&#39;</span> <span style="color: #a6e22e">sizeEnd=</span><span style="color: #e6db74">&#39;1&#39;</span> <span style="color: #a6e22e">opacityStart=</span><span style="color: #e6db74">&#39;0.2&#39;</span> 
+      <span style="color: #a6e22e">opacityMiddle=</span><span style="color: #e6db74">&#39;0.4&#39;</span> <span style="color: #a6e22e">opacityEnd=</span><span style="color: #e6db74">&#39;0.2&#39;</span> <span style="color: #a6e22e">velocity=</span><span style="color: #e6db74">&#39;0 2 0&#39;</span> <span style="color: #a6e22e">acceleration=</span><span style="color: #e6db74">&#39;0 1 0&#39;</span> 
+      <span style="color: #a6e22e">positionSpread=</span><span style="color: #e6db74">&#39;1 1 1&#39;</span> <span style="color: #a6e22e">accelerationSpread=</span><span style="color: #e6db74">&#39;5 0 5&#39;</span> <span style="color: #a6e22e">colorStart=</span><span style="color: #e6db74">&quot;white&quot;</span><span style="color: #f92672">&gt;&lt;/emitter&gt;</span>
+    <span style="color: #f92672">&lt;/particles&gt;</span>
+    <span style="color: #f92672">&lt;/group&gt;</span>
+    <span style="color: #f92672">&lt;group</span> <span style="color: #a6e22e">x=</span><span style="color: #e6db74">&#39;5&#39;</span> <span style="color: #a6e22e">y=</span><span style="color: #e6db74">&#39;2&#39;</span><span style="color: #f92672">&gt;</span>
+    <span style="color: #f92672">&lt;particles</span> <span style="color: #a6e22e">maxAge=</span><span style="color: #e6db74">&#39;2&#39;</span> <span style="color: #a6e22e">id=</span><span style="color: #e6db74">&quot;sparks&quot;</span> <span style="color: #a6e22e">class=</span><span style="color: #e6db74">&quot;animRotateY&quot;</span><span style="color: #f92672">&gt;</span>
+      <span style="color: #f92672">&lt;emitter</span> <span style="color: #a6e22e">particlesPerSecond=</span><span style="color: #e6db74">&#39;100&#39;</span> <span style="color: #a6e22e">size=</span><span style="color: #e6db74">&#39;2&#39;</span> <span style="color: #a6e22e">sizeEnd=</span><span style="color: #e6db74">&#39;1&#39;</span> <span style="color: #a6e22e">opacityStart=</span><span style="color: #e6db74">&#39;0.2&#39;</span> 
+      <span style="color: #a6e22e">opacityMiddle=</span><span style="color: #e6db74">&#39;0.4&#39;</span> <span style="color: #a6e22e">opacityEnd=</span><span style="color: #e6db74">&#39;0.2&#39;</span> <span style="color: #a6e22e">velocity=</span><span style="color: #e6db74">&#39;2 0 0&#39;</span> <span style="color: #a6e22e">acceleration=</span><span style="color: #e6db74">&#39;0 -1 0&#39;</span> 
+      <span style="color: #a6e22e">positionSpread=</span><span style="color: #e6db74">&#39;0 0 0&#39;</span> <span style="color: #a6e22e">accelerationSpread=</span><span style="color: #e6db74">&#39;1 1 1&#39;</span> <span style="color: #a6e22e">colorStart=</span><span style="color: #e6db74">&quot;red&quot;</span> <span style="color: #a6e22e">colorEnd=</span><span style="color: #e6db74">&quot;yellow&quot;</span><span style="color: #f92672">&gt;&lt;/emitter&gt;</span>
+    <span style="color: #f92672">&lt;/particles&gt;</span>
+    <span style="color: #f92672">&lt;/group&gt;</span>
+    <span style="color: #f92672">&lt;group</span> <span style="color: #a6e22e">x=</span><span style="color: #e6db74">&#39;-5&#39;</span> <span style="color: #a6e22e">y=</span><span style="color: #e6db74">&#39;2&#39;</span><span style="color: #f92672">&gt;</span>
+    <span style="color: #f92672">&lt;particles</span> <span style="color: #a6e22e">maxAge=</span><span style="color: #e6db74">&#39;2&#39;</span> <span style="color: #a6e22e">id=</span><span style="color: #e6db74">&quot;rain&quot;</span><span style="color: #f92672">&gt;</span>
+      <span style="color: #f92672">&lt;emitter</span> <span style="color: #a6e22e">particlesPerSecond=</span><span style="color: #e6db74">&#39;100&#39;</span> <span style="color: #a6e22e">size=</span><span style="color: #e6db74">&#39;.1&#39;</span> <span style="color: #a6e22e">sizeEnd=</span><span style="color: #e6db74">&#39;.5&#39;</span> <span style="color: #a6e22e">opacityStart=</span><span style="color: #e6db74">&#39;1&#39;</span> 
+      <span style="color: #a6e22e">opacityMiddle=</span><span style="color: #e6db74">&#39;0.5&#39;</span> <span style="color: #a6e22e">opacityEnd=</span><span style="color: #e6db74">&#39;0.5&#39;</span> <span style="color: #a6e22e">velocity=</span><span style="color: #e6db74">&#39;0 -3.5 0&#39;</span> <span style="color: #a6e22e">acceleration=</span><span style="color: #e6db74">&#39;0 -3 0&#39;</span> 
+      <span style="color: #a6e22e">positionSpread=</span><span style="color: #e6db74">&#39;30 -3.5 5&#39;</span> <span style="color: #a6e22e">accelerationSpread=</span><span style="color: #e6db74">&#39;.5 -.5 .5&#39;</span> <span style="color: #a6e22e">colorStart=</span><span style="color: #e6db74">&quot;blue&quot;</span> <span style="color: #a6e22e">colorEnd=</span><span style="color: #e6db74">&quot;lightblue&quot;</span>
+      <span style="color: #a6e22e">blendin=</span><span style="color: #e6db74">&#39;normal&#39;</span><span style="color: #f92672">&gt;&lt;/emitter&gt;</span>
+    <span style="color: #f92672">&lt;/particles&gt;</span>
+    <span style="color: #f92672">&lt;/group&gt;</span>
+    <span style="color: #f92672">&lt;group&gt;</span>
+    <span style="color: #f92672">&lt;particles</span> <span style="color: #a6e22e">id=</span><span style="color: #e6db74">&quot;stars&quot;</span> <span style="color: #a6e22e">size=</span><span style="color: #e6db74">&#39;.5&#39;</span> <span style="color: #a6e22e">class=</span><span style="color: #e6db74">&quot;animRotateYSlow&quot;</span><span style="color: #f92672">&gt;</span>
+      <span style="color: #f92672">&lt;vertices&gt;&lt;/vertices&gt;</span>
+    <span style="color: #f92672">&lt;/particles&gt;</span>
+    <span style="color: #f92672">&lt;/group&gt;</span>
+    <span style="color: #f92672">&lt;effect</span> <span style="color: #a6e22e">type=</span><span style="color: #e6db74">&quot;Film&quot;</span> <span style="color: #a6e22e">grayscale=</span><span style="color: #e6db74">&quot;0&quot;</span> <span style="color: #a6e22e">disabled</span><span style="color: #f92672">&gt;&lt;/effect&gt;</span>
+  <span style="color: #f92672">&lt;effect</span> <span style="color: #a6e22e">type=</span><span style="color: #e6db74">&quot;DotScreenRGB&quot;</span> <span style="color: #a6e22e">scale=</span><span style="color: #e6db74">&quot;3&quot;</span> <span style="color: #a6e22e">disabled</span><span style="color: #f92672">&gt;&lt;/effect&gt;</span>
+  <span style="color: #f92672">&lt;effect</span> <span style="color: #a6e22e">type=</span><span style="color: #e6db74">&quot;Bloom&quot;</span> <span style="color: #a6e22e">strength=</span><span style="color: #e6db74">&quot;3&quot;</span> <span style="color: #f92672">&gt;&lt;/effect&gt;</span>
+  <span style="color: #f92672">&lt;effect</span> <span style="color: #a6e22e">type=</span><span style="color: #e6db74">&quot;RGBShift&quot;</span> <span style="color: #a6e22e">amount=</span><span style="color: #e6db74">&quot;.005&quot;</span> <span style="color: #a6e22e">disabled</span><span style="color: #f92672">&gt;&lt;/effect&gt;</span>
+  <span style="color: #f92672">&lt;/scene&gt;</span>
+<span style="color: #f92672">&lt;/glam&gt;</span>
+<span style="color: #f92672">&lt;/div&gt;</span>
+
+
+<span style="color: #f92672">&lt;/body&gt;</span>
+<span style="color: #f92672">&lt;/html&gt;</span>
+</pre></div>
+
+</div>
+
+<div class="glamcubeeffects display0">
+<div style="background: #272822; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;"><pre style="margin: 0; line-height: 125%"><span style="color: #75715e">&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot; &quot;http://www.w3.org/TR/html4/loose.dtd&quot;&gt;</span>
+<span style="color: #f92672">&lt;html&gt;</span>
+<span style="color: #f92672">&lt;head&gt;</span>
+<span style="color: #f92672">&lt;meta</span> <span style="color: #a6e22e">http-equiv=</span><span style="color: #e6db74">&quot;Content-Type&quot;</span> <span style="color: #a6e22e">content=</span><span style="color: #e6db74">&quot;text/html; charset=UTF-8&quot;</span><span style="color: #f92672">&gt;</span>
+<span style="color: #f92672">&lt;script </span><span style="color: #a6e22e">src=</span><span style="color: #e6db74">&quot;../../libs/jquery-1.9.1/jquery-1.9.1.js&quot;</span><span style="color: #f92672">&gt;&lt;/script&gt;</span>
+<span style="color: #f92672">&lt;script </span><span style="color: #a6e22e">src=</span><span style="color: #e6db74">&quot;../../build/glam.min.js&quot;</span> <span style="color: #f92672">&gt;&lt;/script&gt;</span>
+<span style="color: #f92672">&lt;title&gt;</span>glam - animated cube<span style="color: #f92672">&lt;/title&gt;</span>
+
+<span style="color: #f92672">&lt;style&gt;</span>
+  <span style="color: #f92672">body</span><span style="color: #f8f8f2">{</span>
+    <span style="color: #66d9ef">margin</span><span style="color: #f92672">:</span> <span style="color: #ae81ff">0px</span><span style="color: #f8f8f2">;</span>
+    <span style="color: #66d9ef">background-color</span><span style="color: #f92672">:</span> <span style="color: #ae81ff">#000</span><span style="color: #f8f8f2">;</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #a6e22e">#photocube</span> <span style="color: #f8f8f2">{</span>
+    <span style="color: #f8f8f2">image</span><span style="color: #f92672">:</span><span style="color: #e6db74">url(../../images/flowers.jpg)</span><span style="color: #f8f8f2">;</span>
+    <span style="color: #f8f8f2">rx</span><span style="color: #f92672">:</span><span style="color: #ae81ff">30</span><span style="color: #f8f8f2">deg;</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #66d9ef">@-webkit-keyframes</span> <span style="color: #f92672">kfRotateY</span> <span style="color: #f8f8f2">{</span>
+    <span style="color: #f92672">from</span> <span style="color: #f8f8f2">{</span>
+      <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">transform</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">rotateY(</span><span style="color: #ae81ff">0</span><span style="color: #f8f8f2">deg);</span>
+    <span style="color: #f8f8f2">}</span>
+  
+    <span style="color: #f92672">to</span> <span style="color: #f8f8f2">{</span>
+     <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">transform</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">rotateY(</span><span style="color: #ae81ff">360</span><span style="color: #f8f8f2">deg);</span>
+    <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+  <span style="color: #a6e22e">.animRotateY</span>
+   <span style="color: #f8f8f2">{</span>
+    <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">animation</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">duration</span><span style="color: #f92672">:</span> <span style="color: #ae81ff">10s</span><span style="color: #f8f8f2">;</span>
+    <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">animation</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">name</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">kfRotateY;</span>
+    <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">animation</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">iteration</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">count</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">infinite;</span>
+    <span style="color: #f92672">-</span><span style="color: #f8f8f2">webkit</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">animation</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">timing</span><span style="color: #f92672">-</span><span style="color: #f8f8f2">function</span><span style="color: #f92672">:</span><span style="color: #f8f8f2">linear;</span>
+  <span style="color: #f8f8f2">}</span>
+
+<span style="color: #f92672">&lt;/style&gt;</span>
+<span style="color: #f92672">&lt;script&gt;</span>
+<span style="color: #a6e22e">$</span><span style="color: #f8f8f2">(document).</span><span style="color: #a6e22e">ready</span><span style="color: #f8f8f2">(</span><span style="color: #66d9ef">function</span><span style="color: #f8f8f2">(){</span>
+
+  <span style="color: #a6e22e">glam</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">ready</span><span style="color: #f8f8f2">();</span>
+<span style="color: #f8f8f2">});</span>
+
+<span style="color: #f92672">&lt;/script&gt;</span>
+<span style="color: #f92672">&lt;/head&gt;</span>
+<span style="color: #f92672">&lt;body&gt;</span>
+<span style="color: #75715e">&lt;!-- </span>
+<span style="color: #75715e">glam - Simple scene with cube</span>
+<span style="color: #75715e"> --&gt;</span>
+<span style="color: #f92672">&lt;div</span> <span style="color: #a6e22e">id=</span><span style="color: #e6db74">&quot;container&quot;</span> <span style="color: #a6e22e">style=</span><span style="color: #e6db74">&quot;width:600px; height:600px;&quot;</span><span style="color: #f92672">&gt;</span>
+<span style="color: #f92672">&lt;glam&gt;</span>
+  <span style="color: #f92672">&lt;scene&gt;</span>
+  <span style="color: #f92672">&lt;cube</span> <span style="color: #a6e22e">id=</span><span style="color: #e6db74">&quot;photocube&quot;</span> <span style="color: #a6e22e">class=</span><span style="color: #e6db74">&quot;&quot;</span><span style="color: #f92672">&gt;&lt;/cube&gt;</span>
+  <span style="color: #f92672">&lt;effect</span> <span style="color: #a6e22e">type=</span><span style="color: #e6db74">&quot;RGBShift&quot;</span> <span style="color: #a6e22e">amount=</span><span style="color: #e6db74">&quot;.05&quot;</span> <span style="color: #a6e22e">disabled</span><span style="color: #f92672">&gt;&lt;/effect&gt;</span>
+  <span style="color: #f92672">&lt;effect</span> <span style="color: #a6e22e">type=</span><span style="color: #e6db74">&quot;DotScreenRGB&quot;</span> <span style="color: #a6e22e">scale=</span><span style="color: #e6db74">&#39;2&#39;</span><span style="color: #f92672">&gt;&lt;/effect&gt;</span>
+  <span style="color: #f92672">&lt;/scene&gt;</span>
+<span style="color: #f92672">&lt;/glam&gt;</span>
+<span style="color: #f92672">&lt;/div&gt;</span>
+
+
+<span style="color: #f92672">&lt;/body&gt;</span>
+<span style="color: #f92672">&lt;/html&gt;</span>
 </pre></div>
 
 </div>
