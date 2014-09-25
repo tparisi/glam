@@ -29,7 +29,7 @@ glam.Material.create = function(style, createCB, objtype) {
 					break;
 			}
 		}
-		else if (style["shader-vertex"] && style["shader-fragment"] && style["shader-uniforms"]) {
+		else if (style["vertex-shader"] && style["fragment-shader"] && style["shader-uniforms"]) {
 			material = glam.Material.createShaderMaterial(style, param, createCB);
 		}
 		else if (objtype == "line") {
@@ -56,7 +56,22 @@ glam.Material.parseStyle = function(style) {
 	if (style.image) {
 		image = glam.Material.parseUrl(style.image);
 	}
-	
+
+	var normalMap = "";
+	if (style["normal-image"]) {
+		normalMap = glam.Material.parseUrl(style["normal-image"]);
+	}
+
+	var bumpMap = "";
+	if (style["bump-image"]) {
+		bumpMap = glam.Material.parseUrl(style["bump-image"]);
+	}
+
+	var specularMap = "";
+	if (style["specular-image"]) {
+		specularMap = glam.Material.parseUrl(style["specular-image"]);
+	}
+
 	var reflectivity;
 	if (style.reflectivity)
 		reflectivity = parseFloat(style.reflectivity);
@@ -70,23 +85,27 @@ glam.Material.parseStyle = function(style) {
 	var color;
 	var diffuse;
 	var specular;
+	var ambient;
 	var css = "";
 
 	if (css = style["color"]) {
 		color = new THREE.Color().setStyle(css).getHex();
 	}
-	if (css = style["color-diffuse"]) {
+	if (css = style["diffuse-color"]) {
 		diffuse = new THREE.Color().setStyle(css).getHex();
 	}
-	if (css = style["color-specular"]) {
+	if (css = style["specular-color"]) {
 		specular = new THREE.Color().setStyle(css).getHex();
+	}
+	if (css = style["ambient-color"]) {
+		ambient = new THREE.Color().setStyle(css).getHex();
 	}
 	
 	var opacity;
 	if (style.opacity)
 		opacity = parseFloat(style.opacity);
 
-	var side = THREE.DoubleSide;
+	var side = THREE.FrontSide;
 	if (style["backface-visibility"]) {
 		switch (style["backface-visibility"].toLowerCase()) {
 			case "visible" :
@@ -124,12 +143,20 @@ glam.Material.parseStyle = function(style) {
 		param.map = THREE.ImageUtils.loadTexture(image);
 	if (envMap)
 		param.envMap = envMap;
+	if (normalMap)
+		param.normalMap = THREE.ImageUtils.loadTexture(normalMap);
+	if (bumpMap)
+		param.bumpMap = THREE.ImageUtils.loadTexture(bumpMap);
+	if (specularMap)
+		param.specularMap = THREE.ImageUtils.loadTexture(specularMap);
 	if (color !== undefined)
 		param.color = color;
 	if (diffuse !== undefined)
 		param.color = diffuse;
 	if (specular !== undefined)
 		param.specular = specular;
+	if (ambient !== undefined)
+		param.ambient = ambient;
 	if (opacity !== undefined) {
 		param.opacity = opacity;
 		param.transparent = opacity < 1;
@@ -166,26 +193,26 @@ glam.Material.parseUrl = function(image) {
 glam.Material.tryParseEnvMap = function(style) {
 	var urls = [];
 	
-	if (style["envmap-right"])
-		urls.push(glam.Material.parseUrl(style["envmap-right"]));
-	if (style["envmap-left"])
-		urls.push(glam.Material.parseUrl(style["envmap-left"]));
-	if (style["envmap-top"])
-		urls.push(glam.Material.parseUrl(style["envmap-top"]));
-	if (style["envmap-bottom"])
-		urls.push(glam.Material.parseUrl(style["envmap-bottom"]));
-	if (style["envmap-front"])
-		urls.push(glam.Material.parseUrl(style["envmap-front"]));
-	if (style["envmap-back"])
-		urls.push(glam.Material.parseUrl(style["envmap-back"]));
+	if (style["cube-image-right"])
+		urls.push(glam.Material.parseUrl(style["cube-image-right"]));
+	if (style["cube-image-left"])
+		urls.push(glam.Material.parseUrl(style["cube-image-left"]));
+	if (style["cube-image-top"])
+		urls.push(glam.Material.parseUrl(style["cube-image-top"]));
+	if (style["cube-image-bottom"])
+		urls.push(glam.Material.parseUrl(style["cube-image-bottom"]));
+	if (style["cube-image-front"])
+		urls.push(glam.Material.parseUrl(style["cube-image-front"]));
+	if (style["cube-image-back"])
+		urls.push(glam.Material.parseUrl(style["cube-image-back"]));
 	
 	if (urls.length == 6) {
 		var cubeTexture = THREE.ImageUtils.loadTextureCube( urls );
 		return cubeTexture;
 	}
 	
-	if (style["envmap"])
-		return THREE.ImageUtils.loadTexture(glam.Material.parseUrl(style["envmap"]), THREE.SphericalRefractionMapping);
+	if (style["sphere-image"])
+		return THREE.ImageUtils.loadTexture(glam.Material.parseUrl(style["sphere-image"]), THREE.SphericalRefractionMapping);
 	
 	return null;
 }
@@ -203,8 +230,8 @@ glam.Material.createShaderMaterial = function(style, param, createCB) {
 		glam.Material.callShaderMaterialCallbacks(vsurl, fsurl);
 	}
 	
-	var vs = style["shader-vertex"];
-	var fs = style["shader-fragment"];
+	var vs = style["vertex-shader"];
+	var fs = style["fragment-shader"];
 	var uniforms = glam.Material.parseUniforms(style["shader-uniforms"], param);
 
 	var vsurl = glam.Material.parseUrl(vs);
@@ -273,13 +300,20 @@ glam.Material.parseUniforms = function(uniformsText, param) {
 		
 		if (type == "f")
 			value = parseFloat(value);
+		if (type == "c") {
+			var c = new THREE.Color();
+			c.setStyle(value);
+			value = c;
+		}
 		else if (type == "t") {
 			value = value.toLowerCase();
-			if (value == "envmap") {
+			if (value == "cube") {
 				value = param.envMap;
 			}
-			else if (value == "texture" || value == "map") {
-				value = param.map;
+			else {
+				var image = glam.Material.parseUrl(value);
+				value = THREE.ImageUtils.loadTexture(image);
+				value.wrapS = value.wrapT = THREE.Repeat;
 			}
 		}
 		
@@ -357,10 +391,14 @@ glam.Material.getShaderMaterialLoading = function(vsurl, fsurl) {
 	return (entry && entry.loading);
 }
 
-glam.Material.addHandlers = function(docelt, obj) {
+glam.Material.addHandlers = function(docelt, style, obj) {
 
-	docelt.setAttributeHandlers.push(function(attr, val) {
+	docelt.glam.setAttributeHandlers.push(function(attr, val) {
 		glam.Material.onSetAttribute(obj, docelt, attr, val);
+	});
+	
+	style.setPropertyHandlers.push(function(attr, val) {
+		glam.Material.onSetProperty(obj, docelt, attr, val);
 	});
 }
 
@@ -368,7 +406,21 @@ glam.Material.onSetAttribute = function(obj, docelt, attr, val) {
 
 	var material = obj.visuals[0].material;
 	switch (attr) {
-		case "color-diffuse" :
+		case "color" :
+		case "diffuse-color" :
+		case "diffuseColor" :
+			material.color.setStyle(val);
+			break;
+	}
+}
+
+glam.Material.onSetProperty = function(obj, docelt, attr, val) {
+
+	var material = obj.visuals[0].material;
+	switch (attr) {
+		case "color" :
+		case "diffuse-color" :
+		case "diffuseColor" :
 			material.color.setStyle(val);
 			break;
 	}

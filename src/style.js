@@ -9,6 +9,9 @@ glam.Style = function(docelt) {
 	this.docelt = docelt;
 	this._properties = {
 	};
+	
+	this.setPropertyHandlers = [];
+	this.defineStandardProperties();
 }
 
 glam.Style.prototype = new Object;
@@ -21,18 +24,9 @@ glam.Style.prototype.addProperties = function(props) {
 
 glam.Style.prototype.addProperty = function(propName, propValue) {
 
+	this.defineProperty(propName, propValue);
+
 	this._properties[propName] = propValue;
-	
-	Object.defineProperty(this, propName, {
-			enumerable : true,
-	        get: function() {
-	            return this._properties[propName];
-	        },
-	        set: function(v) {
-	        	this._properties[propName] = v;
-	        	this.onPropertyChanged(propName, v);
-	        }
-		});
 }
 
 glam.Style.prototype.addPropertiesFromString = function(str) {
@@ -57,5 +51,101 @@ glam.Style.prototype.addPropertiesFromString = function(str) {
 
 glam.Style.prototype.onPropertyChanged = function(propName, propValue) {
 
-	console.log(this.docelt.id, "property", propName, "value changed to", propValue);
+	// console.log(this.docelt.id, "property", propName, "value changed to", propValue);
+
+	var i, len = this.setPropertyHandlers.length;
+	for (i = 0; i < len; i++) {
+		var handler = this.setPropertyHandlers[i];
+		if (handler) {
+			handler(propName, propValue);
+		}
+	}
 }
+
+glam.Style.prototype.defineProperty = function(propName, propValue) {
+	Object.defineProperty(this, propName, {
+			enumerable : true,
+			configurable : true,
+	        get: function() {
+	            return this._properties[propName];
+	        },
+	        set: function(v) {
+	        	this._properties[propName] = v;
+	        	this.onPropertyChanged(propName, v);
+	        }
+		});
+}
+
+glam.Style.prototype.defineStandardProperties = function() {
+
+	var props = glam.Style._standardProperties
+	var propName;
+	for (propName in props) {
+		var propValue = props[propName];
+		this.defineProperty(propName, propValue)
+	}
+}
+
+glam.Style._standardProperties = {
+		"angle" : "",
+		"backface-visibility" : "visible",
+		"background-type" : "",
+		"bevel-size" : "",
+		"bevel-thickness" : "",
+		"color" : "",
+		"diffuse-color" : "",
+		"diffuseColor" : "",
+		"specular-color" : "",
+		"specularColor" : "",
+		"dash-size" : "",
+		"depth" : "",
+		"distance" : "",
+		"end-angle" : "",
+		"cube-image-back" : "",
+		"cube-image-bottom" : "",
+		"cube-image-front" : "",
+		"cube-image-left" : "",
+		"cube-image-right" : "",
+		"cube-image-top" : "",
+		"sphere-image" : "",
+		"sphereImage" : "",
+		"font-bevel" : "",
+		"font-depth" : "",
+		"font-family" : "",
+		"font-size" : "",
+		"font-style" : "",
+		"font-weight" : "",
+		"gap-size" : "",
+		"height" : "",
+		"line-width" : "",
+		"image" : "",
+		"normal-image" : "",
+		"bump-image" : "",
+		"specular-image" : "",
+		"opacity" : "",
+		"radius" : "",
+		"radius-segments" : "",
+		"width-segments" : "",
+		"height-segments" : "",
+		"reflectivity" : "",
+		"refraction-ratio" : "",
+		"render-mode" : "",
+		"rx" : "",
+		"ry" : "",
+		"rz" : "",
+		"shader" : "phong",
+		"fragment-shader" : "",
+		"vertex-shader" : "",
+		"shader-uniforms" : "",
+		"start-angle" : "",
+		"sx" : "",
+		"sy" : "",
+		"sz" : "",
+		"vertex-colors" : "",
+		"vertex-normals" : "",
+		"width" : "",
+		"x" : "",
+		"y" : "",
+		"z" : "",
+};
+

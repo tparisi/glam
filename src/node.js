@@ -12,11 +12,11 @@ glam.Node.init = function(docelt) {
 	docelt.glam = {
 	};
 	
-	docelt.setAttributeHandlers = [];
-	docelt.onSetAttribute = function(attr, val) {
-		var i, len = docelt.setAttributeHandlers.length;
+	docelt.glam.setAttributeHandlers = [];
+	docelt.glam.onSetAttribute = function(attr, val) {
+		var i, len = docelt.glam.setAttributeHandlers.length;
 		for (i = 0; i < len; i++) {
-			var handler = docelt.setAttributeHandlers[i];
+			var handler = docelt.glam.setAttributeHandlers[i];
 			if (handler) {
 				handler(attr, val);
 			}

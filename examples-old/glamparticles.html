@@ -1,0 +1,134 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+<script src="../build/glam.min.js" ></script>
+<title>glam - particle system</title>
+
+<style>
+	body{
+		margin: 0px;
+		background-color: #000;
+	}
+
+
+	#fire {
+		image:url(../images/smokeparticle.png);
+	}
+	#bubbles {
+		image:url(../images/firefly.png);
+	}
+	#sparks {
+		image:url(../images/Star02.png);
+	}
+	#stars {
+		image:url(../images/Star02.png);
+	}
+	#rain {
+		image:url(../images/smokeparticle.png);
+	}
+	@-webkit-keyframes kfRotateY {
+	  from {
+	    -webkit-transform: rotateY(0deg);
+	  }
+	
+	  to {
+	   -webkit-transform: rotateY(-360deg);
+	  }
+	}
+	.animRotateY
+	 {
+	  -webkit-animation-duration: 2s;
+	  -webkit-animation-name: kfRotateY;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:linear;
+	}
+	.animRotateYSlow
+	 {
+	  -webkit-animation-duration: 200s;
+	  -webkit-animation-name: kfRotateY;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:linear;
+	}
+	
+	
+</style>
+<script>
+$(document).ready(function(){
+
+	glam.ready();
+
+	var p4 = document.getElementById("stars");
+	if (p4) {
+		var geometry = p4.geometry;
+		var material = p4.material;
+		
+		for (var i = 0; i < 1000; i++) {
+
+			var x = (0.5 - Math.random()) * 50;
+			var y = (0.5 - Math.random()) * 50;
+			var z = (0.5 - Math.random()) * 50;
+			var vert = new THREE.Vector3(x, y, z);
+			geometry.vertices.push(vert);
+
+			var r = Math.random(), g = Math.random(), b = Math.random();
+			var color = new THREE.Color(r, g, b);
+
+			geometry.colors.push(color);
+
+			material.vertexColors = true;
+		}
+
+		geometry.verticesNeedUpdate = true;
+	}
+});
+
+</script>
+</head>
+<body>
+<div id="container" style="width:98%; height:98%;position:absolute;">
+<glam>
+  <scene>
+  	<camera z='10'></camera>
+    <group>
+		<particles maxAge='2' id="fire">
+			<emitter particlesPerSecond='50' size='10' sizeEnd='5' opacityStart='0.2' 
+			opacityMiddle='0.4' opacityEnd='0.1' velocity='0 2.5 0' acceleration='0 3 0' 
+			positionSpread='2 3.5 2' accelerationSpread='1.5 .5 1.5' colorStart="yellow"
+			blending='additive' ></emitter>
+		</particles>
+    </group>
+    <group x='-5'>
+		<particles maxAge='2' id="bubbles">
+			<emitter particlesPerSecond='10' size='2' sizeEnd='1' opacityStart='0.2' 
+			opacityMiddle='0.4' opacityEnd='0.2' velocity='0 2 0' acceleration='0 1 0' 
+			positionSpread='1 1 1' accelerationSpread='5 0 5' colorStart="white"></emitter>
+		</particles>
+    </group>
+    <group x='5' y='2'>
+		<particles maxAge='2' id="sparks" class="animRotateY">
+			<emitter particlesPerSecond='100' size='2' sizeEnd='1' opacityStart='0.2' 
+			opacityMiddle='0.4' opacityEnd='0.2' velocity='2 0 0' acceleration='0 -1 0' 
+			positionSpread='0 0 0' accelerationSpread='1 1 1' colorStart="red" colorEnd="yellow"></emitter>
+		</particles>
+    </group>
+    <group x='-5' y='2'>
+		<particles maxAge='2' id="rain">
+			<emitter particlesPerSecond='100' size='.1' sizeEnd='.5' opacityStart='1' 
+			opacityMiddle='0.5' opacityEnd='0.5' velocity='0 -3.5 0' acceleration='0 -3 0' 
+			positionSpread='30 -3.5 5' accelerationSpread='.5 -.5 .5' colorStart="blue" colorEnd="lightblue"
+			blendin='normal'></emitter>
+		</particles>
+    </group>
+    <group>
+		<particles id="stars" size='.5' class="animRotateYSlow">
+			<vertices></vertices>
+		</particles>
+    </group>
+  </scene>
+</glam>
+</div>
+
+</body>
+</html>

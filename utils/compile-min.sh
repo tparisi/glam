@@ -12,6 +12,7 @@ SOURCES="../src/glam.js \
 ../src/cube.js \
 ../src/cylinder.js \
 ../src/document.js \
+../src/effect.js \
 ../src/group.js \
 ../src/import.js \
 ../src/input.js \
@@ -22,8 +23,6 @@ SOURCES="../src/glam.js \
 ../src/node.js \
 ../src/parser.js \
 ../src/particles.js \
-../src/particleEmitter.js \
-../src/particleSystem.js \
 ../src/rect.js \
 ../src/renderer.js \
 ../src/sphere.js \
@@ -36,8 +35,7 @@ SOURCES="../src/glam.js \
 ../src/visual.js"
 
 LIBS="../libs/parsecss/jquery.parsecss.js \
-../libs/vizi/vizi.min.js \
-../libs/ParticleEngine/ShaderParticles.min.js"
+../libs/vizi/vizi.min.js"
 
 FONTS="../fonts/helvetiker_bold.typeface.js \
 ../fonts/helvetiker_regular.typeface.js"

@@ -5717,8 +5717,15 @@ Vizi.GraphicsThreeJS.prototype.initRenderer = function(param)
     this.lastFrameTime = 0;
     
     if (param.riftRender) {
-    	  this.riftCam = new THREE.OculusRiftEffect(this.renderer);	
+    	this.riftCam = new THREE.VREffect(this.renderer, function(err) {
+			if (err) {
+				console.log("Error creating VR renderer: ", err);
+			}
+    	});
     }
+    
+    // Placeholder for effects composer
+    this.composer = null;
 }
 
 Vizi.GraphicsThreeJS.prototype.initMouse = function()
@@ -6271,32 +6278,45 @@ Vizi.GraphicsThreeJS.prototype.setCursor = function(cursor)
 
 Vizi.GraphicsThreeJS.prototype.update = function()
 {
-	// N.B.: start with hack, let's see how it goes...
-	if (this.riftCam) {
-	    this.riftCam.render(
-	        	[ this.backgroundLayer.scene, this.scene ],
-	        	[this.backgroundLayer.camera, this.camera]);
+    var frameTime = Date.now();
+    var deltat = (frameTime - this.lastFrameTime) / 1000;
+    this.frameRate = 1 / deltat;
 
-	    return;
+    this.lastFrameTime = frameTime;
+
+	// N.B.: start with hack, let's see how it goes...
+	if (this.riftCam && this.riftCam._vrHMD) {
+		this.renderVR();
+	}
+	else if (this.composer) {
+		this.renderEffects(deltat);
+	}
+	else {
+		this.render();
 	}
 	
+    if (this.stats)
+    {
+    	this.stats.update();
+    }
+}
+
+Vizi.GraphicsThreeJS.prototype.render = function() {
     this.renderer.setClearColor( 0, 0 );
 	this.renderer.autoClearColor = true;
     this.renderer.render( this.backgroundLayer.scene, this.backgroundLayer.camera );
     this.renderer.setClearColor( 0, 1 );
 	this.renderer.autoClearColor = false;
     this.renderer.render( this.scene, this.camera );
+}
 
-    var frameTime = Date.now();
-    var deltat = (frameTime - this.lastFrameTime) / 1000;
-    this.frameRate = 1 / deltat;
+Vizi.GraphicsThreeJS.prototype.renderVR = function() {
+	// start with 2 layer to test; will need to work in postprocessing when that's ready
+    this.riftCam.render([this.backgroundLayer.scene, this.scene], [this.backgroundLayer.camera, this.camera]);
+}
 
-    this.lastFrameTime = frameTime;
-    	
-    if (this.stats)
-    {
-    	this.stats.update();
-    }
+Vizi.GraphicsThreeJS.prototype.renderEffects = function(deltat) {
+	this.composer.render(deltat);
 }
 
 Vizi.GraphicsThreeJS.prototype.enableShadows = function(enable)
@@ -6304,6 +6324,42 @@ Vizi.GraphicsThreeJS.prototype.enableShadows = function(enable)
 	this.renderer.shadowMapEnabled = enable;
 	this.renderer.shadowMapSoft = enable;
 	this.renderer.shadowMapCullFrontFaces = false;
+}
+
+Vizi.GraphicsThreeJS.prototype.setFullScreen = function(enable)
+{
+	if (this.riftCam) {
+		this.riftCam.setFullScreen(enable);
+	}
+}
+
+Vizi.GraphicsThreeJS.prototype.setCamera = function(camera) {
+	this.camera = camera;
+	if (this.composer) {
+		this.composer.setCamera(camera);
+	}
+}
+
+Vizi.GraphicsThreeJS.prototype.addEffect = function(effect) {
+	
+	if (!this.composer) {
+		this.composer = new Vizi.Composer();
+	}
+	
+	if (!this.effects) {
+		this.effects  = [];
+	}
+	
+	if (effect.isShaderEffect) {
+		for (var i = 0; i < this.effects.length; i++) {
+			var ef = this.effects[i];
+//			ef.pass.renderToScreen = false;
+		}	
+//		effect.pass.renderToScreen = true;
+	}
+	
+	this.effects.push(effect);
+	this.composer.addEffect(effect);
 }
 
 Vizi.GraphicsThreeJS.default_display_stats = false;
@@ -7316,9 +7372,7 @@ Vizi.RiftControllerScript = function(param)
 	Vizi.Script.call(this, param);
 
 	this._enabled = (param.enabled !== undefined) ? param.enabled : true;
-	this.oculusBridge = null;
 	this.riftControls = null;
-	this.useVRJS = (param.useVRJS !== undefined) ? param.useVRJS : false;
 	
     Object.defineProperties(this, {
     	camera: {
@@ -7344,53 +7398,12 @@ goog.inherits(Vizi.RiftControllerScript, Vizi.Script);
 
 Vizi.RiftControllerScript.prototype.realize = function()
 {
-	this.bodyAngle     = 0;
-	this.bodyAxis      = new THREE.Vector3(0, 1, 0);
-	this.bodyPosition  = new THREE.Vector3(0, 15, 0);
-	this.velocity      = new THREE.Vector3();
-
-	var that = this;
-	if (this.useVRJS) {
-		this.vrstate = null;
-		vr.load(function() {
-			that.vrstate = new vr.State();
-		});
-	}
-	else {
-		var bridgeOrientationUpdated = function(quatValues) {
-			that.bridgeOrientationUpdated(quatValues);
-		}
-		var bridgeConfigUpdated = function(quatValues) {
-			that.bridgeConfigUpdated(quatValues);
-		}
-		var bridgeConnected = function(quatValues) {
-			that.bridgeConnected(quatValues);
-		}
-		var bridgeDisconnected = function(quatValues) {
-			that.bridgeDisconnected(quatValues);
-		}
-		
-		this.oculusBridge = new OculusBridge({
-			"debug" : true,
-			"onOrientationUpdate" : bridgeOrientationUpdated,
-			"onConfigUpdate"      : bridgeConfigUpdated,
-			"onConnect"           : bridgeConnected,
-			"onDisconnect"        : bridgeDisconnected
-		});
-		
-		this.oculusBridge.connect();
-	}	
 }
 
 Vizi.RiftControllerScript.prototype.update = function()
 {
-	if (this._enabled) {
-		if (this.useVRJS) {
-			if (this.vrstate) {
-				var polled = vr.pollState(this.vrstate);
-				this.riftControls.update(this.clock.getDelta(), polled ? this.vrstate : null );
-			}
-		}
+	if (this._enabled && this.riftControls) {
+		this.riftControls.update();
 	}
 }
 
@@ -7401,61 +7414,21 @@ Vizi.RiftControllerScript.prototype.setEnabled = function(enabled)
 
 Vizi.RiftControllerScript.prototype.setCamera = function(camera) {
 	this._camera = camera;
-	if (this.useVRJS) {
-		this.riftControls = this.createControls(camera);
-	}
+	this.riftControls = this.createControls(camera);
 }
 
 Vizi.RiftControllerScript.prototype.createControls = function(camera)
 {
-	var controls = new Vizi.OculusRiftControls(camera.object);
+	var controls = new THREE.VRControls(camera.object, function(err) {
+			if (err) {
+				console.log("Error creating VR controller: ", err);
+			}
+		});
 
-	this.clock = new THREE.Clock();
+	// N.B.: this only works because the callback up there is synchronous...
 	return controls;
 }
 
-Vizi.RiftControllerScript.prototype.bridgeOrientationUpdated = function(quatValues) {
-
-	// Do first-person style controls (like the Tuscany demo) using the rift and keyboard.
-
-	// TODO: Don't instantiate new objects in here, these should be re-used to avoid garbage collection.
-
-	// make a quaternion for the the body angle rotated about the Y axis.
-	var quat = new THREE.Quaternion();
-	quat.setFromAxisAngle(this.bodyAxis, this.bodyAngle);
-
-	// make a quaternion for the current orientation of the Rift
-	var quatCam = new THREE.Quaternion(quatValues.x, quatValues.y, quatValues.z, quatValues.w);
-
-	// multiply the body rotation by the Rift rotation.
-	quat.multiply(quatCam);
-
-	// Make a vector pointing along the Z axis and rotate it accoring to the combined look/body angle.
-	var xzVector = new THREE.Vector3(0, 0, 1);
-	xzVector.applyQuaternion(quat);
-
-	// Compute the X/Z angle based on the combined look/body angle.  This will be used for FPS style movement controls
-	// so you can steer with a combination of the keyboard and by moving your head.
-	viewAngle = Math.atan2(xzVector.z, xzVector.x) + Math.PI;
-
-	// Apply the combined look/body angle to the camera.
-	this._camera.quaternion.copy(quat);
-	
-//	console.log("quat", quat);
-}
-
-Vizi.RiftControllerScript.prototype.bridgeConnected = function() {
-//  document.getElementById("logo").className = "";
-}
-
-Vizi.RiftControllerScript.prototype.bridgeDisconnected = function() {
-//  document.getElementById("logo").className = "offline";
-}
-
-Vizi.RiftControllerScript.prototype.bridgeConfigUpdated = function(config) {
-// console.log("Oculus config updated.");
-// riftCam.setHMD(config);      
-}
 
 /**
  * @fileoverview Interpolator for key frame animation
@@ -8440,7 +8413,7 @@ Vizi.CameraManager.setActiveCamera = function(camera)
 		Vizi.CameraManager.activeCamera.active = false;
 	
 	Vizi.CameraManager.activeCamera = camera;
-	Vizi.Graphics.instance.camera = camera.object;
+	Vizi.Graphics.instance.setCamera(camera.object);
 }
 
 
@@ -8493,6 +8466,7 @@ Vizi.HUDScript = function(param) {
 
 	this.zDistance = (param.zDistance !== undefined) ? param.zDistance : Vizi.HUDScript.DEFAULT_Z_DISTANCE;
 	this.position = new THREE.Vector3(0, 0, -this.zDistance);
+	this.savedPosition = this.position.clone();
 	this.scale = new THREE.Vector3;
 	this.quaternion = new THREE.Quaternion;
 }
@@ -8501,6 +8475,8 @@ goog.inherits(Vizi.HUDScript, Vizi.Script);
 
 Vizi.HUDScript.prototype.realize = function() {
 }
+
+Vizi.HUDScript.EPSILON = 0.001;
 
 Vizi.HUDScript.prototype.update = function() {
 	
@@ -8513,6 +8489,12 @@ Vizi.HUDScript.prototype.update = function() {
 	this._object.transform.quaternion.copy(this.quaternion);
 	this._object.transform.position.copy(this.position);
 	this._object.transform.translateZ(-this.zDistance);
+	
+	if (this.savedPosition.distanceTo(this.position) > Vizi.HUDScript.EPSILON) {
+		console.log("Position changed:", this.position)
+	}
+	
+	this.savedPosition.copy(this.position);
 }
 
 Vizi.HUDScript.DEFAULT_Z_DISTANCE = 1;
@@ -8770,6 +8752,96 @@ Vizi.Loader.prototype.convertScene = function(scene) {
 
 	return convert(scene);
 }
+goog.provide('Vizi.ParticleEmitter');
+goog.require('Vizi.Component');
+
+Vizi.ParticleEmitter = function(param) {
+	this.param = param || {};
+	
+	Vizi.Component.call(this, param);
+
+	var size = this.param.size || Vizi.ParticleEmitter.DEFAULT_SIZE;
+	var sizeEnd = this.param.sizeEnd || Vizi.ParticleEmitter.DEFAULT_SIZE_END;
+	var colorStart = this.param.colorStart || Vizi.ParticleEmitter.DEFAULT_COLOR_START;
+	var colorEnd = this.param.colorEnd || Vizi.ParticleEmitter.DEFAULT_COLOR_END;
+	var particlesPerSecond = this.param.particlesPerSecond || Vizi.ParticleEmitter.DEFAULT_PARTICLES_PER_SECOND;
+	var opacityStart = this.param.opacityStart || Vizi.ParticleEmitter.DEFAULT_OPACITY_START;
+	var opacityMiddle = this.param.opacityMiddle || Vizi.ParticleEmitter.DEFAULT_OPACITY_MIDDLE;
+	var opacityEnd = this.param.opacityEnd || Vizi.ParticleEmitter.DEFAULT_OPACITY_END;
+	var velocity = this.param.velocity || Vizi.ParticleEmitter.DEFAULT_VELOCITY;
+	var acceleration = this.param.acceleration || Vizi.ParticleEmitter.DEFAULT_ACCELERATION;
+	var positionSpread = this.param.positionSpread || Vizi.ParticleEmitter.DEFAULT_POSITION_SPREAD;
+	var accelerationSpread = this.param.accelerationSpread || Vizi.ParticleEmitter.DEFAULT_ACCELERATION_SPREAD;
+	var blending = this.param.blending || Vizi.ParticleEmitter.DEFAULT_BLENDING;
+
+	this._active = false;
+
+	this.object = new ShaderParticleEmitter({
+		size: size,
+        sizeEnd: sizeEnd,
+        colorStart: colorStart,
+        colorEnd: colorEnd,
+        particlesPerSecond: particlesPerSecond,
+        opacityStart: opacityStart,
+        opacityMiddle: opacityMiddle,
+        opacityEnd: opacityEnd,
+        velocity: velocity,
+        acceleration: acceleration,
+        positionSpread: positionSpread,
+        accelerationSpread: accelerationSpread,
+        blending: blending,
+      });
+	
+    Object.defineProperties(this, {
+        active: {
+	        get: function() {
+	            return this._active;
+	        },
+	        set: function(v) {
+	        	this.setActive(v);
+	        }
+    	},
+    });
+
+}
+
+goog.inherits(Vizi.ParticleEmitter, Vizi.Component);
+
+Vizi.ParticleEmitter.prototype.realize = function() {
+
+}
+
+Vizi.ParticleEmitter.prototype.update = function() {
+
+}
+
+Vizi.ParticleEmitter.prototype.setActive = function(active) {
+
+    this._active = active;
+    
+    if (this._active) {
+    	this.object.enable();
+    }
+    else {
+    	this.object.disable();
+    }
+}
+
+Vizi.ParticleEmitter.DEFAULT_SIZE = 1;
+Vizi.ParticleEmitter.DEFAULT_SIZE_END = 1;
+Vizi.ParticleEmitter.DEFAULT_COLOR_START = new THREE.Color;
+Vizi.ParticleEmitter.DEFAULT_COLOR_END = new THREE.Color;
+Vizi.ParticleEmitter.DEFAULT_PARTICLES_PER_SECOND = 10;
+Vizi.ParticleEmitter.DEFAULT_OPACITY_START = 0.1;
+Vizi.ParticleEmitter.DEFAULT_OPACITY_MIDDLE = 0.5;
+Vizi.ParticleEmitter.DEFAULT_OPACITY_END = 0.0;
+Vizi.ParticleEmitter.DEFAULT_VELOCITY = new THREE.Vector3(0, 10, 0);
+Vizi.ParticleEmitter.DEFAULT_ACCELERATION = new THREE.Vector3(0, 1, 0);
+Vizi.ParticleEmitter.DEFAULT_POSITION_SPREAD = new THREE.Vector3(0, 0, 0);
+Vizi.ParticleEmitter.DEFAULT_ACCELERATION_SPREAD = new THREE.Vector3(0, 1, 0);
+Vizi.ParticleEmitter.DEFAULT_BLENDING = THREE.NoBlending;
+
+
 /**
  *
  */
@@ -9263,6 +9335,55 @@ Vizi.ScaleBehavior.prototype.stop = function()
 	
 	Vizi.Behavior.prototype.stop.call(this);
 }/**
+ * @fileoverview Vizi Effects Composer - postprocessing effects composer, wraps Three.js
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('Vizi.Composer');
+
+/**
+ * @constructor
+ */
+
+Vizi.Composer = function(param)
+{
+	// Freak out if somebody tries to make 2
+    if (Vizi.Composer.instance)
+    {
+        throw new Error('Composer singleton already exists')
+    }
+
+	Vizi.Composer.instance = this;
+
+    // Create the effects composer
+    // For now, create default render pass to start it up
+	var graphics = Vizi.Graphics.instance;
+    this.composer = new THREE.EffectComposer( graphics.renderer );
+	this.composer.addPass( new THREE.RenderPass( graphics.scene, graphics.camera ) );
+	var copyPass = new THREE.ShaderPass( THREE.CopyShader );
+	copyPass.renderToScreen = true;
+	this.composer.addPass(copyPass);
+}
+
+Vizi.Composer.prototype.render = function(deltat) {
+
+	// for now just pass it through
+	this.composer.render(deltat);	
+}
+
+Vizi.Composer.prototype.addEffect = function(effect) {
+
+	var index = this.composer.passes.length - 1;
+	this.composer.insertPass(effect.pass, index);	
+}
+
+Vizi.Composer.prototype.setCamera = function(camera) {
+	var renderpass = this.composer.passes[0];
+	renderpass.camera = camera;
+}
+
+Vizi.Composer.instance = null;/**
  * @fileoverview Viewer class - Application Subclass for Model/Scene Viewer
  * @author Tony Parisi / http://www.tonyparisi.com
  */
@@ -10003,6 +10124,121 @@ Vizi.Viewer.DEFAULT_GRID_STEP_SIZE = 1;
 Vizi.Viewer.GRID_COLOR = 0x202020;
 Vizi.Viewer.GRID_OPACITY = 0.2;
 Vizi.Viewer.DEFAULT_HEADLIGHT_INTENSITY = 1;
+goog.provide('Vizi.ParticleSystemScript');
+goog.require('Vizi.Script');
+goog.require('Vizi.ParticleEmitter');
+
+Vizi.ParticleSystem = function(param) {
+
+	param = param || {};
+	
+	var obj = new Vizi.Object;
+
+	var texture = param.texture || null;
+	var maxAge = param.maxAge || Vizi.ParticleSystemScript.DEFAULT_MAX_AGE;
+
+	var visual = null;
+	if (param.geometry) {
+		
+		var color = (param.color !== undefined) ? param.color : Vizi.ParticleSystem.DEFAULT_COLOR;
+		var material = new THREE.ParticleSystemMaterial({color:color, size:param.size, map:param.map,
+			transparent: (param.map !== null), vertexColors: (param.geometry.colors.length > 0)});
+		var ps = new THREE.ParticleSystem(param.geometry, material);
+
+		if (param.map)
+			ps.sortParticles = true;
+		
+	    visual = new Vizi.Visual({object:ps});
+	}
+	else {
+		
+		var particleGroup = new ShaderParticleGroup({
+	        texture: texture,
+	        maxAge: maxAge,
+	      });
+		    
+	    visual = new Vizi.Visual({object:particleGroup.mesh});
+	}
+	
+    obj.addComponent(visual);
+    
+	param.particleGroup = particleGroup;
+	
+	var pScript = new Vizi.ParticleSystemScript(param);
+	obj.addComponent(pScript);
+	
+	return obj;
+}
+
+
+Vizi.ParticleSystemScript = function(param) {
+	Vizi.Script.call(this, param);
+
+	this.particleGroup = param.particleGroup;
+	
+	this._active = true;
+	
+    Object.defineProperties(this, {
+        active: {
+	        get: function() {
+	            return this._active;
+	        },
+	        set: function(v) {
+	        	this.setActive(v);
+	        }
+    	},
+    });
+
+}
+
+goog.inherits(Vizi.ParticleSystemScript, Vizi.Script);
+
+Vizi.ParticleSystemScript.prototype.realize = function()
+{
+    this.initEmitters();
+
+}
+
+Vizi.ParticleSystemScript.prototype.initEmitters = function() {
+	
+	var emitters = this._object.getComponents(Vizi.ParticleEmitter);
+	
+	var i = 0, len = emitters.length;
+	
+    for (i = 0; i < len; i++) {
+    	var emitter = emitters[i];
+    	this.particleGroup.addEmitter(emitter.object);
+    	emitter.active = this._active;
+    }
+    
+    this.emitters = emitters;
+}
+
+Vizi.ParticleSystemScript.prototype.setActive = function(active) {
+
+	var emitters = this.emitters;
+	if (!emitters)
+		return;
+	
+	var i = 0, len = emitters.length;
+	
+    for (i = 0; i < len; i++) {
+    	var emitter = emitters[i];
+    	emitter.active = active;
+    }
+
+    this._active = active;
+}
+
+Vizi.ParticleSystemScript.prototype.update = function() {
+	if (this.particleGroup) {
+		this.particleGroup.tick();
+	}
+}
+
+Vizi.ParticleSystem.DEFAULT_COLOR = 0xffffff;
+Vizi.ParticleSystemScript.DEFAULT_MAX_AGE = 1;
+
 goog.provide('Vizi.SpotLight');
 goog.require('Vizi.Light');
 
@@ -10123,6 +10359,42 @@ Vizi.SpotLight.DEFAULT_EXPONENT = 10;
 Vizi.SpotLight.DEFAULT_CAST_SHADOWS = false;
 Vizi.SpotLight.DEFAULT_SHADOW_DARKNESS = 0.3;
 /**
+ * @fileoverview Effect - Vizi postprocessing effect, wraps Three.js
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('Vizi.Effect');
+goog.require('Vizi.EventDispatcher');
+
+/**
+ * @constructor
+ */
+
+Vizi.Effect = function(shader)
+{
+    Vizi.EventDispatcher.call(this);	
+    
+	this.isShaderEffect = false;
+
+    if (shader.render && typeof(shader.render) == "function") {
+    	this.pass = shader;
+    }
+    else {
+    	this.pass = new THREE.ShaderPass(shader);
+    	this.isShaderEffect = true;
+    }
+}
+
+goog.inherits(Vizi.Effect, Vizi.EventDispatcher);
+
+Vizi.Effect.prototype.update = function() {
+
+	// hook for later - maybe we do
+	// subclass with specific knowledge about shader uniforms
+}
+
+/**
  * @fileoverview Base class for visual decoration - like Vizi.Visual but not pickable.
  * @author Tony Parisi
  */
@@ -10209,6 +10481,10 @@ goog.require('Vizi.SkyboxScript');
 goog.require('Vizi.SkysphereScript');
 goog.require('Vizi.Prefabs');
 goog.require('Vizi.Decoration');
+goog.require('Vizi.ParticleEmitter');
+goog.require('Vizi.ParticleSystemScript');
+goog.require('Vizi.Composer');
+goog.require('Vizi.Effect');
 goog.require('Vizi.SceneComponent');
 goog.require('Vizi.SceneUtils');
 goog.require('Vizi.SceneVisual');

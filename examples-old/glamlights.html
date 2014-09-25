@@ -1,0 +1,137 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+<script src="../build/glam.min.js" ></script>
+<title>glam - shapes, materials, groups and hierarchy</title>
+
+<style>
+	
+	body{
+		margin: 0px;
+		background-color: #000;
+	}
+
+	#texturedcube {
+		image:url(../images/ash_uvgrid01.jpg);
+	}
+
+	#cone1 {
+		diffuse-color:blue;
+		shader:phong;
+		radius:1;
+	}
+
+	#cylinder1 {
+		diffuse-color:green;
+		radius:1;
+		render-mode:wireframe;
+	}
+	
+	#sphere1 {
+		shader:phong;
+		diffuse-color:red;
+		specular-color:#004400;
+		opacity:.8;
+	}
+
+	#nestedGroup {
+	}
+
+	#text1 {
+		diffuse-color:cornflowerblue;
+		shader:phong;
+		font-bevel:none;
+		font-weight:bold;
+	}
+
+	#dirLight1 {
+		color:white;
+	}
+	
+	#spotLight1 {
+		color:#44ff88;
+	}
+
+	#pointLight1 {
+		color:blue;
+	}
+
+	#pointLight2 {
+		color:yellow;
+	}
+
+	#ambLight1 {
+		color:#404000;
+	}
+	
+	@-webkit-keyframes kfBounce {
+	  0% {
+	    transform:translateY(-6);
+	  }
+	
+	  25% {
+	    transform:translateY(0);
+	  }
+	  
+	  50% {
+	    transform:translateY(6);
+	  }
+	  
+	  75% {
+	    transform:translateY(0);
+	  }
+	  
+	  100% {
+	    transform:translateY(-6);
+	  }
+	}
+	
+	.lightBounce {
+	  animation-duration: 5s;
+	  animation-name: kfBounce;
+	  animation-iteration-count: infinite;
+	  animation-timing-function:ease-in-out;
+	}
+	
+</style>
+<script>
+$(document).ready(function(){
+
+	glam.ready();
+});
+
+</script>
+</head>
+<body>
+<!-- 
+glam - Simple scene with cube
+ -->
+<div id="container" style="width:98%; height:98%;position:absolute;">
+<glam>
+  <scene>
+  	<controller noheadlight></controller>
+  	<light id="dirLight1" type='directional'  dz='0' dy='-1' dx='0'></light>
+  	<light id="spotLight1" type='spot' z='2' angle='15deg' exponent='1' ></light>
+  	<light id="pointLight1" type='point' x='-2' z='2'></light>
+  	<light id="pointLight2" type='point' x='2' z='0' class="lightBounce"></light>
+  	<light id="ambLight1" type='ambient'></light>
+  	<group y='-1'>
+		<cube id="texturedcube" x="1.5" y='2' z='-5' depth='.5' height='1.5' ></cube>
+		<group id="aGroup" x="1" y=".5" z="-2" >
+			<sphere id="sphere1" radius='1.5'></sphere>
+			<group id="nestedGroup" x='-3' y='1' z='-5'>
+				<cone id="cone1" x='-1' y='-.5' z='2' rz='90deg'></cone>
+				<cylinder id="cylinder1"></cylinder>
+			</group>
+		</group>
+		<text id="text1" value="glam"></text>
+  	</group>
+  </scene>
+</glam>
+</div>
+
+
+</body>
+</html>

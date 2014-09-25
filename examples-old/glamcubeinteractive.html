@@ -1,0 +1,73 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+<script src="../build/glam.min.js" ></script>
+<title>glam - cube with mouse interaction</title>
+
+<style>
+	body{
+		margin: 0px;
+		background-color: #000;
+	}
+
+	#photocube {
+		image:url(../images/flowers.jpg);
+		rx:30deg;
+		color:white;
+	}
+
+</style>
+<script>
+
+var stat = null;
+$(document).ready(function(){
+
+	glam.ready();
+
+	stat = document.getElementById("stat");
+	
+	var photocube = document.getElementById('photocube');
+
+	photocube.addEventListener("mouseover", function(event) {
+		stat.innerHTML = 'OVER';
+		photocube.glam.style.color = 'red';
+	});
+	photocube.addEventListener("mouseout", function(event) {
+		stat.innerHTML = 'OUT';
+		photocube.glam.style.color = 'white';
+	});
+	photocube.addEventListener("mousedown", function(event) {
+		stat.innerHTML = 'DOWN';
+	});
+	photocube.addEventListener("mouseup", function(event) {
+		stat.innerHTML = 'UP';
+	});
+	photocube.addEventListener("mousemove", function(event) {
+		stat.innerHTML = 'MOVE';
+	});
+	photocube.addEventListener("click", function(event) {
+		stat.innerHTML = 'CLICK';
+	});
+	
+});
+
+</script>
+</head>
+<body>
+<!-- 
+glam - Simple scene with cube
+ -->
+<div id="container" style="width:600px; height:600px;">
+<glam id="glam">
+  <scene>
+	<cube id="photocube"></cube>
+  </scene>
+</glam>
+</div>
+<div id="stat" style="position:absolute;left:200px;top:20%;font-size:72px;color:goldenrod;font-family:Arial;font-style:normal;">
+</div>
+
+</body>
+</html>

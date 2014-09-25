@@ -26,12 +26,12 @@ $(document).ready(function(){
 
 	photocube.addEventListener("mouseover", function(event) {
 		stat.innerHTML = 'OVER';
-		photocube.setAttribute('color-diffuse', 'red');
+		photocube.glam.style.color = 'red';
 	});
 	photocube.addEventListener("mouseout", function(event) {
 		event.stopPropagation();
 		stat.innerHTML = 'OUT';
-		photocube.setAttribute('color-diffuse', 'white');
+		photocube.glam.style.color = 'white';
 	});
 	photocube.addEventListener("mousedown", function(event) {
 		stat.innerHTML = 'DOWN';

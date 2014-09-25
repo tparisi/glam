@@ -35,7 +35,7 @@ glam.Cone.getAttributes = function(docelt, style, param) {
 glam.Cone.createVisual = function(docelt, material, param) {
 	
 	var visual = new Vizi.Visual(
-			{ geometry: new THREE.CylinderGeometry(0, param.radius, param.height, 16),
+			{ geometry: new THREE.CylinderGeometry(0, param.radius, param.height, 32),
 				material: material
 			});
 

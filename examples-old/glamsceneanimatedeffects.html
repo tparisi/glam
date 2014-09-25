@@ -1,0 +1,204 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+<script src="../build/glam.min.js" ></script>
+<title>glam - scene with multiple animations</title>
+
+<style>
+
+	body{
+		margin: 0px;
+		background-color: #000;
+	}
+
+	#fire {
+		image:url(../images/smokeparticle.png);
+	}
+	#bubbles {
+		image:url(../images/firefly.png);
+	}
+	#sparks {
+		image:url(../images/Star02.png);
+	}
+	#stars {
+		image:url(../images/Star02.png);
+	}
+	#rain {
+		image:url(../images/smokeparticle.png);
+	}
+
+	#texturedcube {
+		image:url(../images/ash_uvgrid01.jpg);
+	}
+
+	#cone1 {
+		color:blue;
+		radius:1;
+		shader:phong;
+	}
+
+	#cylinder1 {
+		color:green;
+		radius:1;
+		render-mode:wireframe;
+	}
+	
+	#sphere1 {
+		radius:1.5;
+		shader:phong;
+		diffuse-color:red;
+		specular-color:#004400;
+		opacity:.8;
+	}
+
+	#nestedGroup {
+	}
+
+	#text1 {
+		diffuse-color:cornflowerblue;
+		shader:phong;
+		font-bevel:bevel;
+		font-weight:bold;
+	}
+
+	@-webkit-keyframes kfRotateY {
+	  0% {
+	    -webkit-transform: rotateY(0deg) translateY(0);
+	  }
+	
+	  50% {
+	   -webkit-transform: rotateY(180deg) translateY(3);
+	  }
+	  
+	  100% {
+	   -webkit-transform: rotateY(360deg) translateY(0);
+	  }
+	}
+	
+	@-webkit-keyframes kfRotateZ {
+	  from {
+	    -webkit-transform: rotateZ(0deg);
+	  }
+	
+	  to {
+	   -webkit-transform: rotateZ(360deg);
+	  }
+	}
+
+	@-webkit-keyframes kfFade {
+	  0% {
+	    opacity:1;
+	    color:red;
+	  }
+	
+	  50% {
+	    opacity:.5;
+	    color:green;
+	  }
+	  
+	  100% {
+	    opacity:1;
+	    color:red;
+	  }
+	}
+
+	.animRotateY
+	 {
+	  -webkit-animation-duration: 2s;
+	  -webkit-animation-name: kfRotateY;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
+
+	.animRotateZ
+	 {
+	  -webkit-animation-duration: 5s;
+	  -webkit-animation-name: kfRotateZ;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:linear;
+	}
+
+	
+	.animFade
+	 {
+	  -webkit-animation-duration: 1s;
+	  -webkit-animation-name: kfFade;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
+
+</style>
+<script>
+$(document).ready(function(){
+
+	glam.ready();
+});
+
+</script>
+</head>
+<body>
+<!-- 
+glam - Simple scene with cube
+ -->
+<div id="container" style="width:98%; height:98%;position:absolute;">
+<glam>
+  <scene>
+  	<group y='-1'>
+		<cube id="texturedcube" class="animRotateY" x="1.5" y='2' z='-5' depth='.5' height='1.5'></cube>
+		<group id="aGroup" x="1" y=".5" z="-2" >
+			<sphere id="sphere1" class="animFade" radius='1.5'></sphere>
+			<group id="nestedGroup" x='-3' y='1' z='-5'>
+				<cone id="cone1" x='-1' y='-.5' z='2' rz='90deg'></cone>
+				<cylinder class="animRotateZ" id="cylinder1"></cylinder>
+			</group>
+		</group>
+		<text id="text1">glam is HOT</text>
+  	</group>
+    <group>
+		<particles maxAge='2' id="fire">
+			<emitter particlesPerSecond='50' size='10' sizeEnd='5' opacityStart='0.2' 
+			opacityMiddle='0.4' opacityEnd='0.1' velocity='0 2.5 0' acceleration='0 3 0' 
+			positionSpread='2 3.5 2' accelerationSpread='1.5 .5 1.5' colorStart="yellow"
+			blending='additive' ></emitter>
+		</particles>
+    </group>
+    <group x='-5'>
+		<particles maxAge='2' id="bubbles">
+			<emitter particlesPerSecond='10' size='2' sizeEnd='1' opacityStart='0.2' 
+			opacityMiddle='0.4' opacityEnd='0.2' velocity='0 2 0' acceleration='0 1 0' 
+			positionSpread='1 1 1' accelerationSpread='5 0 5' colorStart="white"></emitter>
+		</particles>
+    </group>
+    <group x='5' y='2'>
+		<particles maxAge='2' id="sparks" class="animRotateY">
+			<emitter particlesPerSecond='100' size='2' sizeEnd='1' opacityStart='0.2' 
+			opacityMiddle='0.4' opacityEnd='0.2' velocity='2 0 0' acceleration='0 -1 0' 
+			positionSpread='0 0 0' accelerationSpread='1 1 1' colorStart="red" colorEnd="yellow"></emitter>
+		</particles>
+    </group>
+    <group x='-5' y='2'>
+		<particles maxAge='2' id="rain">
+			<emitter particlesPerSecond='100' size='.1' sizeEnd='.5' opacityStart='1' 
+			opacityMiddle='0.5' opacityEnd='0.5' velocity='0 -3.5 0' acceleration='0 -3 0' 
+			positionSpread='30 -3.5 5' accelerationSpread='.5 -.5 .5' colorStart="blue" colorEnd="lightblue"
+			blendin='normal'></emitter>
+		</particles>
+    </group>
+    <group>
+		<particles id="stars" size='.5' class="animRotateYSlow">
+			<vertices></vertices>
+		</particles>
+    </group>
+   	<effect type="Film" grayscale="0" disabled></effect>
+	<effect type="DotScreenRGB" scale="3" disabled></effect>
+	<effect type="Bloom" strength="3" ></effect>
+	<effect type="RGBShift" amount=".005" disabled></effect>
+  </scene>
+</glam>
+</div>
+
+
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+<script src="../../build/glam.min.js" ></script>
+<title>glam - animated cube</title>
+
+<style>
+	body{
+		margin: 0px;
+		background-color: #000;
+	}
+
+	#photocube {
+		image:url(../../images/flowers.jpg);
+		rx:30deg;
+	}
+
+</style>
+<script>
+$(document).ready(function(){
+
+	glam.ready();
+});
+
+</script>
+</head>
+<body>
+<!-- 
+glam - Simple scene with cube
+ -->
+<div id="container" style="width:600px; height:600px;">
+<glam>
+  <scene>
+	<cube id="photocube" animation="animRotateY"></cube>
+  	<animation id="animRotateY" duration="10s" iteration-count="infinite" timing-function="linear">
+		<keyframe time="0%" property="transform" value="rotateY(0deg);"></keyframe>
+		<keyframe time="50%" property="transform" value="rotateY(180deg);"></keyframe>
+		<keyframe time="100%" property="transform" value="rotateY(360deg);"></keyframe>
+	</animation>
+  </scene>
+</glam>
+</div>
+
+
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+<script src="../build/glam.min.js" ></script>
+<title>glam - fresnel shader</title>
+
+<style>
+
+	body{
+		margin: 0px;
+		background-color: #000;
+	}
+
+	.skybox {
+		cube-image-right:url(../images/Park2/posx.jpg);
+		cube-image-left:url(../images/Park2/negx.jpg);
+		cube-image-top:url(../images/Park2/posy.jpg);
+		cube-image-bottom:url(../images/Park2/negy.jpg);
+		cube-image-front:url(../images/Park2/posz.jpg);
+		cube-image-back:url(../images/Park2/negz.jpg);
+	}
+	
+	.bubble {
+		radius:.5;
+		diffuse-color:lightgray;
+		vertex-shader:url(../shaders/fresnel.vs);
+		fragment-shader:url(../shaders/fresnel.fs);
+		shader-uniforms:mRefractionRatio f 1.02 mFresnelBias f 0.1 mFresnelPower f 2.0 mFresnelScale f 1.0 tCube t cube;
+	}
+
+	@-webkit-keyframes kfBB1 {
+	  0% {
+	    -webkit-transform: translateY(-6);
+	  }
+	
+	  50% {
+	   -webkit-transform: translateY(0);
+	  }
+	  
+	  100% {
+	   -webkit-transform: translateY(6);
+	  }
+	}
+
+	@-webkit-keyframes kfBB2 {
+	  0% {
+	    -webkit-transform: translateY(0);
+	  }
+	
+	  50% {
+	   -webkit-transform: translateY(2);
+	  }
+	  
+	  100% {
+	   -webkit-transform: translateY(0);
+	  }
+	}
+
+	@-webkit-keyframes kfBB3 {
+	  0% {
+	    -webkit-transform: translateY(-2);
+	  }
+	
+	  50% {
+	   -webkit-transform: translateY(0);
+	  }
+	  
+	  100% {
+	   -webkit-transform: translateY(-2);
+	  }
+	}
+
+	.bubbleBounce
+	 {
+	  -webkit-animation-duration: 20s;
+	  -webkit-animation-name: kfBB1;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
+
+	.bubbleBounce2
+	 {
+	  -webkit-animation-duration: 5s;
+	  -webkit-animation-name: kfBB2;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
+
+	.bubbleBounce3
+	 {
+	  -webkit-animation-duration: 8s;
+	  -webkit-animation-name: kfBB3;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
+
+	#sb1 {
+		background-type:box;
+	}
+	
+</style>
+<script>
+
+function addBubbles(scene) {
+
+	var i, len = 0;
+
+	for (i = 0; i < len; i++) {
+
+		var x = -6 + (Math.random() * 12);
+		var y = -6 + (Math.random() * 12);
+		var z = -6 + (Math.random() * 12);
+
+		var groupelt = document.createElement('group');
+		
+		groupelt.setAttribute('x', x);
+		groupelt.setAttribute('z', z);
+		groupelt.setAttribute('y', y);
+		
+		var sphereelt = document.createElement('sphere');
+		var animClass = i % 3 ? 'bubbleBounce' : (i % 2 ? 'bubbleBounce2' : 'bubbleBounce3');
+		sphereelt.setAttribute('class', "bubble skybox " + animClass);
+
+		groupelt.appendChild(sphereelt);
+		
+		scene.appendChild(groupelt);
+		
+	}
+}
+
+$(document).ready(function(){
+
+	glam.ready();
+	var scene = document.getElementsByTagName('scene')[0];
+	addBubbles(scene);
+});
+
+</script>
+</head>
+<body>
+<!-- 
+glam - Simple scene with cube
+ -->
+<div id="container" style="width:98%; height:98%;position:absolute;">
+<glam>
+  <renderer type="rift"></renderer>
+  <scene>
+	<background id="sb1" class="skybox"></background>
+	<group y ='1' z='-3'>
+		<sphere class="bubble skybox bubbleBounce"></sphere>
+		<sphere x='-1' z='-2' class="bubble skybox bubbleBounce2"></sphere>
+	</group>
+	<group x='2' y ='.5' z='-2'>
+		<sphere class="bubble skybox bubbleBounce"></sphere>
+		<sphere x='-1' z='-2' class="bubble skybox bubbleBounce2"></sphere>
+	</group>
+	<sphere class="bubble skybox bubbleBounce"></sphere>
+	<sphere x='-1' z='-2' class="bubble skybox bubbleBounce2"></sphere>
+  </scene>
+</glam>
+</div>
+
+</body>
+</html>

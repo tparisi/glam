@@ -27,6 +27,7 @@ glam.Types.types = {
 		"line" :  { cls : glam.Line, transform:true, animation:true, visual:true },
 		"light" :  { cls : glam.Light, transform:true, animation:true },
 		"particles" :  { cls : glam.Particles, transform:true, animation:true },
+		"effect" :  { cls : glam.Effect, },
 };
 
 
@@ -102,6 +103,22 @@ glam.Types.parseColor3Array = function(element, colors) {
 		colors.push(c);
 	}
 
+}
+
+
+glam.Types.parseColor3 = function(text, c) {
+
+	var nums = text.split(" ");
+	
+	var i, len = nums.length;
+	if (len < 3)
+		return;
+	
+	var r = parseFloat(nums[0]), 
+		g = parseFloat(nums[1]), 
+		b = parseFloat(nums[2]);
+	
+	c.setRGB(r, g, b);
 }
 
 glam.Types.parseFaceArray = function(element, faces) {

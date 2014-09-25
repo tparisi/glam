@@ -23,18 +23,10 @@ glam.Animation.create = function(docelt) {
 	var easing = glam.Animation.parseTimingFunction(timingFunction);
 	var loop = (iterationCount.toLowerCase() == "infinite") ? true : false;
 	
-	var poskeys = [];
-	var posvalues = [];
-	var rotkeys = [];
-	var rotvalues = [];
-	var sclkeys = [];
-	var sclvalues = [];
-	var opakeys = [];
-	var opavalues = [];
-	var colorkeys = [];
-	var colorvalues = [];
-	
-	var i, len, children = docelt.childNodes, len = children.length;
+	var i, 
+		children = docelt.childNodes, 
+		len = children.length,
+		frames = [];
 	
 	for (i = 0; i < len; i++) {
 		var childelt = children[i];
@@ -43,92 +35,18 @@ glam.Animation.create = function(docelt) {
 			tag = tag.toLowerCase();
 		
 		if (tag == "keyframe") {
-			var frame = glam.Animation.createFrame(childelt);
-			if (frame) {
-				var val = frame.value;
-				if (frame.type == "transform") {
-					if ("x" in val || "y" in val || "z" in val) {
-						poskeys.push(frame.time);
-						var value = {
-						};
-						if ("x" in val) {
-							value.x = val.x;
-						}
-						if ("y" in val) {
-							value.y = val.y;
-						}
-						if ("z" in val) {
-							value.z = val.z;
-						}
-						posvalues.push(value);
-					}
-					if ("rx" in val || "ry" in val || "rz" in val) {
-						rotkeys.push(frame.time);
-						var value = {
-						};
-						if ("rx" in val) {
-							value.x = val.rx;
-						}
-						if ("ry" in val) {
-							value.y = val.ry;
-						}
-						if ("rz" in val) {
-							value.z = val.rz;
-						}
-						rotvalues.push(value);
-					}
-					if ("sx" in val || "sy" in val || "sz" in val) {
-						sclkeys.push(frame.time);
-						var value = {
-						};
-						if ("sx" in val) {
-							value.x = val.sx;
-						}
-						if ("sy" in val) {
-							value.y = val.sy;
-						}
-						if ("sz" in val) {
-							value.z = val.sz;
-						}
-						sclvalues.push(value);
-					}
-				}
-				else if (frame.type == "material") {
-					if ("opacity" in val) {
-						opakeys.push(frame.time);
-						opavalues.push( { opacity : parseFloat(val.opacity) });
-					}
-					if ("color" in val) {
-						colorkeys.push(frame.time);
-						var rgbColor = new THREE.Color(val.color);
-						colorvalues.push( { r : rgbColor.r, g: rgbColor.g, b: rgbColor.b });
-					}
-				}
-			}
+			var frame = glam.Animation.parseFrame(childelt);
+			frames.push(frame);
 		}
 	}
 	
-	var anim = {
-		duration : duration,
-		loop : loop,
-		easing : easing,
-		poskeys : poskeys,
-		posvalues : posvalues,
-		rotkeys : rotkeys,
-		rotvalues : rotvalues,
-		sclkeys : sclkeys,
-		sclvalues : sclvalues,
-		opakeys : opakeys,
-		opavalues : opavalues,
-		colorkeys : colorkeys,
-		colorvalues : colorvalues,
-	};
-
+	var anim = glam.Animation.build(duration, loop, easing, frames);
+	
 	glam.addAnimation(id, anim);
 	glam.Animation.callParseCallbacks(id, anim);
 }
 
-glam.Animation.createFrame = function(docelt) {
+glam.Animation.parseFrame = function(docelt) {
 
 	var time = docelt.getAttribute('time') || glam.Animation.DEFAULT_FRAME_TIME;
 	var frametime = glam.Animation.parseFrameTime(time);
@@ -157,6 +75,205 @@ glam.Animation.createFrame = function(docelt) {
 		};
 	}
 	
+}
+
+glam.Animation.createFromStyle = function(docelt, style, obj) {
+	var animationSpec,
+		animationName,
+		duration,
+		timingFunction,
+		easing,
+		delayTime,
+		iterationCount,
+		loop;
+
+	animationName = style["animation-name"]
+	                          || style["-webkit-animation-name"]
+	 		                  || style["-moz-animation-name"];
+	
+	if (animationName) {
+		duration = style["animation-duration"]
+	            || style["-webkit-animation-duration"]
+	 		      || style["-moz-animation-duration"];
+
+		
+		timingFunction = style["animation-timing-function"]
+		                    || style["-webkit-animation-timing-function"]
+				 		      || style["-moz-animation-timing-function"];
+		
+		iterationCount = style["animation-iteration-count"]
+			                    || style["-webkit-animation-iteration-count"]
+					 		      || style["-moz-animation-iteration-count"];
+	}
+	else {
+		animationSpec = style["animation"]
+		                      || style["-webkit-animation"]
+		 		 		      || style["-moz-animation"];
+		
+		if (animationSpec) {
+			// name duration timing-function delay iteration-count direction
+			var split = animationSpec.split("\\s+");
+			animationName = split[0];
+			duration = split[1];
+			timingFunction = split[2];
+			delayTime = split[3];
+			iterationCount = split[4];
+			
+		}
+	}
+	
+    duration = duration || glam.Animation.DEFAULT_DURATION;
+	duration = glam.Animation.parseTime(duration);
+    timingFunction = timingFunction || glam.Animation.DEFAULT_TIMING_FUNCTION;
+	easing = glam.Animation.parseTimingFunction(timingFunction);
+    iterationCount = iterationCount || glam.Animation.DEFAULT_ITERATION_COUNT;
+	loop = (iterationCount.toLowerCase() == "infinite") ? true : false;				
+	
+	if (animationName) {
+		var animation = glam.getStyle(animationName);
+		
+		var frames = [];
+		
+		for (var k in animation) {
+			var frametime;
+			if (k == 'from') {
+				frametime = 0; 
+			}
+			else if (k == 'to') {
+				frametime = 1;
+			}
+			else {
+				frametime = glam.Animation.parseFrameTime(k);
+			}
+
+			var framevalue;
+			var framedata = animation[k];
+			for (prop in framedata) {
+				var value = framedata[prop];
+				var type;
+				if (prop == "transform" ||
+						prop == "-webkit-transform" ||
+						prop == "-moz-transform") {
+					
+					type = "transform";
+					framevalue = {};
+					glam.Transform.parseTransform(value, framevalue);
+				}
+				else if (prop == "opacity" || prop == "color") {
+					type = "material";
+					framevalue = glam.Material.parseStyle(framedata);
+				}
+				
+				var frame = {
+						time : frametime,
+						value : framevalue,
+						type : type,
+					};
+				frames.push(frame);
+			}			
+		}
+		
+		var anim = glam.Animation.build(duration, loop, easing, frames);
+		glam.Animation.addAnimationToObject(anim, obj);
+	}
+	
+}
+
+glam.Animation.build = function(duration, loop, easing, frames) {
+
+	var poskeys = [];
+	var posvalues = [];
+	var rotkeys = [];
+	var rotvalues = [];
+	var sclkeys = [];
+	var sclvalues = [];
+	var opakeys = [];
+	var opavalues = [];
+	var colorkeys = [];
+	var colorvalues = [];
+	
+	var i, len = frames.length;
+	
+	for (i = 0; i < len; i++) {
+		var frame = frames[i];
+		var val = frame.value;
+		if (frame.type == "transform") {
+			if ("x" in val || "y" in val || "z" in val) {
+				poskeys.push(frame.time);
+				var value = {
+				};
+				if ("x" in val) {
+					value.x = val.x;
+				}
+				if ("y" in val) {
+					value.y = val.y;
+				}
+				if ("z" in val) {
+					value.z = val.z;
+				}
+				posvalues.push(value);
+			}
+			if ("rx" in val || "ry" in val || "rz" in val) {
+				rotkeys.push(frame.time);
+				var value = {
+				};
+				if ("rx" in val) {
+					value.x = val.rx;
+				}
+				if ("ry" in val) {
+					value.y = val.ry;
+				}
+				if ("rz" in val) {
+					value.z = val.rz;
+				}
+				rotvalues.push(value);
+			}
+			if ("sx" in val || "sy" in val || "sz" in val) {
+				sclkeys.push(frame.time);
+				var value = {
+				};
+				if ("sx" in val) {
+					value.x = val.sx;
+				}
+				if ("sy" in val) {
+					value.y = val.sy;
+				}
+				if ("sz" in val) {
+					value.z = val.sz;
+				}
+				sclvalues.push(value);
+			}
+		}
+		else if (frame.type == "material") {
+			if ("opacity" in val) {
+				opakeys.push(frame.time);
+				opavalues.push( { opacity : parseFloat(val.opacity) });
+			}
+			if ("color" in val) {
+				colorkeys.push(frame.time);
+				var rgbColor = new THREE.Color(val.color);
+				colorvalues.push( { r : rgbColor.r, g: rgbColor.g, b: rgbColor.b });
+			}
+		}
+	}
+	
+	var anim = {
+		duration : duration,
+		loop : loop,
+		easing : easing,
+		poskeys : poskeys,
+		posvalues : posvalues,
+		rotkeys : rotkeys,
+		rotvalues : rotvalues,
+		sclkeys : sclkeys,
+		sclvalues : sclvalues,
+		opakeys : opakeys,
+		opavalues : opavalues,
+		colorkeys : colorkeys,
+		colorvalues : colorvalues,
+	};
+
+	return anim;
 }
 
 glam.Animation.parseTime = function(time) {
@@ -214,7 +331,7 @@ glam.Animation.parseMaterial = function(value) {
 	return s;
 }
 
-glam.Animation.parse = function(docelt, obj) {
+glam.Animation.parse = function(docelt, style, obj) {
 	var animationId = docelt.getAttribute('animation');
 	if (animationId) {
 		var animation = glam.getAnimation(animationId);
@@ -226,6 +343,9 @@ glam.Animation.parse = function(docelt, obj) {
 				glam.Animation.addAnimationToObject(animation, obj);				
 			});
 		}
+	}
+	else {
+		glam.Animation.createFromStyle(docelt, style, obj);
 	}
 }
 
