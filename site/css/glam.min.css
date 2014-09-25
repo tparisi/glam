@@ -6,7 +6,7 @@
 
  /*GlAM CSS  */
 body,.navbar{padding:0;margin:0;font-family:'Oswald',sans-serif;color:#fff;background:#000}h2,h4,.navbar-brand{color:#fff!important;text-shadow:-1.2px 0 0 rgba(9,241,157,1),1.2px 0 0 rgba(255,5,145,1)}h3{color:#fff!important}li a{text-transform:uppercase}.display0{display:none}.paddingSides10px{padding-left:10px;padding-right:10px}.positionRelative{position:relative}.positionAbsolute{position:absolute}.Uppercase{text-transform:uppercase}.txtCenter{text-align:center}.bxSizing{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;float:left}@media (max-width: 2000px){.collapse.in{overflow:scroll!important}.navbar-header,.row,.thumbnail,.popup{float:none;-webkit-transform:translateZ(0)!important;-webkit-backface-visibility:hidden}.navbar-left,.navbar-right{float:none!important}.navbar-toggle{display:block}.navbar-collapse{border-top:1px solid transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,0.1)}.navbar-fixed-top{top:0;border-width:0 0 1px}.navbar-collapse.collapse{display:none!important}.navbar-nav{float:none!important;margin-top:7.5px}.navbar-nav>li{float:none}.navbar-nav>li>a{padding-top:10px;padding-bottom:10px}.collapse.in{display:block!important}}#selectmenuContent{position:absolute;top:0;background-color:transparent;color:transparent;left:0}#selectmenuContent select{background-color:transparent;float:left;width:100%;height:33px;border:none}.fixfixed .navbar-fixed-top{position:absolute}.container{margin-top:20px}.thumbnail{background-color:transparent;border:solid 1px #fff;display:none}.thumbnail p{color:#fff!important}.btn-glam{background:#C01331;border-color:#F03C02;color:#fff}.btn-glam:hover{background:#F03C02;border-color:#C01331;color:#fff!important}.glamBlu{color:#02A7F0!important}.thumbnail:hover h3{transition:text-shadow .5s ease;text-shadow:-2px 1px 0 #C01331,2px 1px 0 #02A7F0}#downloads a,#downloads a:hover{color:#fff!important}.thumbnail img{height:161px!important;width:auto!important}@media (max-width: 600px){.thumbnail img{height:auto!important;width:100%!important}}.closePopUp{position:absolute;right:42px;top:20px;color:#fff;font-weight:700;font-size:22px;padding:5px;border:solid 1px #FA06A2;border-radius:4px;cursor:pointer;background-color:#000}.popup{width:90%;margin:auto;text-align:center}.popupContainer{position:relative;float:left;width:100%}.b-iframe,iframe{width:100%;float:left}#main_content{display:none}
-      .imgT{
+       .imgT{
         float:left;
         width:100%;
         text-align: center;
@@ -59,7 +59,7 @@ body,.navbar{padding:0;margin:0;font-family:'Oswald',sans-serif;color:#fff;backg
       .glamBG{
         float: left;
         width: 100%;
-        background-image:url('site/images/bg.jpg');
+        background-image:url('/site/images/bg.jpg');
         background-size: cover;
       }
 
@@ -82,22 +82,22 @@ body,.navbar{padding:0;margin:0;font-family:'Oswald',sans-serif;color:#fff;backg
       }
 
       .dImage1{
-        background-image: url('site/images/demo/bubblepop.jpg' );
+        background-image: url('/site/images/demo/bubblepop.jpg' );
       }
 
       .dImage2{
-         background-image: url('site/images/demo/glamcubeanimated.jpg' );
+         background-image: url('/site/images/demo/glamcubeanimated.jpg' );
          background-size: 20%;
         
       }
 
       .dImage3{
-         background-image: url('site/images/demo/glamcity.jpg' );
+         background-image: url('/site/images/demo/glamcity.jpg' );
         
       }
 
       .dImage4{
-         background-image: url('site/images/demo/glamsceneanimatedeffects.jpg' );
+         background-image: url('/site/images/demo/glamsceneanimatedeffects.jpg' );
          background-size: 85%;
         
       }
@@ -147,6 +147,25 @@ body,.navbar{padding:0;margin:0;font-family:'Oswald',sans-serif;color:#fff;backg
       @media screen and (max-device-width: 876px) {
         .glamBG, .demoLnk{display: none}
       }
+
+      .viewSource{
+        position: absolute;
+        right: 80px;
+        top: 20px;
+        color: #fff;
+        font-weight: 700;
+        font-size: 22px;
+        padding: 5px;
+        border: solid 1px #FA06A2;
+        border-radius: 4px;
+        cursor: pointer;
+        background-color: #000;
+      }
+
+      .sourceBtnContainer{
+        float:left; width:100%; position:absolute; bottom:20px
+      }
+
 
 
 /* glam css end */

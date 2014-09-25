@@ -66,166 +66,6 @@
         GL markup Language site by #SeaCloud9
         -->
       <title><glam/></title>
-
-      <style type="text/css">
-      .imgT{
-        float:left;
-        width:100%;
-        text-align: center;
-      }
-      .type{
-        float:left;
-        width:100%;
-        text-align: center;
-        border-radius: 4px;
-        background-color: #fff;
-        color: #000;
-        padding: 3px 12px;
-      }
-
-      .btn-glam{
-        width: 100%;
-        float: left;
-        padding: 3px 12px;
-      }
-
-      .btn{
-        display: none;
-      }
-
-      .caption p{
-        display: none;
-      }
-
-      .demoBtn{
-        float: left;
-        width: 100%;
-        clear: both;
-        display: block;
-        box-sizing: border-box;
-      }
-      .thumbnail{
-        cursor: pointer;
-      }
-      .thumbnail img{
-        margin-bottom: 15px;
-        margin-top: 6px;
-      }
-
-      .logoLnk{
-        font-size: 22px;
-        letter-spacing: 2px;
-
-      }
-
-      .glamBG{
-        float: left;
-        width: 100%;
-        background-image:url('site/images/bg.jpg');
-        background-size: cover;
-      }
-
-      .dContainer{
-        background:black; width:150px; height:150px;-webkit-transform: rotate(45deg);-moz-transform: rotate(45deg);transform: rotate(45deg);
-        overflow: hidden;
-        margin-top: 90px;
-      }
-
-      .dImage{
-        margin-left: -80px;
-        margin-top: -40px;
-        float: left;
-        width: 400px;
-        height: 400px;
-        background-size: cover;
-        transform: rotate(-45deg);
-        -webkit-transform: rotate(-45deg);
-        -moz-transform: rotate(-45deg);
-      }
-
-      .dImage1{
-        background-image: url('site/images/demo/bubblepop.jpg' );
-      }
-
-      .dImage2{
-         background-image: url('site/images/demo/glamcubeanimated.jpg' );
-         background-size: 20%;
-        
-      }
-
-      .dImage3{
-         background-image: url('site/images/demo/glamcity.jpg' );
-        
-      }
-
-      .dImage4{
-         background-image: url('site/images/demo/glamsceneanimatedeffects.jpg' );
-         background-size: 85%;
-        
-      }
-
-      .dWaraper{
-        float:right; width:100%; text-align:center;
-        position: relative;
-      }
-
-      .d1{
-        margin-left: 220px;
-        margin-top: -28px;
-      }
-
-      .d2{
-        margin-top: -151px;
-        margin-right: 224px;
-      }
-
-      .d3{
-        margin-top: -30px;
-      }
-
-  
-      .glamBG{
-        min-height: 584px;
-        position: relative;
-      }
-
-      .glHdrTxt{
-        position: absolute;
-        width: 100%;
-        z-index: 99;
-        left: -255px;
-        top: 60px;
-      }
-
-      .glHdrTxt h2{
-         font-size: 40px; 
-      }
-
-      .popup{
-        width: 100%;
-        left: 0px !important;
-      }
-
-      @media screen and (max-device-width: 876px) {
-        .glamBG, .demoLnk{display: none}
-      }
-
-      .viewSource{
-        position: absolute;
-        right: 80px;
-        top: 20px;
-        color: #fff;
-        font-weight: 700;
-        font-size: 22px;
-        padding: 5px;
-        border: solid 1px #FA06A2;
-        border-radius: 4px;
-        cursor: pointer;
-        background-color: #000;
-      }
-
-
-      </style>
     </head>
     <body class='glamBody'>
       <header>
@@ -255,9 +95,6 @@
                   <option value="glamsceneanimatedeffects">
                     postprocessing
                   </option>
-                  
-
-
                   <option value="glamcube">
                     glamcube
                   </option>
@@ -334,7 +171,6 @@
               <li><a href='#bubblepop'>bubblepop!</a></li>
               <li><a href='#glamcity'>glamcity</a></li>
               <li><a href='#glamsceneanimatedeffects'>postprocessing</a></li>
-
               <li><a href='#glamcube'>cube</a></li>
               <li><a href='#glamscene'>glamscene</a></li>
               <li><a href='#glamcubeanimated'>animated cube</a></li>
@@ -392,8 +228,10 @@
             </div>
              </center>
 
+             </div>
+             <div class="sourceBtnContainer"><a href="https://github.com/tparisi/glam/zipball/master" class=" navbar-brand logoLnk">Download</a>
+            <a href="https://github.com/tparisi/glam" class=" btn-github navbar-brand logoLnk" target="blank"><span class="icon"></span>View on GitHub</a></div>
           </header>
-
 
         <div class="container-fluid">
           <h2 style="display:none">GL and Markup</h2>
@@ -416,7 +254,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">Photo Cube</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p>Basic Demo - Textured cube with CSS animations.</p>
             </div>
             <a data-url='demos/glamcubeanimated.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcubeanimated'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -431,7 +269,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">Bubblepop!</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p>Bubble Pop! Shaders, environment maps, and using the DOM to create and destroy objects.</p>
             </div>
             <a data-url='demos/bubblepop.html' class="btn btn-glam" role="button">View</a> <a data-source='bubblepop'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -445,7 +283,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">Glam City</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p>Glam City - an imported COLLADA model with an animated camera.</p>
             </div>
             <a data-url='demos/glamcity.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcity'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -459,7 +297,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">Postprocessing</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p>Post-Processing and Particle Systems demo.</p>
             </div>
             <a data-url='demos/glamsceneanimatedeffects.html' class="btn btn-glam" role="button">View</a> <a data-source='glamsceneanimatedeffects'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -477,7 +315,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">cube</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p> A simple textured cube. Interactive 3D content in 8 lines of markup and CSS.</p>
             </div>
             <a data-url='examples/basic/glamcube.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcube'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -490,7 +328,7 @@
            </div>
             <div class="caption">
               <h3  class="Uppercase">scene</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p>A hierarchical scene, demonstrating several visual types and grouping.</p>
             </div>
             <a data-url='examples/hierarchy/glamscene.html' class="btn btn-glam" role="button">View</a> <a data-source='glamscene'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -503,7 +341,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">animated cube</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p>Animation basics: using CSS to drive 3D animations.</p>
             </div>
             <a data-url='examples/animation/glamcubeanimated.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcubeanimated'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -516,7 +354,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">animated scene</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p> An animated hierarchical scene with several CSS keyframes.</p>
             </div>
             <a data-url='examples/animation/glamsceneanimated.html' class="btn btn-glam" role="button">View</a> <a data-source='glamsceneanimated'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -529,7 +367,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">cube with interaction</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p>Basic interaction. Add DOM event handlers to any object.</p>
             </div>
             <a data-url='examples/interaction/glamcubeinteractive.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcubeinteractive'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -542,7 +380,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">meshes</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p>Create meshes with vertices, normals, colors and texture coordinates.</p>
             </div>
             <a data-url='examples/visuals/glammesh.html' class="btn btn-glam" role="button">View</a> <a data-source='glammesh'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -555,7 +393,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">lines</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p>Create line sets with GLAM.</p>
             </div>
             <a data-url='examples/visuals/glamlines.html' class="btn btn-glam" role="button">View</a> <a data-source='glamlines'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -568,7 +406,7 @@
           </div>
             <div class="caption">
               <h3  class="Uppercase">3D text</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p> 3D text, flat and extruded.</p>
             </div>
             <a data-url='examples/visuals/glamtext.html' class="btn btn-glam" role="button">View</a> <a data-source='glamtext'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -581,7 +419,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">particle systems</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p>Particle systems demo.</p>
             </div>
             <a data-url='examples/visuals/glamparticles.html' class="btn btn-glam" role="button">View</a> <a data-source='glamparticles'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -594,7 +432,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">importing models</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p>Demonstrates importing an external model in a 3D standard 3D format.</p>
             </div>
             <a data-url='examples/imports/glamimport.html' class="btn btn-glam" role="button">View</a> <a data-source='glamimport'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -607,7 +445,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">bump mapping</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p>Sphere with bump-mapping.</p>
             </div>
             <a data-url='examples/materials/glambumpmap.html' class="btn btn-glam" role="button">View</a> <a data-source='glambumpmap' class="btn btn-glam" role="button">Source</a>
           </div>
@@ -620,7 +458,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">normal mapping</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p> Earth sphere with normal-mapping.</p>
             </div>
             <a data-url='examples/materials/glamearth.html' class="btn btn-glam" role="button">View</a> <a data-source='glamearth' class="btn btn-glam" role="button">Source</a>
           </div>
@@ -633,7 +471,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">fresnel shader</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p> Fresnel-shaded reflection and refraction effect.</p>
             </div>
             <a data-url='examples/shaders/glamshaderfresnel.html' class="btn btn-glam" role="button">View</a> <a data-source='glamshaderfresnel'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -646,7 +484,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">sun shader</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p>Animate textures using a programmable shader.</p>
             </div>
             <a data-url='examples/shaders/glamsun.html' class="btn btn-glam" role="button">View</a> <a data-source='glamsun'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -659,7 +497,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">sky box</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p>Skybox (cube map) scene background.</p>
             </div>
             <a data-url='examples/backgrounds/glamskybox.html' class="btn btn-glam" role="button">View</a> <a data-source='glamskybox'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -672,7 +510,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">sky sphere</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p> Skysphere (panoram) scene background.</p>
             </div>
             <a data-url='examples/backgrounds/glamskysphere.html' class="btn btn-glam" role="button">View</a> <a data-source='glamskysphere'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -685,7 +523,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">Cube - Dot Shader</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p>Simple cube with dot-shader "Lichtenstein" post-processing effect.</p>
             </div>
             <a data-url='examples/effects/glamcubeeffects.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcubeeffects'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -698,7 +536,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">Scene - Bloom Shader</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p>Scene with several post-processing effects and particle systems.</p>
             </div>
             <a data-url='examples/effects/glamsceneanimatedeffects.html' class="btn btn-glam" role="button">View</a> <a data-source='glamsceneanimatedeffects'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -711,7 +549,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">city</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p>Glam City demo using Web VR APIs (Oculus Renderer and Camera Controller)</p>
             </div>
             <a data-url='examples/vr/glamcityvr.html' class="btn btn-glam" role="button">View</a> <a data-source='glamcityvr'  class="btn btn-glam" role="button">Source</a>
           </div>
@@ -724,7 +562,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">fresnel shader</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p>Fresnel shader demo in VR (Oculus Renderer and Camera Controller).</p>
               
             </div>
             <a data-url='examples/vr/glamshaderfresnelvr.html' class="btn btn-glam" role="button">View</a> <a data-source='glamshaderfresnelvr'  class="btn btn-glam" role="button">Source</a>
@@ -738,7 +576,7 @@
             </div>
             <div class="caption">
               <h3  class="Uppercase">sky sphere</h3>
-              <p>Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec id elit non mi porta gravida at eget metus. Nullam id dolor id nibh ultricies vehicula ut id elit.</p>
+              <p> Spherical pano viewer in VR ( (Oculus Renderer and Camera Controller).</p>
             </div>
             <a data-url='examples/vr/glamskyspherevr.html' class="btn btn-glam" role="button">View</a> <a data-source='glamskyspherevr'  class="btn btn-glam" role="button">Source</a>
           </div>
