@@ -181,11 +181,11 @@ $(function() {
 
                         $('.closePopUp').on('click, tap', function(){
                         _bPopSource.close();
-                        $('.closePopUp').remove();
                         });
                     },
                     onClose:function(){
                        $('body').not('iframe body').css('overflow', 'scroll');
+                       $('.closePopUp').remove();
                     },
                     loadUrl: 'source.html#' + currentID
                     });
