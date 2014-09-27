@@ -173,13 +173,15 @@ $(function() {
                        $('body').not('iframe body').css('overflow', 'hidden');
                        $('.popup, .b-iframe').height($(window).height());
                        $('.popup, .b-iframe').width($(window).width());
-                       $('iframe').height(2000);
+                       $('iframe').height(5000);
                        $('.popup, .b-iframe').css('overflow', 'scroll');
 
-                       $('.popup').append("<div class='closePopUp'>X</div>");
+                       $('body').append("<div class='closePopUp' style='z-index:99999; display:none; ;top:"+($(window).scrollTop() + 70)+"px '>X</div>");
+                       $('.closePopUp').fadeIn('fast');
 
                         $('.closePopUp').on('click, tap', function(){
                         _bPopSource.close();
+                        $('.closePopUp').remove();
                         });
                     },
                     onClose:function(){
