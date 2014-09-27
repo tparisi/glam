@@ -180,12 +180,12 @@ $(function() {
                        $('.closePopUp').fadeIn('fast');
 
                         $('.closePopUp').on('click, tap', function(){
-                        $('.closePopUp').remove();
+                        _bPopSource.close();
                         });
                     },
                     onClose:function(){
                        $('body').not('iframe body').css('overflow', 'scroll');
-                       _bPopSource.close();
+                       $('.closePopUp').remove();
                     },
                     loadUrl: 'source.html#' + currentID
                     });
