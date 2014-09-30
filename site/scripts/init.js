@@ -43,19 +43,17 @@ function detectmob() {
 }
 
 
-function scrollToContent(loc){
-    $('html').velocity("scroll", { duration: 1500, easing: "easeInSine", offset: $(loc).offset().top - 55  });
-    $('#menuContent').collapse('hide');
-}
+
 
 
 $(function() {
+    /* todo add back when diamond hg and bg stretch
     var bgHeight = $(window).height() - 320;
     if(bgHeight >= 584){
         $('.glamBG').height($(window).height() - 320);
     }else{
         $('.glamBG').height(584);
-    }
+    }*/
     
 
     var _bPop;
@@ -89,6 +87,11 @@ $(function() {
  
 
     define(['holder', 'velocity'], function(holder, velocity) {
+        scrollToContent = function(loc){
+            $('html').velocity("scroll", { duration: 1500, easing: "easeInSine", offset: $(loc).offset().top - 55  });
+            $('#menuContent').collapse('hide');
+        }
+
         this.compositionComplete = function () { // EXECUTES AFTER DOM UPDATE
                 holder.run({
                     domain: "holder.canvas",
