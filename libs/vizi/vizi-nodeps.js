@@ -4402,7 +4402,6 @@ Vizi.CylinderDragger.prototype.createDragPlane = function() {
 	planeface.vertexNormals.push( normal.clone(), normal.clone(), normal.clone(), normal.clone() );
 	planegeom.faces.push(planeface);
 	planegeom.computeFaceNormals();
-	planegeom.computeCentroids();
 
 	var mat = new THREE.MeshBasicMaterial({color:this.color, transparent: true, side:THREE.DoubleSide, opacity:0.1 });
 
@@ -9185,7 +9184,6 @@ Vizi.PlaneDragger.prototype.createDragPlane = function() {
 	planeface.vertexNormals.push( normal.clone(), normal.clone(), normal.clone(), normal.clone() );
 	planegeom.faces.push(planeface);
 	planegeom.computeFaceNormals();
-	planegeom.computeCentroids();
 
 	var mat = new THREE.MeshBasicMaterial({color:this.color, transparent: true, side:THREE.DoubleSide, opacity:0.1 });
 
@@ -10141,9 +10139,10 @@ Vizi.ParticleSystem = function(param) {
 	if (param.geometry) {
 		
 		var color = (param.color !== undefined) ? param.color : Vizi.ParticleSystem.DEFAULT_COLOR;
-		var material = new THREE.ParticleSystemMaterial({color:color, size:param.size, map:param.map,
+		var material = new THREE.PointCloudMaterial({color:color, size:param.size, map:param.map,
 			transparent: (param.map !== null), vertexColors: (param.geometry.colors.length > 0)});
-		var ps = new THREE.ParticleSystem(param.geometry, material);
+		var ps = new THREE.PointCloud(param.geometry, material);
+		ps.sortParticles = true;
 
 		if (param.map)
 			ps.sortParticles = true;
