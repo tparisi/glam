@@ -30,6 +30,13 @@ glam.Effect.create = function(docelt, style, app) {
 			effect = new Vizi.Effect(new THREE.BloomPass(strength));
 			break;
 
+		case "FXAA" :
+			effect = new Vizi.Effect(THREE.FXAAShader);
+			var w = Vizi.Graphics.instance.renderer.domElement.offsetWidth;
+			var h = Vizi.Graphics.instance.renderer.domElement.offsetHeight;
+			effect.pass.uniforms['resolution'].value.set(1 / w, 1 / h);
+			break;
+			
 		case "Film" :
 			effect = new Vizi.Effect( THREE.FilmShader );
 			effect.pass.uniforms['grayscale'].value = glam.Effect.DEFAULT_FILM_GRAYSCALE;
