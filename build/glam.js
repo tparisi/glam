@@ -56609,9 +56609,15 @@ glam = {
 		
 };
 
+glam.isReady = false;
 glam.ready = function() {
+	if (glam.isReady)
+		return;
+	
 	glam.parser.parseDocument();
 	glam.createViewers();
+	
+	glam.isReady = true;
 }
 
 glam.createViewers = function() {
