@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>About GLAM</title>
+<style>
+.glammy {
+	font-size:18px;
+	font-style:italic;
+	font-weight:bold;
+}
+</style>
+</head>
+<body>
+<h1>About GLAM</h1>
+
+<p>
+<label class="glammy">GLAM</label> (GL And Markup) is a declarative language for 3D web content. 
+</p>
+<p>
+GLAM combines the power of WebGL with a set of easy-to-use markup tags and style properties. With GLAM, 3D authoring is like any other web authoring. To make 3D, you create elements, set their attributes, add event listeners, and define styles. Just like DOM used to make! Content is easy to animate: keyframes and tweens can be defined in a compact set of markup tags, or as standard CSS3 animations or transitions. GLAM is also fully extensible: to add custom behavior, write JavaScript event handlers. If you want fancy shading written in GLSL, simply specify your vertex and fragment shaders as properties of the object’s style. GLAM renders with WebGL, using Three.js, and adds behaviors, interaction and lots of easy-to-use features on top. But most importantly, GLAM defines a markup language and set of stylesheet extensions that make 3D programming a snap. 
+</p>
+<p>
+GLAM was created by Tony Parisi, the guy who made the Virtual Reality Markup Language (VRML), 20 years before anybody knew they needed it. Since then, Tony’s learned a few more things about graphics, web browsers have grown up, and the world has caught up with his vision. GLAM is still quite young. We’re adding features and demos at a rapid clip, and we are also looking closely at related technologies such as Web Components as they come of age. We’d love your feedback and contributions! 
+</p>
+<p>
+
+(links here)
+</p>
+
+
+<h1>FAQ</h1>
+
+<h2>Why GLAM?</h2>
+
+<p>
+With WebGL, the browser is now a complete 3D platform. Powerful APIs provide everything we need: graphics, compositing, animation, threading, networking… making mind-blowing connected 3D applications possible. The API approach provides maximum flexibility – render whatever you want without the browser needing to support new objects – but the pendulum has swung too far. It takes lines and lines of JavaScript and JSON to make even the simplest 3D content. And there is no easy way to style your content once you’ve created it.
+</p>
+<p>
+
+Let’s say you want to create a cube with a texture map (image) on its surface. Using the WebGL API, that’s about 300 lines of code. (Really.) You have to create buffers, load textures, set states, write shaders, and finally make drawing calls. It’s a ton of work, and it’s in an alien language full of unfamiliar concepts. So, you turn to Three.js to make it easier. Now, in about forty lines of code, you have accomplished the same thing, and are working with high level, easy to understand graphics objects. Cool… but think about it: forty lines of JavaScript code to make a cube. And that cube doesn’t animate, you can’t use your mouse to rotate it, and you can’t change its appearance with a style sheet. 
+Wouldn’t it be great if you could just say
+</p>
+<code>
+		&lt;cube&gt;
+</code>
+<p>
+ and a cube appears on the page? You bet it would.
+</p>
+<p>
+Web developers need a simple way to create 3D content in pages that can be styled and programmed like any other page content. We need a 3D markup language for the web. We need… GLAM!
+</p>
+<p>
+For more on the motivation behind GLAM, check out Tony’s <a href="http://www.slideshare.net/auradeluxe/glam-35009205">slideshare presentation</a>.
+</p>
+
+
+
+<h2>Why Now?</h2>
+<p>
+WebGL is ubiquitous. With the release of iOS8, WebGL now runs on all major desktop and mobile browsers, across all devices. That’s 3 billion seats ready for connected 3D applications, everywhere, powered by JavaScript. This is an incredible opportunity to change the face of computing.
+</p>
+<p>
+The last few years have seen an explosion of interest in building WebGL. But there is a huge skill gap. 3D is inherently hard, yes; we have that extra dimension to worry about, plus cameras, shaders, skinned animations, etc… But there is no reason to make 3D harder than it has to be. For the simple 3D stuff, there should be a simple way to do it, with an approach that is familiar to the millions of web developers ready to try something new. Until GLAM, this didn’t exist. GLAM is here to make your 3D job easier, so you can focus on the fun part: building a killer 3D web app.
+</p>
+<h2>How Do I Use GLAM?</h2>
+
+<p>
+To add GLAM to your application, simply include either the debug or minified version of the library:
+</p>
+<p>
+<code>
+&lt;script src="path-to-glam-lib/glam.js"&gt;&lt;/script&gt;
+</code>
+</p>
+<p>
+OR
+</p>
+<p>
+<code>
+&lt;script src="path-to-glam-lib/glam.min.js"&gt;&lt;/script&gt;
+</code>
+</p>
+<p>
+… and then you can start adding 3D tags to your page. To see what those tags look like, read the Getting Started Tutorial (link)
+</p>
+
+<h2>How Do I Author GLAM?</h2>
+<p>
+Right now, authoring GLAM requires a text editor. Someday, maybe, we’ll build an interactive tool for authoring, or at least a syntax-assisted in-browser editor a la JSFiddle.
+</p>
+<p>
+To test, you will most likely need a web server … so that you can see your texture maps and shaders. Launching HTML files from your Finder/Explorer usually results in the browser yakking about cross-origin restrictions.
+</p>
+
+<h2>How Can I Participate?</h2>
+<p>
+GLAM is new. We’re just getting started, and we need your help! We are looking for help with code, content and documentation. Check out the Github repo and examples (links here) and join the GLAM revolution!
+</p>
+<p class="glammy">
+CAN YOU DIG IT?
+</p>
+
+</body>
+</html>
