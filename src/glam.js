@@ -54,4 +54,9 @@ glam.getAnimation = function(id) {
 	return glam.animations[id];
 }
 
+$(document).ready(function(){
+
+	glam.ready();
+});
+
 

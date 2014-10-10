@@ -2,27 +2,26 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<script src="../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
-<script src="../build/glam.min.js" ></script>
-<title>glam - welcome to Glam City!</title>
+<script src="../../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+<script src="../../build/glam.js" ></script>
+<title>glam - Imported scene with skybox background</title>
 
 <style>
 	body{
 		margin: 0px;
 		background-color: #000;
 	}
-
 	
 	#sb1 {
 		background-type:box;
-		cube-image-right:url(../images/sky35/rightcity.jpg);
-		cube-image-left:url(../images/sky35/leftcity.jpg);
-		cube-image-top:url(../images/sky35/topcity.jpg);
-		cube-image-bottom:url(../images/sky35/botcity.jpg);
-		cube-image-front:url(../images/sky35/frontcity.jpg);
-		cube-image-back:url(../images/sky35/backcity.jpg);
+		cube-image-right:url(../../images/sky35/rightcity.jpg);
+		cube-image-left:url(../../images/sky35/leftcity.jpg);
+		cube-image-top:url(../../images/sky35/topcity.jpg);
+		cube-image-bottom:url(../../images/sky35/botcity.jpg);
+		cube-image-front:url(../../images/sky35/frontcity.jpg);
+		cube-image-back:url(../../images/sky35/backcity.jpg);
 	}
-
+	
 	@-webkit-keyframes kfFly {
 	  0% {
 	    transform:translateX(0) translateY(0) translateZ(0) rotateY(0deg);
@@ -56,8 +55,11 @@
   <scene>
 	<background id="sb1"></background>
 	<controller noheadlight></controller>
-	<import id="imported_scene" src="../models/futurgo_city/futurgo_city.dae" ></import>
+	<import id="imported_scene" src="../../models/futurgo_city/futurgo_city.dae" ></import>
 	<camera y='10' class="animFly"></camera>
+	<effect type="Film" disabled sCount='2048' grayscale='0' nIntensity='1' sIntensity='.5'></effect>	
+	<effect type="DotScreenRGB" disabled scale='2'></effect>
+	<effect type="Bloom" strength='.667' kernelSize='100'></effect>
   </scene>
 </glam>
 </div>
