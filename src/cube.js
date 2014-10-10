@@ -41,7 +41,7 @@ glam.Cube.getAttributes = function(docelt, style, param) {
 glam.Cube.createVisual = function(docelt, material, param) {
 
 	var visual = new Vizi.Visual(
-			{ geometry: new THREE.CubeGeometry(param.width, param.height, param.depth),
+			{ geometry: new THREE.BoxGeometry(param.width, param.height, param.depth),
 				material: material
 			});
 	

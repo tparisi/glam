@@ -43650,6 +43650,14 @@ THREE.EffectComposer = function ( renderer, renderTarget ) {
 
 		var width = window.innerWidth || 1;
 		var height = window.innerHeight || 1;
+		if (renderer._renderer) {
+			width = renderer._renderer.domElement.offsetWidth / renderer._renderer.devicePixelRatio;
+			height = renderer._renderer.domElement.offsetHeight / renderer._renderer.devicePixelRatio;
+		}
+		else {
+			width = renderer.domElement.offsetWidth  / renderer.devicePixelRatio;
+			height = renderer.domElement.offsetHeight / renderer.devicePixelRatio;
+		}
 		var parameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat, stencilBuffer: false };
 
 		renderTarget = new THREE.WebGLRenderTarget( width, height, parameters );
@@ -43708,8 +43716,18 @@ THREE.EffectComposer.prototype = {
 
 			if ( !pass.enabled ) continue;
 
-			pass.render( this.renderer, this.writeBuffer, this.readBuffer, delta, maskActive );
-
+			if (this.renderer instanceof THREE.VREffect) {
+				if (pass instanceof THREE.RenderPass) {
+					pass.render( this.renderer, this.writeBuffer, this.readBuffer, delta, maskActive );
+				}
+				else {
+					pass.render( this.renderer._renderer, this.writeBuffer, this.readBuffer, delta, maskActive );
+				}
+			}
+			else {
+				pass.render( this.renderer, this.writeBuffer, this.readBuffer, delta, maskActive );
+			}
+			
 			if ( pass.needsSwap ) {
 
 				if ( maskActive ) {
@@ -44734,6 +44752,11 @@ THREE.VREffect = function ( renderer, done ) {
 					self.rightEyeFOV = vrHMD.getRecommendedEyeFieldOfView( "right" );
 					self.leftEyeMatrix = (new THREE.Matrix4()).makeTranslation(self.leftEyeTranslation.x, self.leftEyeTranslation.y, self.leftEyeTranslation.z);
 					self.rightEyeMatrix = (new THREE.Matrix4()).makeTranslation(self.rightEyeTranslation.x, self.rightEyeTranslation.y, self.rightEyeTranslation.z);
+					var geom = new THREE.BoxGeometry;
+					var material = new THREE.MeshBasicMaterial({color:0x0000ff});
+					self.cube = new THREE.Mesh(geom, material);
+					self.dummyScene = new THREE.Scene;
+					self.dummyScene.add(cube);
 					break; // We keep the first we encounter
 				}
 			}
@@ -44770,8 +44793,6 @@ THREE.VREffect = function ( renderer, done ) {
 		var rendererWidth = renderer.domElement.width / renderer.devicePixelRatio;
 		var rendererHeight = renderer.domElement.height / renderer.devicePixelRatio;
 		var eyeDivisionLine = rendererWidth / 2;
-		renderer.enableScissorTest( true );
-		renderer.clear();
 
 		var scenes, cameras;
 		if (scene instanceof Array) {
@@ -44821,15 +44842,32 @@ THREE.VREffect = function ( renderer, done ) {
 			cameraLeft.matrixWorld.multiply(this.leftEyeMatrix);
 			cameraRight.matrixWorld.multiply(this.rightEyeMatrix);
 				
+			// render something to scene HACK otherwise viewport isn't getting set?
+			renderer.setViewport( 0, 0, rendererWidth, rendererHeight );
+			renderer.setScissor( 0, 0, rendererHeight, rendererHeight );
+			renderer.render(this.dummyScene, camera, renderTarget, forceClear );
+
+			// Initial clear
+			renderer.enableScissorTest( true );
+			
 			// render left eye
 			renderer.setViewport( 0, 0, eyeDivisionLine, rendererHeight );
 			renderer.setScissor( 0, 0, eyeDivisionLine, rendererHeight );
-			renderer.render( scene, cameraLeft );
+//			renderer.clear();
+			renderer.render( scene, cameraLeft, renderTarget, forceClear );
 				
 			// render right eye
+			renderer.enableScissorTest( true );
+			
 			renderer.setViewport( eyeDivisionLine, 0, eyeDivisionLine, rendererHeight );
 			renderer.setScissor( eyeDivisionLine, 0, eyeDivisionLine, rendererHeight );
-			renderer.render( scene, cameraRight );
+//			renderer.clear();
+			renderer.render( scene, cameraRight, renderTarget, forceClear );
+
+			renderer.enableScissorTest( false );
+			renderer.setViewport( 0, 0, rendererWidth, rendererHeight );
+			renderer.setScissor( 0, 0, rendererWidth, rendererHeight );
+		
 		}
 		
 	};
@@ -48487,6 +48525,7 @@ Vizi.FirstPersonControllerScript = function(param)
 	this._turn = (param.turn !== undefined) ? param.turn : true;
 	this._tilt = (param.tilt !== undefined) ? param.tilt : true;
 	this._mouseLook = (param.mouseLook !== undefined) ? param.mouseLook : false;
+	this.testCollisions = (param.testCollisions !== undefined) ? param.testCollisions : false;
 	
 	this.collisionDistance = 10;
 	this.moveSpeed = 13;
@@ -48575,7 +48614,13 @@ Vizi.FirstPersonControllerScript.prototype.update = function()
 {
 	this.saveCamera();
 	this.controls.update(this.clock.getDelta());
-	var collide = this.testCollision();
+	if (this.testCollisions) {
+		var collide = this.testCollision();
+	}
+	else {
+		var collide = null;
+	}
+	
 	if (collide && collide.object) {
 		this.restoreCamera();
 		this.dispatchEvent("collide", collide);
@@ -52226,7 +52271,12 @@ Vizi.GraphicsThreeJS.prototype.onKeyPress = function(event)
 Vizi.GraphicsThreeJS.prototype.onWindowResize = function(event)
 {
 	this.renderer.setSize(this.container.offsetWidth, this.container.offsetHeight);
-
+	
+	if (this.composer) {
+		this.composer.setSize(this.container.offsetWidth, this.container.offsetHeight);
+	}
+	
+	
 	if (Vizi.CameraManager && Vizi.CameraManager.handleWindowResize(this.container.offsetWidth, this.container.offsetHeight))
 	{		
 	}
@@ -52255,11 +52305,11 @@ Vizi.GraphicsThreeJS.prototype.update = function()
     this.lastFrameTime = frameTime;
 
 	// N.B.: start with hack, let's see how it goes...
-	if (this.riftCam && this.riftCam._vrHMD) {
-		this.renderVR();
-	}
-	else if (this.composer) {
+	if (this.composer) {
 		this.renderEffects(deltat);
+	}
+    else if (this.riftCam && this.riftCam._vrHMD) {
+		this.renderVR();
 	}
 	else {
 		this.render();
@@ -53330,7 +53380,12 @@ Vizi.Prefabs.RiftController = function(param)
 	var controller = new Vizi.Object(param);
 	var controllerScript = new Vizi.RiftControllerScript(param);
 	controller.addComponent(controllerScript);
+
+	var intensity = param.headlight ? 1 : 0;
 	
+	var headlight = new Vizi.DirectionalLight({ intensity : intensity });
+	controller.addComponent(headlight);
+
 	return controller;
 }
 
@@ -53343,6 +53398,10 @@ Vizi.RiftControllerScript = function(param)
 
 	this._enabled = (param.enabled !== undefined) ? param.enabled : true;
 	this.riftControls = null;
+
+	this._headlightOn = param.headlight;
+	
+	this.cameraDir = new THREE.Vector3;
 	
     Object.defineProperties(this, {
     	camera: {
@@ -53368,6 +53427,8 @@ goog.inherits(Vizi.RiftControllerScript, Vizi.Script);
 
 Vizi.RiftControllerScript.prototype.realize = function()
 {
+	this.headlight = this._object.getComponent(Vizi.DirectionalLight);
+	this.headlight.intensity = this._headlightOn ? 1 : 0;
 }
 
 Vizi.RiftControllerScript.prototype.update = function()
@@ -53375,6 +53436,14 @@ Vizi.RiftControllerScript.prototype.update = function()
 	if (this._enabled && this.riftControls) {
 		this.riftControls.update();
 	}
+	
+	if (this._headlightOn)
+	{
+		this.cameraDir.set(0, 0, -1);
+		this.cameraDir.transformDirection(this.camera.object.matrixWorld);
+		
+		this.headlight.direction.copy(this.cameraDir);
+	}	
 }
 
 Vizi.RiftControllerScript.prototype.setEnabled = function(enabled)
@@ -55328,8 +55397,14 @@ Vizi.Composer = function(param)
     // Create the effects composer
     // For now, create default render pass to start it up
 	var graphics = Vizi.Graphics.instance;
-    this.composer = new THREE.EffectComposer( graphics.renderer );
-	this.composer.addPass( new THREE.RenderPass( graphics.scene, graphics.camera ) );
+	graphics.renderer.autoClear = false;
+    this.composer = new THREE.EffectComposer( graphics.riftCam ? graphics.riftCam : graphics.renderer );
+    var bgPass = new THREE.RenderPass( graphics.backgroundLayer.scene, graphics.backgroundLayer.camera );
+    bgPass.clear = true;
+	this.composer.addPass( bgPass );
+	var fgPass = new THREE.RenderPass( graphics.scene, graphics.camera );
+	fgPass.clear = false;
+	this.composer.addPass(fgPass);
 	var copyPass = new THREE.ShaderPass( THREE.CopyShader );
 	copyPass.renderToScreen = true;
 	this.composer.addPass(copyPass);
@@ -55348,8 +55423,12 @@ Vizi.Composer.prototype.addEffect = function(effect) {
 }
 
 Vizi.Composer.prototype.setCamera = function(camera) {
-	var renderpass = this.composer.passes[0];
+	var renderpass = this.composer.passes[1];
 	renderpass.camera = camera;
+}
+
+Vizi.Composer.prototype.setSize = function(width, height) {
+	this.composer.setSize(width, height);
 }
 
 Vizi.Composer.instance = null;/**
@@ -56564,6 +56643,11 @@ glam.getAnimation = function(id) {
 	return glam.animations[id];
 }
 
+$(document).ready(function(){
+
+	glam.ready();
+});
+
 
 /**
  * @fileoverview animation parser/implementation
@@ -57396,7 +57480,7 @@ glam.Cube.getAttributes = function(docelt, style, param) {
 glam.Cube.createVisual = function(docelt, material, param) {
 
 	var visual = new Vizi.Visual(
-			{ geometry: new THREE.CubeGeometry(param.width, param.height, param.depth),
+			{ geometry: new THREE.BoxGeometry(param.width, param.height, param.depth),
 				material: material
 			});
 	

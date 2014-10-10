@@ -2516,6 +2516,7 @@ Vizi.FirstPersonControllerScript = function(param)
 	this._turn = (param.turn !== undefined) ? param.turn : true;
 	this._tilt = (param.tilt !== undefined) ? param.tilt : true;
 	this._mouseLook = (param.mouseLook !== undefined) ? param.mouseLook : false;
+	this.testCollisions = (param.testCollisions !== undefined) ? param.testCollisions : false;
 	
 	this.collisionDistance = 10;
 	this.moveSpeed = 13;
@@ -2604,7 +2605,13 @@ Vizi.FirstPersonControllerScript.prototype.update = function()
 {
 	this.saveCamera();
 	this.controls.update(this.clock.getDelta());
-	var collide = this.testCollision();
+	if (this.testCollisions) {
+		var collide = this.testCollision();
+	}
+	else {
+		var collide = null;
+	}
+	
 	if (collide && collide.object) {
 		this.restoreCamera();
 		this.dispatchEvent("collide", collide);
@@ -6255,7 +6262,12 @@ Vizi.GraphicsThreeJS.prototype.onKeyPress = function(event)
 Vizi.GraphicsThreeJS.prototype.onWindowResize = function(event)
 {
 	this.renderer.setSize(this.container.offsetWidth, this.container.offsetHeight);
-
+	
+	if (this.composer) {
+		this.composer.setSize(this.container.offsetWidth, this.container.offsetHeight);
+	}
+	
+	
 	if (Vizi.CameraManager && Vizi.CameraManager.handleWindowResize(this.container.offsetWidth, this.container.offsetHeight))
 	{		
 	}
@@ -6284,11 +6296,11 @@ Vizi.GraphicsThreeJS.prototype.update = function()
     this.lastFrameTime = frameTime;
 
 	// N.B.: start with hack, let's see how it goes...
-	if (this.riftCam && this.riftCam._vrHMD) {
-		this.renderVR();
-	}
-	else if (this.composer) {
+	if (this.composer) {
 		this.renderEffects(deltat);
+	}
+    else if (this.riftCam && this.riftCam._vrHMD) {
+		this.renderVR();
 	}
 	else {
 		this.render();
@@ -7359,7 +7371,12 @@ Vizi.Prefabs.RiftController = function(param)
 	var controller = new Vizi.Object(param);
 	var controllerScript = new Vizi.RiftControllerScript(param);
 	controller.addComponent(controllerScript);
+
+	var intensity = param.headlight ? 1 : 0;
 	
+	var headlight = new Vizi.DirectionalLight({ intensity : intensity });
+	controller.addComponent(headlight);
+
 	return controller;
 }
 
@@ -7372,6 +7389,10 @@ Vizi.RiftControllerScript = function(param)
 
 	this._enabled = (param.enabled !== undefined) ? param.enabled : true;
 	this.riftControls = null;
+
+	this._headlightOn = param.headlight;
+	
+	this.cameraDir = new THREE.Vector3;
 	
     Object.defineProperties(this, {
     	camera: {
@@ -7397,6 +7418,8 @@ goog.inherits(Vizi.RiftControllerScript, Vizi.Script);
 
 Vizi.RiftControllerScript.prototype.realize = function()
 {
+	this.headlight = this._object.getComponent(Vizi.DirectionalLight);
+	this.headlight.intensity = this._headlightOn ? 1 : 0;
 }
 
 Vizi.RiftControllerScript.prototype.update = function()
@@ -7404,6 +7427,14 @@ Vizi.RiftControllerScript.prototype.update = function()
 	if (this._enabled && this.riftControls) {
 		this.riftControls.update();
 	}
+	
+	if (this._headlightOn)
+	{
+		this.cameraDir.set(0, 0, -1);
+		this.cameraDir.transformDirection(this.camera.object.matrixWorld);
+		
+		this.headlight.direction.copy(this.cameraDir);
+	}	
 }
 
 Vizi.RiftControllerScript.prototype.setEnabled = function(enabled)
@@ -9357,8 +9388,14 @@ Vizi.Composer = function(param)
     // Create the effects composer
     // For now, create default render pass to start it up
 	var graphics = Vizi.Graphics.instance;
-    this.composer = new THREE.EffectComposer( graphics.renderer );
-	this.composer.addPass( new THREE.RenderPass( graphics.scene, graphics.camera ) );
+	graphics.renderer.autoClear = false;
+    this.composer = new THREE.EffectComposer( graphics.riftCam ? graphics.riftCam : graphics.renderer );
+    var bgPass = new THREE.RenderPass( graphics.backgroundLayer.scene, graphics.backgroundLayer.camera );
+    bgPass.clear = true;
+	this.composer.addPass( bgPass );
+	var fgPass = new THREE.RenderPass( graphics.scene, graphics.camera );
+	fgPass.clear = false;
+	this.composer.addPass(fgPass);
 	var copyPass = new THREE.ShaderPass( THREE.CopyShader );
 	copyPass.renderToScreen = true;
 	this.composer.addPass(copyPass);
@@ -9377,8 +9414,12 @@ Vizi.Composer.prototype.addEffect = function(effect) {
 }
 
 Vizi.Composer.prototype.setCamera = function(camera) {
-	var renderpass = this.composer.passes[0];
+	var renderpass = this.composer.passes[1];
 	renderpass.camera = camera;
+}
+
+Vizi.Composer.prototype.setSize = function(width, height) {
+	this.composer.setSize(width, height);
 }
 
 Vizi.Composer.instance = null;/**
