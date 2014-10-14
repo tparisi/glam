@@ -59377,7 +59377,7 @@ glam.Text.createVisual = function(docelt, material, param) {
 				material: textmat
 			});
 
-	THREE.GeometryUtils.center(textGeo);
+	textGeo.center();
 	
 	return visual;
 }
