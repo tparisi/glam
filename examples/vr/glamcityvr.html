@@ -8,9 +8,20 @@
 
 <style>
 
+
 	body{
 		margin: 0px;
 		background-color: #000;
+	}
+
+
+	#startVR {
+		position: fixed;
+		bottom: 20px;
+		right: 20px;
+		padding: 8px;
+		color: #FFF;
+		background-color: #555;
 	}
 	
 	#sb1 {
@@ -49,9 +60,21 @@
 	}
 	
 </style>
+<script>
+	$(document).ready(function() {
+		var fullScreenButton = document.getElementById( 'startVR' );
+		fullScreenButton.onclick = function() {
+			Vizi.Graphics.instance.setFullScreen( true );
+		};
+	
+		
+	});
+	
+</script>
 </head>
 <body>
-<div id="container" style="width:98%; height:98%;position:absolute;">
+<div id="startVR">Start VR Mode</div>
+<div id="container" style="width:98%; height:98%;position:absolute;z-index:-2;">
 <glam>
   <renderer type="rift"></renderer>
   <scene>

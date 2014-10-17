@@ -1798,6 +1798,11 @@ Vizi.Object = function(param) {
      */
     this.name = "";
  
+    /**
+     * @type {Boolean}
+     * @private
+     */
+    this._realizing = false;
     
     /**
      * @type {Boolean}
@@ -1860,7 +1865,7 @@ Vizi.Object.prototype.addChild = function(child) {
     child.setParent(this);
     this._children.push(child);
 
-    if (this._realized && !child._realized)
+    if ((this._realizing || this._realized) && !child._realized)
     {
     	child.realize();
     }
@@ -1936,7 +1941,7 @@ Vizi.Object.prototype.addComponent = function(component) {
     this._components.push(component);
     component.setObject(this);
     
-    if (this._realized && !component._realized)
+    if ((this._realizing || this._realized) && !component._realized)
     {
     	component.realize();
     }
@@ -2045,6 +2050,8 @@ Vizi.Object.prototype.getComponents = function(type) {
 //---------------------------------------------------------------------
 
 Vizi.Object.prototype.realize = function() {
+    this._realizing = true;
+    
     this.realizeComponents();
     this.realizeChildren();
         
@@ -2061,7 +2068,9 @@ Vizi.Object.prototype.realizeComponents = function() {
 
     for (; i < count; ++i)
     {
-        this._components[i].realize();
+        if (!this._components[i]._realized) {
+        	this._components[i].realize();
+        }
     }
 }
 
@@ -2075,7 +2084,9 @@ Vizi.Object.prototype.realizeChildren = function() {
 
     for (; i < count; ++i)
     {
-        this._children[i].realize();
+        if (!this._children[i]._realized) {
+        	this._children[i].realize();
+        }
     }
 }
 
@@ -3739,7 +3750,12 @@ Vizi.Prefabs.DeviceOrientationController = function(param)
 	var controller = new Vizi.Object(param);
 	var controllerScript = new Vizi.DeviceOrientationControllerScript(param);
 	controller.addComponent(controllerScript);
+
+	var intensity = param.headlight ? 1 : 0;
 	
+	var headlight = new Vizi.DirectionalLight({ intensity : intensity });
+	controller.addComponent(headlight);
+		
 	return controller;
 }
 
@@ -3751,6 +3767,7 @@ Vizi.DeviceOrientationControllerScript = function(param)
 	Vizi.Script.call(this, param);
 
 	this._enabled = (param.enabled !== undefined) ? param.enabled : true;
+	this._headlightOn = param.headlight;
 	this.roll = (param.roll !== undefined) ? param.roll : true;
 		
     Object.defineProperties(this, {
@@ -3770,13 +3787,23 @@ Vizi.DeviceOrientationControllerScript = function(param)
     			this.setEnabled(v);
     		}
     	},
+        headlightOn: {
+	        get: function() {
+	            return this._headlightOn;
+	        },
+	        set:function(v)
+	        {
+	        	this.setHeadlightOn(v);
+	        }
+    	},
     });
 }
 
 goog.inherits(Vizi.DeviceOrientationControllerScript, Vizi.Script);
 
-Vizi.DeviceOrientationControllerScript.prototype.realize = function()
-{
+Vizi.DeviceOrientationControllerScript.prototype.realize = function() {
+	this.headlight = this._object.getComponent(Vizi.DirectionalLight);
+	this.headlight.intensity = this._headlightOn ? 1 : 0;
 }
 
 Vizi.DeviceOrientationControllerScript.prototype.createControls = function(camera)
@@ -3794,6 +3821,11 @@ Vizi.DeviceOrientationControllerScript.prototype.update = function()
 {
 	if (this._enabled)
 		this.controls.update();
+
+	if (this._headlightOn)
+	{
+		this.headlight.direction.copy(this._camera.position).negate();
+	}	
 }
 
 Vizi.DeviceOrientationControllerScript.prototype.setEnabled = function(enabled)
@@ -3803,6 +3835,14 @@ Vizi.DeviceOrientationControllerScript.prototype.setEnabled = function(enabled)
 		this.controls.connect();
 	else
 		this.controls.disconnect();
+}
+
+Vizi.DeviceOrientationControllerScript.prototype.setHeadlightOn = function(on)
+{
+	this._headlightOn = on;
+	if (this.headlight) {
+		this.headlight.intensity = on ? 1 : 0;
+	}
 }
 
 Vizi.DeviceOrientationControllerScript.prototype.setCamera = function(camera) {
@@ -5729,6 +5769,10 @@ Vizi.GraphicsThreeJS.prototype.initRenderer = function(param)
 			}
     	});
     }
+    else if (param.cardboard) {
+    	this.cardboard = new THREE.StereoEffect(this.renderer);
+    	this.cardboard.setSize( this.container.offsetWidth, this.container.offsetHeight );
+    }
     
     // Placeholder for effects composer
     this.composer = null;
@@ -5784,6 +5828,14 @@ Vizi.GraphicsThreeJS.prototype.addDomHandlers = function()
 {
 	var that = this;
 	window.addEventListener( 'resize', function(event) { that.onWindowResize(event); }, false );
+
+	
+	var fullScreenChange =
+		this.renderer.domElement.mozRequestFullScreen? 'mozfullscreenchange' : 'webkitfullscreenchange';
+	
+	document.addEventListener( fullScreenChange, 
+			function(e) {that.onFullScreenChanged(e); }, false );
+
 }
 
 Vizi.GraphicsThreeJS.prototype.objectFromMouse = function(event)
@@ -6261,10 +6313,24 @@ Vizi.GraphicsThreeJS.prototype.onKeyPress = function(event)
 
 Vizi.GraphicsThreeJS.prototype.onWindowResize = function(event)
 {
-	this.renderer.setSize(this.container.offsetWidth, this.container.offsetHeight);
+	var width = this.container.offsetWidth,
+		height = this.container.offsetHeight;
+
+	// HACK HACK HACK seems to be the only reliable thing and even this
+	// is dicey on Chrome. Is there a race condition?
+	if (this.riftCam) {
+		width = window.innerWidth;
+		height = window.innerHeight;
+	}
+
+	if (this.cardboard) {
+		this.cardboard.setSize(width, height);
+	}
+	
+	this.renderer.setSize(width, height);
 	
 	if (this.composer) {
-		this.composer.setSize(this.container.offsetWidth, this.container.offsetHeight);
+		this.composer.setSize(width, height);
 	}
 	
 	
@@ -6277,6 +6343,19 @@ Vizi.GraphicsThreeJS.prototype.onWindowResize = function(event)
 		this.camera.updateProjectionMatrix();
 	}
 }
+
+Vizi.GraphicsThreeJS.prototype.onFullScreenChanged = function(event) {
+	
+	if ( !document.mozFullScreenElement && !document.webkitFullScreenElement ) {
+		this.fullscreen = false;
+	}
+	else {
+		this.fullscreen = true;
+	}
+}
+
+
+
 
 Vizi.GraphicsThreeJS.prototype.setCursor = function(cursor)
 {
@@ -6298,6 +6377,9 @@ Vizi.GraphicsThreeJS.prototype.update = function()
 	// N.B.: start with hack, let's see how it goes...
 	if (this.composer) {
 		this.renderEffects(deltat);
+	}
+	else if (this.cardboard) {
+		this.renderStereo();
 	}
     else if (this.riftCam && this.riftCam._vrHMD) {
 		this.renderVR();
@@ -6330,6 +6412,11 @@ Vizi.GraphicsThreeJS.prototype.renderEffects = function(deltat) {
 	this.composer.render(deltat);
 }
 
+Vizi.GraphicsThreeJS.prototype.renderStereo = function() {
+	// start with 2 layer to test; will need to work in postprocessing when that's ready
+    this.cardboard.render([this.backgroundLayer.scene, this.scene], [this.backgroundLayer.camera, this.camera]);
+}
+
 Vizi.GraphicsThreeJS.prototype.enableShadows = function(enable)
 {
 	this.renderer.shadowMapEnabled = enable;
@@ -6340,6 +6427,9 @@ Vizi.GraphicsThreeJS.prototype.enableShadows = function(enable)
 Vizi.GraphicsThreeJS.prototype.setFullScreen = function(enable)
 {
 	if (this.riftCam) {
+
+		this.fullscreen = enable;
+		
 		this.riftCam.setFullScreen(enable);
 	}
 }
@@ -6558,6 +6648,7 @@ Vizi.Application.prototype.run = function()
 {
     // core game loop here
 	this.realizeObjects();
+	Vizi.Graphics.instance.scene.updateMatrixWorld();
 	this.lastFrameTime = Date.now();
 	this.running = true;
 	this.runloop();

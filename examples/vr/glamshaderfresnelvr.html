@@ -13,6 +13,15 @@
 		background-color: #000;
 	}
 
+	#startVR {
+		position: fixed;
+		bottom: 20px;
+		right: 20px;
+		padding: 8px;
+		color: #FFF;
+		background-color: #555;
+	}
+	
 	.skybox {
 		cube-image-right:url(../../images/Park2/posx.jpg);
 		cube-image-left:url(../../images/Park2/negx.jpg);
@@ -136,6 +145,12 @@ $(document).ready(function(){
 
 	var scene = document.getElementsByTagName('scene')[0];
 	addBubbles(scene);
+
+	var fullScreenButton = document.getElementById( 'startVR' );
+		fullScreenButton.onclick = function() {
+		Vizi.Graphics.instance.setFullScreen( true );
+	};
+	
 });
 
 </script>
@@ -144,7 +159,8 @@ $(document).ready(function(){
 <!-- 
 glam - Simple scene with cube
  -->
-<div id="container" style="width:98%; height:98%;position:absolute;">
+<div id="startVR">Start VR Mode</div>
+<div id="container" style="width:98%; height:98%;position:absolute;z-index:-2;">
 <glam>
   <renderer type="rift"></renderer>
   <scene>

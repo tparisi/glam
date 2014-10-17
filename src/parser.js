@@ -80,11 +80,13 @@ glam.parser = {
 		var len = styles.length;
 		for (i = 0; i < len; i++)
 		{
-			$.parsecss(styles[i].childNodes[0].data,
-					function(css) {
-							glam.parser.addStyle(css);
-						}
-					);
+			if (styles[i].childNodes.length) {
+				$.parsecss(styles[i].childNodes[0].data,
+						function(css) {
+								glam.parser.addStyle(css);
+							}
+						);
+			}
 		}
 	},
 	
