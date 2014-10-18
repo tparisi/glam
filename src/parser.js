@@ -22,8 +22,10 @@ glam.parser = {
 		    	var i, len = mutation.removedNodes.length;
 		    	for (i = 0; i < len; i++) {
 		    		var node = mutation.removedNodes[i];
-		    		var viewer = glam.viewers[doc.id];
-			    	viewer.removeNode(node);
+					if (node.glam) {
+						var viewer = glam.viewers[doc.id];
+						viewer.removeNode(node);
+					}
 		    	}
 		    }
 		    else if (mutation.type == "attributes") {
