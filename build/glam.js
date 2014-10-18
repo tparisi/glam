@@ -56865,6 +56865,10 @@ glam.getAnimation = function(id) {
 	return glam.animations[id];
 }
 
+glam.setFullScreen = function(enable) {
+	return Vizi.Graphics.instance.setFullScreen(enable);
+}
+
 $(document).ready(function(){
 
 	glam.ready();
