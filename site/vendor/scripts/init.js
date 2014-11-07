@@ -124,7 +124,7 @@ _initGlam = function(){
         if(detectmob()){
             window.open(
                 // todo remove this
-                '/'+ $(this).find('a').data("url"),
+                $(this).find('a').data("url"),
                 '_blank'
             )
         }else{
@@ -156,7 +156,7 @@ _initGlam = function(){
                 $('body').not('iframe body').css('overflow', 'scroll');
             },
             // todo remove this
-            loadUrl: '/'+ $(this).find('a').data("url")
+            loadUrl: $(this).find('a').data("url")
             });
         }
 
@@ -189,7 +189,7 @@ _initGlam = function(){
                        $('.closePopUp').remove();
                     },
                     // todo remove this
-                    loadUrl: '/'+ 'source.html#' + currentID
+                    loadUrl: 'source.html#' + currentID
                     });
     }
 
@@ -224,7 +224,7 @@ _initGlam = function(){
                 $('body').not('iframe body').css('overflow', 'scroll');
             },
             // todo remove this
-            loadUrl: "/"+ $(this).data("url")
+            loadUrl: $(this).data("url")
         });
 
     });
