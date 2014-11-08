@@ -13,7 +13,7 @@ angular.module( 'ngGlam.about', [
         templateUrl: 'about/about.tpl.html'
       }
     },
-    data:{ pageTitle: 'What is It?' }
+    data:{ pageTitle: 'About - GLAM' }
   });
 })
 

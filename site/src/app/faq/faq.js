@@ -13,7 +13,7 @@ angular.module( 'ngGlam.faq', [
         templateUrl: 'faq/faq.tpl.html'
       }
     },
-    data:{ pageTitle: 'What is It?' }
+    data:{ pageTitle: 'FAQ - GLAM' }
   });
 })
 

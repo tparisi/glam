@@ -44,7 +44,7 @@ angular.module("about/about.tpl.html", []).run(["$templateCache", function($temp
     "\n" +
     "demos at a rapid clip, and we are also looking closely at related technologies such as\n" +
     "\n" +
-    "Web Components as they come of age. We’d love your feedback and contributions!\n" +
+    "Web Components as they come of age. We'd love your feedback and contributions!\n" +
     "</p>\n" +
     "</div>\n" +
     "\n" +
@@ -66,7 +66,7 @@ angular.module("faq/faq.tpl.html", []).run(["$templateCache", function($template
     "\n" +
     "renders with WebGL, using the graphics power of Three.js. GLAM adds behaviors,\n" +
     "\n" +
-    "interaction and lots of easy­to­use features on top of Three.js, but most importantly, it\n" +
+    "interaction and lots of easy to use features on top of Three.js, but most importantly, it\n" +
     "\n" +
     "defines a markup language and set of stylesheet extensions that make 3D programming\n" +
     "\n" +
@@ -88,7 +88,7 @@ angular.module("faq/faq.tpl.html", []).run(["$templateCache", function($template
     "\n" +
     "GLAM was created by Tony Parisi, the guy who made the Virtual Reality Markup\n" +
     "\n" +
-    "Language (VRML), 20 years before anybody knew they needed it. Since then, Tony’s\n" +
+    "Language (VRML), 20 years before anybody knew they needed it. Since then, Tony's\n" +
     "\n" +
     "learned a few more things about graphics, web browsers have grown up, and the world\n" +
     "\n" +
@@ -170,7 +170,7 @@ angular.module("faq/faq.tpl.html", []).run(["$templateCache", function($template
     "\n" +
     "Right now, authoring GLAM requires a text editor. Someday, maybe, we'll build an\n" +
     "\n" +
-    "interactive tool for authoring, or at least a syntax­assisted in­browser editor a la JSFiddle.\n" +
+    "interactive tool for authoring, or at least a syntax assisted in browser editor a la JSFiddle.\n" +
     "\n" +
     "To test, you will most likely need a web server ... so that you can see your texture maps\n" +
     "\n" +

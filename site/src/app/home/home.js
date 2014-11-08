@@ -31,7 +31,7 @@ angular.module( 'ngGlam.home', [
         templateUrl: 'home/home.tpl.html'
       }
     },
-    data:{ pageTitle: 'Home' }
+    data:{ pageTitle: 'GLAM' }
   });
 })
 
