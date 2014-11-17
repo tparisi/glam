@@ -10305,7 +10305,9 @@ Vizi.ParticleSystem = function(param) {
 		
 		var color = (param.color !== undefined) ? param.color : Vizi.ParticleSystem.DEFAULT_COLOR;
 		var material = new THREE.PointCloudMaterial({color:color, size:param.size, map:param.map,
-			transparent: (param.map !== null), vertexColors: (param.geometry.colors.length > 0)});
+			transparent: (param.map !== null), 
+		    depthWrite: false,
+			vertexColors: (param.geometry.colors.length > 0)});
 		var ps = new THREE.PointCloud(param.geometry, material);
 		ps.sortParticles = true;
 
