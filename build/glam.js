@@ -205,7 +205,7 @@
         var css = restore(split.join(' '));
         css = css.substr(1, css.length - 2); // strip {}
         $.parsecss(css, function(keyframes) {
-        	console.log("Parsed keyframes: ", keyframes);
+        	// console.log("Parsed keyframes: ", keyframes);
         	var ret = {};
         	ret[kfName] = keyframes;
         	callback(ret);
@@ -44172,7 +44172,7 @@ THREE.StereoEffect = function ( renderer ) {
 
 	// API
 
-	this.separation = 3;
+	this.separation = 0.03;
 
 	// internals
 
@@ -44222,6 +44222,12 @@ THREE.StereoEffect = function ( renderer ) {
 			var scene = scenes[i];
 			var camera = cameras[i];
 			
+			scene.updateMatrixWorld();
+
+			if ( camera.parent === undefined ) camera.updateMatrixWorld();
+		
+			camera.matrixWorld.decompose( _position, _quaternion, _scale );
+
 			if (i == 0) {
 			   	renderer.setClearColor( 0, 0 );
 				renderer.autoClearColor = true;				
@@ -44230,21 +44236,6 @@ THREE.StereoEffect = function ( renderer ) {
 			    renderer.setClearColor( 0, 1 );
 				renderer.autoClearColor = false;				
 			}
-
-			scene.updateMatrix();
-			scene.updateMatrixWorld();
-
-			if (camera.matrixAutoUpdate) {
-				camera.updateMatrix();
-				camera.updateMatrixWorld();
-			}
-
-			scene.updateMatrixWorld();
-
-			if ( camera.parent === undefined ) camera.updateMatrixWorld();
-		
-			camera.matrixWorld.decompose( _position, _quaternion, _scale );
-
 			// left
 	
 			_cameraL.fov = camera.fov;
@@ -44256,6 +44247,7 @@ THREE.StereoEffect = function ( renderer ) {
 			_cameraL.position.copy( _position );
 			_cameraL.quaternion.copy( _quaternion );
 			_cameraL.translateX( - this.separation );
+			_cameraL.updateMatrixWorld();
 	
 			// right
 	
@@ -44266,12 +44258,12 @@ THREE.StereoEffect = function ( renderer ) {
 			_cameraR.position.copy( _position );
 			_cameraR.quaternion.copy( _quaternion );
 			_cameraR.translateX( this.separation );
+			_cameraR.updateMatrixWorld();
 	
 			//
 	
 			renderer.setViewport( 0, 0, _width * 2, _height );
-			// don't do this, defeats layering
-			// renderer.clear();
+//			renderer.clear();
 	
 			renderer.setViewport( 0, 0, _width, _height );
 			renderer.render( scene, _cameraL );
@@ -48018,6 +48010,7 @@ Vizi.Object.prototype.removeChild = function(child) {
         this._children.splice(i, 1);
         child.removeAllComponents();
         child.setParent(null);
+        child._realized = child._realizing = false;
     }
 }
 
@@ -48133,6 +48126,7 @@ Vizi.Object.prototype.removeAllComponents = function() {
     	if (component.removeFromScene)
     	{
     		component.removeFromScene();
+    		component._realized = component._realizing = false;
     	}
     	
         component.setObject(null);
@@ -48203,6 +48197,8 @@ Vizi.Object.prototype.realizeComponents = function() {
     for (; i < count; ++i)
     {
         if (!this._components[i]._realized) {
+        	// in case we're part of a previously-removed object getting re-parented
+        	this._components[i].setObject(this);
         	this._components[i].realize();
         }
     }
@@ -48592,7 +48588,7 @@ Vizi.Camera.prototype.lookAt = function(v)
 	this.object.lookAt(v);
 }
 
-Vizi.Camera.DEFAULT_POSITION = new THREE.Vector3(0, 0, 10);
+Vizi.Camera.DEFAULT_POSITION = new THREE.Vector3(0, 0, 0);
 Vizi.Camera.DEFAULT_NEAR = 1;
 Vizi.Camera.DEFAULT_FAR = 10000;
 /**
@@ -51327,6 +51323,8 @@ Vizi.OrbitControls = function ( object, domElement ) {
 
 	this.oneButton = false;
 	
+	this.usekeys = false;
+	
 	// internals
 
 	var scope = this;
@@ -51733,6 +51731,10 @@ Vizi.OrbitControls = function ( object, domElement ) {
 
 	function onKeyDown( event ) {
 
+		if ( !scope.usekeys) {
+			return;
+		}
+		
 		if ( scope.enabled === false ) return;
 		if ( scope.userPan === false ) return;
 
@@ -51963,6 +51965,7 @@ Vizi.GraphicsThreeJS.prototype.addDomHandlers = function()
 	var that = this;
 	window.addEventListener( 'resize', function(event) { that.onWindowResize(event); }, false );
 
+	setTimeout(function(event) { that.onWindowResize(event); }, 10);
 	
 	var fullScreenChange =
 		this.renderer.domElement.mozRequestFullScreen? 'mozfullscreenchange' : 'webkitfullscreenchange';
@@ -52480,7 +52483,7 @@ Vizi.GraphicsThreeJS.prototype.onWindowResize = function(event)
 
 Vizi.GraphicsThreeJS.prototype.onFullScreenChanged = function(event) {
 	
-	if ( !document.mozFullScreenElement && !document.webkitFullScreenElement ) {
+	if ( !document.mozFullscreenElement && !document.webkitFullscreenElement ) {
 		this.fullscreen = false;
 	}
 	else {
@@ -52549,6 +52552,7 @@ Vizi.GraphicsThreeJS.prototype.renderEffects = function(deltat) {
 Vizi.GraphicsThreeJS.prototype.renderStereo = function() {
 	// start with 2 layer to test; will need to work in postprocessing when that's ready
     this.cardboard.render([this.backgroundLayer.scene, this.scene], [this.backgroundLayer.camera, this.camera]);
+//    this.cardboard.render(this.scene, this.camera);
 }
 
 Vizi.GraphicsThreeJS.prototype.enableShadows = function(enable)
@@ -52565,6 +52569,25 @@ Vizi.GraphicsThreeJS.prototype.setFullScreen = function(enable)
 		this.fullscreen = enable;
 		
 		this.riftCam.setFullScreen(enable);
+	}
+	else if (this.cardboard) {
+
+		var canvas = this.renderer.domElement;
+		
+		if (enable) {
+			if ( this.container.mozRequestFullScreen ) {
+				this.container.mozRequestFullScreen();
+			} else {
+				this.container.webkitRequestFullscreen();
+			}
+		}
+		else {
+			if ( document.mozCancelFullScreen ) {
+				document.mozCancelFullScreen();
+			} else {
+				document.webkitExitFullscreen();
+			}
+		}
 	}
 }
 
@@ -53270,7 +53293,7 @@ Vizi.Prefabs.Skybox = function(param)
 	} );
 
 	var visual = new Vizi.Visual(
-			{ geometry: new THREE.CubeGeometry( 10000, 10000, 10000 ),
+			{ geometry: new THREE.BoxGeometry( 10000, 10000, 10000 ),
 				material: material,
 			});
 	box.addComponent(visual);
@@ -54908,7 +54931,7 @@ Vizi.Loader.prototype.handleSceneLoaded = function(url, data, userData)
 	
 	if (data.scene)
 	{
-		console.log("In loaded callback for ", url);
+		// console.log("In loaded callback for ", url);
 		
 		var convertedScene = this.convertScene(data.scene);
 		result.scene = convertedScene; // new Vizi.SceneVisual({scene:data.scene}); // 
@@ -55299,12 +55322,12 @@ Vizi.DeviceOrientationControls = function ( object ) {
 
 			if ( this.freeze ) return;
 
-			alpha  = this.deviceOrientation.gamma ? THREE.Math.degToRad( this.deviceOrientation.alpha ) : 0; // Z
+			alpha  = this.deviceOrientation.alpha ? THREE.Math.degToRad( this.deviceOrientation.alpha ) : 0; // Z
 			beta   = this.deviceOrientation.beta  ? THREE.Math.degToRad( this.deviceOrientation.beta  ) : 0; // X'
 			gamma  = this.deviceOrientation.gamma ? THREE.Math.degToRad( this.deviceOrientation.gamma ) : 0; // Y''
 			orient = this.screenOrientation       ? THREE.Math.degToRad( this.screenOrientation       ) : 0; // O
 
-			setObjectQuaternion( this.object.quaternion, alpha, beta, gamma, orient );
+			this.setObjectQuaternion( this.object.quaternion, alpha, beta, gamma, orient );
 
 		}
 
@@ -55342,7 +55365,7 @@ Vizi.DeviceOrientationControls = function ( object ) {
 
 	// The angles alpha, beta and gamma form a set of intrinsic Tait-Bryan angles of type Z-X'-Y''
 
-	setObjectQuaternion = function () {
+	this.setObjectQuaternion = function () {
 
 		var zee = new THREE.Vector3( 0, 0, 1 );
 
@@ -55723,7 +55746,8 @@ Vizi.Viewer.prototype.initScene = function()
 	this.addObject(this.controller);
 
 	var viewpoint = new Vizi.Object;
-	this.defaultCamera = new Vizi.PerspectiveCamera({active:true});
+	this.defaultCamera = new Vizi.PerspectiveCamera({active:true, 
+		position : Vizi.Viewer.DEFAULT_CAMERA_POSITION});
 	viewpoint.addComponent(this.defaultCamera);
 	viewpoint.name = "[default]";
 	this.addObject(viewpoint);
@@ -56383,6 +56407,7 @@ Vizi.Viewer.prototype.setController = function(type) {
 	this.controllerScript.center = center;
 }
 
+Vizi.Viewer.DEFAULT_CAMERA_POSITION = new THREE.Vector3(0, 0, 10);
 Vizi.Viewer.DEFAULT_GRID_SIZE = 100;
 Vizi.Viewer.DEFAULT_GRID_STEP_SIZE = 1;
 Vizi.Viewer.GRID_COLOR = 0x202020;
@@ -59599,7 +59624,7 @@ glam.Text.createVisual = function(docelt, material, param) {
 				material: textmat
 			});
 
-	THREE.GeometryUtils.center(textGeo);
+	textGeo.center();
 	
 	return visual;
 }
