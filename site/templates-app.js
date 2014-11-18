@@ -5,7 +5,7 @@ angular.module("about/about.tpl.html", []).run(["$templateCache", function($temp
     "\n" +
     "\n" +
     "<div class=\"row\">\n" +
-    "  <h1 class=\"page-header\">\n" +
+    "  <h1 class=\"page-header\" id=\"about\">\n" +
     "    About GLAM\n" +
     "  </h1>\n" +
     "  <p class=\"p17\">\n" +
@@ -56,7 +56,7 @@ angular.module("faq/faq.tpl.html", []).run(["$templateCache", function($template
   $templateCache.put("faq/faq.tpl.html",
     "<div class=\"row\">\n" +
     "\n" +
-    "    <h1 class=\"page-header\">\n" +
+    "    <h1 class=\"page-header\" id=\"faq\">\n" +
     "    Why GLAM?\n" +
     "  </h1>\n" +
     "\n" +
