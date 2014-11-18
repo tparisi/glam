@@ -18,12 +18,9 @@ angular.module( 'ngGlam.about', [
 })
 
 .controller( 'AboutCtrl', function AboutCtrl( $scope ) {
-  // This is simple a demo for UI Boostrap.
-  $scope.dropdownDemoItems = [
-    "The first choice!",
-    "And another choice for you.",
-    "but wait! A third!"
-  ];
+  $('html').velocity("scroll", { duration: 1500, easing: "easeInSine", offset: $('#about').offset().top - 55  });
+
+
 })
 
 ;

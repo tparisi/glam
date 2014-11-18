@@ -84,7 +84,12 @@ _initGlam = function(){
 
   
         scrollToContent = function(loc){
-            $('html').velocity("scroll", { duration: 1500, easing: "easeInSine", offset: $(loc).offset().top - 55  });
+            try{
+                $('html').velocity("scroll", { duration: 1500, easing: "easeInSine", offset: $(loc).offset().top - 55  });
+            }catch(e){
+
+            }
+            
             $('#menuContent').collapse('hide');
         }
 
@@ -108,7 +113,12 @@ _initGlam = function(){
         });
         $(' .demoLnk').on('click, tap', function(e) {
             e.preventDefault();
-        $('html').velocity("scroll", { duration: 1500, easing: "easeInSine", offset: $($(this).attr('href')).offset().top - 55  });
+            try{
+                $('html').velocity("scroll", { duration: 1500, easing: "easeInSine", offset: $($(this).attr('href')).offset().top - 55  });
+            }catch(e){
+
+            }
+        
          });
 
         $(".col-md-3 div").velocity("transition.slideUpBigIn", { complete: function(){
