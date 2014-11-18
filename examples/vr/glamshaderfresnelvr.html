@@ -13,6 +13,15 @@
 		background-color: #000;
 	}
 
+	#startVR {
+		position: fixed;
+		bottom: 20px;
+		right: 20px;
+		padding: 8px;
+		color: #FFF;
+		background-color: #555;
+	}
+	
 	.skybox {
 		cube-image-right:url(../../images/Park2/posx.jpg);
 		cube-image-left:url(../../images/Park2/negx.jpg);
@@ -105,7 +114,7 @@
 
 function addBubbles(scene) {
 
-	var i, len = 0;
+	var i, len = 50;
 
 	for (i = 0; i < len; i++) {
 
@@ -133,9 +142,14 @@ function addBubbles(scene) {
 $(document).ready(function(){
 
 	glam.ready();
-
 	var scene = document.getElementsByTagName('scene')[0];
 	addBubbles(scene);
+
+	var fullScreenButton = document.getElementById( 'startVR' );
+		fullScreenButton.onclick = function() {
+		glam.setFullScreen( true );
+	};
+	
 });
 
 </script>
@@ -144,11 +158,13 @@ $(document).ready(function(){
 <!-- 
 glam - Simple scene with cube
  -->
-<div id="container" style="width:98%; height:98%;position:absolute;">
+<div id="startVR">Start VR Mode</div>
+<div id="container" style="width:98%; height:98%;position:absolute;z-index:-2;">
 <glam>
   <renderer type="rift"></renderer>
   <scene>
 	<background id="sb1" class="skybox"></background>
+    <controller type="rift"></controller>
 	<group y ='1' z='-3'>
 		<sphere class="bubble skybox bubbleBounce"></sphere>
 		<sphere x='-1' z='-2' class="bubble skybox bubbleBounce2"></sphere>

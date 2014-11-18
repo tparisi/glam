@@ -43351,12 +43351,12 @@ THREE.EffectComposer = function ( renderer, renderTarget ) {
 		var width = window.innerWidth || 1;
 		var height = window.innerHeight || 1;
 		if (renderer._renderer) {
-			width = renderer._renderer.domElement.offsetWidth / renderer._renderer.devicePixelRatio;
-			height = renderer._renderer.domElement.offsetHeight / renderer._renderer.devicePixelRatio;
+			width = renderer._renderer.domElement.offsetWidth; // / renderer._renderer.devicePixelRatio;
+			height = renderer._renderer.domElement.offsetHeight; // / renderer._renderer.devicePixelRatio;
 		}
 		else {
-			width = renderer.domElement.offsetWidth  / renderer.devicePixelRatio;
-			height = renderer.domElement.offsetHeight / renderer.devicePixelRatio;
+			width = renderer.domElement.offsetWidth; //  / renderer.devicePixelRatio;
+			height = renderer.domElement.offsetHeight; // / renderer.devicePixelRatio;
 		}
 		var parameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat, stencilBuffer: false };
 
@@ -43860,6 +43860,118 @@ THREE.ShaderPass.prototype = {
 		}
 
 	}
+
+};
+/**
+ * @author alteredq / http://alteredqualia.com/
+ * @authod mrdoob / http://mrdoob.com/
+ * @authod arodic / http://aleksandarrodic.com/
+ */
+
+THREE.StereoEffect = function ( renderer ) {
+
+	// API
+
+	this.separation = 0.03;
+
+	// internals
+
+	var _width, _height;
+
+	var _position = new THREE.Vector3();
+	var _quaternion = new THREE.Quaternion();
+	var _scale = new THREE.Vector3();
+
+	var _cameraL = new THREE.PerspectiveCamera();
+	var _cameraR = new THREE.PerspectiveCamera();
+
+	// initialization
+
+	renderer.autoClear = false;
+
+	this.setSize = function ( width, height ) {
+
+		_width = width / 2;
+		_height = height;
+
+		renderer.setSize( width, height );
+
+	};
+
+	this.render = function ( scene, camera ) {
+
+		var scenes, cameras;
+		if (scene instanceof Array) {
+			scenes = scene;
+		}
+		else {
+			scenes = [ scene ];
+		}
+
+		if (camera instanceof Array) {
+			cameras = camera;
+		}
+		else {
+			cameras = [ camera ];
+		}
+
+
+		var i, len = scenes.length;
+		for (i = 0; i < len; i++) {
+
+			var scene = scenes[i];
+			var camera = cameras[i];
+			
+			scene.updateMatrixWorld();
+
+			if ( camera.parent === undefined ) camera.updateMatrixWorld();
+		
+			camera.matrixWorld.decompose( _position, _quaternion, _scale );
+
+			if (i == 0) {
+			   	renderer.setClearColor( 0, 0 );
+				renderer.autoClearColor = true;				
+			}
+			else {
+			    renderer.setClearColor( 0, 1 );
+				renderer.autoClearColor = false;				
+			}
+			// left
+	
+			_cameraL.fov = camera.fov;
+			_cameraL.aspect = 0.5 * camera.aspect;
+			_cameraL.near = camera.near;
+			_cameraL.far = camera.far;
+			_cameraL.updateProjectionMatrix();
+	
+			_cameraL.position.copy( _position );
+			_cameraL.quaternion.copy( _quaternion );
+			_cameraL.translateX( - this.separation );
+			_cameraL.updateMatrixWorld();
+	
+			// right
+	
+			_cameraR.near = camera.near;
+			_cameraR.far = camera.far;
+			_cameraR.projectionMatrix = _cameraL.projectionMatrix;
+	
+			_cameraR.position.copy( _position );
+			_cameraR.quaternion.copy( _quaternion );
+			_cameraR.translateX( this.separation );
+			_cameraR.updateMatrixWorld();
+	
+			//
+	
+			renderer.setViewport( 0, 0, _width * 2, _height );
+//			renderer.clear();
+	
+			renderer.setViewport( 0, 0, _width, _height );
+			renderer.render( scene, _cameraL );
+	
+			renderer.setViewport( _width, 0, _width, _height );
+			renderer.render( scene, _cameraR );
+		}
+	};
 
 };
 /**
@@ -44424,6 +44536,10 @@ THREE.RGBShiftShader = {
  *
  */
 THREE.VREffect = function ( renderer, done ) {
+	
+	this.FULLSCREEN_WIDTH = 1280;
+	this.FULLSCREEN_HEIGHT = 800;
+	
 	this._renderer = renderer;
 
 	this._init = function() {
@@ -44597,7 +44713,8 @@ THREE.VREffect = function ( renderer, done ) {
 			height: renderer.domElement.height
 		};
 		// Hardcoded Rift display size
-		renderer.setSize( 1280, 800, false );
+		
+		renderer.setSize( this.FULLSCREEN_WIDTH, this.FULLSCREEN_HEIGHT, false );
 		this.startFullscreen();
 	};
 
@@ -44633,7 +44750,7 @@ THREE.VREffect = function ( renderer, done ) {
 	this.FovPortToProjection = function( fov, rightHanded /* = true */, zNear /* = 0.01 */, zFar /* = 10000.0 */ )
 	{
 		rightHanded = rightHanded === undefined ? true : rightHanded;
-		zNear = zNear === undefined ? 0.001 : zNear;
+		zNear = zNear === undefined ? 0.01 : zNear;
 		zFar = zFar === undefined ? 100000.0 : zFar;
 
 		var handednessScale = rightHanded ? -1.0 : 1.0;
@@ -47507,6 +47624,11 @@ Vizi.Object = function(param) {
      */
     this.name = "";
  
+    /**
+     * @type {Boolean}
+     * @private
+     */
+    this._realizing = false;
     
     /**
      * @type {Boolean}
@@ -47569,7 +47691,7 @@ Vizi.Object.prototype.addChild = function(child) {
     child.setParent(this);
     this._children.push(child);
 
-    if (this._realized && !child._realized)
+    if ((this._realizing || this._realized) && !child._realized)
     {
     	child.realize();
     }
@@ -47588,6 +47710,7 @@ Vizi.Object.prototype.removeChild = function(child) {
         this._children.splice(i, 1);
         child.removeAllComponents();
         child.setParent(null);
+        child._realized = child._realizing = false;
     }
 }
 
@@ -47645,7 +47768,7 @@ Vizi.Object.prototype.addComponent = function(component) {
     this._components.push(component);
     component.setObject(this);
     
-    if (this._realized && !component._realized)
+    if ((this._realizing || this._realized) && !component._realized)
     {
     	component.realize();
     }
@@ -47703,6 +47826,7 @@ Vizi.Object.prototype.removeAllComponents = function() {
     	if (component.removeFromScene)
     	{
     		component.removeFromScene();
+    		component._realized = component._realizing = false;
     	}
     	
         component.setObject(null);
@@ -47754,6 +47878,8 @@ Vizi.Object.prototype.getComponents = function(type) {
 //---------------------------------------------------------------------
 
 Vizi.Object.prototype.realize = function() {
+    this._realizing = true;
+    
     this.realizeComponents();
     this.realizeChildren();
         
@@ -47770,7 +47896,11 @@ Vizi.Object.prototype.realizeComponents = function() {
 
     for (; i < count; ++i)
     {
-        this._components[i].realize();
+        if (!this._components[i]._realized) {
+        	// in case we're part of a previously-removed object getting re-parented
+        	this._components[i].setObject(this);
+        	this._components[i].realize();
+        }
     }
 }
 
@@ -47784,7 +47914,9 @@ Vizi.Object.prototype.realizeChildren = function() {
 
     for (; i < count; ++i)
     {
-        this._children[i].realize();
+        if (!this._children[i]._realized) {
+        	this._children[i].realize();
+        }
     }
 }
 
@@ -48156,7 +48288,7 @@ Vizi.Camera.prototype.lookAt = function(v)
 	this.object.lookAt(v);
 }
 
-Vizi.Camera.DEFAULT_POSITION = new THREE.Vector3(0, 0, 10);
+Vizi.Camera.DEFAULT_POSITION = new THREE.Vector3(0, 0, 0);
 Vizi.Camera.DEFAULT_NEAR = 1;
 Vizi.Camera.DEFAULT_FAR = 10000;
 /**
@@ -49448,7 +49580,12 @@ Vizi.Prefabs.DeviceOrientationController = function(param)
 	var controller = new Vizi.Object(param);
 	var controllerScript = new Vizi.DeviceOrientationControllerScript(param);
 	controller.addComponent(controllerScript);
+
+	var intensity = param.headlight ? 1 : 0;
 	
+	var headlight = new Vizi.DirectionalLight({ intensity : intensity });
+	controller.addComponent(headlight);
+		
 	return controller;
 }
 
@@ -49460,6 +49597,7 @@ Vizi.DeviceOrientationControllerScript = function(param)
 	Vizi.Script.call(this, param);
 
 	this._enabled = (param.enabled !== undefined) ? param.enabled : true;
+	this._headlightOn = param.headlight;
 	this.roll = (param.roll !== undefined) ? param.roll : true;
 		
     Object.defineProperties(this, {
@@ -49479,13 +49617,23 @@ Vizi.DeviceOrientationControllerScript = function(param)
     			this.setEnabled(v);
     		}
     	},
+        headlightOn: {
+	        get: function() {
+	            return this._headlightOn;
+	        },
+	        set:function(v)
+	        {
+	        	this.setHeadlightOn(v);
+	        }
+    	},
     });
 }
 
 goog.inherits(Vizi.DeviceOrientationControllerScript, Vizi.Script);
 
-Vizi.DeviceOrientationControllerScript.prototype.realize = function()
-{
+Vizi.DeviceOrientationControllerScript.prototype.realize = function() {
+	this.headlight = this._object.getComponent(Vizi.DirectionalLight);
+	this.headlight.intensity = this._headlightOn ? 1 : 0;
 }
 
 Vizi.DeviceOrientationControllerScript.prototype.createControls = function(camera)
@@ -49503,6 +49651,11 @@ Vizi.DeviceOrientationControllerScript.prototype.update = function()
 {
 	if (this._enabled)
 		this.controls.update();
+
+	if (this._headlightOn)
+	{
+		this.headlight.direction.copy(this._camera.position).negate();
+	}	
 }
 
 Vizi.DeviceOrientationControllerScript.prototype.setEnabled = function(enabled)
@@ -49512,6 +49665,14 @@ Vizi.DeviceOrientationControllerScript.prototype.setEnabled = function(enabled)
 		this.controls.connect();
 	else
 		this.controls.disconnect();
+}
+
+Vizi.DeviceOrientationControllerScript.prototype.setHeadlightOn = function(on)
+{
+	this._headlightOn = on;
+	if (this.headlight) {
+		this.headlight.intensity = on ? 1 : 0;
+	}
 }
 
 Vizi.DeviceOrientationControllerScript.prototype.setCamera = function(camera) {
@@ -50862,6 +51023,8 @@ Vizi.OrbitControls = function ( object, domElement ) {
 
 	this.oneButton = false;
 	
+	this.usekeys = false;
+	
 	// internals
 
 	var scope = this;
@@ -51268,6 +51431,10 @@ Vizi.OrbitControls = function ( object, domElement ) {
 
 	function onKeyDown( event ) {
 
+		if ( !scope.usekeys) {
+			return;
+		}
+		
 		if ( scope.enabled === false ) return;
 		if ( scope.userPan === false ) return;
 
@@ -51438,6 +51605,10 @@ Vizi.GraphicsThreeJS.prototype.initRenderer = function(param)
 			}
     	});
     }
+    else if (param.cardboard) {
+    	this.cardboard = new THREE.StereoEffect(this.renderer);
+    	this.cardboard.setSize( this.container.offsetWidth, this.container.offsetHeight );
+    }
     
     // Placeholder for effects composer
     this.composer = null;
@@ -51493,6 +51664,15 @@ Vizi.GraphicsThreeJS.prototype.addDomHandlers = function()
 {
 	var that = this;
 	window.addEventListener( 'resize', function(event) { that.onWindowResize(event); }, false );
+
+	setTimeout(function(event) { that.onWindowResize(event); }, 10);
+	
+	var fullScreenChange =
+		this.renderer.domElement.mozRequestFullScreen? 'mozfullscreenchange' : 'webkitfullscreenchange';
+	
+	document.addEventListener( fullScreenChange, 
+			function(e) {that.onFullScreenChanged(e); }, false );
+
 }
 
 Vizi.GraphicsThreeJS.prototype.objectFromMouse = function(event)
@@ -51970,10 +52150,24 @@ Vizi.GraphicsThreeJS.prototype.onKeyPress = function(event)
 
 Vizi.GraphicsThreeJS.prototype.onWindowResize = function(event)
 {
-	this.renderer.setSize(this.container.offsetWidth, this.container.offsetHeight);
+	var width = this.container.offsetWidth,
+		height = this.container.offsetHeight;
+
+	// HACK HACK HACK seems to be the only reliable thing and even this
+	// is dicey on Chrome. Is there a race condition?
+	if (this.riftCam) {
+		width = window.innerWidth;
+		height = window.innerHeight;
+	}
+
+	if (this.cardboard) {
+		this.cardboard.setSize(width, height);
+	}
+	
+	this.renderer.setSize(width, height);
 	
 	if (this.composer) {
-		this.composer.setSize(this.container.offsetWidth, this.container.offsetHeight);
+		this.composer.setSize(width, height);
 	}
 	
 	
@@ -51986,6 +52180,19 @@ Vizi.GraphicsThreeJS.prototype.onWindowResize = function(event)
 		this.camera.updateProjectionMatrix();
 	}
 }
+
+Vizi.GraphicsThreeJS.prototype.onFullScreenChanged = function(event) {
+	
+	if ( !document.mozFullscreenElement && !document.webkitFullscreenElement ) {
+		this.fullscreen = false;
+	}
+	else {
+		this.fullscreen = true;
+	}
+}
+
+
+
 
 Vizi.GraphicsThreeJS.prototype.setCursor = function(cursor)
 {
@@ -52007,6 +52214,9 @@ Vizi.GraphicsThreeJS.prototype.update = function()
 	// N.B.: start with hack, let's see how it goes...
 	if (this.composer) {
 		this.renderEffects(deltat);
+	}
+	else if (this.cardboard) {
+		this.renderStereo();
 	}
     else if (this.riftCam && this.riftCam._vrHMD) {
 		this.renderVR();
@@ -52039,6 +52249,12 @@ Vizi.GraphicsThreeJS.prototype.renderEffects = function(deltat) {
 	this.composer.render(deltat);
 }
 
+Vizi.GraphicsThreeJS.prototype.renderStereo = function() {
+	// start with 2 layer to test; will need to work in postprocessing when that's ready
+    this.cardboard.render([this.backgroundLayer.scene, this.scene], [this.backgroundLayer.camera, this.camera]);
+//    this.cardboard.render(this.scene, this.camera);
+}
+
 Vizi.GraphicsThreeJS.prototype.enableShadows = function(enable)
 {
 	this.renderer.shadowMapEnabled = enable;
@@ -52049,7 +52265,29 @@ Vizi.GraphicsThreeJS.prototype.enableShadows = function(enable)
 Vizi.GraphicsThreeJS.prototype.setFullScreen = function(enable)
 {
 	if (this.riftCam) {
+
+		this.fullscreen = enable;
+		
 		this.riftCam.setFullScreen(enable);
+	}
+	else if (this.cardboard) {
+
+		var canvas = this.renderer.domElement;
+		
+		if (enable) {
+			if ( this.container.mozRequestFullScreen ) {
+				this.container.mozRequestFullScreen();
+			} else {
+				this.container.webkitRequestFullscreen();
+			}
+		}
+		else {
+			if ( document.mozCancelFullScreen ) {
+				document.mozCancelFullScreen();
+			} else {
+				document.webkitExitFullscreen();
+			}
+		}
 	}
 }
 
@@ -52267,6 +52505,7 @@ Vizi.Application.prototype.run = function()
 {
     // core game loop here
 	this.realizeObjects();
+	Vizi.Graphics.instance.scene.updateMatrixWorld();
 	this.lastFrameTime = Date.now();
 	this.running = true;
 	this.runloop();
@@ -52754,7 +52993,7 @@ Vizi.Prefabs.Skybox = function(param)
 	} );
 
 	var visual = new Vizi.Visual(
-			{ geometry: new THREE.CubeGeometry( 10000, 10000, 10000 ),
+			{ geometry: new THREE.BoxGeometry( 10000, 10000, 10000 ),
 				material: material,
 			});
 	box.addComponent(visual);
@@ -54392,7 +54631,7 @@ Vizi.Loader.prototype.handleSceneLoaded = function(url, data, userData)
 	
 	if (data.scene)
 	{
-		console.log("In loaded callback for ", url);
+		// console.log("In loaded callback for ", url);
 		
 		var convertedScene = this.convertScene(data.scene);
 		result.scene = convertedScene; // new Vizi.SceneVisual({scene:data.scene}); // 
@@ -54783,12 +55022,12 @@ Vizi.DeviceOrientationControls = function ( object ) {
 
 			if ( this.freeze ) return;
 
-			alpha  = this.deviceOrientation.gamma ? THREE.Math.degToRad( this.deviceOrientation.alpha ) : 0; // Z
+			alpha  = this.deviceOrientation.alpha ? THREE.Math.degToRad( this.deviceOrientation.alpha ) : 0; // Z
 			beta   = this.deviceOrientation.beta  ? THREE.Math.degToRad( this.deviceOrientation.beta  ) : 0; // X'
 			gamma  = this.deviceOrientation.gamma ? THREE.Math.degToRad( this.deviceOrientation.gamma ) : 0; // Y''
 			orient = this.screenOrientation       ? THREE.Math.degToRad( this.screenOrientation       ) : 0; // O
 
-			setObjectQuaternion( this.object.quaternion, alpha, beta, gamma, orient );
+			this.setObjectQuaternion( this.object.quaternion, alpha, beta, gamma, orient );
 
 		}
 
@@ -54826,7 +55065,7 @@ Vizi.DeviceOrientationControls = function ( object ) {
 
 	// The angles alpha, beta and gamma form a set of intrinsic Tait-Bryan angles of type Z-X'-Y''
 
-	setObjectQuaternion = function () {
+	this.setObjectQuaternion = function () {
 
 		var zee = new THREE.Vector3( 0, 0, 1 );
 
@@ -55207,7 +55446,8 @@ Vizi.Viewer.prototype.initScene = function()
 	this.addObject(this.controller);
 
 	var viewpoint = new Vizi.Object;
-	this.defaultCamera = new Vizi.PerspectiveCamera({active:true});
+	this.defaultCamera = new Vizi.PerspectiveCamera({active:true, 
+		position : Vizi.Viewer.DEFAULT_CAMERA_POSITION});
 	viewpoint.addComponent(this.defaultCamera);
 	viewpoint.name = "[default]";
 	this.addObject(viewpoint);
@@ -55867,6 +56107,7 @@ Vizi.Viewer.prototype.setController = function(type) {
 	this.controllerScript.center = center;
 }
 
+Vizi.Viewer.DEFAULT_CAMERA_POSITION = new THREE.Vector3(0, 0, 10);
 Vizi.Viewer.DEFAULT_GRID_SIZE = 100;
 Vizi.Viewer.DEFAULT_GRID_STEP_SIZE = 1;
 Vizi.Viewer.GRID_COLOR = 0x202020;
@@ -55890,7 +56131,9 @@ Vizi.ParticleSystem = function(param) {
 		
 		var color = (param.color !== undefined) ? param.color : Vizi.ParticleSystem.DEFAULT_COLOR;
 		var material = new THREE.PointCloudMaterial({color:color, size:param.size, map:param.map,
-			transparent: (param.map !== null), vertexColors: (param.geometry.colors.length > 0)});
+			transparent: (param.map !== null), 
+		    depthWrite: false,
+			vertexColors: (param.geometry.colors.length > 0)});
 		var ps = new THREE.PointCloud(param.geometry, material);
 		ps.sortParticles = true;
 

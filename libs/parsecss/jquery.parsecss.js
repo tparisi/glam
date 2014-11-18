@@ -205,7 +205,7 @@
         var css = restore(split.join(' '));
         css = css.substr(1, css.length - 2); // strip {}
         $.parsecss(css, function(keyframes) {
-        	console.log("Parsed keyframes: ", keyframes);
+        	// console.log("Parsed keyframes: ", keyframes);
         	var ret = {};
         	ret[kfName] = keyframes;
         	callback(ret);
