@@ -4,21 +4,22 @@ angular.module("about/about.tpl.html", []).run(["$templateCache", function($temp
   $templateCache.put("about/about.tpl.html",
     "\n" +
     "\n" +
-    "<div class=\"row\">\n" +
+    "<div class=\"row txtContainer\">\n" +
+    "\n" +
     "  <h1 class=\"page-header\" id=\"about\">\n" +
     "    About GLAM\n" +
     "  </h1>\n" +
     "  <p class=\"p17\">\n" +
     "\n" +
-    "GLAM (GL And Markup) is a declarative language for creating 3D content for browsers. It\n" +
+    "GLAM (GL And Markup) is a declarative language for creating 3D content for browsers.<br /><br /> It\n" +
     "\n" +
     "renders with WebGL, using the graphics power of Three.js. GLAM adds behaviors,\n" +
     "\n" +
-    "interaction and lots of easy­to­use features on top of Three.js, but most importantly, it\n" +
+    "interaction and lots of easy to use features on top of Three.js, but most importantly, it\n" +
     "\n" +
     "defines a markup language and set of stylesheet extensions that make 3D programming\n" +
     "\n" +
-    "a snap.\n" +
+    "a snap.<br /><br />\n" +
     "\n" +
     "With GLAM, 3D authoring is like any other web authoring. To make 3D, you create\n" +
     "\n" +
@@ -32,7 +33,7 @@ angular.module("about/about.tpl.html", []).run(["$templateCache", function($temp
     "\n" +
     "shading written in GLSL, simply specify your vertex and fragment shaders as properties\n" +
     "\n" +
-    "of the object's style.\n" +
+    "of the object's style.<br /><br />\n" +
     "\n" +
     "GLAM was created by Tony Parisi, the guy who made the Virtual Reality Markup\n" +
     "\n" +
@@ -54,7 +55,7 @@ angular.module("about/about.tpl.html", []).run(["$templateCache", function($temp
 
 angular.module("faq/faq.tpl.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("faq/faq.tpl.html",
-    "<div class=\"row\">\n" +
+    "<div class=\"row txtContainer\">\n" +
     "\n" +
     "    <h1 class=\"page-header\" id=\"faq\">\n" +
     "    Why GLAM?\n" +
@@ -62,41 +63,16 @@ angular.module("faq/faq.tpl.html", []).run(["$templateCache", function($template
     "\n" +
     "    <p class=\"p17\">\n" +
     "\n" +
-    "GLAM (GL And Markup) is a declarative language for creating 3D content for browsers. It\n" +
+    "With WebGL, the browser is now a complete 3D platform. Powerful APIs provide everything we need: graphics, compositing, animation, threading, networking... making mind-blowing connected 3D applications possible. The API approach provides maximum flexibility - render whatever you want without the browser needing to support new objects - but the pendulum has swung too far. It takes lines and lines of JavaScript and JSON to make even the simplest 3D content. And there is no easy way to style your content once you've created it.<br /><br />\n" +
     "\n" +
-    "renders with WebGL, using the graphics power of Three.js. GLAM adds behaviors,\n" +
+    "Let's say you want to create a cube with a texture map (image) on its surface. Using the WebGL API, that's about 300 lines of code. (Really.) You have to create buffers, load textures, set states, write shaders, and finally make drawing calls. It's a ton of work, and it's in an alien language full of unfamiliar concepts. So, you turn to Three.js to make it easier. Now, in about forty lines of code, you have accomplished the same thing, and are working with high level, easy to understand graphics objects. Cool... but think about it: forty lines of JavaScript code to make a cube. And that cube doesn't animate, you can't use your mouse to rotate it, and you can't change its appearance with a style sheet. Wouldn't it be great if you could just say<br /><br />\n" +
     "\n" +
-    "interaction and lots of easy to use features on top of Three.js, but most importantly, it\n" +
+    "&lt;cube&gt;<br /><br />\n" +
+    "and a cube appears on the page? You bet it would.<br /><br />\n" +
     "\n" +
-    "defines a markup language and set of stylesheet extensions that make 3D programming\n" +
+    "Web developers need a simple way to create 3D content in pages that can be styled and programmed like any other page content. We need a 3D markup language for the web. We need... GLAM!<br /><br />\n" +
     "\n" +
-    "a snap.\n" +
-    "\n" +
-    "With GLAM, 3D authoring is like any other web authoring. To make 3D, you create\n" +
-    "\n" +
-    "elements, set their attributes, add event listeners, and define styles. Just like DOM used\n" +
-    "\n" +
-    "to make! Content is easy to animate: keyframes and tweens can be defined in a compact\n" +
-    "\n" +
-    "set of markup tags, or as standard CSS3 animations or transitions. GLAM is also fully\n" +
-    "\n" +
-    "extensible: to add custom behavior, write JavaScript event handlers. If you want fancy\n" +
-    "\n" +
-    "shading written in GLSL, simply specify your vertex and fragment shaders as properties\n" +
-    "\n" +
-    "of the object's style.\n" +
-    "\n" +
-    "GLAM was created by Tony Parisi, the guy who made the Virtual Reality Markup\n" +
-    "\n" +
-    "Language (VRML), 20 years before anybody knew they needed it. Since then, Tony's\n" +
-    "\n" +
-    "learned a few more things about graphics, web browsers have grown up, and the world\n" +
-    "\n" +
-    "has caught up with his vision. GLAM is still quite young. We're adding features and\n" +
-    "\n" +
-    "demos at a rapid clip, and we are also looking closely at related technologies such as\n" +
-    "\n" +
-    "Web Components as they come of age. We'd love your feedback and contributions!\n" +
+    "For more on the motivation behind GLAM, check out Tony's <a href=\"http://www.slideshare.net/auradeluxe/glam-35009205\" target=\"_blank\">slideshare</a> presentation.\n" +
     "</p>\n" +
     "</div>\n" +
     "\n" +
@@ -114,7 +90,7 @@ angular.module("faq/faq.tpl.html", []).run(["$templateCache", function($template
     "\n" +
     "applications, everywhere, powered by JavaScript. This is an incredible opportunity to\n" +
     "\n" +
-    "change the face of computing.\n" +
+    "change the face of computing.<br /><br />\n" +
     "\n" +
     "The last few years have seen an explosion of interest in building WebGL. But there is a\n" +
     "\n" +
@@ -144,13 +120,13 @@ angular.module("faq/faq.tpl.html", []).run(["$templateCache", function($template
     "\n" +
     "To add GLAM to your application, simply include either the debug or minified version of\n" +
     "\n" +
-    "the library:\n" +
+    "the library:<br /><br />\n" +
     "\n" +
     "&lt;script src=\"pathtoglam/glam.js\"&gt; &lt;/script&gt;\n" +
     "\n" +
-    "OR\n" +
+    "OR<br /><br />\n" +
     "\n" +
-    "&lt;script src=\"pathtoglamlib/glam.min.js\"&gt; &lt;/script&gt;\n" +
+    "&lt;script src=\"pathtoglamlib/glam.min.js\"&gt; &lt;/script&gt;<br /><br />\n" +
     "\n" +
     "... and then you can start adding 3D tags to your page. To see what those tags look like,\n" +
     "\n" +
