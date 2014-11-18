@@ -175,6 +175,15 @@ body,.navbar{padding:0;margin:0;font-family:'Oswald',sans-serif;color:#fff;backg
       	font-size: 17px;
       }
 
+ @media screen and (min-width: 1281px) {
+        h3{font-size: 24px;}
+ }
+
+ @media screen and (min-width: 890px) and (max-width: 1280px) {
+        h3{font-size: 18px;}
+ }
+
+
 
 
 /* glam css end */
