@@ -10,6 +10,7 @@ body,.navbar{padding:0;margin:0;font-family:'Oswald',sans-serif;color:#fff;backg
         float:left;
         width:100%;
         text-align: center;
+        overflow: hidden;
       }
       .type{
         float:left;
