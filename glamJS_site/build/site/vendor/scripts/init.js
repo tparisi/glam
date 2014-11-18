@@ -118,6 +118,7 @@ _initGlam = function(){
             }catch(e){
 
             }
+
         
          });
 
