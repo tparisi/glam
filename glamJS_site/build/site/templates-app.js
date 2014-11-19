@@ -11,41 +11,11 @@ angular.module("about/about.tpl.html", []).run(["$templateCache", function($temp
     "  </h1>\n" +
     "  <p class=\"p17\">\n" +
     "\n" +
-    "GLAM (GL And Markup) is a declarative language for creating 3D content for browsers.<br /><br /> It\n" +
+    "GLAM (GL And Markup) is a declarative language for 3D web content.<br /><br /> \n" +
     "\n" +
-    "renders with WebGL, using the graphics power of Three.js. GLAM adds behaviors,\n" +
+    "GLAM combines the power of WebGL with a set of easy-to-use markup tags and style properties. With GLAM, 3D authoring is like any other web authoring. To make 3D, you create elements, set their attributes, add event listeners, and define styles. Just like DOM used to make! Content is easy to animate: keyframes and tweens can be defined in a compact set of markup tags, or as standard CSS3 animations or transitions. GLAM is also fully extensible: to add custom behavior, write JavaScript event handlers. If you want fancy shading written in GLSL, simply specify your vertex and fragment shaders as properties of the object's style. GLAM renders with WebGL, using Three.js, and adds behaviors, interaction and lots of easy-to-use features on top. But most importantly, GLAM defines a markup language and set of stylesheet extensions that make 3D programming a snap.<br /><br /> \n" +
     "\n" +
-    "interaction and lots of easy to use features on top of Three.js, but most importantly, it\n" +
-    "\n" +
-    "defines a markup language and set of stylesheet extensions that make 3D programming\n" +
-    "\n" +
-    "a snap.<br /><br />\n" +
-    "\n" +
-    "With GLAM, 3D authoring is like any other web authoring. To make 3D, you create\n" +
-    "\n" +
-    "elements, set their attributes, add event listeners, and define styles. Just like DOM used\n" +
-    "\n" +
-    "to make! Content is easy to animate: keyframes and tweens can be defined in a compact\n" +
-    "\n" +
-    "set of markup tags, or as standard CSS3 animations or transitions. GLAM is also fully\n" +
-    "\n" +
-    "extensible: to add custom behavior, write JavaScript event handlers. If you want fancy\n" +
-    "\n" +
-    "shading written in GLSL, simply specify your vertex and fragment shaders as properties\n" +
-    "\n" +
-    "of the object's style.<br /><br />\n" +
-    "\n" +
-    "GLAM was created by Tony Parisi, the guy who made the Virtual Reality Markup\n" +
-    "\n" +
-    "Language (VRML), 20 years before anybody knew they needed it. Since then, Tony's\n" +
-    "\n" +
-    "learned a few more things about graphics, web browsers have grown up, and the world\n" +
-    "\n" +
-    "has caught up with his vision. GLAM is still quite young. We're adding features and\n" +
-    "\n" +
-    "demos at a rapid clip, and we are also looking closely at related technologies such as\n" +
-    "\n" +
-    "Web Components as they come of age. We'd love your feedback and contributions!\n" +
+    "GLAM was created by Tony Parisi, the guy who made the Virtual Reality Markup Language (VRML), 20 years before anybody knew they needed it. Since then, Tony's learned a few more things about graphics, web browsers have grown up, and the world has caught up with the vision. GLAM is still quite young. We're adding features and demos at a rapid clip, and we are also looking closely at related technologies such as Web Components as they come of age. We'd love your feedback and contributions!<br /><br /> \n" +
     "</p>\n" +
     "</div>\n" +
     "\n" +
@@ -76,7 +46,7 @@ angular.module("faq/faq.tpl.html", []).run(["$templateCache", function($template
     "</p>\n" +
     "</div>\n" +
     "\n" +
-    "<div class=\"row\">\n" +
+    "<div class=\"row txtContainer\">\n" +
     "\n" +
     "    <h1 class=\"page-header\">\n" +
     "    Why Now?\n" +
@@ -109,7 +79,7 @@ angular.module("faq/faq.tpl.html", []).run(["$templateCache", function($template
     "</p>\n" +
     "</div>\n" +
     "\n" +
-    "<div class=\"row\">\n" +
+    "<div class=\"row txtContainer\">\n" +
     "\n" +
     "    <h1 class=\"page-header\">\n" +
     "    How Do I Use GLAM?\n" +
@@ -136,7 +106,7 @@ angular.module("faq/faq.tpl.html", []).run(["$templateCache", function($template
     "</div>\n" +
     "\n" +
     "\n" +
-    "<div class=\"row\">\n" +
+    "<div class=\"row txtContainer\">\n" +
     "\n" +
     "    <h1 class=\"page-header\">\n" +
     "    How Do I Author GLAM?\n" +
@@ -152,17 +122,25 @@ angular.module("faq/faq.tpl.html", []).run(["$templateCache", function($template
     "\n" +
     "and shaders. Launching HTML files from your Finder/Explorer usually results in the\n" +
     "\n" +
-    "browser yakking about cross­origin restrictions.\n" +
+    "browser yakking about cross-origin restrictions.\n" +
     "\n" +
-    "How Can I Participate?\n" +
+    "</p>\n" +
+    "</div>\n" +
+    "\n" +
+    "<div class=\"row txtContainer\">\n" +
+    "    <h1 class=\"page-header\">\n" +
+    "    How Can I Participate?\n" +
+    "  </h1>\n" +
+    "\n" +
+    "    <p class=\"p17\">\n" +
     "\n" +
     "GLAM is new. We're just getting started, and we need your help! We are looking for help\n" +
     "\n" +
     "with code, content and documentation. Check out the Github repo and examples (links\n" +
     "\n" +
-    "here) and join the GLAM revolution!\n" +
+    "here) and join the GLAM revolution!<br /><br />\n" +
     "\n" +
-    "CAN YOU DIG IT?\n" +
+    "<span style=\"font-size:17px; font-style:italic\">CAN YOU DIG IT?</span>\n" +
     "\n" +
     "</p>\n" +
     "</div>");
