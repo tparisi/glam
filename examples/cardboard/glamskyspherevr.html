@@ -1,0 +1,107 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+<script src="../../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+<script src="../../build/glam.min.js" ></script>
+<title>Scene with skysphere background and environment map</title>
+
+<style>
+
+	body{
+		margin: 0px;
+		background-color: #000;
+	}
+
+  #container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -2;
+  }
+  
+	#startVR {
+		position: fixed;
+		bottom: 20px;
+		right: 20px;
+		padding: 8px;
+		color: #FFF;
+		background-color: #555;
+	}
+		
+	#ss1 {
+		sphere-image:url(../../images/spherepano/pan0.jpg);
+	}
+	
+</style>
+<script>
+var skysphere = null;
+$(document).ready(function(){
+
+	glam.ready();
+
+	skysphere = document.getElementById("ss1");
+
+	var views = document.getElementById("viewSelect");
+	views.onchange = function(){
+
+		var pic = views.options[views.selectedIndex].value;	
+		var src = '../../images/spherepano/' + pic;
+		skysphere.glam.style.sphereImage = src;
+		
+	}
+
+	var fullScreenButton = document.getElementById( 'startVR' );
+		fullScreenButton.onclick = function() {
+		glam.setFullScreen( true );
+	};
+
+});
+
+</script>
+</head>
+<body>
+<!-- 
+glam - Simple scene with cube
+ -->
+<div id="startVR">Start VR Mode</div>
+<div id="container">
+<glam>
+  <renderer type="cardboard"></renderer>
+  <scene>
+	<controller type="cardboard"></controller>
+	<background id="ss1" type="sphere"></background>
+  </scene>
+</glam>
+</div>
+
+	<select id="viewSelect">
+	<option value="pan0.jpg">Plaza</option>
+	<option value="pan1.jpg">Mall</option>
+	<option value="pan2.jpg">Mall 2</option>
+	<option value="pan3.jpg">Back Yard</option>
+	<option value="pan4.jpg">Bar</option>
+	<option value="pan5.jpg">Restaurant</option>
+	<option value="pan6.jpg">Tunnels</option>
+	<option value="pan7.jpg">Planetarium</option>
+	<option value="pan8.jpg">Basement Bar</option>
+	<option value="pan9.jpg">Greece</option>
+	<option value="car.jpg">Car</option>
+	<option value="car2.jpg">Car 2</option>
+	<option value="car3.jpg">Car 3</option>
+	<option value="room.jpg">Room</option>
+	<option value="room2.jpg">Room 2</option>
+	<option value="room3.jpg">Room 3</option>
+	<option value="room4.jpg">Room 4</option>
+	<option value="room5.jpg">Room 5</option>
+	<option value="mellon_square.jpg">Mellon Square</option>
+	<option value="belmorepark1right.jpg">Belmore Park</option>
+	<option value="Panorama-wx8jmd.jpg">Museum</option>
+	
+	</select>
+
+</body>
+</html>
