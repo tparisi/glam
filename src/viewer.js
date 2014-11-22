@@ -23,9 +23,12 @@ glam.Viewer.prototype.initRenderer = function() {
 			if (type.toLowerCase() == "rift") {
 				this.riftRender = true;
 			}
+      else if(type.toLowerCase() == "cardboard") {
+				this.cardboard = true;
+      }
 		}
 	}
-	this.app = new Vizi.Viewer({ container : this.documentParent, headlight: false, riftRender:this.riftRender, displayStats:this.displayStats });
+	this.app = new Vizi.Viewer({ container : this.documentParent, headlight: false, riftRender:this.riftRender, cardboard:this.cardboard, displayStats:this.displayStats });
 }
 
 glam.Viewer.prototype.initDefaultScene = function() {
