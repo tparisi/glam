@@ -143,6 +143,10 @@ function createBubble(x, y, z, animClass) {
 		popBubble(groupelt);
 	});
 
+	sphereelt.addEventListener("viewover", function(event) {
+		popBubble(groupelt);
+	});
+
 	// sphereelt.setAttribute('animation', animClass);
 
 	groupelt.appendChild(sphereelt);
@@ -181,6 +185,7 @@ $(document).ready(function(){
 
     var canvas = Vizi.Graphics.instance.renderer.domElement;
     canvas.addEventListener("touchstart", function(event) {
+    	return;
     	if (!fullscreen) {
 			Vizi.Graphics.instance.setFullScreen(true);
 			fullscreen = true;    		
