@@ -43868,11 +43868,16 @@ THREE.ShaderPass.prototype = {
  * @authod arodic / http://aleksandarrodic.com/
  */
 
+/*
+ * Adapted for Vizi
+ * @authod tparisi / http://tonyparisi.com/
+ */
+
 THREE.StereoEffect = function ( renderer ) {
 
 	// API
 
-	this.separation = 0.03;
+	this.separation = 0.0635 / 2;
 
 	// internals
 
@@ -54981,122 +54986,208 @@ Vizi.Gamepad.AXIS_LEFT_V								= 1;
 Vizi.Gamepad.AXIS_RIGHT_H								= 2;
 Vizi.Gamepad.AXIS_RIGHT_V								= 3;
 /**
+ * DeviceOrientationControls - applies device orientation on object rotation
+ *
+ * @param {Object} object - instance of THREE.Object3D
+ * @constructor
+ *
  * @author richt / http://richt.me
  * @author WestLangley / http://github.com/WestLangley
- * @author Tony Parisi / http://www.tonyparisi.com adapted for Vizi
- * W3C Device Orientation control (http://w3c.github.io/deviceorientation/spec-source-orientation.html)
+ * @author jonobr1 / http://jonobr1.com
+ * @author arodic / http://aleksandarrodic.com
+ * @author doug / http://github.com/doug
+ * @author tparisi / http://github.com/tparisi for Vizi
+ *
+ * W3C Device Orientation control
+ * (http://w3c.github.io/deviceorientation/spec-source-orientation.html)
  */
 
 goog.provide('Vizi.DeviceOrientationControls');
 
-Vizi.DeviceOrientationControls = function ( object ) {
+Vizi.DeviceOrientationControls = function(object) {
 
-	this.object = object;
+  this.object = object;
 
-	this.object.rotation.reorder( "YXZ" );
+  this.object.rotation.reorder('YXZ');
 
-	this.freeze = true;
-	this.roll = true;
+  this.freeze = true;
 
-	this.deviceOrientation = {};
+  this.movementSpeed = 1.0;
+  this.rollSpeed = 0.005;
+  this.autoAlign = true;
+  this.autoForward = false;
 
-	this.screenOrientation = 0;
+  this.alpha = 0;
+  this.beta = 0;
+  this.gamma = 0;
+  this.orient = 0;
 
-	this.onDeviceOrientationChangeEvent = function( rawEvtData ) {
+  this.alignQuaternion = new THREE.Quaternion();
+  this.orientationQuaternion = new THREE.Quaternion();
 
-		this.deviceOrientation = rawEvtData;
-//		console.log(rawEvtData);
-	};
+  var quaternion = new THREE.Quaternion();
+  var quaternionLerp = new THREE.Quaternion();
 
-	this.onScreenOrientationChangeEvent = function() {
+  var tempVector3 = new THREE.Vector3();
+  var tempMatrix4 = new THREE.Matrix4();
+  var tempEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+  var tempQuaternion = new THREE.Quaternion();
 
-		this.screenOrientation = window.orientation || 0;
+  var zee = new THREE.Vector3(0, 0, 1);
+  var up = new THREE.Vector3(0, 1, 0);
+  var v0 = new THREE.Vector3(0, 0, 0);
+  var euler = new THREE.Euler();
+  var q0 = new THREE.Quaternion(); // - PI/2 around the x-axis
+  var q1 = new THREE.Quaternion(- Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
 
-	};
+  this.deviceOrientation = {};
+  this.screenOrientation = window.orientation || 0;
 
-	this.update = function() {
+  this.onDeviceOrientationChangeEvent = (function(rawEvtData) {
 
-		var alpha, beta, gamma;
+    this.deviceOrientation = rawEvtData;
 
-		return function () {
+  }).bind(this);
 
-			if ( this.freeze ) return;
+  var getOrientation = function() {
+    switch (window.screen.orientation || window.screen.mozOrientation) {
+      case 'landscape-primary':
+        return 90;
+      case 'landscape-secondary':
+        return -90;
+      case 'portrait-secondary':
+        return 180;
+      case 'portrait-primary':
+        return 0;
+    }
+    // this returns 90 if width is greater then height 
+    // and window orientation is undefined OR 0
+    // if (!window.orientation && window.innerWidth > window.innerHeight)
+    //   return 90;
+    return window.orientation || 0;
+  };
 
-			alpha  = this.deviceOrientation.alpha ? THREE.Math.degToRad( this.deviceOrientation.alpha ) : 0; // Z
-			beta   = this.deviceOrientation.beta  ? THREE.Math.degToRad( this.deviceOrientation.beta  ) : 0; // X'
-			gamma  = this.deviceOrientation.gamma ? THREE.Math.degToRad( this.deviceOrientation.gamma ) : 0; // Y''
-			orient = this.screenOrientation       ? THREE.Math.degToRad( this.screenOrientation       ) : 0; // O
+  this.onScreenOrientationChangeEvent = (function() {
 
-			this.setObjectQuaternion( this.object.quaternion, alpha, beta, gamma, orient );
+    this.screenOrientation = getOrientation();
 
-		}
+  }).bind(this);
 
-	}();
+  this.update = function(delta) {
 
-	function bind( scope, fn ) {
+    return function() {
 
-		return function () {
+      if (this.freeze) return;
 
-			fn.apply( scope, arguments );
+      // should not need this
+      var orientation = getOrientation(); 
+      if (orientation !== this.screenOrientation) {
+        this.screenOrientation = orientation;
+        this.autoAlign = true;
+      }
 
-		};
+      this.alpha = this.deviceOrientation.gamma ?
+        THREE.Math.degToRad(this.deviceOrientation.alpha) : 0; // Z
+      this.beta = this.deviceOrientation.beta ?
+        THREE.Math.degToRad(this.deviceOrientation.beta) : 0; // X'
+      this.gamma = this.deviceOrientation.gamma ?
+        THREE.Math.degToRad(this.deviceOrientation.gamma) : 0; // Y''
+      this.orient = this.screenOrientation ?
+        THREE.Math.degToRad(this.screenOrientation) : 0; // O
 
-	};
+      // The angles alpha, beta and gamma
+      // form a set of intrinsic Tait-Bryan angles of type Z-X'-Y''
 
-	this.connect = function() {
+      // 'ZXY' for the device, but 'YXZ' for us
+      euler.set(this.beta, this.alpha, - this.gamma, 'YXZ');
 
-		this.onScreenOrientationChangeEvent(); // run once on load
+      quaternion.setFromEuler(euler);
+      quaternionLerp.slerp(quaternion, 0.5); // interpolate
 
-		window.addEventListener( 'orientationchange', bind( this, this.onScreenOrientationChangeEvent ), false );
-		window.addEventListener( 'deviceorientation', bind( this, this.onDeviceOrientationChangeEvent ), false );
+      // orient the device
+      if (this.autoAlign) this.orientationQuaternion.copy(quaternion); // interpolation breaks the auto alignment
+      else this.orientationQuaternion.copy(quaternionLerp);
 
-		this.freeze = false;
+      // camera looks out the back of the device, not the top
+      this.orientationQuaternion.multiply(q1);
 
-	};
+      // adjust for screen orientation
+      this.orientationQuaternion.multiply(q0.setFromAxisAngle(zee, - this.orient));
 
-	this.disconnect = function() {
+      this.object.quaternion.copy(this.alignQuaternion);
+      this.object.quaternion.multiply(this.orientationQuaternion);
 
-		this.freeze = true;
+      if (this.autoForward) {
 
-		window.removeEventListener( 'orientationchange', bind( this, this.onScreenOrientationChangeEvent ), false );
-		window.removeEventListener( 'deviceorientation', bind( this, this.onDeviceOrientationChangeEvent ), false );
+        tempVector3
+          .set(0, 0, -1)
+          .applyQuaternion(this.object.quaternion, 'ZXY')
+          .setLength(this.movementSpeed / 50); // TODO: why 50 :S
 
-	};
+        this.object.position.add(tempVector3);
 
-	// The angles alpha, beta and gamma form a set of intrinsic Tait-Bryan angles of type Z-X'-Y''
+      }
 
-	this.setObjectQuaternion = function () {
+      if (this.autoAlign && this.alpha !== 0) {
 
-		var zee = new THREE.Vector3( 0, 0, 1 );
+        this.autoAlign = false;
 
-		var euler = new THREE.Euler();
+        this.align();
 
-		var q0 = new THREE.Quaternion();
+      }
 
-		var q1 = new THREE.Quaternion( - Math.sqrt( 0.5 ), 0, 0, Math.sqrt( 0.5 ) ); // - PI/2 around the x-axis
+    };
 
-		return function ( quaternion, alpha, beta, gamma, orient ) {
+  }();
 
-			if (!this.roll) {
-				if (Math.abs(orient) == (Math.PI / 2))
-					beta = 0;
-				else if (orient != Math.PI)
-					gamma = 0;
-			}
-			
-			euler.set( beta, alpha, - gamma, 'YXZ' );                       // 'ZXY' for the device, but 'YXZ' for us
+  // //debug
+  // window.addEventListener('click', (function(){
+  //   this.align();
+  // }).bind(this)); 
 
-			quaternion.setFromEuler( euler );                               // orient the device
+  this.align = function() {
 
-			quaternion.multiply( q1 );                                      // camera looks out the back of the device, not the top
+    tempVector3
+      .set(0, 0, -1)
+      .applyQuaternion( tempQuaternion.copy(this.orientationQuaternion).inverse(), 'ZXY' );
 
-			quaternion.multiply( q0.setFromAxisAngle( zee, - orient ) );    // adjust for screen orientation
+    tempEuler.setFromQuaternion(
+      tempQuaternion.setFromRotationMatrix(
+        tempMatrix4.lookAt(tempVector3, v0, up)
+     )
+   );
 
-		}
+    tempEuler.set(0, tempEuler.y, 0);
+    this.alignQuaternion.setFromEuler(tempEuler);
 
-	}();
+  };
+
+  this.connect = function() {
+
+    // run once on load
+    this.onScreenOrientationChangeEvent();
+
+    // window.addEventListener('orientationchange', this.onScreenOrientationChangeEvent, false);
+    window.addEventListener('deviceorientation', this.onDeviceOrientationChangeEvent, false);
+
+    this.freeze = false;
+
+    return this;
+
+  };
+
+  this.disconnect = function() {
+
+    this.freeze = true;
+
+    // window.removeEventListener('orientationchange', this.onScreenOrientationChangeEvent, false);
+    window.removeEventListener('deviceorientation', this.onDeviceOrientationChangeEvent, false);
+
+  };
+
 
 };
+
 /**
  * @fileoverview Picker component - add one to get picking support on your object
  * 
