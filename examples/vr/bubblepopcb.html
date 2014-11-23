@@ -14,13 +14,13 @@
 		margin: 0px;
 		background-color: #000;
 	}
-      #container {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-      }
+	#container {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	}
 
 	.skybox {
 		cube-image-right:url(../../images/Park2_1024/posx.jpg);
@@ -205,7 +205,7 @@ $(document).ready(function(){
   Your browser does not support WAV files in the audio element.
 </audio>
 <!-- 
-glam - Simple scene with cube
+The scene: cardboard renderer, VR controller, and the background; that's it
  -->
 <div id="container">
 <glam>
@@ -213,7 +213,6 @@ glam - Simple scene with cube
 	<renderer type="cardboard"></renderer>
 	<controller type="deviceOrientation"></controller>
 	<background id="sb1" class="skybox"></background>
-<!--	<background id="ss1" type="sphere"></background> -->
   </scene>
 </glam>
 </div>
