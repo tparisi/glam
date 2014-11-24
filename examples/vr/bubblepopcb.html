@@ -118,8 +118,7 @@
 
 var scene = null;
 var pop = null;
-var bubbles = [];
-var curBubble = 0;
+var selectedBubble = null;
 
 function popBubble(groupelt) {
 		pop.pause();
@@ -144,14 +143,16 @@ function createBubble(x, y, z, animClass) {
 	});
 
 	sphereelt.addEventListener("viewover", function(event) {
-		popBubble(groupelt);
+		selectedBubble = groupelt;
+	});
+	sphereelt.addEventListener("viewout", function(event) {
+		selectedBubble = null;
 	});
 
 	// sphereelt.setAttribute('animation', animClass);
 
 	groupelt.appendChild(sphereelt);
 		
-	bubbles.push(groupelt);
 	return groupelt;
 }
 
@@ -185,14 +186,16 @@ $(document).ready(function(){
 
     var canvas = Vizi.Graphics.instance.renderer.domElement;
     canvas.addEventListener("touchstart", function(event) {
-    	return;
     	if (!fullscreen) {
 			Vizi.Graphics.instance.setFullScreen(true);
 			fullscreen = true;    		
     	}
     	else {
-    		var bubble = bubbles[curBubble++];
-    		popBubble(bubble);
+    		var bubble = selectedBubble;
+    		if (bubble) {
+	    		popBubble(bubble);
+	    		selectedBubble = null;
+    		}
     	}
     });
 
