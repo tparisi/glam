@@ -63,6 +63,32 @@ glam.Controller.create = function(docelt, style, app) {
 			app.controller = controller;
 			app.controllerScript = controllerScript;
 		}
+		else if (type == "deviceorientation") {
+			var controller = Vizi.Prefabs.DeviceOrientationController({active:true, 
+				headlight:on,
+				mouseLook:false,
+				useVRJS : true,
+			});
+			var controllerScript = controller.getComponent(Vizi.DeviceOrientationControllerScript);			
+			app.addObject(controller);
+
+			var object = new Vizi.Object;	
+			var camera = new Vizi.PerspectiveCamera();
+			object.addComponent(camera);
+			app.addObject(object);
+
+			controllerScript.camera = camera;
+			camera.active = true;
+			
+			if (app.controllerScript) {
+				app.controllerScript.enabled = false;
+			}
+			
+			// hack because existing FPS or model controller
+			// will clobber our values
+			app.controller = controller;
+			app.controllerScript = controllerScript;
+		}
 	}
 	
 	return null;

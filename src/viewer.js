@@ -9,6 +9,7 @@ glam.Viewer = function(doc) {
 	this.document = doc;
 	this.documentParent = doc.parentElement;
 	this.riftRender = glam.riftRender || false;
+	this.cardboardRender = glam.cardboardRender || false;
 	this.displayStats = glam.displayStats || false;
 }
 
@@ -19,13 +20,20 @@ glam.Viewer.prototype.initRenderer = function() {
 	if (renderers) {
 		var renderer = renderers[0];
 		if (renderer) {
-			var type = renderer.getAttribute("type");
-			if (type.toLowerCase() == "rift") {
+			var type = renderer.getAttribute("type").toLowerCase();
+			if (type == "rift") {
 				this.riftRender = true;
+			}
+			else if (type == "cardboard") {
+				this.cardboardRender = true;
 			}
 		}
 	}
-	this.app = new Vizi.Viewer({ container : this.documentParent, headlight: false, riftRender:this.riftRender, displayStats:this.displayStats });
+	this.app = new Vizi.Viewer({ container : this.documentParent, 
+		headlight: false, 
+		riftRender:this.riftRender, 
+		cardboard:this.cardboardRender,
+		displayStats:this.displayStats });
 }
 
 glam.Viewer.prototype.initDefaultScene = function() {

@@ -8,7 +8,7 @@ glam.Input = {};
 
 glam.Input.add = function(docelt, obj) {
 	
-	function addListener(evt) {
+	function addListener(picker, evt) {
 		picker.addEventListener(evt, function(event){
 			var domEvent = new CustomEvent(
 					evt, 
@@ -32,9 +32,13 @@ glam.Input.add = function(docelt, obj) {
 	var events = ["click", "mouseover", "mouseout", "mousedown", "mouseup", "mousemove"];
 	for (index in events) {
 		var evt = events[index];
-		addListener(evt);
+		addListener(picker, evt);
 	}
 		
 	obj.addComponent(picker);
-	
+
+	var viewpicker = new Vizi.ViewPicker;
+	obj.addComponent(viewpicker);
+	addListener(viewpicker, "viewover")
+	addListener(viewpicker, "viewout");
 }

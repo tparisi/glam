@@ -1,0 +1,229 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+<script src="../../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+<script src="../../build/glam.js" ></script>
+
+<title>glam - bubble pop!</title>
+
+<style>
+	body{
+		margin: 0px;
+		background-color: #000;
+	}
+	#container {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	}
+
+	.skybox {
+		cube-image-right:url(../../images/Park2_1024/posx.jpg);
+		cube-image-left:url(../../images/Park2_1024/negx.jpg);
+		cube-image-top:url(../../images/Park2_1024/posy.jpg);
+		cube-image-bottom:url(../../images/Park2_1024/negy.jpg);
+		cube-image-front:url(../../images/Park2_1024/posz.jpg);
+		cube-image-back:url(../../images/Park2_1024/negz.jpg);
+	}
+	
+	#ss1 {
+		sphere-image:url(../../images/spherepano/pan0.jpg);
+	}
+
+	.bubble {
+		radius:.5;
+		diffuse-color:lightgray;
+		vertex-shader:url(../../shaders/fresnel.vs);
+		fragment-shader:url(../../shaders/fresnel.fs);
+		shader-uniforms:mRefractionRatio f 1.02 mFresnelBias f 0.1 mFresnelPower f 2.0 mFresnelScale f 1.0 tCube t cube;
+	}
+
+	@-webkit-keyframes kfBB1 {
+	  0% {
+	    -webkit-transform: translateY(-6);
+	  }
+	
+	  50% {
+	   -webkit-transform: translateY(0);
+	  }
+	  
+	  100% {
+	   -webkit-transform: translateY(6);
+	  }
+	}
+
+	@-webkit-keyframes kfBB2 {
+	  0% {
+	    -webkit-transform: translateY(0);
+	  }
+	
+	  50% {
+	   -webkit-transform: translateY(2);
+	  }
+	  
+	  100% {
+	   -webkit-transform: translateY(0);
+	  }
+	}
+
+	@-webkit-keyframes kfBB3 {
+	  0% {
+	    -webkit-transform: translateY(-2);
+	  }
+	
+	  50% {
+	   -webkit-transform: translateY(0);
+	  }
+	  
+	  100% {
+	   -webkit-transform: translateY(-2);
+	  }
+	}
+
+	.bubbleBounce
+	 {
+	  -webkit-animation-duration: 20s;
+	  -webkit-animation-name: kfBB1;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
+
+	.bubbleBounce2
+	 {
+	  -webkit-animation-duration: 5s;
+	  -webkit-animation-name: kfBB2;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
+
+	.bubbleBounce3
+	 {
+	  -webkit-animation-duration: 8s;
+	  -webkit-animation-name: kfBB3;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
+	
+	#sb1 {
+		background-type:box;
+	}
+	
+</style>
+<script>
+
+var scene = null;
+var pop = null;
+var selectedBubble = null;
+
+function popBubble(groupelt) {
+		pop.pause();
+		pop.currentTime = 0;
+		pop.play();
+		scene.removeChild(groupelt);
+}
+
+function createBubble(x, y, z, animClass) {
+	var groupelt = document.createElement('group');
+	
+	groupelt.setAttribute('x', x);
+	groupelt.setAttribute('z', z);
+	groupelt.setAttribute('y', y);
+
+	var sphereelt = document.createElement('sphere');
+	sphereelt.setAttribute('class', "bubble skybox " + animClass);
+	sphereelt.setAttribute('radius', ".5");
+
+	sphereelt.addEventListener("click", function(event) {
+		popBubble(groupelt);
+	});
+
+	sphereelt.addEventListener("viewover", function(event) {
+		selectedBubble = groupelt;
+	});
+	sphereelt.addEventListener("viewout", function(event) {
+		selectedBubble = null;
+	});
+
+	// sphereelt.setAttribute('animation', animClass);
+
+	groupelt.appendChild(sphereelt);
+		
+	return groupelt;
+}
+
+function addBubbles() {
+
+	pop = document.getElementById("pop");
+	
+	var i, len = 50;
+
+	for (i = 0; i < len; i++) {
+
+		var x = -6 + (Math.random() * 12);
+		var y = -6 + (Math.random() * 12);
+		var z = -6 + (Math.random() * 12);
+
+		var animClass = i % 3 ? 'bubbleBounce' : (i % 2 ? 'bubbleBounce2' : 'bubbleBounce3');
+		var groupelt = createBubble(x, y, z, animClass);
+		
+		scene.appendChild(groupelt);
+		
+	}
+}
+
+var fullscreen = false;
+
+$(document).ready(function(){
+
+	glam.ready();
+	scene = document.getElementsByTagName('scene')[0];
+	addBubbles();
+
+    var canvas = Vizi.Graphics.instance.renderer.domElement;
+    canvas.addEventListener("touchstart", function(event) {
+    	if (!fullscreen) {
+			Vizi.Graphics.instance.setFullScreen(true);
+			fullscreen = true;    		
+    	}
+    	else {
+    		var bubble = selectedBubble;
+    		if (bubble) {
+	    		popBubble(bubble);
+	    		selectedBubble = null;
+    		}
+    	}
+    });
+
+});
+
+</script>
+</head>
+<body>
+	
+<!--  Audio file  
+	http://freesound.org/people/Godowan/sounds/235264/
+-->
+<audio volume="1" id="pop">
+  <source src="../../sounds/235264__godowan__bubble1_trimmed.wav" type="audio/wav" />
+  Your browser does not support WAV files in the audio element.
+</audio>
+<!-- 
+The scene: cardboard renderer, VR controller, and the background; that's it
+ -->
+<div id="container">
+<glam>
+  <scene>
+	<renderer type="cardboard"></renderer>
+	<controller type="deviceOrientation"></controller>
+	<background id="sb1" class="skybox"></background>
+  </scene>
+</glam>
+</div>
+
+</body>
+</html>
