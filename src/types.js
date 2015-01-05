@@ -9,7 +9,7 @@ glam.Types = {
 
 // statics
 glam.Types.types = {
-		"cube" :  { cls : glam.Cube, transform:true, animation:true, input:true, visual:true },
+		"box" :  { cls : glam.Box, transform:true, animation:true, input:true, visual:true },
 		"cone" :  { cls : glam.Cone, transform:true, animation:true, input:true, visual:true },
 		"cylinder" :  { cls : glam.Cylinder, transform:true, animation:true, input:true, visual:true },
 		"sphere" :  { cls : glam.Sphere, transform:true, animation:true, input:true, visual:true },
