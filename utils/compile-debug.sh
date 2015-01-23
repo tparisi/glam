@@ -7,9 +7,9 @@ SOURCES="../src/glam.js \
 ../src/camera.js \
 ../src/circle.js \
 ../src/classList.js \
+../src/box.js \
 ../src/cone.js \
 ../src/controller.js \
-../src/cube.js \
 ../src/cylinder.js \
 ../src/document.js \
 ../src/effect.js \
