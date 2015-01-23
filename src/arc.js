@@ -4,28 +4,28 @@
  * @author Tony Parisi
  */
 
-glam.Arc = {};
+glam.DOM.Arc = {};
 
-glam.Arc.DEFAULT_RADIUS = 2;
-glam.Arc.DEFAULT_RADIUS_SEGMENTS = 32;
-glam.Arc.DEFAULT_START_ANGLE = "0deg";
-glam.Arc.DEFAULT_END_ANGLE = "360deg";
+glam.DOM.Arc.DEFAULT_RADIUS = 2;
+glam.DOM.Arc.DEFAULT_RADIUS_SEGMENTS = 32;
+glam.DOM.Arc.DEFAULT_START_ANGLE = "0deg";
+glam.DOM.Arc.DEFAULT_END_ANGLE = "360deg";
 
-glam.Arc.create = function(docelt, style) {
-	return glam.Visual.create(docelt, style, glam.Arc);
+glam.DOM.Arc.create = function(docelt, style) {
+	return glam.DOM.Visual.create(docelt, style, glam.DOM.Arc);
 }
 
-glam.Arc.getAttributes = function(docelt, style, param) {
+glam.DOM.Arc.getAttributes = function(docelt, style, param) {
 
 	function parseRotation(r) {
-		return glam.Transform.parseRotation(r);
+		return glam.DOM.Transform.parseRotation(r);
 	}
 	
-	var radius = docelt.getAttribute('radius') || glam.Arc.DEFAULT_RADIUS;
-	var radiusSegments = docelt.getAttribute('radiusSegments') || glam.Arc.DEFAULT_RADIUS_SEGMENTS;
+	var radius = docelt.getAttribute('radius') || glam.DOM.Arc.DEFAULT_RADIUS;
+	var radiusSegments = docelt.getAttribute('radiusSegments') || glam.DOM.Arc.DEFAULT_RADIUS_SEGMENTS;
 
-	var startAngle = docelt.getAttribute('startAngle') || glam.Arc.DEFAULT_START_ANGLE;
-	var endAngle = docelt.getAttribute('endAngle') || glam.Arc.DEFAULT_END_ANGLE;
+	var startAngle = docelt.getAttribute('startAngle') || glam.DOM.Arc.DEFAULT_START_ANGLE;
+	var endAngle = docelt.getAttribute('endAngle') || glam.DOM.Arc.DEFAULT_END_ANGLE;
 	
 	if (style) {
 		if (style.radius)
@@ -49,7 +49,7 @@ glam.Arc.getAttributes = function(docelt, style, param) {
 	param.endAngle = endAngle;
 }
 
-glam.Arc.createVisual = function(docelt, material, param) {
+glam.DOM.Arc.createVisual = function(docelt, material, param) {
 	
 	var visual = new Vizi.Visual(
 			{ geometry: new THREE.CircleGeometry(param.radius, param.radiusSegments, param.startAngle, param.endAngle),

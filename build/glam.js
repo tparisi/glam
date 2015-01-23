@@ -57013,6 +57013,20 @@ Vizi.loadUrl = function(url, element, options) {
 
 
 glam = {
+		
+};
+
+glam.ready = function() {
+	glam.DOM.ready();
+}/**
+ * @fileoverview glam namespace and globals
+ * 
+ * @author Tony Parisi
+ */
+
+
+
+glam.DOM = {
 
 		documents : {},
 		
@@ -57026,53 +57040,53 @@ glam = {
 		
 };
 
-glam.isReady = false;
-glam.ready = function() {
-	if (glam.isReady)
+glam.DOM.isReady = false;
+glam.DOM.ready = function() {
+	if (glam.DOM.isReady)
 		return;
 	
-	glam.parser.parseDocument();
-	glam.createViewers();
+	glam.DOM.parser.parseDocument();
+	glam.DOM.createViewers();
 	
-	glam.isReady = true;
+	glam.DOM.isReady = true;
 }
 
-glam.createViewers = function() {
-	for (docname in glam.documents) {
-		var doc = glam.documents[docname];
-		var viewer = new glam.Viewer(doc);
-		glam.viewers[docname] = viewer;
+glam.DOM.createViewers = function() {
+	for (docname in glam.DOM.documents) {
+		var doc = glam.DOM.documents[docname];
+		var viewer = new glam.DOM.Viewer(doc);
+		glam.DOM.viewers[docname] = viewer;
 		viewer.go();
 	}
 }
 
 
-glam.addStyle = function(selector, style)
+glam.DOM.addStyle = function(selector, style)
 {
-	glam.styles[selector] = style;
+	glam.DOM.styles[selector] = style;
 }
 
-glam.getStyle = function(selector)
+glam.DOM.getStyle = function(selector)
 {
-	return glam.styles[selector];
+	return glam.DOM.styles[selector];
 }
 
-glam.addAnimation = function(id, animation)
+glam.DOM.addAnimation = function(id, animation)
 {
-	glam.animations[id] = animation;
+	glam.DOM.animations[id] = animation;
 }
 
-glam.getAnimation = function(id) {
-	return glam.animations[id];
+glam.DOM.getAnimation = function(id) {
+	return glam.DOM.animations[id];
 }
 
-glam.setFullScreen = function(enable) {
+glam.DOM.setFullScreen = function(enable) {
 	return Vizi.Graphics.instance.setFullScreen(enable);
 }
 
 $(document).ready(function(){
 
-	glam.ready();
+	glam.DOM.ready();
 });
 
 
@@ -57082,23 +57096,23 @@ $(document).ready(function(){
  * @author Tony Parisi
  */
 
-glam.Animation = {};
+glam.DOM.Animation = {};
 
-glam.Animation.DEFAULT_DURATION = "1s";
-glam.Animation.DEFAULT_ITERATION_COUNT = "1";
-glam.Animation.DEFAULT_TIMING_FUNCTION = "linear";
-glam.Animation.DEFAULT_FRAME_TIME = "0%";
-glam.Animation.DEFAULT_FRAME_PROPERTY = "transform";
+glam.DOM.Animation.DEFAULT_DURATION = "1s";
+glam.DOM.Animation.DEFAULT_ITERATION_COUNT = "1";
+glam.DOM.Animation.DEFAULT_TIMING_FUNCTION = "linear";
+glam.DOM.Animation.DEFAULT_FRAME_TIME = "0%";
+glam.DOM.Animation.DEFAULT_FRAME_PROPERTY = "transform";
 
-glam.Animation.create = function(docelt) {
+glam.DOM.Animation.create = function(docelt) {
 
 	var id = docelt.id;
-	var duration = docelt.getAttribute('duration') || glam.Animation.DEFAULT_DURATION;
-	var iterationCount = docelt.getAttribute('iteration-count') || glam.Animation.DEFAULT_ITERATION_COUNT;
-	var timingFunction = docelt.getAttribute('timing-function') || glam.Animation.DEFAULT_TIMING_FUNCTION;
+	var duration = docelt.getAttribute('duration') || glam.DOM.Animation.DEFAULT_DURATION;
+	var iterationCount = docelt.getAttribute('iteration-count') || glam.DOM.Animation.DEFAULT_ITERATION_COUNT;
+	var timingFunction = docelt.getAttribute('timing-function') || glam.DOM.Animation.DEFAULT_TIMING_FUNCTION;
 	
-	duration = glam.Animation.parseTime(duration);
-	var easing = glam.Animation.parseTimingFunction(timingFunction);
+	duration = glam.DOM.Animation.parseTime(duration);
+	var easing = glam.DOM.Animation.parseTimingFunction(timingFunction);
 	var loop = (iterationCount.toLowerCase() == "infinite") ? true : false;
 	
 	var i, 
@@ -57113,27 +57127,27 @@ glam.Animation.create = function(docelt) {
 			tag = tag.toLowerCase();
 		
 		if (tag == "keyframe") {
-			var frame = glam.Animation.parseFrame(childelt);
+			var frame = glam.DOM.Animation.parseFrame(childelt);
 			frames.push(frame);
 		}
 	}
 	
-	var anim = glam.Animation.build(duration, loop, easing, frames);
+	var anim = glam.DOM.Animation.build(duration, loop, easing, frames);
 	
-	glam.addAnimation(id, anim);
-	glam.Animation.callParseCallbacks(id, anim);
+	glam.DOM.addAnimation(id, anim);
+	glam.DOM.Animation.callParseCallbacks(id, anim);
 }
 
-glam.Animation.parseFrame = function(docelt) {
+glam.DOM.Animation.parseFrame = function(docelt) {
 
-	var time = docelt.getAttribute('time') || glam.Animation.DEFAULT_FRAME_TIME;
-	var frametime = glam.Animation.parseFrameTime(time);
-	var property = docelt.getAttribute('property') || glam.Animation.DEFAULT_FRAME_PROPERTY;
+	var time = docelt.getAttribute('time') || glam.DOM.Animation.DEFAULT_FRAME_TIME;
+	var frametime = glam.DOM.Animation.parseFrameTime(time);
+	var property = docelt.getAttribute('property') || glam.DOM.Animation.DEFAULT_FRAME_PROPERTY;
 	var value = docelt.getAttribute('value') || "";
 	
 	if (property == "transform") {
 		var t = {};
-		glam.Transform.parseTransform(value, t);
+		glam.DOM.Transform.parseTransform(value, t);
 
 		return {
 			time : frametime,
@@ -57143,8 +57157,8 @@ glam.Animation.parseFrame = function(docelt) {
 	}
 	else if (property == "material") {
 
-		var s = glam.Animation.parseMaterial(value);
-		var param = glam.Material.parseStyle(s);
+		var s = glam.DOM.Animation.parseMaterial(value);
+		var param = glam.DOM.Material.parseStyle(s);
 
 		return {
 			time : frametime,
@@ -57155,7 +57169,7 @@ glam.Animation.parseFrame = function(docelt) {
 	
 }
 
-glam.Animation.createFromStyle = function(docelt, style, obj) {
+glam.DOM.Animation.createFromStyle = function(docelt, style, obj) {
 	var animationSpec,
 		animationName,
 		duration,
@@ -57200,15 +57214,15 @@ glam.Animation.createFromStyle = function(docelt, style, obj) {
 		}
 	}
 	
-    duration = duration || glam.Animation.DEFAULT_DURATION;
-	duration = glam.Animation.parseTime(duration);
-    timingFunction = timingFunction || glam.Animation.DEFAULT_TIMING_FUNCTION;
-	easing = glam.Animation.parseTimingFunction(timingFunction);
-    iterationCount = iterationCount || glam.Animation.DEFAULT_ITERATION_COUNT;
+    duration = duration || glam.DOM.Animation.DEFAULT_DURATION;
+	duration = glam.DOM.Animation.parseTime(duration);
+    timingFunction = timingFunction || glam.DOM.Animation.DEFAULT_TIMING_FUNCTION;
+	easing = glam.DOM.Animation.parseTimingFunction(timingFunction);
+    iterationCount = iterationCount || glam.DOM.Animation.DEFAULT_ITERATION_COUNT;
 	loop = (iterationCount.toLowerCase() == "infinite") ? true : false;				
 	
 	if (animationName) {
-		var animation = glam.getStyle(animationName);
+		var animation = glam.DOM.getStyle(animationName);
 		
 		var frames = [];
 		
@@ -57221,7 +57235,7 @@ glam.Animation.createFromStyle = function(docelt, style, obj) {
 				frametime = 1;
 			}
 			else {
-				frametime = glam.Animation.parseFrameTime(k);
+				frametime = glam.DOM.Animation.parseFrameTime(k);
 			}
 
 			var framevalue;
@@ -57235,11 +57249,11 @@ glam.Animation.createFromStyle = function(docelt, style, obj) {
 					
 					type = "transform";
 					framevalue = {};
-					glam.Transform.parseTransform(value, framevalue);
+					glam.DOM.Transform.parseTransform(value, framevalue);
 				}
 				else if (prop == "opacity" || prop == "color") {
 					type = "material";
-					framevalue = glam.Material.parseStyle(framedata);
+					framevalue = glam.DOM.Material.parseStyle(framedata);
 				}
 				
 				var frame = {
@@ -57251,13 +57265,13 @@ glam.Animation.createFromStyle = function(docelt, style, obj) {
 			}			
 		}
 		
-		var anim = glam.Animation.build(duration, loop, easing, frames);
-		glam.Animation.addAnimationToObject(anim, obj);
+		var anim = glam.DOM.Animation.build(duration, loop, easing, frames);
+		glam.DOM.Animation.addAnimationToObject(anim, obj);
 	}
 	
 }
 
-glam.Animation.build = function(duration, loop, easing, frames) {
+glam.DOM.Animation.build = function(duration, loop, easing, frames) {
 
 	var poskeys = [];
 	var posvalues = [];
@@ -57354,7 +57368,7 @@ glam.Animation.build = function(duration, loop, easing, frames) {
 	return anim;
 }
 
-glam.Animation.parseTime = function(time) {
+glam.DOM.Animation.parseTime = function(time) {
 	var index = time.indexOf("ms");
 	if (index != -1)
 		return parseFloat(time.split("ms")[0]);
@@ -57365,7 +57379,7 @@ glam.Animation.parseTime = function(time) {
 	
 }
 
-glam.Animation.parseFrameTime = function(time) {
+glam.DOM.Animation.parseFrameTime = function(time) {
 	var index = time.indexOf("%");
 	if (index != -1)
 		return parseFloat(time.split("%")[0]) / 100;
@@ -57373,7 +57387,7 @@ glam.Animation.parseFrameTime = function(time) {
 		return parseFloat(time);
 }
 
-glam.Animation.parseTimingFunction = function(timingFunction) {
+glam.DOM.Animation.parseTimingFunction = function(timingFunction) {
 	timingFunction = timingFunction.toLowerCase();
 	switch (timingFunction) {
 	
@@ -57389,7 +57403,7 @@ glam.Animation.parseTimingFunction = function(timingFunction) {
 	}
 }
 
-glam.Animation.parseMaterial = function(value) {
+glam.DOM.Animation.parseMaterial = function(value) {
 
 	var s = {};
 	
@@ -57409,25 +57423,25 @@ glam.Animation.parseMaterial = function(value) {
 	return s;
 }
 
-glam.Animation.parse = function(docelt, style, obj) {
+glam.DOM.Animation.parse = function(docelt, style, obj) {
 	var animationId = docelt.getAttribute('animation');
 	if (animationId) {
-		var animation = glam.getAnimation(animationId);
+		var animation = glam.DOM.getAnimation(animationId);
 		if (animation) {
-			glam.Animation.addAnimationToObject(animation, obj);
+			glam.DOM.Animation.addAnimationToObject(animation, obj);
 		}
 		else {
-			glam.Animation.addParseCallback(animationId, function(animation) {
-				glam.Animation.addAnimationToObject(animation, obj);				
+			glam.DOM.Animation.addParseCallback(animationId, function(animation) {
+				glam.DOM.Animation.addAnimationToObject(animation, obj);				
 			});
 		}
 	}
 	else {
-		glam.Animation.createFromStyle(docelt, style, obj);
+		glam.DOM.Animation.createFromStyle(docelt, style, obj);
 	}
 }
 
-glam.Animation.addAnimationToObject = function(animation, obj) {
+glam.DOM.Animation.addAnimationToObject = function(animation, obj) {
 		
 	var interps = [];
 	if (animation.poskeys.length) {
@@ -57479,21 +57493,21 @@ glam.Animation.addAnimationToObject = function(animation, obj) {
 	}
 }
 
-glam.Animation.parseCallbacks = {};
+glam.DOM.Animation.parseCallbacks = {};
 
-glam.Animation.addParseCallback = function(id, cb) {
-	var cbs = glam.Animation.parseCallbacks[id];
+glam.DOM.Animation.addParseCallback = function(id, cb) {
+	var cbs = glam.DOM.Animation.parseCallbacks[id];
 	if (!cbs) {
 		cbs = { callbacks : [] };
-		glam.Animation.parseCallbacks[id] = cbs;
+		glam.DOM.Animation.parseCallbacks[id] = cbs;
 	}
 
 	cbs.callbacks.push(cb);
 	
 }
 
-glam.Animation.callParseCallbacks = function(id, anim) {
-	var cbs = glam.Animation.parseCallbacks[id];
+glam.DOM.Animation.callParseCallbacks = function(id, anim) {
+	var cbs = glam.DOM.Animation.parseCallbacks[id];
 	if (cbs) {
 		var callbacks = cbs.callbacks;
 		var i, len = callbacks.length;
@@ -57509,28 +57523,28 @@ glam.Animation.callParseCallbacks = function(id, anim) {
  * @author Tony Parisi
  */
 
-glam.Arc = {};
+glam.DOM.Arc = {};
 
-glam.Arc.DEFAULT_RADIUS = 2;
-glam.Arc.DEFAULT_RADIUS_SEGMENTS = 32;
-glam.Arc.DEFAULT_START_ANGLE = "0deg";
-glam.Arc.DEFAULT_END_ANGLE = "360deg";
+glam.DOM.Arc.DEFAULT_RADIUS = 2;
+glam.DOM.Arc.DEFAULT_RADIUS_SEGMENTS = 32;
+glam.DOM.Arc.DEFAULT_START_ANGLE = "0deg";
+glam.DOM.Arc.DEFAULT_END_ANGLE = "360deg";
 
-glam.Arc.create = function(docelt, style) {
-	return glam.Visual.create(docelt, style, glam.Arc);
+glam.DOM.Arc.create = function(docelt, style) {
+	return glam.DOM.Visual.create(docelt, style, glam.DOM.Arc);
 }
 
-glam.Arc.getAttributes = function(docelt, style, param) {
+glam.DOM.Arc.getAttributes = function(docelt, style, param) {
 
 	function parseRotation(r) {
-		return glam.Transform.parseRotation(r);
+		return glam.DOM.Transform.parseRotation(r);
 	}
 	
-	var radius = docelt.getAttribute('radius') || glam.Arc.DEFAULT_RADIUS;
-	var radiusSegments = docelt.getAttribute('radiusSegments') || glam.Arc.DEFAULT_RADIUS_SEGMENTS;
+	var radius = docelt.getAttribute('radius') || glam.DOM.Arc.DEFAULT_RADIUS;
+	var radiusSegments = docelt.getAttribute('radiusSegments') || glam.DOM.Arc.DEFAULT_RADIUS_SEGMENTS;
 
-	var startAngle = docelt.getAttribute('startAngle') || glam.Arc.DEFAULT_START_ANGLE;
-	var endAngle = docelt.getAttribute('endAngle') || glam.Arc.DEFAULT_END_ANGLE;
+	var startAngle = docelt.getAttribute('startAngle') || glam.DOM.Arc.DEFAULT_START_ANGLE;
+	var endAngle = docelt.getAttribute('endAngle') || glam.DOM.Arc.DEFAULT_END_ANGLE;
 	
 	if (style) {
 		if (style.radius)
@@ -57554,7 +57568,7 @@ glam.Arc.getAttributes = function(docelt, style, param) {
 	param.endAngle = endAngle;
 }
 
-glam.Arc.createVisual = function(docelt, material, param) {
+glam.DOM.Arc.createVisual = function(docelt, material, param) {
 	
 	var visual = new Vizi.Visual(
 			{ geometry: new THREE.CircleGeometry(param.radius, param.radiusSegments, param.startAngle, param.endAngle),
@@ -57569,18 +57583,18 @@ glam.Arc.createVisual = function(docelt, material, param) {
  * @author Tony Parisi
  */
 
-glam.Background = {};
+glam.DOM.Background = {};
 
-glam.Background.DEFAULT_BACKGROUND_TYPE = "box";
+glam.DOM.Background.DEFAULT_BACKGROUND_TYPE = "box";
 
-glam.Background.create = function(docelt, style) {
-	var type = docelt.getAttribute('background-type') || glam.Background.DEFAULT_BACKGROUND_TYPE;
+glam.DOM.Background.create = function(docelt, style) {
+	var type = docelt.getAttribute('background-type') || glam.DOM.Background.DEFAULT_BACKGROUND_TYPE;
 	type = docelt.getAttribute('type') || type;
 	
 	if (style) {
 		if (style["background-type"])
 			type = style["background-type"];
-		var  param = glam.Material.parseStyle(style);
+		var  param = glam.DOM.Material.parseStyle(style);
 	}	
 
 	var background;
@@ -57595,25 +57609,25 @@ glam.Background.create = function(docelt, style) {
 		skysphereScript.texture = param.envMap;
 	}
 
-	glam.Background.addHandlers(docelt, style, background);
+	glam.DOM.Background.addHandlers(docelt, style, background);
 	
 	Vizi.Application.instance.addObject(background);
 	
 	return null;
 }
 
-glam.Background.addHandlers = function(docelt, style, obj) {
+glam.DOM.Background.addHandlers = function(docelt, style, obj) {
 
 	docelt.glam.setAttributeHandlers.push(function(attr, val) {
-		glam.Background.onSetAttribute(obj, docelt, attr, val);
+		glam.DOM.Background.onSetAttribute(obj, docelt, attr, val);
 	});
 	
 	style.setPropertyHandlers.push(function(attr, val) {
-		glam.Background.onSetAttribute(obj, docelt, attr, val);
+		glam.DOM.Background.onSetAttribute(obj, docelt, attr, val);
 	});
 }
 
-glam.Background.onSetAttribute = function(obj, docelt, attr, val) {
+glam.DOM.Background.onSetAttribute = function(obj, docelt, attr, val) {
 
 	switch (attr) {
 		case "sphere-image" :
@@ -57634,17 +57648,17 @@ glam.Background.onSetAttribute = function(obj, docelt, attr, val) {
  * @author Tony Parisi
  */
 
-glam.Camera = {};
+glam.DOM.Camera = {};
 
-glam.Camera.DEFAULT_FOV = 45;
-glam.Camera.DEFAULT_NEAR = 1;
-glam.Camera.DEFAULT_FAR = 10000;
+glam.DOM.Camera.DEFAULT_FOV = 45;
+glam.DOM.Camera.DEFAULT_NEAR = 1;
+glam.DOM.Camera.DEFAULT_FAR = 10000;
 
-glam.Camera.create = function(docelt, style, app) {
+glam.DOM.Camera.create = function(docelt, style, app) {
 	
-	var fov = docelt.getAttribute('fov') || glam.Camera.DEFAULT_FOV;
-	var near = docelt.getAttribute('near') || glam.Camera.DEFAULT_NEAR;
-	var far = docelt.getAttribute('far') || glam.Camera.DEFAULT_FAR;
+	var fov = docelt.getAttribute('fov') || glam.DOM.Camera.DEFAULT_FOV;
+	var near = docelt.getAttribute('near') || glam.DOM.Camera.DEFAULT_NEAR;
+	var far = docelt.getAttribute('far') || glam.DOM.Camera.DEFAULT_FAR;
 	var aspect = docelt.getAttribute('aspect');
 	
 	if (style) {
@@ -57687,19 +57701,19 @@ glam.Camera.create = function(docelt, style, app) {
  * @author Tony Parisi
  */
 
-glam.Circle = {};
+glam.DOM.Circle = {};
 
-glam.Circle.DEFAULT_RADIUS = 2;
-glam.Circle.DEFAULT_RADIUS_SEGMENTS = 32;
+glam.DOM.Circle.DEFAULT_RADIUS = 2;
+glam.DOM.Circle.DEFAULT_RADIUS_SEGMENTS = 32;
 
-glam.Circle.create = function(docelt, style) {
-	return glam.Visual.create(docelt, style, glam.Circle);
+glam.DOM.Circle.create = function(docelt, style) {
+	return glam.DOM.Visual.create(docelt, style, glam.DOM.Circle);
 }
 
-glam.Circle.getAttributes = function(docelt, style, param) {
+glam.DOM.Circle.getAttributes = function(docelt, style, param) {
 
-	var radius = docelt.getAttribute('radius') || glam.Circle.DEFAULT_RADIUS;
-	var radiusSegments = docelt.getAttribute('radiusSegments') || glam.Circle.DEFAULT_RADIUS_SEGMENTS;
+	var radius = docelt.getAttribute('radius') || glam.DOM.Circle.DEFAULT_RADIUS;
+	var radiusSegments = docelt.getAttribute('radiusSegments') || glam.DOM.Circle.DEFAULT_RADIUS_SEGMENTS;
 	
 	if (style) {
 		if (style.radius)
@@ -57715,7 +57729,7 @@ glam.Circle.getAttributes = function(docelt, style, param) {
 	param.radiusSegments = radiusSegments;
 }
 
-glam.Circle.createVisual = function(docelt, material, param) {
+glam.DOM.Circle.createVisual = function(docelt, material, param) {
 	
 	var visual = new Vizi.Visual(
 			{ geometry: new THREE.CircleGeometry(param.radius, param.radiusSegments),
@@ -57730,22 +57744,22 @@ glam.Circle.createVisual = function(docelt, material, param) {
  * @author Tony Parisi
  */
 
-glam.ClassList = function(docelt) {
+glam.DOM.ClassList = function(docelt) {
 	this.docelt = docelt;
 	Array.call(this);
 }
 
-glam.ClassList.prototype = new Array;
+glam.DOM.ClassList.prototype = new Array;
 
-glam.ClassList.prototype.item = function(i) {
+glam.DOM.ClassList.prototype.item = function(i) {
 	return this[i];
 }
 
-glam.ClassList.prototype.add = function(item) {
+glam.DOM.ClassList.prototype.add = function(item) {
 	return this.push(item);
 }
 
-glam.ClassList.prototype.remove = function(item) {
+glam.DOM.ClassList.prototype.remove = function(item) {
 	var i = this.indexOf(item);
 	if (i != -1) {
 		this.splice(i, 1)
@@ -57758,21 +57772,21 @@ glam.ClassList.prototype.remove = function(item) {
  * @author Tony Parisi
  */
 
-glam.Box = {};
+glam.DOM.Box = {};
 
-glam.Box.DEFAULT_WIDTH = 2;
-glam.Box.DEFAULT_HEIGHT = 2;
-glam.Box.DEFAULT_DEPTH = 2;
+glam.DOM.Box.DEFAULT_WIDTH = 2;
+glam.DOM.Box.DEFAULT_HEIGHT = 2;
+glam.DOM.Box.DEFAULT_DEPTH = 2;
 
-glam.Box.create = function(docelt, style) {
-	return glam.Visual.create(docelt, style, glam.Box);
+glam.DOM.Box.create = function(docelt, style) {
+	return glam.DOM.Visual.create(docelt, style, glam.DOM.Box);
 }
 
-glam.Box.getAttributes = function(docelt, style, param) {
+glam.DOM.Box.getAttributes = function(docelt, style, param) {
 
-	var width = docelt.getAttribute('width') || glam.Box.DEFAULT_WIDTH;
-	var height = docelt.getAttribute('height') || glam.Box.DEFAULT_HEIGHT;
-	var depth = docelt.getAttribute('depth') || glam.Box.DEFAULT_DEPTH;
+	var width = docelt.getAttribute('width') || glam.DOM.Box.DEFAULT_WIDTH;
+	var height = docelt.getAttribute('height') || glam.DOM.Box.DEFAULT_HEIGHT;
+	var depth = docelt.getAttribute('depth') || glam.DOM.Box.DEFAULT_DEPTH;
 	
 	if (style) {
 		if (style.width)
@@ -57792,7 +57806,7 @@ glam.Box.getAttributes = function(docelt, style, param) {
 	param.depth = depth;
 }
 
-glam.Box.createVisual = function(docelt, material, param) {
+glam.DOM.Box.createVisual = function(docelt, material, param) {
 
 	var visual = new Vizi.Visual(
 			{ geometry: new THREE.BoxGeometry(param.width, param.height, param.depth),
@@ -57807,19 +57821,19 @@ glam.Box.createVisual = function(docelt, material, param) {
  * @author Tony Parisi
  */
 
-glam.Cone = {};
+glam.DOM.Cone = {};
 
-glam.Cone.DEFAULT_RADIUS = 2;
-glam.Cone.DEFAULT_HEIGHT = 2;
+glam.DOM.Cone.DEFAULT_RADIUS = 2;
+glam.DOM.Cone.DEFAULT_HEIGHT = 2;
 
-glam.Cone.create = function(docelt, style) {
-	return glam.Visual.create(docelt, style, glam.Cone);
+glam.DOM.Cone.create = function(docelt, style) {
+	return glam.DOM.Visual.create(docelt, style, glam.DOM.Cone);
 }
 
-glam.Cone.getAttributes = function(docelt, style, param) {
+glam.DOM.Cone.getAttributes = function(docelt, style, param) {
 
-	var radius = docelt.getAttribute('radius') || glam.Cone.DEFAULT_RADIUS;
-	var height = docelt.getAttribute('height') || glam.Cone.DEFAULT_HEIGHT;
+	var radius = docelt.getAttribute('radius') || glam.DOM.Cone.DEFAULT_RADIUS;
+	var height = docelt.getAttribute('height') || glam.DOM.Cone.DEFAULT_HEIGHT;
 	
 	if (style) {
 		if (style.radius)
@@ -57835,7 +57849,7 @@ glam.Cone.getAttributes = function(docelt, style, param) {
 	param.height = height;
 }
 
-glam.Cone.createVisual = function(docelt, material, param) {
+glam.DOM.Cone.createVisual = function(docelt, material, param) {
 	
 	var visual = new Vizi.Visual(
 			{ geometry: new THREE.CylinderGeometry(0, param.radius, param.height, 32),
@@ -57850,9 +57864,9 @@ glam.Cone.createVisual = function(docelt, material, param) {
  * @author Tony Parisi
  */
 
-glam.Controller = {};
+glam.DOM.Controller = {};
 
-glam.Controller.create = function(docelt, style, app) {
+glam.DOM.Controller.create = function(docelt, style, app) {
 	var on = true;
 	
 	var noheadlight = docelt.getAttribute("noheadlight");
@@ -57945,19 +57959,19 @@ glam.Controller.create = function(docelt, style, app) {
  * @author Tony Parisi
  */
 
-glam.Cylinder = {};
+glam.DOM.Cylinder = {};
 
-glam.Cylinder.DEFAULT_RADIUS = 2;
-glam.Cylinder.DEFAULT_HEIGHT = 2;
+glam.DOM.Cylinder.DEFAULT_RADIUS = 2;
+glam.DOM.Cylinder.DEFAULT_HEIGHT = 2;
 
-glam.Cylinder.create = function(docelt, style) {
-	return glam.Visual.create(docelt, style, glam.Cylinder);
+glam.DOM.Cylinder.create = function(docelt, style) {
+	return glam.DOM.Visual.create(docelt, style, glam.DOM.Cylinder);
 }
 
-glam.Cylinder.getAttributes = function(docelt, style, param) {
+glam.DOM.Cylinder.getAttributes = function(docelt, style, param) {
 
-	var radius = docelt.getAttribute('radius') || glam.Cylinder.DEFAULT_RADIUS;
-	var height = docelt.getAttribute('height') || glam.Cylinder.DEFAULT_HEIGHT;
+	var radius = docelt.getAttribute('radius') || glam.DOM.Cylinder.DEFAULT_RADIUS;
+	var height = docelt.getAttribute('height') || glam.DOM.Cylinder.DEFAULT_HEIGHT;
 	
 	if (style) {
 		if (style.radius)
@@ -57972,7 +57986,7 @@ glam.Cylinder.getAttributes = function(docelt, style, param) {
 	param.height = height;
 }	
 
-glam.Cylinder.createVisual = function(docelt, material, param) {
+glam.DOM.Cylinder.createVisual = function(docelt, material, param) {
 
 	var visual = new Vizi.Visual(
 			{ geometry: new THREE.CylinderGeometry(param.radius, param.radius, param.height, 32),
@@ -57987,7 +58001,7 @@ glam.Cylinder.createVisual = function(docelt, material, param) {
  * @author Tony Parisi
  */
 
-glam.document = {
+glam.DOM.document = {
 		
 	scenes : {},
 	
@@ -57997,17 +58011,17 @@ glam.document = {
 	
 	addScene : function(script, scene)
 	{
-		glam.document.scenes[script.id] = { parentElement : script.parentElement, scene : scene };
+		glam.DOM.document.scenes[script.id] = { parentElement : script.parentElement, scene : scene };
 	},
 
 	addStyle : function(declaration)
 	{
-		glam.document.styles.push(declaration);
+		glam.DOM.document.styles.push(declaration);
 	},
 	
 	addAnimation : function(id, animation)
 	{
-		glam.document.animations[id] = animation;
+		glam.DOM.document.animations[id] = animation;
 	},
 
 	parseDocument : function()
@@ -58023,7 +58037,7 @@ glam.document = {
 			if (scripts[i].type == "text/glam")
 			{
 				var scene = dp.parseFromString(scripts[i].textContent, "text/xml");
-				glam.document.addScene(scripts[i], scene);
+				glam.DOM.document.addScene(scripts[i], scene);
 			}
 		}
 		
@@ -58034,7 +58048,7 @@ glam.document = {
 			{
 				$.parsecss(styles[i].childNodes[0].data,
 						function(css) {
-								glam.document.addStyle(css);
+								glam.DOM.document.addStyle(css);
 							}
 						);
 			}
@@ -58047,16 +58061,16 @@ glam.document = {
  * @author Tony Parisi
  */
 
-glam.Effect = {};
+glam.DOM.Effect = {};
 
-glam.Effect.DEFAULT_BLOOM_STRENGTH = 1;
-glam.Effect.DEFAULT_FILM_GRAYSCALE = 0;
-glam.Effect.DEFAULT_FILM_SCANLINECOUNT = 512;
-glam.Effect.DEFAULT_FILM_INTENSITY = 0.5;
-glam.Effect.DEFAULT_RGBSHIFT_AMOUNT = 0.0015;
-glam.Effect.DEFAULT_DOTSCREEN_SCALE = 1;
+glam.DOM.Effect.DEFAULT_BLOOM_STRENGTH = 1;
+glam.DOM.Effect.DEFAULT_FILM_GRAYSCALE = 0;
+glam.DOM.Effect.DEFAULT_FILM_SCANLINECOUNT = 512;
+glam.DOM.Effect.DEFAULT_FILM_INTENSITY = 0.5;
+glam.DOM.Effect.DEFAULT_RGBSHIFT_AMOUNT = 0.0015;
+glam.DOM.Effect.DEFAULT_DOTSCREEN_SCALE = 1;
 
-glam.Effect.create = function(docelt, style, app) {
+glam.DOM.Effect.create = function(docelt, style, app) {
 	
 	var type = docelt.getAttribute("type");
 	
@@ -58065,7 +58079,7 @@ glam.Effect.create = function(docelt, style, app) {
 	switch (type) {
 
 		case "Bloom" :
-			var strength = glam.Effect.DEFAULT_BLOOM_STRENGTH;
+			var strength = glam.DOM.Effect.DEFAULT_BLOOM_STRENGTH;
 			var str = docelt.getAttribute("strength");
 			if (str != undefined) {
 				strength = parseFloat(str);
@@ -58082,36 +58096,36 @@ glam.Effect.create = function(docelt, style, app) {
 			
 		case "Film" :
 			effect = new Vizi.Effect( THREE.FilmShader );
-			effect.pass.uniforms['grayscale'].value = glam.Effect.DEFAULT_FILM_GRAYSCALE;
-			effect.pass.uniforms['sCount'].value = glam.Effect.DEFAULT_FILM_SCANLINECOUNT;
-			effect.pass.uniforms['nIntensity'].value = glam.Effect.DEFAULT_FILM_INTENSITY;
+			effect.pass.uniforms['grayscale'].value = glam.DOM.Effect.DEFAULT_FILM_GRAYSCALE;
+			effect.pass.uniforms['sCount'].value = glam.DOM.Effect.DEFAULT_FILM_SCANLINECOUNT;
+			effect.pass.uniforms['nIntensity'].value = glam.DOM.Effect.DEFAULT_FILM_INTENSITY;
 			break;
 			
 		case "RGBShift" :
 			effect = new Vizi.Effect( THREE.RGBShiftShader );
-			effect.pass.uniforms[ 'amount' ].value = glam.Effect.DEFAULT_RGBSHIFT_AMOUNT;
+			effect.pass.uniforms[ 'amount' ].value = glam.DOM.Effect.DEFAULT_RGBSHIFT_AMOUNT;
 			break;
 			
 		case "DotScreen" :
 			effect = new Vizi.Effect(THREE.DotScreenShader);
-			effect.pass.uniforms[ 'scale' ].value = glam.Effect.DEFAULT_DOTSCREEN_SCALE;
+			effect.pass.uniforms[ 'scale' ].value = glam.DOM.Effect.DEFAULT_DOTSCREEN_SCALE;
 			break;
 
 		case "DotScreenRGB" :
 			effect = new Vizi.Effect(THREE.DotScreenRGBShader);
-			effect.pass.uniforms[ 'scale' ].value = glam.Effect.DEFAULT_DOTSCREEN_SCALE;
+			effect.pass.uniforms[ 'scale' ].value = glam.DOM.Effect.DEFAULT_DOTSCREEN_SCALE;
 			break;
 	}
 	
 	if (effect) {
-		glam.Effect.parseAttributes(docelt, effect, style);
+		glam.DOM.Effect.parseAttributes(docelt, effect, style);
 		Vizi.Graphics.instance.addEffect(effect);
 	}
 	
 	return null;
 }
 
-glam.Effect.parseAttributes = function(docelt, effect, style) {
+glam.DOM.Effect.parseAttributes = function(docelt, effect, style) {
 	
 	var disabled = docelt.getAttribute("disabled");
 	if (disabled != undefined) {
@@ -58134,7 +58148,7 @@ glam.Effect.parseAttributes = function(docelt, effect, style) {
 				
 					case "t" :
 						
-						var image = glam.Material.parseUrl(attr);
+						var image = glam.DOM.Material.parseUrl(attr);
 						value = THREE.ImageUtils.loadTexture(image);
 						value.wrapS = value.wrapT = THREE.Repeat;
 						break;
@@ -58164,9 +58178,9 @@ glam.Effect.parseAttributes = function(docelt, effect, style) {
  * @author Tony Parisi
  */
 
-glam.Group = {};
+glam.DOM.Group = {};
 
-glam.Group.create = function(docelt, style) {
+glam.DOM.Group.create = function(docelt, style) {
 
 	// Create the group
 	var group = new Vizi.Object;
@@ -58179,9 +58193,9 @@ glam.Group.create = function(docelt, style) {
  * @author Tony Parisi
  */
 
-glam.Import = {};
+glam.DOM.Import = {};
 
-glam.Import.create = function(docelt, style) {
+glam.DOM.Import.create = function(docelt, style) {
 	var src = docelt.getAttribute('src');
 		
 	// Create the cube
@@ -58191,7 +58205,7 @@ glam.Import.create = function(docelt, style) {
 		var loader = new Vizi.Loader;
 
 		var loadCallback = function(data) {
-			glam.Import.onLoadComplete(obj, data, src);
+			glam.DOM.Import.onLoadComplete(obj, data, src);
 			loader.removeEventListener("loaded", loadCallback);
 		}	
 
@@ -58202,7 +58216,7 @@ glam.Import.create = function(docelt, style) {
 	return obj;
 }
 
-glam.Import.onLoadComplete = function(obj, data, url) {
+glam.DOM.Import.onLoadComplete = function(obj, data, url) {
 
 	obj.addChild(data.scene);
 }
@@ -58212,9 +58226,9 @@ glam.Import.onLoadComplete = function(obj, data, url) {
  * @author Tony Parisi
  */
 
-glam.Input = {};
+glam.DOM.Input = {};
 
-glam.Input.add = function(docelt, obj) {
+glam.DOM.Input.add = function(docelt, obj) {
 	
 	function addListener(picker, evt) {
 		picker.addEventListener(evt, function(event){
@@ -58256,25 +58270,25 @@ glam.Input.add = function(docelt, obj) {
  * @author Tony Parisi
  */
 
-glam.Light = {};
+glam.DOM.Light = {};
 
-glam.Light.DEFAULT_TYPE = "directional";
-glam.Light.DEFAULT_COLOR = "#ffffff";
-glam.Light.DEFAULT_ANGLE = "90deg";
-glam.Light.DEFAULT_DISTANCE = 0;
-glam.Light.DEFAULT_EXPONENT = Vizi.SpotLight.DEFAULT_EXPONENT;
+glam.DOM.Light.DEFAULT_TYPE = "directional";
+glam.DOM.Light.DEFAULT_COLOR = "#ffffff";
+glam.DOM.Light.DEFAULT_ANGLE = "90deg";
+glam.DOM.Light.DEFAULT_DISTANCE = 0;
+glam.DOM.Light.DEFAULT_EXPONENT = Vizi.SpotLight.DEFAULT_EXPONENT;
 
-glam.Light.create = function(docelt, style, app) {
+glam.DOM.Light.create = function(docelt, style, app) {
 	
 	function parseAngle(t) {
-		return glam.Transform.parseRotation(t);
+		return glam.DOM.Transform.parseRotation(t);
 	}
 		
-	var type = docelt.getAttribute('type') || glam.Light.DEFAULT_TYPE;
-	var color = docelt.getAttribute('color') || glam.Light.DEFAULT_COLOR;
-	var angle = docelt.getAttribute('angle') || glam.Light.DEFAULT_ANGLE;
-	var distance = docelt.getAttribute('distance') || glam.Light.DEFAULT_DISTANCE;
-	var exponent = docelt.getAttribute('exponent') || glam.Light.DEFAULT_EXPONENT;
+	var type = docelt.getAttribute('type') || glam.DOM.Light.DEFAULT_TYPE;
+	var color = docelt.getAttribute('color') || glam.DOM.Light.DEFAULT_COLOR;
+	var angle = docelt.getAttribute('angle') || glam.DOM.Light.DEFAULT_ANGLE;
+	var distance = docelt.getAttribute('distance') || glam.DOM.Light.DEFAULT_DISTANCE;
+	var exponent = docelt.getAttribute('exponent') || glam.DOM.Light.DEFAULT_EXPONENT;
 	
 	var direction = new THREE.Vector3(0, 0, -1);
 	
@@ -58347,18 +58361,18 @@ glam.Light.create = function(docelt, style, app) {
  * @author Tony Parisi
  */
 
-glam.Line = {};
+glam.DOM.Line = {};
 
-glam.Line.create = function(docelt, style) {
+glam.DOM.Line.create = function(docelt, style) {
 		
 	if (style) {
 	}
 	
-	var material = glam.Material.create(style, null, "line");
+	var material = glam.DOM.Material.create(style, null, "line");
 	
 	var geometry = new THREE.Geometry;
 	
-	glam.Line.parse(docelt, geometry, material);
+	glam.DOM.Line.parse(docelt, geometry, material);
 	
 	var line = new THREE.Line(geometry, material);
 	
@@ -58376,12 +58390,12 @@ glam.Line.create = function(docelt, style) {
 	return obj;
 }
 
-glam.Line.parse = function(docelt, geometry, material) {
+glam.DOM.Line.parse = function(docelt, geometry, material) {
 
 	var verts = docelt.getElementsByTagName('vertices');
 	if (verts) {
 		verts = verts[0];
-		glam.Types.parseVector3Array(verts, geometry.vertices);
+		glam.DOM.Types.parseVector3Array(verts, geometry.vertices);
 	}
 	
 	var vertexColors = [];
@@ -58389,7 +58403,7 @@ glam.Line.parse = function(docelt, geometry, material) {
 	if (colors) {
 		colors = colors[0];
 		if (colors) {
-			glam.Types.parseColor3Array(colors, vertexColors);
+			glam.DOM.Types.parseColor3Array(colors, vertexColors);
 	
 			var i, len = vertexColors.length;
 	
@@ -58411,13 +58425,13 @@ glam.Line.parse = function(docelt, geometry, material) {
  * @author Tony Parisi
  */
 
-glam.Material = {};
+glam.DOM.Material = {};
 
-glam.Material.create = function(style, createCB, objtype) {
+glam.DOM.Material.create = function(style, createCB, objtype) {
 	var material = null;
 	
 	if (style) {
-		var param = glam.Material.parseStyle(style);
+		var param = glam.DOM.Material.parseStyle(style);
 		if (style.shader) {
 			switch (style.shader.toLowerCase()) {
 				case "phong" :
@@ -58437,7 +58451,7 @@ glam.Material.create = function(style, createCB, objtype) {
 			}
 		}
 		else if (style["vertex-shader"] && style["fragment-shader"] && style["shader-uniforms"]) {
-			material = glam.Material.createShaderMaterial(style, param, createCB);
+			material = glam.DOM.Material.createShaderMaterial(style, param, createCB);
 		}
 		else if (objtype == "line") {
 			if (param.dashSize !== undefined  || param.gapSize !== undefined) {
@@ -58458,25 +58472,25 @@ glam.Material.create = function(style, createCB, objtype) {
 	return material;
 }
 
-glam.Material.parseStyle = function(style) {
+glam.DOM.Material.parseStyle = function(style) {
 	var image = "";
 	if (style.image) {
-		image = glam.Material.parseUrl(style.image);
+		image = glam.DOM.Material.parseUrl(style.image);
 	}
 
 	var normalMap = "";
 	if (style["normal-image"]) {
-		normalMap = glam.Material.parseUrl(style["normal-image"]);
+		normalMap = glam.DOM.Material.parseUrl(style["normal-image"]);
 	}
 
 	var bumpMap = "";
 	if (style["bump-image"]) {
-		bumpMap = glam.Material.parseUrl(style["bump-image"]);
+		bumpMap = glam.DOM.Material.parseUrl(style["bump-image"]);
 	}
 
 	var specularMap = "";
 	if (style["specular-image"]) {
-		specularMap = glam.Material.parseUrl(style["specular-image"]);
+		specularMap = glam.DOM.Material.parseUrl(style["specular-image"]);
 	}
 
 	var reflectivity;
@@ -58487,7 +58501,7 @@ glam.Material.parseStyle = function(style) {
 	if (style.refractionRatio)
 		refractionRatio = parseFloat(style.refractionRatio);
 	
-	var envMap = glam.Material.tryParseEnvMap(style);
+	var envMap = glam.DOM.Material.tryParseEnvMap(style);
 	
 	var color;
 	var diffuse;
@@ -58590,28 +58604,28 @@ glam.Material.parseStyle = function(style) {
 	return param;
 }
 
-glam.Material.parseUrl = function(image) {
+glam.DOM.Material.parseUrl = function(image) {
 	var regExp = /\(([^)]+)\)/;
 	var matches = regExp.exec(image);
 	image = matches[1];
 	return image;
 }
 
-glam.Material.tryParseEnvMap = function(style) {
+glam.DOM.Material.tryParseEnvMap = function(style) {
 	var urls = [];
 	
 	if (style["cube-image-right"])
-		urls.push(glam.Material.parseUrl(style["cube-image-right"]));
+		urls.push(glam.DOM.Material.parseUrl(style["cube-image-right"]));
 	if (style["cube-image-left"])
-		urls.push(glam.Material.parseUrl(style["cube-image-left"]));
+		urls.push(glam.DOM.Material.parseUrl(style["cube-image-left"]));
 	if (style["cube-image-top"])
-		urls.push(glam.Material.parseUrl(style["cube-image-top"]));
+		urls.push(glam.DOM.Material.parseUrl(style["cube-image-top"]));
 	if (style["cube-image-bottom"])
-		urls.push(glam.Material.parseUrl(style["cube-image-bottom"]));
+		urls.push(glam.DOM.Material.parseUrl(style["cube-image-bottom"]));
 	if (style["cube-image-front"])
-		urls.push(glam.Material.parseUrl(style["cube-image-front"]));
+		urls.push(glam.DOM.Material.parseUrl(style["cube-image-front"]));
 	if (style["cube-image-back"])
-		urls.push(glam.Material.parseUrl(style["cube-image-back"]));
+		urls.push(glam.DOM.Material.parseUrl(style["cube-image-back"]));
 	
 	if (urls.length == 6) {
 		var cubeTexture = THREE.ImageUtils.loadTextureCube( urls );
@@ -58619,12 +58633,12 @@ glam.Material.tryParseEnvMap = function(style) {
 	}
 	
 	if (style["sphere-image"])
-		return THREE.ImageUtils.loadTexture(glam.Material.parseUrl(style["sphere-image"]), THREE.SphericalRefractionMapping);
+		return THREE.ImageUtils.loadTexture(glam.DOM.Material.parseUrl(style["sphere-image"]), THREE.SphericalRefractionMapping);
 	
 	return null;
 }
 
-glam.Material.createShaderMaterial = function(style, param, createCB) {
+glam.DOM.Material.createShaderMaterial = function(style, param, createCB) {
 	
 	function done() {
 		var material = new THREE.ShaderMaterial({
@@ -58633,16 +58647,16 @@ glam.Material.createShaderMaterial = function(style, param, createCB) {
 			uniforms: uniforms,
 		});
 		
-		glam.Material.saveShaderMaterial(vsurl, fsurl, material);
-		glam.Material.callShaderMaterialCallbacks(vsurl, fsurl);
+		glam.DOM.Material.saveShaderMaterial(vsurl, fsurl, material);
+		glam.DOM.Material.callShaderMaterialCallbacks(vsurl, fsurl);
 	}
 	
 	var vs = style["vertex-shader"];
 	var fs = style["fragment-shader"];
-	var uniforms = glam.Material.parseUniforms(style["shader-uniforms"], param);
+	var uniforms = glam.DOM.Material.parseUniforms(style["shader-uniforms"], param);
 
-	var vsurl = glam.Material.parseUrl(vs);
-	var fsurl = glam.Material.parseUrl(fs);
+	var vsurl = glam.DOM.Material.parseUrl(vs);
+	var fsurl = glam.DOM.Material.parseUrl(fs);
 
 	if (!vsurl || !fsurl) {
 		var vselt = document.getElementById(vs);
@@ -58662,16 +58676,16 @@ glam.Material.createShaderMaterial = function(style, param, createCB) {
 		}
 	}	
 	
-	var material = glam.Material.getShaderMaterial(vsurl, fsurl);
+	var material = glam.DOM.Material.getShaderMaterial(vsurl, fsurl);
 	if (material)
 		return material;
 	
-	glam.Material.addShaderMaterialCallback(vsurl, fsurl, createCB);
+	glam.DOM.Material.addShaderMaterialCallback(vsurl, fsurl, createCB);
 	
-	if (glam.Material.getShaderMaterialLoading(vsurl, fsurl))
+	if (glam.DOM.Material.getShaderMaterialLoading(vsurl, fsurl))
 		return;
 	
-	glam.Material.setShaderMaterialLoading(vsurl, fsurl);
+	glam.DOM.Material.setShaderMaterialLoading(vsurl, fsurl);
 	
 	var vstext = "";
 	var fstext = "";
@@ -58692,7 +58706,7 @@ glam.Material.createShaderMaterial = function(style, param, createCB) {
 	});	
 }
 
-glam.Material.parseUniforms = function(uniformsText, param) {
+glam.DOM.Material.parseUniforms = function(uniformsText, param) {
 	
 	var uniforms = {
 	};
@@ -58718,7 +58732,7 @@ glam.Material.parseUniforms = function(uniformsText, param) {
 				value = param.envMap;
 			}
 			else {
-				var image = glam.Material.parseUrl(value);
+				var image = glam.DOM.Material.parseUrl(value);
 				value = THREE.ImageUtils.loadTexture(image);
 				value.wrapS = value.wrapT = THREE.Repeat;
 			}
@@ -58735,34 +58749,34 @@ glam.Material.parseUniforms = function(uniformsText, param) {
 	return uniforms;
 }
 
-glam.Material.shaderMaterials = {};
+glam.DOM.Material.shaderMaterials = {};
 
-glam.Material.saveShaderMaterial = function(vsurl, fsurl, material) {
+glam.DOM.Material.saveShaderMaterial = function(vsurl, fsurl, material) {
 	var key = vsurl + fsurl;
-	var entry = glam.Material.shaderMaterials[key];
+	var entry = glam.DOM.Material.shaderMaterials[key];
 	entry.material = material;
 	entry.loading = false;
 }
 
-glam.Material.addShaderMaterialCallback = function(vsurl, fsurl, cb) {
+glam.DOM.Material.addShaderMaterialCallback = function(vsurl, fsurl, cb) {
 	var key = vsurl + fsurl;
 	
-	var entry = glam.Material.shaderMaterials[key];
+	var entry = glam.DOM.Material.shaderMaterials[key];
 	if (!entry) {
-		glam.Material.shaderMaterials[key] = {
+		glam.DOM.Material.shaderMaterials[key] = {
 			material : null,
 			loading : false,
 			callbacks : [],
 		};
 	}
 	
-	glam.Material.shaderMaterials[key].callbacks.push(cb);
+	glam.DOM.Material.shaderMaterials[key].callbacks.push(cb);
 }
 
-glam.Material.callShaderMaterialCallbacks = function(vsurl, fsurl) {
+glam.DOM.Material.callShaderMaterialCallbacks = function(vsurl, fsurl) {
 	var key = vsurl + fsurl;
 	
-	var entry = glam.Material.shaderMaterials[key];
+	var entry = glam.DOM.Material.shaderMaterials[key];
 	if (entry && entry.material) {
 		for (cb in entry.callbacks) {
 			entry.callbacks[cb](entry.material);
@@ -58770,10 +58784,10 @@ glam.Material.callShaderMaterialCallbacks = function(vsurl, fsurl) {
 	}
 }
 
-glam.Material.getShaderMaterial = function(vsurl, fsurl) {
+glam.DOM.Material.getShaderMaterial = function(vsurl, fsurl) {
 	
 	var key = vsurl + fsurl;
-	var entry = glam.Material.shaderMaterials[key];
+	var entry = glam.DOM.Material.shaderMaterials[key];
 	if (entry) {
 		return entry.material;
 	}
@@ -58782,34 +58796,34 @@ glam.Material.getShaderMaterial = function(vsurl, fsurl) {
 	}
 }
 
-glam.Material.setShaderMaterialLoading = function(vsurl, fsurl) {
+glam.DOM.Material.setShaderMaterialLoading = function(vsurl, fsurl) {
 	
 	var key = vsurl + fsurl;
-	var entry = glam.Material.shaderMaterials[key];
+	var entry = glam.DOM.Material.shaderMaterials[key];
 	if (entry) {
 		entry.loading = true;
 	}
 }
 
-glam.Material.getShaderMaterialLoading = function(vsurl, fsurl) {
+glam.DOM.Material.getShaderMaterialLoading = function(vsurl, fsurl) {
 	
 	var key = vsurl + fsurl;
-	var entry = glam.Material.shaderMaterials[key];
+	var entry = glam.DOM.Material.shaderMaterials[key];
 	return (entry && entry.loading);
 }
 
-glam.Material.addHandlers = function(docelt, style, obj) {
+glam.DOM.Material.addHandlers = function(docelt, style, obj) {
 
 	docelt.glam.setAttributeHandlers.push(function(attr, val) {
-		glam.Material.onSetAttribute(obj, docelt, attr, val);
+		glam.DOM.Material.onSetAttribute(obj, docelt, attr, val);
 	});
 	
 	style.setPropertyHandlers.push(function(attr, val) {
-		glam.Material.onSetProperty(obj, docelt, attr, val);
+		glam.DOM.Material.onSetProperty(obj, docelt, attr, val);
 	});
 }
 
-glam.Material.onSetAttribute = function(obj, docelt, attr, val) {
+glam.DOM.Material.onSetAttribute = function(obj, docelt, attr, val) {
 
 	var material = obj.visuals[0].material;
 	switch (attr) {
@@ -58821,7 +58835,7 @@ glam.Material.onSetAttribute = function(obj, docelt, attr, val) {
 	}
 }
 
-glam.Material.onSetProperty = function(obj, docelt, attr, val) {
+glam.DOM.Material.onSetProperty = function(obj, docelt, attr, val) {
 
 	var material = obj.visuals[0].material;
 	switch (attr) {
@@ -58838,23 +58852,23 @@ glam.Material.onSetProperty = function(obj, docelt, attr, val) {
  * @author Tony Parisi
  */
 
-glam.Mesh = {};
-glam.Mesh.VERTEX_NORMALS = false;
-glam.Mesh.VERTEX_COLORS = false;
+glam.DOM.Mesh = {};
+glam.DOM.Mesh.VERTEX_NORMALS = false;
+glam.DOM.Mesh.VERTEX_COLORS = false;
 
-glam.Mesh.create = function(docelt, style) {
+glam.DOM.Mesh.create = function(docelt, style) {
 	
-	return glam.Visual.create(docelt, style, glam.Mesh);
+	return glam.DOM.Visual.create(docelt, style, glam.DOM.Mesh);
 }
 
-glam.Mesh.getAttributes = function(docelt, style, param) {
+glam.DOM.Mesh.getAttributes = function(docelt, style, param) {
 	
 	var vertexNormals = docelt.getAttribute('vertexNormals');
 	if (vertexNormals !== null) {
 		vertexNormals = true;
 	}
 	else {
-		vertexNormals = glam.Mesh.VERTEX_NORMALS;
+		vertexNormals = glam.DOM.Mesh.VERTEX_NORMALS;
 	}
 	
 	var vertexColors = docelt.getAttribute('vertexColors');
@@ -58862,7 +58876,7 @@ glam.Mesh.getAttributes = function(docelt, style, param) {
 		vertexColors = true;
 	}
 	else {
-		vertexColors = glam.Mesh.VERTEX_COLORS;
+		vertexColors = glam.DOM.Mesh.VERTEX_COLORS;
 	}
 	
 	if (style) {
@@ -58876,11 +58890,11 @@ glam.Mesh.getAttributes = function(docelt, style, param) {
 	param.vertexColors = vertexColors;
 }
 
-glam.Mesh.createVisual = function(docelt, material, param) {
+glam.DOM.Mesh.createVisual = function(docelt, material, param) {
 
 	var geometry = new THREE.Geometry;
 	
-	glam.Mesh.parse(docelt, geometry, material, param);
+	glam.DOM.Mesh.parse(docelt, geometry, material, param);
 	
 	var mesh = new THREE.Mesh(geometry, material);
 	var visual = new Vizi.Visual(
@@ -58891,13 +58905,13 @@ glam.Mesh.createVisual = function(docelt, material, param) {
 	return visual;
 }
 
-glam.Mesh.parse = function(docelt, geometry, material, param) {
+glam.DOM.Mesh.parse = function(docelt, geometry, material, param) {
 
 	var verts = docelt.getElementsByTagName('vertices');
 	if (verts) {
 		verts = verts[0];
 		if (verts) {
-			glam.Types.parseVector3Array(verts, geometry.vertices);
+			glam.DOM.Types.parseVector3Array(verts, geometry.vertices);
 		}
 	}
 	
@@ -58905,7 +58919,7 @@ glam.Mesh.parse = function(docelt, geometry, material, param) {
 	if (uvs) {
 		uvs = uvs[0];
 		if (uvs) {
-			glam.Types.parseUVArray(uvs, geometry.faceVertexUvs[0]);
+			glam.DOM.Types.parseUVArray(uvs, geometry.faceVertexUvs[0]);
 		}
 	}
 
@@ -58913,7 +58927,7 @@ glam.Mesh.parse = function(docelt, geometry, material, param) {
 	if (faces) {
 		faces = faces[0];
 		if (faces) {
-			glam.Types.parseFaceArray(faces, geometry.faces);
+			glam.DOM.Types.parseFaceArray(faces, geometry.faces);
 		}
 	}
 
@@ -58922,7 +58936,7 @@ glam.Mesh.parse = function(docelt, geometry, material, param) {
 	if (normals) {
 		normals = normals[0];
 		if (normals) {
-			glam.Types.parseVector3Array(normals, vertexNormals);
+			glam.DOM.Types.parseVector3Array(normals, vertexNormals);
 			
 			if (param.vertexNormals) {
 				
@@ -58962,7 +58976,7 @@ glam.Mesh.parse = function(docelt, geometry, material, param) {
 	if (colors) {
 		colors = colors[0];
 		if (colors) {
-			glam.Types.parseColor3Array(colors, vertexColors);
+			glam.DOM.Types.parseColor3Array(colors, vertexColors);
 	
 			if (param.vertexColors) {
 	
@@ -59019,10 +59033,10 @@ glam.Mesh.parse = function(docelt, geometry, material, param) {
  * @author Tony Parisi
  */
 
-glam.Node = {};
+glam.DOM.Node = {};
 
 
-glam.Node.init = function(docelt) {
+glam.DOM.Node.init = function(docelt) {
 
 	docelt.glam = {
 	};
@@ -59039,15 +59053,15 @@ glam.Node.init = function(docelt) {
 	}
 }
 
-glam.Node.getStyle = function(docelt) {
+glam.DOM.Node.getStyle = function(docelt) {
 	
-	var glamClassList = new glam.ClassList(docelt);
+	var glamClassList = new glam.DOM.ClassList(docelt);
 	docelt.glam.classList = glamClassList;
 	
-	var style = new glam.Style(docelt);
+	var style = new glam.DOM.Style(docelt);
 	
 	if (docelt.id) {
-		var styl = glam.getStyle("#" + docelt.id);
+		var styl = glam.DOM.getStyle("#" + docelt.id);
 		style.addProperties(styl);
 	}
 	
@@ -59061,7 +59075,7 @@ glam.Node.getStyle = function(docelt) {
 		for (klassname in klasses) {
 			var kls = klasses[klassname];
 			if (kls) {
-				var styl = glam.getStyle("." + kls);
+				var styl = glam.DOM.getStyle("." + kls);
 				style.addProperties(styl);
 				
 				glamClassList.add(kls);
@@ -59084,7 +59098,7 @@ glam.Node.getStyle = function(docelt) {
  * @author Tony Parisi
  */
 
-glam.parser = {
+glam.DOM.parser = {
 		
 	addDocument : function(doc)
 	{
@@ -59096,13 +59110,13 @@ glam.parser = {
 		    	var i, len = mutation.addedNodes.length;
 		    	for (i = 0; i < len; i++) {
 		    		var node = mutation.addedNodes[i];
-		    		var viewer = glam.viewers[doc.id];
+		    		var viewer = glam.DOM.viewers[doc.id];
 			    	viewer.addNode(node);
 		    	}
 		    	var i, len = mutation.removedNodes.length;
 		    	for (i = 0; i < len; i++) {
 		    		var node = mutation.removedNodes[i];
-		    		var viewer = glam.viewers[doc.id];
+		    		var viewer = glam.DOM.viewers[doc.id];
 			    	viewer.removeNode(node);
 		    	}
 		    }
@@ -59127,13 +59141,13 @@ glam.parser = {
 	addStyle : function(declaration)
 	{
 		for (selector in declaration) {
-			glam.addStyle(selector, declaration[selector]);
+			glam.DOM.addStyle(selector, declaration[selector]);
 		}
 	},
 	
 	getStyle : function(selector)
 	{
-		return glam.getStyle(selector);
+		return glam.DOM.getStyle(selector);
 	},
 	
 	parseDocument : function()
@@ -59148,12 +59162,12 @@ glam.parser = {
 		{
 			var doc = docs[i];
 			if (!doc.id) {
-				doc.id = "#glamDocument" + glam.documentIndex++;
+				doc.id = "#glamDocument" + glam.DOM.documentIndex++;
 			}
-			glam.parser.addDocument(doc);
-			glam.documents[doc.id] = doc;
+			glam.DOM.parser.addDocument(doc);
+			glam.DOM.documents[doc.id] = doc;
 			doc.style.display = 'none';
-			glam.parser.addEventHandlers(doc);
+			glam.DOM.parser.addEventHandlers(doc);
 		}
 		
 		var styles = document.head.getElementsByTagName("style");
@@ -59163,7 +59177,7 @@ glam.parser = {
 			if (styles[i].childNodes.length) {
 				$.parsecss(styles[i].childNodes[0].data,
 						function(css) {
-								glam.parser.addStyle(css);
+								glam.DOM.parser.addStyle(css);
 							}
 						);
 			}
@@ -59207,15 +59221,15 @@ glam.parser = {
  * @author Tony Parisi
  */
 
-glam.Particles = {};
+glam.DOM.Particles = {};
 
-glam.Particles.create = function(docelt, style) {
+glam.DOM.Particles.create = function(docelt, style) {
 
-	var mparam = glam.Material.parseStyle(style);
+	var mparam = glam.DOM.Material.parseStyle(style);
 
 	// Parse the attributes
 	var param = {};
-	glam.Particles.getAttributes(docelt, style, param);
+	glam.DOM.Particles.getAttributes(docelt, style, param);
 	
 	// Throw in the texture from the material
 	param.map = mparam.map;      // for static geometry-based
@@ -59223,7 +59237,7 @@ glam.Particles.create = function(docelt, style) {
 	param.color = mparam.color;
 	
 	// Parse the child elements
-	var elts = glam.Particles.parse(docelt);
+	var elts = glam.DOM.Particles.parse(docelt);
 	
 	// Got geometry in there? Pass it on
 	param.geometry = elts.geometry;
@@ -59232,7 +59246,7 @@ glam.Particles.create = function(docelt, style) {
 	var ps = Vizi.ParticleSystem(param);
 
 	// Got emitters in there? Add them
-	glam.Particles.addEmitters(elts.emitters, ps);
+	glam.DOM.Particles.addEmitters(elts.emitters, ps);
 
 	// Bind the properties
 	var visual = ps.getComponent(Vizi.Visual);
@@ -59245,15 +59259,15 @@ glam.Particles.create = function(docelt, style) {
 	return ps;
 }
 
-glam.Particles.getAttributes = function(docelt, style, param) {
-	var maxAge = docelt.getAttribute('maxAge') || glam.Particles.DEFAULT_MAX_AGE;
+glam.DOM.Particles.getAttributes = function(docelt, style, param) {
+	var maxAge = docelt.getAttribute('maxAge') || glam.DOM.Particles.DEFAULT_MAX_AGE;
 	var size = parseFloat(docelt.getAttribute('size'));
 
 	param.maxAge = parseFloat(maxAge);
 	param.size = size;
 }
 
-glam.Particles.parse = function(docelt) {
+glam.DOM.Particles.parse = function(docelt) {
 	
 	var result = {
 			geometry : null,
@@ -59272,7 +59286,7 @@ glam.Particles.parse = function(docelt) {
 			
 			var emitter = emitters[i];
 			if (emitter) {
-				glam.Particles.parseEmitter(emitter, param);
+				glam.DOM.Particles.parseEmitter(emitter, param);
 
 				var pe = new Vizi.ParticleEmitter(param);
 				result.emitters.push(pe);
@@ -59286,7 +59300,7 @@ glam.Particles.parse = function(docelt) {
 		verts = verts[0];
 		if (verts) {
 			var geometry = new THREE.Geometry;
-			glam.Types.parseVector3Array(verts, geometry.vertices);
+			glam.DOM.Types.parseVector3Array(verts, geometry.vertices);
 			result.geometry = geometry;
 		}
 	}
@@ -59294,7 +59308,7 @@ glam.Particles.parse = function(docelt) {
 	return result;
 }
 
-glam.Particles.parseEmitter = function(emitter, param) {
+glam.DOM.Particles.parseEmitter = function(emitter, param) {
 	    
 	var size = parseFloat(emitter.getAttribute('size'));
 	var sizeEnd = parseFloat(emitter.getAttribute('sizeEnd'));
@@ -59331,22 +59345,22 @@ glam.Particles.parseEmitter = function(emitter, param) {
 
 	var vel = emitter.getAttribute('velocity');
 	if (vel) {
-		glam.Types.parseVector3(vel, velocity);
+		glam.DOM.Types.parseVector3(vel, velocity);
 	}
 	
 	var accel = emitter.getAttribute('acceleration');
 	if (accel) {
-		glam.Types.parseVector3(accel, acceleration);
+		glam.DOM.Types.parseVector3(accel, acceleration);
 	}
 	
 	var posSpread = emitter.getAttribute('positionSpread');
 	if (posSpread) {
-		glam.Types.parseVector3(posSpread, positionSpread);
+		glam.DOM.Types.parseVector3(posSpread, positionSpread);
 	}
 
 	var accelSpread = emitter.getAttribute('accelerationSpread');
 	if (accelSpread) {
-		glam.Types.parseVector3(accelSpread, accelerationSpread);
+		glam.DOM.Types.parseVector3(accelSpread, accelerationSpread);
 	}
 
 	var blending = THREE.NoBlending;
@@ -59392,7 +59406,7 @@ glam.Particles.parseEmitter = function(emitter, param) {
 	param.blending = blending;
 }
 
-glam.Particles.addEmitters = function(emitters, ps) {
+glam.DOM.Particles.addEmitters = function(emitters, ps) {
 	
 	var i, len = emitters.length;
 	for (i = 0; i < len; i++) {
@@ -59400,7 +59414,7 @@ glam.Particles.addEmitters = function(emitters, ps) {
 	}
 }
 
-glam.Particles.DEFAULT_MAX_AGE = 1;
+glam.DOM.Particles.DEFAULT_MAX_AGE = 1;
 
 /**
  * @fileoverview 2D rectangle parser/implementation
@@ -59408,23 +59422,23 @@ glam.Particles.DEFAULT_MAX_AGE = 1;
  * @author Tony Parisi
  */
 
-glam.Rect = {};
+glam.DOM.Rect = {};
 
-glam.Rect.DEFAULT_WIDTH = 2;
-glam.Rect.DEFAULT_HEIGHT = 2;
-glam.Rect.DEFAULT_WIDTH_SEGMENTS = 1;
-glam.Rect.DEFAULT_HEIGHT_SEGMENTS = 1;
+glam.DOM.Rect.DEFAULT_WIDTH = 2;
+glam.DOM.Rect.DEFAULT_HEIGHT = 2;
+glam.DOM.Rect.DEFAULT_WIDTH_SEGMENTS = 1;
+glam.DOM.Rect.DEFAULT_HEIGHT_SEGMENTS = 1;
 
-glam.Rect.create = function(docelt, style) {
-	return glam.Visual.create(docelt, style, glam.Rect);
+glam.DOM.Rect.create = function(docelt, style) {
+	return glam.DOM.Visual.create(docelt, style, glam.DOM.Rect);
 }
 
-glam.Rect.getAttributes = function(docelt, style, param) {
+glam.DOM.Rect.getAttributes = function(docelt, style, param) {
 
-	var width = docelt.getAttribute('width') || glam.Rect.DEFAULT_WIDTH;
-	var height = docelt.getAttribute('height') || glam.Rect.DEFAULT_HEIGHT;
-	var widthSegments = docelt.getAttribute('width') || glam.Rect.DEFAULT_WIDTH_SEGMENTS;
-	var heightSegments = docelt.getAttribute('height') || glam.Rect.DEFAULT_HEIGHT_SEGMENTS;
+	var width = docelt.getAttribute('width') || glam.DOM.Rect.DEFAULT_WIDTH;
+	var height = docelt.getAttribute('height') || glam.DOM.Rect.DEFAULT_HEIGHT;
+	var widthSegments = docelt.getAttribute('width') || glam.DOM.Rect.DEFAULT_WIDTH_SEGMENTS;
+	var heightSegments = docelt.getAttribute('height') || glam.DOM.Rect.DEFAULT_HEIGHT_SEGMENTS;
 	
 	if (style) {
 		if (style.width)
@@ -59448,7 +59462,7 @@ glam.Rect.getAttributes = function(docelt, style, param) {
 	param.heightSegments = heightSegments;
 }
 
-glam.Rect.createVisual = function(docelt, material, param) {
+glam.DOM.Rect.createVisual = function(docelt, material, param) {
 
 	var visual = new Vizi.Visual(
 			{ geometry: new THREE.PlaneGeometry(param.width, param.height, param.widthSegments, param.heightSegments),
@@ -59463,7 +59477,7 @@ glam.Rect.createVisual = function(docelt, material, param) {
  * @author Tony Parisi
  */
 
-glam.renderer = {
+glam.DOM.renderer = {
 };
 /**
  * @fileoverview sphere primitive parser/implementation
@@ -59471,21 +59485,21 @@ glam.renderer = {
  * @author Tony Parisi
  */
 
-glam.Sphere = {};
+glam.DOM.Sphere = {};
 
-glam.Sphere.DEFAULT_RADIUS = 2;
-glam.Sphere.DEFAULT_WIDTH_SEGMENTS = 32;
-glam.Sphere.DEFAULT_HEIGHT_SEGMENTS = 32;
+glam.DOM.Sphere.DEFAULT_RADIUS = 2;
+glam.DOM.Sphere.DEFAULT_WIDTH_SEGMENTS = 32;
+glam.DOM.Sphere.DEFAULT_HEIGHT_SEGMENTS = 32;
 
-glam.Sphere.create = function(docelt, style) {
-	return glam.Visual.create(docelt, style, glam.Sphere);
+glam.DOM.Sphere.create = function(docelt, style) {
+	return glam.DOM.Visual.create(docelt, style, glam.DOM.Sphere);
 }
 
-glam.Sphere.getAttributes = function(docelt, style, param) {
+glam.DOM.Sphere.getAttributes = function(docelt, style, param) {
 	
-	var radius = docelt.getAttribute('radius') || glam.Sphere.DEFAULT_RADIUS;
-	var widthSegments = docelt.getAttribute('width-segments') || glam.Sphere.DEFAULT_WIDTH_SEGMENTS;
-	var heightSegments = docelt.getAttribute('height-segments') || glam.Sphere.DEFAULT_HEIGHT_SEGMENTS;
+	var radius = docelt.getAttribute('radius') || glam.DOM.Sphere.DEFAULT_RADIUS;
+	var widthSegments = docelt.getAttribute('width-segments') || glam.DOM.Sphere.DEFAULT_WIDTH_SEGMENTS;
+	var heightSegments = docelt.getAttribute('height-segments') || glam.DOM.Sphere.DEFAULT_HEIGHT_SEGMENTS;
 	
 	if (style) {
 		if (style.radius)
@@ -59505,7 +59519,7 @@ glam.Sphere.getAttributes = function(docelt, style, param) {
 	param.heightSegments = heightSegments;
 }
 
-glam.Sphere.createVisual = function(docelt, material, param) {
+glam.DOM.Sphere.createVisual = function(docelt, material, param) {
 
 	var visual = new Vizi.Visual(
 			{ geometry: new THREE.SphereGeometry(param.radius, param.widthSegments, param.heightSegments),
@@ -59520,7 +59534,7 @@ glam.Sphere.createVisual = function(docelt, material, param) {
  * @author Tony Parisi
  */
 
-glam.Style = function(docelt) {
+glam.DOM.Style = function(docelt) {
 
 	this.docelt = docelt;
 	this._properties = {
@@ -59530,22 +59544,22 @@ glam.Style = function(docelt) {
 	this.defineStandardProperties();
 }
 
-glam.Style.prototype = new Object;
+glam.DOM.Style.prototype = new Object;
 
-glam.Style.prototype.addProperties = function(props) {
+glam.DOM.Style.prototype.addProperties = function(props) {
 	for (p in props) {
 		this.addProperty(p, props[p]);
 	}
 }
 
-glam.Style.prototype.addProperty = function(propName, propValue) {
+glam.DOM.Style.prototype.addProperty = function(propName, propValue) {
 
 	this.defineProperty(propName, propValue);
 
 	this._properties[propName] = propValue;
 }
 
-glam.Style.prototype.addPropertiesFromString = function(str) {
+glam.DOM.Style.prototype.addPropertiesFromString = function(str) {
 	var propstrs = str.split(';');
 	var props = {
 	};
@@ -59565,7 +59579,7 @@ glam.Style.prototype.addPropertiesFromString = function(str) {
 	this.addProperties(props);
 }
 
-glam.Style.prototype.onPropertyChanged = function(propName, propValue) {
+glam.DOM.Style.prototype.onPropertyChanged = function(propName, propValue) {
 
 	// console.log(this.docelt.id, "property", propName, "value changed to", propValue);
 
@@ -59578,7 +59592,7 @@ glam.Style.prototype.onPropertyChanged = function(propName, propValue) {
 	}
 }
 
-glam.Style.prototype.defineProperty = function(propName, propValue) {
+glam.DOM.Style.prototype.defineProperty = function(propName, propValue) {
 	Object.defineProperty(this, propName, {
 			enumerable : true,
 			configurable : true,
@@ -59592,9 +59606,9 @@ glam.Style.prototype.defineProperty = function(propName, propValue) {
 		});
 }
 
-glam.Style.prototype.defineStandardProperties = function() {
+glam.DOM.Style.prototype.defineStandardProperties = function() {
 
-	var props = glam.Style._standardProperties
+	var props = glam.DOM.Style._standardProperties
 	var propName;
 	for (propName in props) {
 		var propValue = props[propName];
@@ -59602,7 +59616,7 @@ glam.Style.prototype.defineStandardProperties = function() {
 	}
 }
 
-glam.Style._standardProperties = {
+glam.DOM.Style._standardProperties = {
 		"angle" : "",
 		"backface-visibility" : "visible",
 		"background-type" : "",
@@ -59671,40 +59685,40 @@ glam.Style._standardProperties = {
  * @author Tony Parisi
  */
 
-glam.Text = {};
+glam.DOM.Text = {};
 
-glam.Text.DEFAULT_FONT_SIZE = 1;
-glam.Text.DEFAULT_FONT_DEPTH = .2;
-glam.Text.DEFAULT_FONT_BEVEL = "none";
-glam.Text.DEFAULT_BEVEL_SIZE = .01;
-glam.Text.DEFAULT_BEVEL_THICKNESS = .02;
-glam.Text.DEFAULT_FONT_FAMILY = "helvetica";
-glam.Text.DEFAULT_FONT_WEIGHT = "normal";
-glam.Text.DEFAULT_FONT_STYLE = "normal";
+glam.DOM.Text.DEFAULT_FONT_SIZE = 1;
+glam.DOM.Text.DEFAULT_FONT_DEPTH = .2;
+glam.DOM.Text.DEFAULT_FONT_BEVEL = "none";
+glam.DOM.Text.DEFAULT_BEVEL_SIZE = .01;
+glam.DOM.Text.DEFAULT_BEVEL_THICKNESS = .02;
+glam.DOM.Text.DEFAULT_FONT_FAMILY = "helvetica";
+glam.DOM.Text.DEFAULT_FONT_WEIGHT = "normal";
+glam.DOM.Text.DEFAULT_FONT_STYLE = "normal";
 
-glam.Text.BEVEL_EPSILON = 0.0001;
+glam.DOM.Text.BEVEL_EPSILON = 0.0001;
 
-glam.Text.DEFAULT_VALUE = "",
+glam.DOM.Text.DEFAULT_VALUE = "",
 
-glam.Text.create = function(docelt, style) {
-	return glam.Visual.create(docelt, style, glam.Text);
+glam.DOM.Text.create = function(docelt, style) {
+	return glam.DOM.Visual.create(docelt, style, glam.DOM.Text);
 }
 
-glam.Text.getAttributes = function(docelt, style, param) {
+glam.DOM.Text.getAttributes = function(docelt, style, param) {
 
 	// Font stuff
 	// for now: helvetiker, optimer - typeface.js stuff
 	// could also do: gentilis, droid sans, droid serif but the files are big.
-	var fontFamily = docelt.getAttribute('fontFamily') || glam.Text.DEFAULT_FONT_FAMILY; // "optimer";
-	var fontWeight = docelt.getAttribute('fontWeight') || glam.Text.DEFAULT_FONT_WEIGHT; // "bold"; // normal bold
-	var fontStyle = docelt.getAttribute('fontStyle') || glam.Text.DEFAULT_FONT_STYLE; // "normal"; // normal italic
+	var fontFamily = docelt.getAttribute('fontFamily') || glam.DOM.Text.DEFAULT_FONT_FAMILY; // "optimer";
+	var fontWeight = docelt.getAttribute('fontWeight') || glam.DOM.Text.DEFAULT_FONT_WEIGHT; // "bold"; // normal bold
+	var fontStyle = docelt.getAttribute('fontStyle') || glam.DOM.Text.DEFAULT_FONT_STYLE; // "normal"; // normal italic
 
 	// Size, depth, bevel etc.
-	var fontSize = docelt.getAttribute('fontSize') || glam.Text.DEFAULT_FONT_SIZE;
-	var fontDepth = docelt.getAttribute('fontDepth') || glam.Text.DEFAULT_FONT_DEPTH;
-	var fontBevel = docelt.getAttribute('fontBevel') || glam.Text.DEFAULT_FONT_BEVEL;
-	var bevelSize = docelt.getAttribute('bevelSize') || glam.Text.DEFAULT_BEVEL_SIZE;
-	var bevelThickness = docelt.getAttribute('bevelThickness') || glam.Text.DEFAULT_BEVEL_THICKNESS;
+	var fontSize = docelt.getAttribute('fontSize') || glam.DOM.Text.DEFAULT_FONT_SIZE;
+	var fontDepth = docelt.getAttribute('fontDepth') || glam.DOM.Text.DEFAULT_FONT_DEPTH;
+	var fontBevel = docelt.getAttribute('fontBevel') || glam.DOM.Text.DEFAULT_FONT_BEVEL;
+	var bevelSize = docelt.getAttribute('bevelSize') || glam.DOM.Text.DEFAULT_BEVEL_SIZE;
+	var bevelThickness = docelt.getAttribute('bevelThickness') || glam.DOM.Text.DEFAULT_BEVEL_THICKNESS;
 	
 	if (style) {
 		if (style["font-family"])
@@ -59764,12 +59778,12 @@ glam.Text.getAttributes = function(docelt, style, param) {
 	}
 	// hack because no-bevel shading has bad normals along text edge
 	if (!bevelEnabled) {
-		bevelThickness = bevelSize = glam.Text.BEVEL_EPSILON;
+		bevelThickness = bevelSize = glam.DOM.Text.BEVEL_EPSILON;
 		bevelEnabled = true;
 	}
 
 	// The text value
-	var value = docelt.getAttribute('value') || glam.Text.DEFAULT_VALUE;
+	var value = docelt.getAttribute('value') || glam.DOM.Text.DEFAULT_VALUE;
 
 	if (!value) {
 		value = docelt.textContent;
@@ -59786,7 +59800,7 @@ glam.Text.getAttributes = function(docelt, style, param) {
 	param.fontStyle = fontStyle;
 }
 
-glam.Text.createVisual = function(docelt, material, param) {
+glam.DOM.Text.createVisual = function(docelt, material, param) {
 
 	if (!param.value) {
 		return null;
@@ -59840,9 +59854,9 @@ glam.Text.createVisual = function(docelt, material, param) {
  * @author Tony Parisi
  */
 
-glam.Transform = {};
+glam.DOM.Transform = {};
 
-glam.Transform.parse = function(docelt, style, obj) {
+glam.DOM.Transform.parse = function(docelt, style, obj) {
 	
 	var t = {
 	};
@@ -59850,19 +59864,19 @@ glam.Transform.parse = function(docelt, style, obj) {
 	t.x = parseFloat(docelt.getAttribute('x')) || 0;
 	t.y = parseFloat(docelt.getAttribute('y')) || 0;
 	t.z = parseFloat(docelt.getAttribute('z')) || 0;
-	t.rx = glam.Transform.parseRotation(docelt.getAttribute('rx')) || 0;
-	t.ry = glam.Transform.parseRotation(docelt.getAttribute('ry')) || 0;
-	t.rz = glam.Transform.parseRotation(docelt.getAttribute('rz')) || 0;
+	t.rx = glam.DOM.Transform.parseRotation(docelt.getAttribute('rx')) || 0;
+	t.ry = glam.DOM.Transform.parseRotation(docelt.getAttribute('ry')) || 0;
+	t.rz = glam.DOM.Transform.parseRotation(docelt.getAttribute('rz')) || 0;
 	t.sx = parseFloat(docelt.getAttribute('sx')) || 1;
 	t.sy = parseFloat(docelt.getAttribute('sy')) || 1;
 	t.sz = parseFloat(docelt.getAttribute('sz')) || 1;
 	var transform = docelt.getAttribute('transform');
 	if (transform) {
-		glam.Transform.parseTransform(transform, t);
+		glam.DOM.Transform.parseTransform(transform, t);
 	}
 
 	if (style) {
-		glam.Transform.parseStyle(style, t);
+		glam.DOM.Transform.parseStyle(style, t);
 	}
 	
 	obj.transform.position.set(t.x, t.y, t.z);
@@ -59870,15 +59884,15 @@ glam.Transform.parse = function(docelt, style, obj) {
 	obj.transform.scale.set(t.sx, t.sy, t.sz);
 	
 	docelt.glam.setAttributeHandlers.push(function(attr, val) {
-		glam.Transform.onSetAttribute(obj, docelt, attr, val);
+		glam.DOM.Transform.onSetAttribute(obj, docelt, attr, val);
 	});
 
 	style.setPropertyHandlers.push(function(attr, val) {
-		glam.Transform.onSetAttribute(obj, docelt, attr, val);
+		glam.DOM.Transform.onSetAttribute(obj, docelt, attr, val);
 	});
 }
 
-glam.Transform.parseStyle = function(style, t) {
+glam.DOM.Transform.parseStyle = function(style, t) {
 	
 	if (style) {
 		if (style.x) {
@@ -59891,13 +59905,13 @@ glam.Transform.parseStyle = function(style, t) {
 			t.z = parseFloat(style.z);
 		}
 		if (style.rx) {
-			t.rx = glam.Transform.parseRotation(style.rx);
+			t.rx = glam.DOM.Transform.parseRotation(style.rx);
 		}
 		if (style.ry) {
-			t.ry = glam.Transform.parseRotation(style.ry);
+			t.ry = glam.DOM.Transform.parseRotation(style.ry);
 		}
 		if (style.rz) {
-			t.rz = glam.Transform.parseRotation(style.rz);
+			t.rz = glam.DOM.Transform.parseRotation(style.rz);
 		}
 		if (style.sx) {
 			t.sx = parseFloat(style.sx);
@@ -59909,12 +59923,12 @@ glam.Transform.parseStyle = function(style, t) {
 			t.sz = parseFloat(style.sz);
 		}
 		if (style.transform) {			
-			glam.Transform.parseTransform(style.transform, t);
+			glam.DOM.Transform.parseTransform(style.transform, t);
 		}
 	}
 }
 
-glam.Transform.parseRotation = function(r) {
+glam.DOM.Transform.parseRotation = function(r) {
 	if (!r)
 		return null;
 	
@@ -59940,7 +59954,7 @@ glam.Transform.parseRotation = function(r) {
 	return parseFloat(r);
 }
 
-glam.Transform.parseTransform = function(str, t) {
+glam.DOM.Transform.parseTransform = function(str, t) {
 
 	var transforms = str.split(" ");
 	var i, len = transforms.length;
@@ -59963,13 +59977,13 @@ glam.Transform.parseTransform = function(str, t) {
 				t.z = parseFloat(value);
 				break;
 			case "rotateX" :
-				t.rx = glam.Transform.parseRotation(value);
+				t.rx = glam.DOM.Transform.parseRotation(value);
 				break;
 			case "rotateY" :
-				t.ry = glam.Transform.parseRotation(value);
+				t.ry = glam.DOM.Transform.parseRotation(value);
 				break;
 			case "rotateZ" :
-				t.rz = glam.Transform.parseRotation(value);
+				t.rz = glam.DOM.Transform.parseRotation(value);
 				break;
 			case "scaleX" :
 				t.sx = parseFloat(value);
@@ -59984,7 +59998,7 @@ glam.Transform.parseTransform = function(str, t) {
 	}
 }
 
-glam.Transform.onSetAttribute = function(obj, docelt, attr, val) {
+glam.DOM.Transform.onSetAttribute = function(obj, docelt, attr, val) {
 	var v = parseFloat(val);
 	switch(attr) {
 		case 'x' :
@@ -60023,14 +60037,14 @@ glam.Transform.onSetAttribute = function(obj, docelt, attr, val) {
  * @author Tony Parisi
  */
 
-glam.Transition = {};
+glam.DOM.Transition = {};
 
-glam.Transition.DEFAULT_DURATION = glam.Animation.DEFAULT_DURATION;
-glam.Transition.DEFAULT_TIMING_FUNCTION =  glam.Animation.DEFAULT_TIMING_FUNCTION;
+glam.DOM.Transition.DEFAULT_DURATION = glam.DOM.Animation.DEFAULT_DURATION;
+glam.DOM.Transition.DEFAULT_TIMING_FUNCTION =  glam.DOM.Animation.DEFAULT_TIMING_FUNCTION;
 
 // transition:transform 2s, background-color 5s linear 2s;
 
-glam.Transition.parse = function(docelt, style, obj) {
+glam.DOM.Transition.parse = function(docelt, style, obj) {
 
 	var transition = style.transition || "";
 	
@@ -60047,12 +60061,12 @@ glam.Transition.parse = function(docelt, style, obj) {
 				params.shift();
 			var propname = params[0];
 			var duration = params[1];
-			var timingFunction = params[2] || glam.Transition.DEFAULT_TIMING_FUNCTION;
+			var timingFunction = params[2] || glam.DOM.Transition.DEFAULT_TIMING_FUNCTION;
 			var delay = params[3] || "";
 			
-			duration = glam.Animation.parseTime(duration);
-			timingFunction = glam.Animation.parseTimingFunction(timingFunction);
-			delay = glam.Animation.parseTime(delay);
+			duration = glam.DOM.Animation.parseTime(duration);
+			timingFunction = glam.DOM.Animation.parseTimingFunction(timingFunction);
+			delay = glam.DOM.Animation.parseTime(delay);
 			
 			transitions[propname] = {
 					duration : duration,
@@ -60069,34 +60083,34 @@ glam.Transition.parse = function(docelt, style, obj) {
  * @author Tony Parisi
  */
 
-glam.Types = {
+glam.DOM.Types = {
 };
 
 // statics
-glam.Types.types = {
-		"box" :  { cls : glam.Box, transform:true, animation:true, input:true, visual:true },
-		"cone" :  { cls : glam.Cone, transform:true, animation:true, input:true, visual:true },
-		"cylinder" :  { cls : glam.Cylinder, transform:true, animation:true, input:true, visual:true },
-		"sphere" :  { cls : glam.Sphere, transform:true, animation:true, input:true, visual:true },
-		"rect" :  { cls : glam.Rect, transform:true, animation:true, input:true, visual:true },
-		"circle" :  { cls : glam.Circle, transform:true, animation:true, input:true, visual:true },
-		"arc" :  { cls : glam.Arc, transform:true, animation:true, input:true, visual:true },
-		"group" :  { cls : glam.Group, transform:true, animation:true, input:true },
-		"animation" :  { cls : glam.Animation },
-		"background" :  { cls : glam.Background },
-		"import" :  { cls : glam.Import, transform:true, animation:true },
-		"camera" :  { cls : glam.Camera, transform:true, animation:true },
-		"controller" :  { cls : glam.Controller },
-		"text" :  { cls : glam.Text, transform:true, animation:true, input:true, visual:true },
-		"mesh" :  { cls : glam.Mesh, transform:true, animation:true, input:true, visual:true },
-		"line" :  { cls : glam.Line, transform:true, animation:true, visual:true },
-		"light" :  { cls : glam.Light, transform:true, animation:true },
-		"particles" :  { cls : glam.Particles, transform:true, animation:true },
-		"effect" :  { cls : glam.Effect, },
+glam.DOM.Types.types = {
+		"box" :  { cls : glam.DOM.Box, transform:true, animation:true, input:true, visual:true },
+		"cone" :  { cls : glam.DOM.Cone, transform:true, animation:true, input:true, visual:true },
+		"cylinder" :  { cls : glam.DOM.Cylinder, transform:true, animation:true, input:true, visual:true },
+		"sphere" :  { cls : glam.DOM.Sphere, transform:true, animation:true, input:true, visual:true },
+		"rect" :  { cls : glam.DOM.Rect, transform:true, animation:true, input:true, visual:true },
+		"circle" :  { cls : glam.DOM.Circle, transform:true, animation:true, input:true, visual:true },
+		"arc" :  { cls : glam.DOM.Arc, transform:true, animation:true, input:true, visual:true },
+		"group" :  { cls : glam.DOM.Group, transform:true, animation:true, input:true },
+		"animation" :  { cls : glam.DOM.Animation },
+		"background" :  { cls : glam.DOM.Background },
+		"import" :  { cls : glam.DOM.Import, transform:true, animation:true },
+		"camera" :  { cls : glam.DOM.Camera, transform:true, animation:true },
+		"controller" :  { cls : glam.DOM.Controller },
+		"text" :  { cls : glam.DOM.Text, transform:true, animation:true, input:true, visual:true },
+		"mesh" :  { cls : glam.DOM.Mesh, transform:true, animation:true, input:true, visual:true },
+		"line" :  { cls : glam.DOM.Line, transform:true, animation:true, visual:true },
+		"light" :  { cls : glam.DOM.Light, transform:true, animation:true },
+		"particles" :  { cls : glam.DOM.Particles, transform:true, animation:true },
+		"effect" :  { cls : glam.DOM.Effect, },
 };
 
 
-glam.Types.parseVector3Array = function(element, vertices) {
+glam.DOM.Types.parseVector3Array = function(element, vertices) {
 
 	var text = element.textContent;
 	var nums = text.split(" ");
@@ -60116,7 +60130,7 @@ glam.Types.parseVector3Array = function(element, vertices) {
 	}
 }
 
-glam.Types.parseVector3 = function(text, vec) {
+glam.DOM.Types.parseVector3 = function(text, vec) {
 
 	var nums = text.split(" ");
 	
@@ -60131,7 +60145,7 @@ glam.Types.parseVector3 = function(text, vec) {
 	vec.set(x, y, z);
 }
 
-glam.Types.parseVector2Array = function(element, uvs) {
+glam.DOM.Types.parseVector2Array = function(element, uvs) {
 	var text = element.textContent;
 	var nums = text.split(" ");
 	
@@ -60150,7 +60164,7 @@ glam.Types.parseVector2Array = function(element, uvs) {
 
 }
 
-glam.Types.parseColor3Array = function(element, colors) {
+glam.DOM.Types.parseColor3Array = function(element, colors) {
 	var text = element.textContent;
 	var nums = text.split(" ");
 	
@@ -60171,7 +60185,7 @@ glam.Types.parseColor3Array = function(element, colors) {
 }
 
 
-glam.Types.parseColor3 = function(text, c) {
+glam.DOM.Types.parseColor3 = function(text, c) {
 
 	var nums = text.split(" ");
 	
@@ -60186,7 +60200,7 @@ glam.Types.parseColor3 = function(text, c) {
 	c.setRGB(r, g, b);
 }
 
-glam.Types.parseFaceArray = function(element, faces) {
+glam.DOM.Types.parseFaceArray = function(element, faces) {
 	
 	var text = element.textContent;
 	var nums = text.split(" ");
@@ -60207,7 +60221,7 @@ glam.Types.parseFaceArray = function(element, faces) {
 
 }
 
-glam.Types.parseUVArray = function(element, uvs) {
+glam.DOM.Types.parseUVArray = function(element, uvs) {
 	var text = element.textContent;
 	var nums = text.split(" ");
 	
@@ -60236,18 +60250,18 @@ glam.Types.parseUVArray = function(element, uvs) {
  * @author Tony Parisi
  */
 
-glam.Viewer = function(doc) {
+glam.DOM.Viewer = function(doc) {
 
 	this.document = doc;
 	this.documentParent = doc.parentElement;
-	this.riftRender = glam.riftRender || false;
-	this.cardboardRender = glam.cardboardRender || false;
-	this.displayStats = glam.displayStats || false;
+	this.riftRender = glam.DOM.riftRender || false;
+	this.cardboardRender = glam.DOM.cardboardRender || false;
+	this.displayStats = glam.DOM.displayStats || false;
 }
 
-glam.Viewer.prototype = new Object;
+glam.DOM.Viewer.prototype = new Object;
 
-glam.Viewer.prototype.initRenderer = function() {
+glam.DOM.Viewer.prototype.initRenderer = function() {
 	var renderers = this.document.getElementsByTagName('renderer');
 	if (renderers) {
 		var renderer = renderers[0];
@@ -60268,14 +60282,14 @@ glam.Viewer.prototype.initRenderer = function() {
 		displayStats:this.displayStats });
 }
 
-glam.Viewer.prototype.initDefaultScene = function() {
+glam.DOM.Viewer.prototype.initDefaultScene = function() {
 	
 	this.scene = new Vizi.Object;
 	this.app.sceneRoot.addChild(this.scene);
 	this.app.defaultCamera.position.set(0, 0, 5);
 }
 
-glam.Viewer.prototype.traverseScene = function() {
+glam.DOM.Viewer.prototype.traverseScene = function() {
 	var scenes = this.document.getElementsByTagName('scene');
 	if (scenes) {
 		var scene = scenes[0];
@@ -60287,7 +60301,7 @@ glam.Viewer.prototype.traverseScene = function() {
 	}
 }
 
-glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
+glam.DOM.Viewer.prototype.traverse = function(docelt, sceneobj) {
 
 	var tag = docelt.tagName;
 
@@ -60299,11 +60313,11 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 			tag = tag.toLowerCase();
 
 		var fn = null;
-		var type = tag ? glam.Types.types[tag] : null;
+		var type = tag ? glam.DOM.Types.types[tag] : null;
 		if (type && type.cls && (fn = type.cls.create) && typeof(fn) == "function") {
 			// console.log("    * found it in table!");
-			glam.Node.init(childelt);
-			var style = glam.Node.getStyle(childelt);
+			glam.DOM.Node.init(childelt);
+			var style = glam.DOM.Node.getStyle(childelt);
 			var obj = fn.call(this, childelt, style, this.app);
 			if (obj) {
 				childelt.glam.object = obj;
@@ -60316,17 +60330,17 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 	
 }
 
-glam.Viewer.prototype.addNode = function(docelt) {
+glam.DOM.Viewer.prototype.addNode = function(docelt) {
 
 	var tag = docelt.tagName;
 	if (tag)
 		tag = tag.toLowerCase();
 	var fn = null;
-	var type = tag ? glam.Types.types[tag] : null;
+	var type = tag ? glam.DOM.Types.types[tag] : null;
 	if (type && type.cls && (fn = type.cls.create) && typeof(fn) == "function") {
 
-		glam.Node.init(docelt);
-		var style = glam.Node.getStyle(docelt);
+		glam.DOM.Node.init(docelt);
+		var style = glam.DOM.Node.getStyle(docelt);
 		var obj = fn.call(this, docelt, style, this.app);
 		
 		if (obj) {
@@ -60338,7 +60352,7 @@ glam.Viewer.prototype.addNode = function(docelt) {
 	}
 }
 
-glam.Viewer.prototype.removeNode = function(docelt) {
+glam.DOM.Viewer.prototype.removeNode = function(docelt) {
 
 	var obj = docelt.glam.object;
 	if (obj) {
@@ -60346,28 +60360,28 @@ glam.Viewer.prototype.removeNode = function(docelt) {
 	}
 }
 
-glam.Viewer.prototype.addFeatures = function(docelt, style, obj, type) {
+glam.DOM.Viewer.prototype.addFeatures = function(docelt, style, obj, type) {
 
 	if (type.transform) {
-		glam.Transform.parse(docelt, style, obj);
+		glam.DOM.Transform.parse(docelt, style, obj);
 	}
 	
 	if (type.animation) {
-		glam.Animation.parse(docelt, style, obj);
-		glam.Transition.parse(docelt, style, obj);
+		glam.DOM.Animation.parse(docelt, style, obj);
+		glam.DOM.Transition.parse(docelt, style, obj);
 	}
 
 	if (type.input) {
-		glam.Input.add(docelt, obj);
+		glam.DOM.Input.add(docelt, obj);
 	}
 	
 	if (type.visual) {
-		glam.Visual.addProperties(docelt, obj);
-		glam.Material.addHandlers(docelt, style, obj);
+		glam.DOM.Visual.addProperties(docelt, obj);
+		glam.DOM.Material.addHandlers(docelt, style, obj);
 	}
 }
 
-glam.Viewer.prototype.go = function() {
+glam.DOM.Viewer.prototype.go = function() {
 	// Run it
 	this.initRenderer();
 	this.initDefaultScene();
@@ -60376,7 +60390,7 @@ glam.Viewer.prototype.go = function() {
 	this.app.run();
 }
 
-glam.Viewer.prototype.prepareViewsAndControllers = function() {
+glam.DOM.Viewer.prototype.prepareViewsAndControllers = function() {
 	
 	var cameras = this.app.cameras;
 	if (cameras && cameras.length) {
@@ -60394,9 +60408,9 @@ glam.Viewer.prototype.prepareViewsAndControllers = function() {
  * @author Tony Parisi
  */
 
-glam.Visual = {};
+glam.DOM.Visual = {};
 
-glam.Visual.create = function(docelt, style, cls) {
+glam.DOM.Visual.create = function(docelt, style, cls) {
 
 	var param = {
 	};
@@ -60405,26 +60419,26 @@ glam.Visual.create = function(docelt, style, cls) {
 	
 	var obj = new Vizi.Object;	
 	
-	var material = glam.Material.create(style, function(material) {
-		glam.Visual.createVisual(obj, cls, docelt, material, param);
+	var material = glam.DOM.Material.create(style, function(material) {
+		glam.DOM.Visual.createVisual(obj, cls, docelt, material, param);
 	});
 	
 	if (material) {
-		glam.Visual.createVisual(obj, cls, docelt, material, param);
+		glam.DOM.Visual.createVisual(obj, cls, docelt, material, param);
 	}
 	
 	return obj;
 }
 
-glam.Visual.createVisual = function(obj, cls, docelt, material, param) {
+glam.DOM.Visual.createVisual = function(obj, cls, docelt, material, param) {
 	var visual = cls.createVisual(docelt, material, param);	
 	if (visual) {
 		obj.addComponent(visual);
-		glam.Visual.addProperties(docelt, obj);
+		glam.DOM.Visual.addProperties(docelt, obj);
 	}
 }
 
-glam.Visual.addProperties = function(docelt, obj) {
+glam.DOM.Visual.addProperties = function(docelt, obj) {
 
 	var visuals = obj.getComponents(Vizi.Visual);
 	var visual = visuals[0];

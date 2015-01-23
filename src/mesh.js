@@ -4,23 +4,23 @@
  * @author Tony Parisi
  */
 
-glam.Mesh = {};
-glam.Mesh.VERTEX_NORMALS = false;
-glam.Mesh.VERTEX_COLORS = false;
+glam.DOM.Mesh = {};
+glam.DOM.Mesh.VERTEX_NORMALS = false;
+glam.DOM.Mesh.VERTEX_COLORS = false;
 
-glam.Mesh.create = function(docelt, style) {
+glam.DOM.Mesh.create = function(docelt, style) {
 	
-	return glam.Visual.create(docelt, style, glam.Mesh);
+	return glam.DOM.Visual.create(docelt, style, glam.DOM.Mesh);
 }
 
-glam.Mesh.getAttributes = function(docelt, style, param) {
+glam.DOM.Mesh.getAttributes = function(docelt, style, param) {
 	
 	var vertexNormals = docelt.getAttribute('vertexNormals');
 	if (vertexNormals !== null) {
 		vertexNormals = true;
 	}
 	else {
-		vertexNormals = glam.Mesh.VERTEX_NORMALS;
+		vertexNormals = glam.DOM.Mesh.VERTEX_NORMALS;
 	}
 	
 	var vertexColors = docelt.getAttribute('vertexColors');
@@ -28,7 +28,7 @@ glam.Mesh.getAttributes = function(docelt, style, param) {
 		vertexColors = true;
 	}
 	else {
-		vertexColors = glam.Mesh.VERTEX_COLORS;
+		vertexColors = glam.DOM.Mesh.VERTEX_COLORS;
 	}
 	
 	if (style) {
@@ -42,11 +42,11 @@ glam.Mesh.getAttributes = function(docelt, style, param) {
 	param.vertexColors = vertexColors;
 }
 
-glam.Mesh.createVisual = function(docelt, material, param) {
+glam.DOM.Mesh.createVisual = function(docelt, material, param) {
 
 	var geometry = new THREE.Geometry;
 	
-	glam.Mesh.parse(docelt, geometry, material, param);
+	glam.DOM.Mesh.parse(docelt, geometry, material, param);
 	
 	var mesh = new THREE.Mesh(geometry, material);
 	var visual = new Vizi.Visual(
@@ -57,13 +57,13 @@ glam.Mesh.createVisual = function(docelt, material, param) {
 	return visual;
 }
 
-glam.Mesh.parse = function(docelt, geometry, material, param) {
+glam.DOM.Mesh.parse = function(docelt, geometry, material, param) {
 
 	var verts = docelt.getElementsByTagName('vertices');
 	if (verts) {
 		verts = verts[0];
 		if (verts) {
-			glam.Types.parseVector3Array(verts, geometry.vertices);
+			glam.DOM.Types.parseVector3Array(verts, geometry.vertices);
 		}
 	}
 	
@@ -71,7 +71,7 @@ glam.Mesh.parse = function(docelt, geometry, material, param) {
 	if (uvs) {
 		uvs = uvs[0];
 		if (uvs) {
-			glam.Types.parseUVArray(uvs, geometry.faceVertexUvs[0]);
+			glam.DOM.Types.parseUVArray(uvs, geometry.faceVertexUvs[0]);
 		}
 	}
 
@@ -79,7 +79,7 @@ glam.Mesh.parse = function(docelt, geometry, material, param) {
 	if (faces) {
 		faces = faces[0];
 		if (faces) {
-			glam.Types.parseFaceArray(faces, geometry.faces);
+			glam.DOM.Types.parseFaceArray(faces, geometry.faces);
 		}
 	}
 
@@ -88,7 +88,7 @@ glam.Mesh.parse = function(docelt, geometry, material, param) {
 	if (normals) {
 		normals = normals[0];
 		if (normals) {
-			glam.Types.parseVector3Array(normals, vertexNormals);
+			glam.DOM.Types.parseVector3Array(normals, vertexNormals);
 			
 			if (param.vertexNormals) {
 				
@@ -128,7 +128,7 @@ glam.Mesh.parse = function(docelt, geometry, material, param) {
 	if (colors) {
 		colors = colors[0];
 		if (colors) {
-			glam.Types.parseColor3Array(colors, vertexColors);
+			glam.DOM.Types.parseColor3Array(colors, vertexColors);
 	
 			if (param.vertexColors) {
 	

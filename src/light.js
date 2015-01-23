@@ -4,25 +4,25 @@
  * @author Tony Parisi
  */
 
-glam.Light = {};
+glam.DOM.Light = {};
 
-glam.Light.DEFAULT_TYPE = "directional";
-glam.Light.DEFAULT_COLOR = "#ffffff";
-glam.Light.DEFAULT_ANGLE = "90deg";
-glam.Light.DEFAULT_DISTANCE = 0;
-glam.Light.DEFAULT_EXPONENT = Vizi.SpotLight.DEFAULT_EXPONENT;
+glam.DOM.Light.DEFAULT_TYPE = "directional";
+glam.DOM.Light.DEFAULT_COLOR = "#ffffff";
+glam.DOM.Light.DEFAULT_ANGLE = "90deg";
+glam.DOM.Light.DEFAULT_DISTANCE = 0;
+glam.DOM.Light.DEFAULT_EXPONENT = Vizi.SpotLight.DEFAULT_EXPONENT;
 
-glam.Light.create = function(docelt, style, app) {
+glam.DOM.Light.create = function(docelt, style, app) {
 	
 	function parseAngle(t) {
-		return glam.Transform.parseRotation(t);
+		return glam.DOM.Transform.parseRotation(t);
 	}
 		
-	var type = docelt.getAttribute('type') || glam.Light.DEFAULT_TYPE;
-	var color = docelt.getAttribute('color') || glam.Light.DEFAULT_COLOR;
-	var angle = docelt.getAttribute('angle') || glam.Light.DEFAULT_ANGLE;
-	var distance = docelt.getAttribute('distance') || glam.Light.DEFAULT_DISTANCE;
-	var exponent = docelt.getAttribute('exponent') || glam.Light.DEFAULT_EXPONENT;
+	var type = docelt.getAttribute('type') || glam.DOM.Light.DEFAULT_TYPE;
+	var color = docelt.getAttribute('color') || glam.DOM.Light.DEFAULT_COLOR;
+	var angle = docelt.getAttribute('angle') || glam.DOM.Light.DEFAULT_ANGLE;
+	var distance = docelt.getAttribute('distance') || glam.DOM.Light.DEFAULT_DISTANCE;
+	var exponent = docelt.getAttribute('exponent') || glam.DOM.Light.DEFAULT_EXPONENT;
 	
 	var direction = new THREE.Vector3(0, 0, -1);
 	

@@ -4,7 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.parser = {
+glam.DOM.parser = {
 		
 	addDocument : function(doc)
 	{
@@ -16,13 +16,13 @@ glam.parser = {
 		    	var i, len = mutation.addedNodes.length;
 		    	for (i = 0; i < len; i++) {
 		    		var node = mutation.addedNodes[i];
-		    		var viewer = glam.viewers[doc.id];
+		    		var viewer = glam.DOM.viewers[doc.id];
 			    	viewer.addNode(node);
 		    	}
 		    	var i, len = mutation.removedNodes.length;
 		    	for (i = 0; i < len; i++) {
 		    		var node = mutation.removedNodes[i];
-		    		var viewer = glam.viewers[doc.id];
+		    		var viewer = glam.DOM.viewers[doc.id];
 			    	viewer.removeNode(node);
 		    	}
 		    }
@@ -47,13 +47,13 @@ glam.parser = {
 	addStyle : function(declaration)
 	{
 		for (selector in declaration) {
-			glam.addStyle(selector, declaration[selector]);
+			glam.DOM.addStyle(selector, declaration[selector]);
 		}
 	},
 	
 	getStyle : function(selector)
 	{
-		return glam.getStyle(selector);
+		return glam.DOM.getStyle(selector);
 	},
 	
 	parseDocument : function()
@@ -68,12 +68,12 @@ glam.parser = {
 		{
 			var doc = docs[i];
 			if (!doc.id) {
-				doc.id = "#glamDocument" + glam.documentIndex++;
+				doc.id = "#glamDocument" + glam.DOM.documentIndex++;
 			}
-			glam.parser.addDocument(doc);
-			glam.documents[doc.id] = doc;
+			glam.DOM.parser.addDocument(doc);
+			glam.DOM.documents[doc.id] = doc;
 			doc.style.display = 'none';
-			glam.parser.addEventHandlers(doc);
+			glam.DOM.parser.addEventHandlers(doc);
 		}
 		
 		var styles = document.head.getElementsByTagName("style");
@@ -83,7 +83,7 @@ glam.parser = {
 			if (styles[i].childNodes.length) {
 				$.parsecss(styles[i].childNodes[0].data,
 						function(css) {
-								glam.parser.addStyle(css);
+								glam.DOM.parser.addStyle(css);
 							}
 						);
 			}

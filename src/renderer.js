@@ -4,5 +4,5 @@
  * @author Tony Parisi
  */
 
-glam.renderer = {
+glam.DOM.renderer = {
 };

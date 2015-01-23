@@ -4,19 +4,19 @@
  * @author Tony Parisi
  */
 
-glam.Cone = {};
+glam.DOM.Cone = {};
 
-glam.Cone.DEFAULT_RADIUS = 2;
-glam.Cone.DEFAULT_HEIGHT = 2;
+glam.DOM.Cone.DEFAULT_RADIUS = 2;
+glam.DOM.Cone.DEFAULT_HEIGHT = 2;
 
-glam.Cone.create = function(docelt, style) {
-	return glam.Visual.create(docelt, style, glam.Cone);
+glam.DOM.Cone.create = function(docelt, style) {
+	return glam.DOM.Visual.create(docelt, style, glam.DOM.Cone);
 }
 
-glam.Cone.getAttributes = function(docelt, style, param) {
+glam.DOM.Cone.getAttributes = function(docelt, style, param) {
 
-	var radius = docelt.getAttribute('radius') || glam.Cone.DEFAULT_RADIUS;
-	var height = docelt.getAttribute('height') || glam.Cone.DEFAULT_HEIGHT;
+	var radius = docelt.getAttribute('radius') || glam.DOM.Cone.DEFAULT_RADIUS;
+	var height = docelt.getAttribute('height') || glam.DOM.Cone.DEFAULT_HEIGHT;
 	
 	if (style) {
 		if (style.radius)
@@ -32,7 +32,7 @@ glam.Cone.getAttributes = function(docelt, style, param) {
 	param.height = height;
 }
 
-glam.Cone.createVisual = function(docelt, material, param) {
+glam.DOM.Cone.createVisual = function(docelt, material, param) {
 	
 	var visual = new Vizi.Visual(
 			{ geometry: new THREE.CylinderGeometry(0, param.radius, param.height, 32),

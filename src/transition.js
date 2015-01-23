@@ -4,14 +4,14 @@
  * @author Tony Parisi
  */
 
-glam.Transition = {};
+glam.DOM.Transition = {};
 
-glam.Transition.DEFAULT_DURATION = glam.Animation.DEFAULT_DURATION;
-glam.Transition.DEFAULT_TIMING_FUNCTION =  glam.Animation.DEFAULT_TIMING_FUNCTION;
+glam.DOM.Transition.DEFAULT_DURATION = glam.DOM.Animation.DEFAULT_DURATION;
+glam.DOM.Transition.DEFAULT_TIMING_FUNCTION =  glam.DOM.Animation.DEFAULT_TIMING_FUNCTION;
 
 // transition:transform 2s, background-color 5s linear 2s;
 
-glam.Transition.parse = function(docelt, style, obj) {
+glam.DOM.Transition.parse = function(docelt, style, obj) {
 
 	var transition = style.transition || "";
 	
@@ -28,12 +28,12 @@ glam.Transition.parse = function(docelt, style, obj) {
 				params.shift();
 			var propname = params[0];
 			var duration = params[1];
-			var timingFunction = params[2] || glam.Transition.DEFAULT_TIMING_FUNCTION;
+			var timingFunction = params[2] || glam.DOM.Transition.DEFAULT_TIMING_FUNCTION;
 			var delay = params[3] || "";
 			
-			duration = glam.Animation.parseTime(duration);
-			timingFunction = glam.Animation.parseTimingFunction(timingFunction);
-			delay = glam.Animation.parseTime(delay);
+			duration = glam.DOM.Animation.parseTime(duration);
+			timingFunction = glam.DOM.Animation.parseTimingFunction(timingFunction);
+			delay = glam.DOM.Animation.parseTime(delay);
 			
 			transitions[propname] = {
 					duration : duration,

@@ -4,18 +4,18 @@
  * @author Tony Parisi
  */
 
-glam.Background = {};
+glam.DOM.Background = {};
 
-glam.Background.DEFAULT_BACKGROUND_TYPE = "box";
+glam.DOM.Background.DEFAULT_BACKGROUND_TYPE = "box";
 
-glam.Background.create = function(docelt, style) {
-	var type = docelt.getAttribute('background-type') || glam.Background.DEFAULT_BACKGROUND_TYPE;
+glam.DOM.Background.create = function(docelt, style) {
+	var type = docelt.getAttribute('background-type') || glam.DOM.Background.DEFAULT_BACKGROUND_TYPE;
 	type = docelt.getAttribute('type') || type;
 	
 	if (style) {
 		if (style["background-type"])
 			type = style["background-type"];
-		var  param = glam.Material.parseStyle(style);
+		var  param = glam.DOM.Material.parseStyle(style);
 	}	
 
 	var background;
@@ -30,25 +30,25 @@ glam.Background.create = function(docelt, style) {
 		skysphereScript.texture = param.envMap;
 	}
 
-	glam.Background.addHandlers(docelt, style, background);
+	glam.DOM.Background.addHandlers(docelt, style, background);
 	
 	Vizi.Application.instance.addObject(background);
 	
 	return null;
 }
 
-glam.Background.addHandlers = function(docelt, style, obj) {
+glam.DOM.Background.addHandlers = function(docelt, style, obj) {
 
 	docelt.glam.setAttributeHandlers.push(function(attr, val) {
-		glam.Background.onSetAttribute(obj, docelt, attr, val);
+		glam.DOM.Background.onSetAttribute(obj, docelt, attr, val);
 	});
 	
 	style.setPropertyHandlers.push(function(attr, val) {
-		glam.Background.onSetAttribute(obj, docelt, attr, val);
+		glam.DOM.Background.onSetAttribute(obj, docelt, attr, val);
 	});
 }
 
-glam.Background.onSetAttribute = function(obj, docelt, attr, val) {
+glam.DOM.Background.onSetAttribute = function(obj, docelt, attr, val) {
 
 	switch (attr) {
 		case "sphere-image" :

@@ -1,6 +1,7 @@
 BUILDDIR=../build
 OUTPUT="$BUILDDIR/glam.js"
 SOURCES="../src/glam.js \
+../src/dom.js \
 ../src/animation.js \
 ../src/arc.js \
 ../src/background.js \

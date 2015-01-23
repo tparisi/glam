@@ -4,7 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.document = {
+glam.DOM.document = {
 		
 	scenes : {},
 	
@@ -14,17 +14,17 @@ glam.document = {
 	
 	addScene : function(script, scene)
 	{
-		glam.document.scenes[script.id] = { parentElement : script.parentElement, scene : scene };
+		glam.DOM.document.scenes[script.id] = { parentElement : script.parentElement, scene : scene };
 	},
 
 	addStyle : function(declaration)
 	{
-		glam.document.styles.push(declaration);
+		glam.DOM.document.styles.push(declaration);
 	},
 	
 	addAnimation : function(id, animation)
 	{
-		glam.document.animations[id] = animation;
+		glam.DOM.document.animations[id] = animation;
 	},
 
 	parseDocument : function()
@@ -40,7 +40,7 @@ glam.document = {
 			if (scripts[i].type == "text/glam")
 			{
 				var scene = dp.parseFromString(scripts[i].textContent, "text/xml");
-				glam.document.addScene(scripts[i], scene);
+				glam.DOM.document.addScene(scripts[i], scene);
 			}
 		}
 		
@@ -51,7 +51,7 @@ glam.document = {
 			{
 				$.parsecss(styles[i].childNodes[0].data,
 						function(css) {
-								glam.document.addStyle(css);
+								glam.DOM.document.addStyle(css);
 							}
 						);
 			}

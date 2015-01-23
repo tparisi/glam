@@ -4,10 +4,10 @@
  * @author Tony Parisi
  */
 
-glam.Node = {};
+glam.DOM.Node = {};
 
 
-glam.Node.init = function(docelt) {
+glam.DOM.Node.init = function(docelt) {
 
 	docelt.glam = {
 	};
@@ -24,15 +24,15 @@ glam.Node.init = function(docelt) {
 	}
 }
 
-glam.Node.getStyle = function(docelt) {
+glam.DOM.Node.getStyle = function(docelt) {
 	
-	var glamClassList = new glam.ClassList(docelt);
+	var glamClassList = new glam.DOM.ClassList(docelt);
 	docelt.glam.classList = glamClassList;
 	
-	var style = new glam.Style(docelt);
+	var style = new glam.DOM.Style(docelt);
 	
 	if (docelt.id) {
-		var styl = glam.getStyle("#" + docelt.id);
+		var styl = glam.DOM.getStyle("#" + docelt.id);
 		style.addProperties(styl);
 	}
 	
@@ -46,7 +46,7 @@ glam.Node.getStyle = function(docelt) {
 		for (klassname in klasses) {
 			var kls = klasses[klassname];
 			if (kls) {
-				var styl = glam.getStyle("." + kls);
+				var styl = glam.DOM.getStyle("." + kls);
 				style.addProperties(styl);
 				
 				glamClassList.add(kls);

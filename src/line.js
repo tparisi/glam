@@ -4,18 +4,18 @@
  * @author Tony Parisi
  */
 
-glam.Line = {};
+glam.DOM.Line = {};
 
-glam.Line.create = function(docelt, style) {
+glam.DOM.Line.create = function(docelt, style) {
 		
 	if (style) {
 	}
 	
-	var material = glam.Material.create(style, null, "line");
+	var material = glam.DOM.Material.create(style, null, "line");
 	
 	var geometry = new THREE.Geometry;
 	
-	glam.Line.parse(docelt, geometry, material);
+	glam.DOM.Line.parse(docelt, geometry, material);
 	
 	var line = new THREE.Line(geometry, material);
 	
@@ -33,12 +33,12 @@ glam.Line.create = function(docelt, style) {
 	return obj;
 }
 
-glam.Line.parse = function(docelt, geometry, material) {
+glam.DOM.Line.parse = function(docelt, geometry, material) {
 
 	var verts = docelt.getElementsByTagName('vertices');
 	if (verts) {
 		verts = verts[0];
-		glam.Types.parseVector3Array(verts, geometry.vertices);
+		glam.DOM.Types.parseVector3Array(verts, geometry.vertices);
 	}
 	
 	var vertexColors = [];
@@ -46,7 +46,7 @@ glam.Line.parse = function(docelt, geometry, material) {
 	if (colors) {
 		colors = colors[0];
 		if (colors) {
-			glam.Types.parseColor3Array(colors, vertexColors);
+			glam.DOM.Types.parseColor3Array(colors, vertexColors);
 	
 			var i, len = vertexColors.length;
 	

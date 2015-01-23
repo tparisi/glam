@@ -4,19 +4,19 @@
  * @author Tony Parisi
  */
 
-glam.Circle = {};
+glam.DOM.Circle = {};
 
-glam.Circle.DEFAULT_RADIUS = 2;
-glam.Circle.DEFAULT_RADIUS_SEGMENTS = 32;
+glam.DOM.Circle.DEFAULT_RADIUS = 2;
+glam.DOM.Circle.DEFAULT_RADIUS_SEGMENTS = 32;
 
-glam.Circle.create = function(docelt, style) {
-	return glam.Visual.create(docelt, style, glam.Circle);
+glam.DOM.Circle.create = function(docelt, style) {
+	return glam.DOM.Visual.create(docelt, style, glam.DOM.Circle);
 }
 
-glam.Circle.getAttributes = function(docelt, style, param) {
+glam.DOM.Circle.getAttributes = function(docelt, style, param) {
 
-	var radius = docelt.getAttribute('radius') || glam.Circle.DEFAULT_RADIUS;
-	var radiusSegments = docelt.getAttribute('radiusSegments') || glam.Circle.DEFAULT_RADIUS_SEGMENTS;
+	var radius = docelt.getAttribute('radius') || glam.DOM.Circle.DEFAULT_RADIUS;
+	var radiusSegments = docelt.getAttribute('radiusSegments') || glam.DOM.Circle.DEFAULT_RADIUS_SEGMENTS;
 	
 	if (style) {
 		if (style.radius)
@@ -32,7 +32,7 @@ glam.Circle.getAttributes = function(docelt, style, param) {
 	param.radiusSegments = radiusSegments;
 }
 
-glam.Circle.createVisual = function(docelt, material, param) {
+glam.DOM.Circle.createVisual = function(docelt, material, param) {
 	
 	var visual = new Vizi.Visual(
 			{ geometry: new THREE.CircleGeometry(param.radius, param.radiusSegments),

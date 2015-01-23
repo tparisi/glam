@@ -4,17 +4,17 @@
  * @author Tony Parisi
  */
 
-glam.Camera = {};
+glam.DOM.Camera = {};
 
-glam.Camera.DEFAULT_FOV = 45;
-glam.Camera.DEFAULT_NEAR = 1;
-glam.Camera.DEFAULT_FAR = 10000;
+glam.DOM.Camera.DEFAULT_FOV = 45;
+glam.DOM.Camera.DEFAULT_NEAR = 1;
+glam.DOM.Camera.DEFAULT_FAR = 10000;
 
-glam.Camera.create = function(docelt, style, app) {
+glam.DOM.Camera.create = function(docelt, style, app) {
 	
-	var fov = docelt.getAttribute('fov') || glam.Camera.DEFAULT_FOV;
-	var near = docelt.getAttribute('near') || glam.Camera.DEFAULT_NEAR;
-	var far = docelt.getAttribute('far') || glam.Camera.DEFAULT_FAR;
+	var fov = docelt.getAttribute('fov') || glam.DOM.Camera.DEFAULT_FOV;
+	var near = docelt.getAttribute('near') || glam.DOM.Camera.DEFAULT_NEAR;
+	var far = docelt.getAttribute('far') || glam.DOM.Camera.DEFAULT_FAR;
 	var aspect = docelt.getAttribute('aspect');
 	
 	if (style) {

@@ -4,18 +4,18 @@
  * @author Tony Parisi
  */
 
-glam.Viewer = function(doc) {
+glam.DOM.Viewer = function(doc) {
 
 	this.document = doc;
 	this.documentParent = doc.parentElement;
-	this.riftRender = glam.riftRender || false;
-	this.cardboardRender = glam.cardboardRender || false;
-	this.displayStats = glam.displayStats || false;
+	this.riftRender = glam.DOM.riftRender || false;
+	this.cardboardRender = glam.DOM.cardboardRender || false;
+	this.displayStats = glam.DOM.displayStats || false;
 }
 
-glam.Viewer.prototype = new Object;
+glam.DOM.Viewer.prototype = new Object;
 
-glam.Viewer.prototype.initRenderer = function() {
+glam.DOM.Viewer.prototype.initRenderer = function() {
 	var renderers = this.document.getElementsByTagName('renderer');
 	if (renderers) {
 		var renderer = renderers[0];
@@ -36,14 +36,14 @@ glam.Viewer.prototype.initRenderer = function() {
 		displayStats:this.displayStats });
 }
 
-glam.Viewer.prototype.initDefaultScene = function() {
+glam.DOM.Viewer.prototype.initDefaultScene = function() {
 	
 	this.scene = new Vizi.Object;
 	this.app.sceneRoot.addChild(this.scene);
 	this.app.defaultCamera.position.set(0, 0, 5);
 }
 
-glam.Viewer.prototype.traverseScene = function() {
+glam.DOM.Viewer.prototype.traverseScene = function() {
 	var scenes = this.document.getElementsByTagName('scene');
 	if (scenes) {
 		var scene = scenes[0];
@@ -55,7 +55,7 @@ glam.Viewer.prototype.traverseScene = function() {
 	}
 }
 
-glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
+glam.DOM.Viewer.prototype.traverse = function(docelt, sceneobj) {
 
 	var tag = docelt.tagName;
 
@@ -67,11 +67,11 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 			tag = tag.toLowerCase();
 
 		var fn = null;
-		var type = tag ? glam.Types.types[tag] : null;
+		var type = tag ? glam.DOM.Types.types[tag] : null;
 		if (type && type.cls && (fn = type.cls.create) && typeof(fn) == "function") {
 			// console.log("    * found it in table!");
-			glam.Node.init(childelt);
-			var style = glam.Node.getStyle(childelt);
+			glam.DOM.Node.init(childelt);
+			var style = glam.DOM.Node.getStyle(childelt);
 			var obj = fn.call(this, childelt, style, this.app);
 			if (obj) {
 				childelt.glam.object = obj;
@@ -84,17 +84,17 @@ glam.Viewer.prototype.traverse = function(docelt, sceneobj) {
 	
 }
 
-glam.Viewer.prototype.addNode = function(docelt) {
+glam.DOM.Viewer.prototype.addNode = function(docelt) {
 
 	var tag = docelt.tagName;
 	if (tag)
 		tag = tag.toLowerCase();
 	var fn = null;
-	var type = tag ? glam.Types.types[tag] : null;
+	var type = tag ? glam.DOM.Types.types[tag] : null;
 	if (type && type.cls && (fn = type.cls.create) && typeof(fn) == "function") {
 
-		glam.Node.init(docelt);
-		var style = glam.Node.getStyle(docelt);
+		glam.DOM.Node.init(docelt);
+		var style = glam.DOM.Node.getStyle(docelt);
 		var obj = fn.call(this, docelt, style, this.app);
 		
 		if (obj) {
@@ -106,7 +106,7 @@ glam.Viewer.prototype.addNode = function(docelt) {
 	}
 }
 
-glam.Viewer.prototype.removeNode = function(docelt) {
+glam.DOM.Viewer.prototype.removeNode = function(docelt) {
 
 	var obj = docelt.glam.object;
 	if (obj) {
@@ -114,28 +114,28 @@ glam.Viewer.prototype.removeNode = function(docelt) {
 	}
 }
 
-glam.Viewer.prototype.addFeatures = function(docelt, style, obj, type) {
+glam.DOM.Viewer.prototype.addFeatures = function(docelt, style, obj, type) {
 
 	if (type.transform) {
-		glam.Transform.parse(docelt, style, obj);
+		glam.DOM.Transform.parse(docelt, style, obj);
 	}
 	
 	if (type.animation) {
-		glam.Animation.parse(docelt, style, obj);
-		glam.Transition.parse(docelt, style, obj);
+		glam.DOM.Animation.parse(docelt, style, obj);
+		glam.DOM.Transition.parse(docelt, style, obj);
 	}
 
 	if (type.input) {
-		glam.Input.add(docelt, obj);
+		glam.DOM.Input.add(docelt, obj);
 	}
 	
 	if (type.visual) {
-		glam.Visual.addProperties(docelt, obj);
-		glam.Material.addHandlers(docelt, style, obj);
+		glam.DOM.Visual.addProperties(docelt, obj);
+		glam.DOM.Material.addHandlers(docelt, style, obj);
 	}
 }
 
-glam.Viewer.prototype.go = function() {
+glam.DOM.Viewer.prototype.go = function() {
 	// Run it
 	this.initRenderer();
 	this.initDefaultScene();
@@ -144,7 +144,7 @@ glam.Viewer.prototype.go = function() {
 	this.app.run();
 }
 
-glam.Viewer.prototype.prepareViewsAndControllers = function() {
+glam.DOM.Viewer.prototype.prepareViewsAndControllers = function() {
 	
 	var cameras = this.app.cameras;
 	if (cameras && cameras.length) {
