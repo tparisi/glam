@@ -13,7 +13,7 @@
 		background-color: #000;
 	}
 
-	#texturedcube {
+	#texturedbox {
 		image:url(../../images/ash_uvgrid01.jpg);
 	}
 
@@ -117,13 +117,13 @@
 </head>
 <body>
 <!-- 
-glam - Simple scene with cube
+glam - Simple scene with box
  -->
 <div id="container" style="width:98%; height:98%;position:absolute;">
 <glam>
   <scene>
   	<group y='-1'>
-		<cube id="texturedcube" class="animRotateY" x="1.5" y='2' z='-5' depth='.5' height='1.5'></cube>
+		<box id="texturedbox" class="animRotateY" x="1.5" y='2' z='-5' depth='.5' height='1.5'></box>
 		<group id="aGroup" x="1" y=".5" z="-2" >
 			<sphere id="sphere1" class="animFade" radius='1.5'></sphere>
 			<group id="nestedGroup" x='-3' y='1' z='-5'>

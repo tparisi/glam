@@ -4,21 +4,21 @@
  * @author Tony Parisi
  */
 
-glam.Cube = {};
+glam.Box = {};
 
-glam.Cube.DEFAULT_WIDTH = 2;
-glam.Cube.DEFAULT_HEIGHT = 2;
-glam.Cube.DEFAULT_DEPTH = 2;
+glam.Box.DEFAULT_WIDTH = 2;
+glam.Box.DEFAULT_HEIGHT = 2;
+glam.Box.DEFAULT_DEPTH = 2;
 
-glam.Cube.create = function(docelt, style) {
-	return glam.Visual.create(docelt, style, glam.Cube);
+glam.Box.create = function(docelt, style) {
+	return glam.Visual.create(docelt, style, glam.Box);
 }
 
-glam.Cube.getAttributes = function(docelt, style, param) {
+glam.Box.getAttributes = function(docelt, style, param) {
 
-	var width = docelt.getAttribute('width') || glam.Cube.DEFAULT_WIDTH;
-	var height = docelt.getAttribute('height') || glam.Cube.DEFAULT_HEIGHT;
-	var depth = docelt.getAttribute('depth') || glam.Cube.DEFAULT_DEPTH;
+	var width = docelt.getAttribute('width') || glam.Box.DEFAULT_WIDTH;
+	var height = docelt.getAttribute('height') || glam.Box.DEFAULT_HEIGHT;
+	var depth = docelt.getAttribute('depth') || glam.Box.DEFAULT_DEPTH;
 	
 	if (style) {
 		if (style.width)
@@ -38,7 +38,7 @@ glam.Cube.getAttributes = function(docelt, style, param) {
 	param.depth = depth;
 }
 
-glam.Cube.createVisual = function(docelt, material, param) {
+glam.Box.createVisual = function(docelt, material, param) {
 
 	var visual = new Vizi.Visual(
 			{ geometry: new THREE.BoxGeometry(param.width, param.height, param.depth),
