@@ -55756,7 +55756,7 @@ glam.ParticlesElement.parseEmitter = function(emitter, param) {
 	var opacityMiddle = parseFloat(emitter.getAttribute('opacityMiddle'));
 	var opacityEnd = parseFloat(emitter.getAttribute('opacityEnd'));
 	
-	var colorStart, colorEnd;
+	var colorStart, colorEnd, css;
 	if (css = emitter.getAttribute('colorStart')) {
 		colorStart = new THREE.Color().setStyle(css);
 	}
@@ -55883,7 +55883,7 @@ glam.BackgroundElement.create = function(docelt, style) {
 	}
 	else if (type == "sphere") {
 		background = glam.Prefabs.Skysphere();
-		skysphereScript = background.getComponent(glam.SkysphereScript);
+		var skysphereScript = background.getComponent(glam.SkysphereScript);
 		skysphereScript.texture = param.envMap;
 	}
 

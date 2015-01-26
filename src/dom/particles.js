@@ -100,7 +100,7 @@ glam.ParticlesElement.parseEmitter = function(emitter, param) {
 	var opacityMiddle = parseFloat(emitter.getAttribute('opacityMiddle'));
 	var opacityEnd = parseFloat(emitter.getAttribute('opacityEnd'));
 	
-	var colorStart, colorEnd;
+	var colorStart, colorEnd, css;
 	if (css = emitter.getAttribute('colorStart')) {
 		colorStart = new THREE.Color().setStyle(css);
 	}

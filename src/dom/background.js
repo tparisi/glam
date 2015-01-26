@@ -26,7 +26,7 @@ glam.BackgroundElement.create = function(docelt, style) {
 	}
 	else if (type == "sphere") {
 		background = glam.Prefabs.Skysphere();
-		skysphereScript = background.getComponent(glam.SkysphereScript);
+		var skysphereScript = background.getComponent(glam.SkysphereScript);
 		skysphereScript.texture = param.envMap;
 	}
 
