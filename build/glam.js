@@ -1,303 +1,3 @@
-// jQuery based CSS parser
-// documentation: http://youngisrael-stl.org/wordpress/2009/01/16/jquery-css-parser/
-// Version: 1.5
-// Copyright (c) 2011 Daniel Wachsstock
-// MIT license:
-// Permission is hereby granted, free of charge, to any person
-// obtaining a copy of this software and associated documentation
-// files (the "Software"), to deal in the Software without
-// restriction, including without limitation the rights to use,
-// copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the
-// Software is furnished to do so, subject to the following
-// conditions:
-
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-// WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-// OTHER DEALINGS IN THE SOFTWARE.
-
-
-(function($){
-
-	// utility function, since we want to allow $('style') and $(document), so we need to look for elements in the jQuery object ($.fn.filter) and elements that are children of the jQuery object ($.fn.find)
-	$.fn.findandfilter = function(selector){
-		var ret = this.filter(selector).add(this.find(selector));
-		ret.prevObject = ret.prevObject.prevObject; // maintain the filter/end chain correctly (the filter and the find both push onto the chain). 
-		return ret;
-	};
-	
-  $.fn.parsecss = function(callback, parseAttributes){
-		var parse = function(str) { $.parsecss(str, callback) }; // bind the callback
-    this
-    .findandfilter ('style').each (function(){
-      parse(this.innerHTML);
-    })
-    .end()
-    .findandfilter ('link[type="text/css"]').each (function(){
-			// only get the stylesheet if it's not disabled, it won't trigger cross-site security (doesn't start with anything like http:) and it uses the appropriate media)
-			if (!this.disabled && !/^\w+:/.test($(this).attr('href')) && $.parsecss.mediumApplies(this.media)) $.get(this.href, parse);
-    })
-    .end();
-		
-		if (parseAttributes){
-			$.get(location.pathname+location.search, function(HTMLtext) {
-				styleAttributes(HTMLtext, callback);
-			}, 'text');
-		}
-		
-		return this;
-	};
-
-  $.parsecss = function(str, callback){
-    var ret = {};
-		str = munge(str).replace(/@(([^;`]|`[^b]|`b[^%])*(`b%)?);?/g, function(s,rule){
-			// @rules end with ; or a block, with the semicolon not being part of the rule but the closing brace (represented by `b%) is
-			processAtRule($.trim(rule), callback);
-			return '';
-		});
-
-    $.each (str.split('`b%'), function(i,css){ // split on the end of a block 
-			css = css.split('%b`'); // css[0] is the selector; css[1] is the index in munged for the cssText
-			if (css.length < 2) return; // invalid css
-			css[0] = restore(css[0]);
-			ret[css[0]] = $.extend(ret[css[0]] || {}, parsedeclarations(css[1]));
-    });
-		callback(ret);
-  };
-	// explanation of the above: munge(str) strips comments and encodes strings and brace-delimited blocks, so that
-	// %b` corresponds to { and `b% corresponds to }
-	// munge(str) replaces blocks with %b`1`b% (for example)
-	// 
-	// str.split('`b%') splits the text by '}' (which ends every CSS statement) 
-	// Each so the each(munge(str... function(i,css)
-	// is called with css being empty (the string after the last delimiter), an @rule, or a css statement of the form
-	// selector %b`n where n is a number (the block was turned into %b`n`b% by munge). Splitting on %b` gives the selector and the
-	// number corresponding to the declaration block. parsedeclarations will do restore('%b`'+n+'`b%') to get it back.
-
-	// if anyone ever implements http://www.w3.org/TR/cssom-view/#the-media-interface, we're ready
-  $.parsecss.mediumApplies = (window.media && window.media.query) || function(str){
-    if (!str) return true; // if no descriptor, everything applies
-    if (str in media) return media[str];
-		var style = $('<style media="'+str+'">body {position: relative; z-index: 1;}</style>').appendTo('head');
-		return media[str] = [$('body').css('z-index')==1, style.remove()][0]; // the [x,y][0] is a silly hack to evaluate two expressions and return the first
-  };
-
-  $.parsecss.isValidSelector = function(str){
-		var s = $('<style>'+str+'{}</style>').appendTo('head')[0];
-		// s.styleSheet is IE; it accepts illegal selectors but converts them to UNKNOWN. Standards-based (s.shee.cssRules) just reject the rule
-		return [s.styleSheet ? !/UNKNOWN/i.test(s.styleSheet.cssText) : !!s.sheet.cssRules.length, $(s).remove()][0]; // the [x,y][0] is a silly hack to evaluate two expressions and return the first
-  };
-	
-	$.parsecss.parseArguments = function(str){
-		if (!str) return [];
-		var ret = [], mungedArguments = munge(str, true).split(/\s+/); // can't use $.map because it flattens arrays !
-		for (var i = 0; i < mungedArguments.length; ++i) {
-			var a = restore(mungedArguments[i]);
-			try{
-				ret.push(eval('('+a+')'));
-			}catch(err){
-				ret.push(a);
-			}
-		}
-		return ret;
-	};
-
-	// uses the parsed css to apply useful jQuery functions
-	$.parsecss.jquery = function(css){
-		for (var selector in css){
-			for (var property in css[selector]){
-				var match = /^-jquery(-(.*))?/.exec(property);
-				if (!match) continue;
-				var value = munge(css[selector][property]).split('!'); // exclamation point separates the parts of livequery actions
-				var which = match[2];
-				dojQuery(selector, which, restore(value[0]), restore(value[1]));
-			}
-		}
-	};
-
-	// expose the styleAttributes function
-	$.parsecss.styleAttributes = styleAttributes;
-	
-  // caches
-  var media = {}; // media description strings
-  var munged = {}; // strings that were removed by the parser so they don't mess up searching for specific characters
-
-  // private functions
-
-  function parsedeclarations(index){ // take a string from the munged array and parse it into an object of property: value pairs
-		var str = munged[index].replace(/^{|}$/g, ''); // find the string and remove the surrounding braces
-		str = munge(str); // make sure any internal braces or strings are escaped
-    var parsed = {};
-    $.each (str.split(';'), function (i, decl){
-      decl = decl.split(':');
-      if (decl.length < 2) return;
-      parsed[restore(decl[0])] = restore(decl.slice(1).join(':'));
-    });
-    return parsed;
-  }
-
-  // replace strings and brace-surrounded blocks with %s`number`s% and %b`number`b%. By successively taking out the innermost
-  // blocks, we ensure that we're matching braces. No way to do this with just regular expressions. Obviously, this assumes no one
-  // would use %s` in the real world.
-	// Turns out this is similar to the method that Dean Edwards used for his CSS parser in IE7.js (http://code.google.com/p/ie7-js/)
-  var REbraces = /{[^{}]*}/;
-	var REfull = /\[[^\[\]]*\]|{[^{}]*}|\([^()]*\)|function(\s+\w+)?(\s*%b`\d+`b%){2}/; // match pairs of parentheses, brackets, and braces and function definitions.
-	var REatcomment = /\/\*@((?:[^\*]|\*[^\/])*)\*\//g; // comments of the form /*@ text */ have text parsed 
-	// we have to combine the comments and the strings because comments can contain string delimiters and strings can contain comment delimiters
-	// var REcomment = /\/\*(?:[^\*]|\*[^\/])*\*\/|<!--|-->/g; // other comments are stripped. (this is a simplification of real SGML comments (see http://htmlhelp.com/reference/wilbur/misc/comment.html) , but it's what real browsers use)
-	// var REstring = /\\.|"(?:[^\\\"]|\\.|\\\n)*"|'(?:[^\\\']|\\.|\\\n)*'/g; //  match escaped characters and strings
-	var REcomment_string =
-		/(?:\/\*(?:[^\*]|\*[^\/])*\*\/)|(\\.|"(?:[^\\\"]|\\.|\\\n)*"|'(?:[^\\\']|\\.|\\\n)*')/g;
-  var REmunged = /%\w`(\d+)`\w%/;
-  var uid = 0; // unique id number
-  function munge(str, full){
-    str = str
-    .replace(REatcomment,'$1') // strip /*@ comments but leave the text (to let invalid CSS through)
-    .replace(REcomment_string, function (s, string){ // strip strings and escaped characters, leaving munged markers, and strip comments
-			if (!string) return '';
-      var replacement = '%s`'+(++uid)+'`s%';
-      munged[uid] = string.replace(/^\\/,''); // strip the backslash now
-      return replacement;      
-    })
-		;    
-    // need a loop here rather than .replace since we need to replace nested braces
-		var RE = full ? REfull : REbraces;
-    while (match = RE.exec(str)){
-      replacement = '%b`'+(++uid)+'`b%';
-      munged[uid] = match[0];
-      str = str.replace(RE, replacement);
-    }
-    return str;
-  }
-
-  function restore(str){
-		if (str === undefined) return str;
-    while (match = REmunged.exec(str)){
-      str = str.replace(REmunged, munged[match[1]]);
-    }
-    return $.trim(str);
-  }
-
-  function processAtRule (rule, callback){
-    var split = rule.split(/\s+/); // split on whitespace
-    var type = split.shift(); // first word
-    if (type=='media'){
-      var css = restore(split.pop()).slice(1,-1); // last word is the rule; need to strip the outermost braces
-      if ($.parsecss.mediumApplies(split.join(' '))){
-        $.parsecss(css, callback);
-      }
-    }else if (type=='import'){
-      var url = restore(split.shift());
-      if ($.parsecss.mediumApplies(split.join(' '))){
-        url = url.replace(/^url\(|\)$/gi, '').replace(/^["']|["']$/g, ''); // remove the url('...') wrapper
-        $.get(url, function(str) { $.parsecss(str, callback) });
-      }
-    }else if (type=='-webkit-keyframes' || type=='-moz-keyframes' || type=='keyframes'){
-        var kfName = split.shift();
-        var css = restore(split.join(' '));
-        css = css.substr(1, css.length - 2); // strip {}
-        $.parsecss(css, function(keyframes) {
-        	// console.log("Parsed keyframes: ", keyframes);
-        	var ret = {};
-        	ret[kfName] = keyframes;
-        	callback(ret);
-        })
-    }
-  }
-		
-	function dojQuery (selector, which, value, value2){ // value2 is the value for the livequery no longer match
-		if (/show|hide/.test(which)) which +=  'Default'; // -jquery-show is a shortcut for -jquery-showDefault
-		if (value2 !== undefined && $.livequery){
-			// mode is 0 for a static value (can be evaluated when parsed); 
-			// 1 for delayed (refers to "this" which means it needs to be evaluated separately for each element matched), and
-			// 2 for livequery; evaluated whenever elments change
-			var mode = 2;
-		}else{
-			mode = /\bthis\b/.test(value) ? 1 : 0;
-		}
-		if (which && $.fn[which]){
-			// a plugin
-			// late bind parseArguments so "this" is defined correctly
-			function p (str) { return function() { return $.fn[which].apply($(this), $.parsecss.parseArguments.call(this, str)) } };
-			switch (mode){
-				case 0: return $.fn[which].apply($(selector), $.parsecss.parseArguments(value));
-				case 1: return $(selector).each(p(value));
-				case 2: return (new $.livequery(selector, document, undefined, p(value), value2 === '' ? undefined : p(value2))).run();
-			}
-		}else if (which){
-			// a plugin but one that was not defined
-			return undefined;
-		}else{
-			// straight javascript
-			switch (mode){
-				case 0: return eval(value);
-				case 1: return $(selector).each(Function(value));
-				case 2: return (new $.livequery(selector, document, undefined, Function(value), value2 === '' ? undefined : Function(value2))).run();
-			}
-		}
-	}
-
-	// override show and hide. $.data(el, 'showDefault') is a function that is to be used for show if no arguments are passed in (if there are arguments, they override the stored function)
-	// Many of the effects call the native show/hide() with no arguments, resulting in an infinite loop.
-	var _show = {show: $.fn.show, hide: $.fn.hide}; // save the originals
-	$.each(['show','hide'], function(){
-		var which = this, show = _show[which], plugin = which+'Default';
-		$.fn[which] = function(){
-			if (arguments.length > 0) return show.apply(this, arguments);
-			return this.each(function(){
-				var fn = $.data(this, plugin), $this = $(this);
-				if (fn){
-					$.removeData(this, plugin); // prevent the infinite loop
-					fn.call($this);
-					$this.queue(function(){$this.data(plugin, fn).dequeue()}); // put the function back at the end of the animation
-				}else{
-					show.call($this);
-				}
-			});
-		};
-		$.fn[plugin] = function(){
-			var args = $.makeArray(arguments), name = args[0];
-			if ($.fn[name]){ // a plugin
-				args.shift();
-				var fn = $.fn[name];
-			}else if ($.effects && $.effects[name]){ // a jQuery UI effect. They require an options object as the second argument
-				if (typeof args[1] != 'object') args.splice(1,0,{});
-				fn = _show[which];
-			}else{ // regular show/hide
-				fn = _show[which];
-			}
-			return this.data(plugin, function(){fn.apply(this,args)});
-		};
-	});
-		
-	// experimental: find unrecognized style attributes in elements by reloading the code as text
-	var RESGMLcomment = /<!--([^-]|-[^-])*-->/g; // as above, a simplification of real comments. Don't put -- in your HTML comments!
-	var REnotATag = /(>)[^<]*/g;
-	var REtag = /<(\w+)([^>]*)>/g;
-
-	function styleAttributes (HTMLtext, callback) {
-		var ret = '', style, tags = {}; //  keep track of tags so we can identify elements unambiguously
-		HTMLtext = HTMLtext.replace(RESGMLcomment, '').replace(REnotATag, '$1');
-		munge(HTMLtext).replace(REtag, function(s, tag, attrs){
-			tag = tag.toLowerCase();
-			if (tags[tag]) ++tags[tag]; else tags[tag] = 1;
-			if (style = /\bstyle\s*=\s*(%s`\d+`s%)/i.exec(attrs)){ // style attributes must be of the form style = "a: bc" ; they must be in quotes. After munging, they are marked with numbers. Grab that number
-				var id = /\bid\s*=\s*(\S+)/i.exec(attrs); // find the id if there is one.
-				if (id) id = '#'+restore(id[1]).replace(/^['"]|['"]$/g,''); else id = tag + ':eq(' + (tags[tag]-1) + ')';
-				ret += [id, '{', restore(style[1]).replace(/^['"]|['"]$/g,''),'}'].join('');
-			}
-		});
-		$.parsecss(ret, callback);
-	}
-})(jQuery);
 // File:src/Three.js
 
 /**
@@ -46128,6 +45828,309 @@ if ( !window.requestAnimationFrame ) {
 	} )();
 
 }
+// jQuery based CSS parser
+// documentation: http://youngisrael-stl.org/wordpress/2009/01/16/jquery-css-parser/
+// Version: 1.5
+// Copyright (c) 2011 Daniel Wachsstock
+// MIT license:
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use,
+// copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following
+// conditions:
+
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+// WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
+
+
+(function($){
+
+	// utility function, since we want to allow $('style') and $(document), so we need to look for elements in the jQuery object ($.fn.filter) and elements that are children of the jQuery object ($.fn.find)
+	$.fn.findandfilter = function(selector){
+		var ret = this.filter(selector).add(this.find(selector));
+		ret.prevObject = ret.prevObject.prevObject; // maintain the filter/end chain correctly (the filter and the find both push onto the chain). 
+		return ret;
+	};
+	
+  $.fn.parsecss = function(callback, parseAttributes){
+		var parse = function(str) { $.parsecss(str, callback) }; // bind the callback
+    this
+    .findandfilter ('style').each (function(){
+      parse(this.innerHTML);
+    })
+    .end()
+    .findandfilter ('link[type="text/css"]').each (function(){
+			// only get the stylesheet if it's not disabled, it won't trigger cross-site security (doesn't start with anything like http:) and it uses the appropriate media)
+			if (!this.disabled && !/^\w+:/.test($(this).attr('href')) && $.parsecss.mediumApplies(this.media)) $.get(this.href, parse);
+    })
+    .end();
+		
+		if (parseAttributes){
+			$.get(location.pathname+location.search, function(HTMLtext) {
+				styleAttributes(HTMLtext, callback);
+			}, 'text');
+		}
+		
+		return this;
+	};
+
+  $.parsecss = function(str, callback){
+    var ret = {};
+		str = munge(str).replace(/@(([^;`]|`[^b]|`b[^%])*(`b%)?);?/g, function(s,rule){
+			// @rules end with ; or a block, with the semicolon not being part of the rule but the closing brace (represented by `b%) is
+			processAtRule($.trim(rule), callback);
+			return '';
+		});
+
+    $.each (str.split('`b%'), function(i,css){ // split on the end of a block 
+			css = css.split('%b`'); // css[0] is the selector; css[1] is the index in munged for the cssText
+			if (css.length < 2) return; // invalid css
+			css[0] = restore(css[0]);
+			ret[css[0]] = $.extend(ret[css[0]] || {}, parsedeclarations(css[1]));
+    });
+		callback(ret);
+  };
+	// explanation of the above: munge(str) strips comments and encodes strings and brace-delimited blocks, so that
+	// %b` corresponds to { and `b% corresponds to }
+	// munge(str) replaces blocks with %b`1`b% (for example)
+	// 
+	// str.split('`b%') splits the text by '}' (which ends every CSS statement) 
+	// Each so the each(munge(str... function(i,css)
+	// is called with css being empty (the string after the last delimiter), an @rule, or a css statement of the form
+	// selector %b`n where n is a number (the block was turned into %b`n`b% by munge). Splitting on %b` gives the selector and the
+	// number corresponding to the declaration block. parsedeclarations will do restore('%b`'+n+'`b%') to get it back.
+
+	// if anyone ever implements http://www.w3.org/TR/cssom-view/#the-media-interface, we're ready
+  $.parsecss.mediumApplies = (window.media && window.media.query) || function(str){
+    if (!str) return true; // if no descriptor, everything applies
+    if (str in media) return media[str];
+		var style = $('<style media="'+str+'">body {position: relative; z-index: 1;}</style>').appendTo('head');
+		return media[str] = [$('body').css('z-index')==1, style.remove()][0]; // the [x,y][0] is a silly hack to evaluate two expressions and return the first
+  };
+
+  $.parsecss.isValidSelector = function(str){
+		var s = $('<style>'+str+'{}</style>').appendTo('head')[0];
+		// s.styleSheet is IE; it accepts illegal selectors but converts them to UNKNOWN. Standards-based (s.shee.cssRules) just reject the rule
+		return [s.styleSheet ? !/UNKNOWN/i.test(s.styleSheet.cssText) : !!s.sheet.cssRules.length, $(s).remove()][0]; // the [x,y][0] is a silly hack to evaluate two expressions and return the first
+  };
+	
+	$.parsecss.parseArguments = function(str){
+		if (!str) return [];
+		var ret = [], mungedArguments = munge(str, true).split(/\s+/); // can't use $.map because it flattens arrays !
+		for (var i = 0; i < mungedArguments.length; ++i) {
+			var a = restore(mungedArguments[i]);
+			try{
+				ret.push(eval('('+a+')'));
+			}catch(err){
+				ret.push(a);
+			}
+		}
+		return ret;
+	};
+
+	// uses the parsed css to apply useful jQuery functions
+	$.parsecss.jquery = function(css){
+		for (var selector in css){
+			for (var property in css[selector]){
+				var match = /^-jquery(-(.*))?/.exec(property);
+				if (!match) continue;
+				var value = munge(css[selector][property]).split('!'); // exclamation point separates the parts of livequery actions
+				var which = match[2];
+				dojQuery(selector, which, restore(value[0]), restore(value[1]));
+			}
+		}
+	};
+
+	// expose the styleAttributes function
+	$.parsecss.styleAttributes = styleAttributes;
+	
+  // caches
+  var media = {}; // media description strings
+  var munged = {}; // strings that were removed by the parser so they don't mess up searching for specific characters
+
+  // private functions
+
+  function parsedeclarations(index){ // take a string from the munged array and parse it into an object of property: value pairs
+		var str = munged[index].replace(/^{|}$/g, ''); // find the string and remove the surrounding braces
+		str = munge(str); // make sure any internal braces or strings are escaped
+    var parsed = {};
+    $.each (str.split(';'), function (i, decl){
+      decl = decl.split(':');
+      if (decl.length < 2) return;
+      parsed[restore(decl[0])] = restore(decl.slice(1).join(':'));
+    });
+    return parsed;
+  }
+
+  // replace strings and brace-surrounded blocks with %s`number`s% and %b`number`b%. By successively taking out the innermost
+  // blocks, we ensure that we're matching braces. No way to do this with just regular expressions. Obviously, this assumes no one
+  // would use %s` in the real world.
+	// Turns out this is similar to the method that Dean Edwards used for his CSS parser in IE7.js (http://code.google.com/p/ie7-js/)
+  var REbraces = /{[^{}]*}/;
+	var REfull = /\[[^\[\]]*\]|{[^{}]*}|\([^()]*\)|function(\s+\w+)?(\s*%b`\d+`b%){2}/; // match pairs of parentheses, brackets, and braces and function definitions.
+	var REatcomment = /\/\*@((?:[^\*]|\*[^\/])*)\*\//g; // comments of the form /*@ text */ have text parsed 
+	// we have to combine the comments and the strings because comments can contain string delimiters and strings can contain comment delimiters
+	// var REcomment = /\/\*(?:[^\*]|\*[^\/])*\*\/|<!--|-->/g; // other comments are stripped. (this is a simplification of real SGML comments (see http://htmlhelp.com/reference/wilbur/misc/comment.html) , but it's what real browsers use)
+	// var REstring = /\\.|"(?:[^\\\"]|\\.|\\\n)*"|'(?:[^\\\']|\\.|\\\n)*'/g; //  match escaped characters and strings
+	var REcomment_string =
+		/(?:\/\*(?:[^\*]|\*[^\/])*\*\/)|(\\.|"(?:[^\\\"]|\\.|\\\n)*"|'(?:[^\\\']|\\.|\\\n)*')/g;
+  var REmunged = /%\w`(\d+)`\w%/;
+  var uid = 0; // unique id number
+  function munge(str, full){
+  	var match;
+  	var replacement;
+    str = str
+    .replace(REatcomment,'$1') // strip /*@ comments but leave the text (to let invalid CSS through)
+    .replace(REcomment_string, function (s, string){ // strip strings and escaped characters, leaving munged markers, and strip comments
+			if (!string) return '';
+      var replacement = '%s`'+(++uid)+'`s%';
+      munged[uid] = string.replace(/^\\/,''); // strip the backslash now
+      return replacement;      
+    })
+		;    
+    // need a loop here rather than .replace since we need to replace nested braces
+		var RE = full ? REfull : REbraces;
+    while (match = RE.exec(str)){
+      replacement = '%b`'+(++uid)+'`b%';
+      munged[uid] = match[0];
+      str = str.replace(RE, replacement);
+    }
+    return str;
+  }
+
+  function restore(str){
+  	var match;
+	if (str === undefined) return str;
+    while (match = REmunged.exec(str)){
+      str = str.replace(REmunged, munged[match[1]]);
+    }
+    return $.trim(str);
+  }
+
+  function processAtRule (rule, callback){
+    var split = rule.split(/\s+/); // split on whitespace
+    var type = split.shift(); // first word
+    if (type=='media'){
+      var css = restore(split.pop()).slice(1,-1); // last word is the rule; need to strip the outermost braces
+      if ($.parsecss.mediumApplies(split.join(' '))){
+        $.parsecss(css, callback);
+      }
+    }else if (type=='import'){
+      var url = restore(split.shift());
+      if ($.parsecss.mediumApplies(split.join(' '))){
+        url = url.replace(/^url\(|\)$/gi, '').replace(/^["']|["']$/g, ''); // remove the url('...') wrapper
+        $.get(url, function(str) { $.parsecss(str, callback) });
+      }
+    }else if (type=='-webkit-keyframes' || type=='-moz-keyframes' || type=='keyframes'){
+        var kfName = split.shift();
+        var css = restore(split.join(' '));
+        css = css.substr(1, css.length - 2); // strip {}
+        $.parsecss(css, function(keyframes) {
+        	// console.log("Parsed keyframes: ", keyframes);
+        	var ret = {};
+        	ret[kfName] = keyframes;
+        	callback(ret);
+        })
+    }
+  }
+		
+	function dojQuery (selector, which, value, value2){ // value2 is the value for the livequery no longer match
+		// a plugin
+		// late bind parseArguments so "this" is defined correctly
+		function p (str) { return function() { return $.fn[which].apply($(this), $.parsecss.parseArguments.call(this, str)) } };
+		if (/show|hide/.test(which)) which +=  'Default'; // -jquery-show is a shortcut for -jquery-showDefault
+		if (value2 !== undefined && $.livequery){
+			// mode is 0 for a static value (can be evaluated when parsed); 
+			// 1 for delayed (refers to "this" which means it needs to be evaluated separately for each element matched), and
+			// 2 for livequery; evaluated whenever elments change
+			var mode = 2;
+		}else{
+			mode = /\bthis\b/.test(value) ? 1 : 0;
+		}
+		if (which && $.fn[which]){
+			switch (mode){
+				case 0: return $.fn[which].apply($(selector), $.parsecss.parseArguments(value));
+				case 1: return $(selector).each(p(value));
+				case 2: return (new $.livequery(selector, document, undefined, p(value), value2 === '' ? undefined : p(value2))).run();
+			}
+		}else if (which){
+			// a plugin but one that was not defined
+			return undefined;
+		}else{
+			// straight javascript
+			switch (mode){
+				case 0: return eval(value);
+				case 1: return $(selector).each(Function(value));
+				case 2: return (new $.livequery(selector, document, undefined, Function(value), value2 === '' ? undefined : Function(value2))).run();
+			}
+		}
+	}
+
+	// override show and hide. $.data(el, 'showDefault') is a function that is to be used for show if no arguments are passed in (if there are arguments, they override the stored function)
+	// Many of the effects call the native show/hide() with no arguments, resulting in an infinite loop.
+	var _show = {show: $.fn.show, hide: $.fn.hide}; // save the originals
+	$.each(['show','hide'], function(){
+		var which = this, show = _show[which], plugin = which+'Default';
+		$.fn[which] = function(){
+			if (arguments.length > 0) return show.apply(this, arguments);
+			return this.each(function(){
+				var fn = $.data(this, plugin), $this = $(this);
+				if (fn){
+					$.removeData(this, plugin); // prevent the infinite loop
+					fn.call($this);
+					$this.queue(function(){$this.data(plugin, fn).dequeue()}); // put the function back at the end of the animation
+				}else{
+					show.call($this);
+				}
+			});
+		};
+		$.fn[plugin] = function(){
+			var args = $.makeArray(arguments), name = args[0];
+			if ($.fn[name]){ // a plugin
+				args.shift();
+				var fn = $.fn[name];
+			}else if ($.effects && $.effects[name]){ // a jQuery UI effect. They require an options object as the second argument
+				if (typeof args[1] != 'object') args.splice(1,0,{});
+				fn = _show[which];
+			}else{ // regular show/hide
+				fn = _show[which];
+			}
+			return this.data(plugin, function(){fn.apply(this,args)});
+		};
+	});
+		
+	// experimental: find unrecognized style attributes in elements by reloading the code as text
+	var RESGMLcomment = /<!--([^-]|-[^-])*-->/g; // as above, a simplification of real comments. Don't put -- in your HTML comments!
+	var REnotATag = /(>)[^<]*/g;
+	var REtag = /<(\w+)([^>]*)>/g;
+
+	function styleAttributes (HTMLtext, callback) {
+		var ret = '', style, tags = {}; //  keep track of tags so we can identify elements unambiguously
+		HTMLtext = HTMLtext.replace(RESGMLcomment, '').replace(REnotATag, '$1');
+		munge(HTMLtext).replace(REtag, function(s, tag, attrs){
+			tag = tag.toLowerCase();
+			if (tags[tag]) ++tags[tag]; else tags[tag] = 1;
+			if (style = /\bstyle\s*=\s*(%s`\d+`s%)/i.exec(attrs)){ // style attributes must be of the form style = "a: bc" ; they must be in quotes. After munging, they are marked with numbers. Grab that number
+				var id = /\bid\s*=\s*(\S+)/i.exec(attrs); // find the id if there is one.
+				if (id) id = '#'+restore(id[1]).replace(/^['"]|['"]$/g,''); else id = tag + ':eq(' + (tags[tag]-1) + ')';
+				ret += [id, '{', restore(style[1]).replace(/^['"]|['"]$/g,''),'}'].join('');
+			}
+		});
+		$.parsecss(ret, callback);
+	}
+})(jQuery);
 var CLOSURE_NO_DEPS = true;
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
 //
@@ -47653,40 +47656,9 @@ goog.scope = function(fn) {
 
 
 /**
- * @fileoverview Main interface to the graphics and rendering subsystem
- * 
  * @author Tony Parisi
  */
-goog.provide('Vizi.Time');
-
-Vizi.Time = function()
-{
-	// Freak out if somebody tries to make 2
-    if (Vizi.Time.instance)
-    {
-        throw new Error('Graphics singleton already exists')
-    }
-}
-
-
-Vizi.Time.prototype.initialize = function(param)
-{
-	this.currentTime = Date.now();
-
-	Vizi.Time.instance = this;
-}
-
-Vizi.Time.prototype.update = function()
-{
-	this.currentTime = Date.now();
-}
-
-Vizi.Time.instance = null;
-	        
-/**
- * @author Tony Parisi
- */
-goog.provide('Vizi.Service');
+goog.provide('glam.Service');
 
 /**
  * Interface for a Service.
@@ -47694,7 +47666,7 @@ goog.provide('Vizi.Service');
  * Allows multiple different backends for the same type of service.
  * @interface
  */
-Vizi.Service = function() {};
+glam.Service = function() {};
 
 //---------------------------------------------------------------------
 // Initialization/Termination
@@ -47703,31 +47675,192 @@ Vizi.Service = function() {};
 /**
  * Initializes the Service - Abstract.
  */
-Vizi.Service.prototype.initialize = function(param) {};
+glam.Service.prototype.initialize = function(param) {};
 
 /**
  * Terminates the Service - Abstract.
  */
-Vizi.Service.prototype.terminate = function() {};
+glam.Service.prototype.terminate = function() {};
 
 
 /**
  * Updates the Service - Abstract.
  */
-Vizi.Service.prototype.update = function() {};/**
+glam.Service.prototype.update = function() {};/**
  *
  */
-goog.require('Vizi.Service');
-goog.provide('Vizi.EventService');
+goog.provide('glam.Keyboard');
+
+glam.Keyboard = function()
+{
+	// N.B.: freak out if somebody tries to make 2
+	// throw (...)
+
+	glam.Keyboard.instance = this;
+}
+
+glam.Keyboard.prototype.onKeyDown = function(event)
+{
+}
+
+glam.Keyboard.prototype.onKeyUp = function(event)
+{
+}
+
+glam.Keyboard.prototype.onKeyPress = function(event)
+{
+}	        
+
+glam.Keyboard.instance = null;
+
+/* key codes
+37: left
+38: up
+39: right
+40: down
+*/
+glam.Keyboard.KEY_LEFT  = 37;
+glam.Keyboard.KEY_UP  = 38;
+glam.Keyboard.KEY_RIGHT  = 39;
+glam.Keyboard.KEY_DOWN  = 40;
+/**
+ *
+ */
+goog.provide('glam.Mouse');
+
+glam.Mouse = function()
+{
+	// N.B.: freak out if somebody tries to make 2
+	// throw (...)
+
+	this.state = 
+	{ x : glam.Mouse.NO_POSITION, y: glam.Mouse.NO_POSITION,
+
+	buttons : { left : false, middle : false, right : false },
+	scroll : 0,
+	};
+
+	glam.Mouse.instance = this;
+};
+
+glam.Mouse.prototype.onMouseMove = function(event)
+{
+    this.state.x = event.elementX;
+    this.state.y = event.elementY;	            
+}
+
+glam.Mouse.prototype.onMouseDown = function(event)
+{
+    this.state.x = event.elementX;
+    this.state.y = event.elementY;	            
+    this.state.buttons.left = true;
+}
+
+glam.Mouse.prototype.onMouseUp = function(event)
+{
+    this.state.x = event.elementX;
+    this.state.y = event.elementY;	            
+    this.state.buttons.left = false;	            
+}
+
+glam.Mouse.prototype.onMouseClick = function(event)
+{
+    this.state.x = event.elementX;
+    this.state.y = event.elementY;	            
+    this.state.buttons.left = false;	            
+}
+
+glam.Mouse.prototype.onMouseDoubleClick = function(event)
+{
+    this.state.x = event.elementX;
+    this.state.y = event.elementY;	            
+    this.state.buttons.left = false;	            
+}
+
+glam.Mouse.prototype.onMouseScroll = function(event, delta)
+{
+    this.state.scroll = 0; // PUNT!
+}
+
+
+glam.Mouse.prototype.getState = function()
+{
+	return this.state;
+}
+
+glam.Mouse.instance = null;
+glam.Mouse.NO_POSITION = Number.MIN_VALUE;
+/**
+ *
+ */
+goog.provide('glam.Input');
+goog.require('glam.Service');
+goog.require('glam.Mouse');
+goog.require('glam.Keyboard');
+
+glam.Input = function()
+{
+	// N.B.: freak out if somebody tries to make 2
+	// throw (...)
+
+	this.mouse = new glam.Mouse();
+	this.keyboard = new glam.Keyboard();
+	this.gamepad = new glam.Gamepad();
+	glam.Input.instance = this;
+}
+
+goog.inherits(glam.Input, glam.Service);
+
+glam.Input.prototype.update = function() {
+	if (this.gamepad && this.gamepad.update)
+		this.gamepad.update();
+}
+
+glam.Input.instance = null;/**
+ * @fileoverview Main interface to the graphics and rendering subsystem
+ * 
+ * @author Tony Parisi
+ */
+goog.provide('glam.Time');
+
+glam.Time = function()
+{
+	// Freak out if somebody tries to make 2
+    if (glam.Time.instance)
+    {
+        throw new Error('Graphics singleton already exists')
+    }
+}
+
+
+glam.Time.prototype.initialize = function(param)
+{
+	this.currentTime = Date.now();
+
+	glam.Time.instance = this;
+}
+
+glam.Time.prototype.update = function()
+{
+	this.currentTime = Date.now();
+}
+
+glam.Time.instance = null;
+	        
+/**
+ *
+ */
+goog.require('glam.Service');
+goog.provide('glam.EventService');
 
 /**
  * The EventService.
  *
- * @extends {Vizi.Service}
+ * @extends {glam.Service}
  */
-Vizi.EventService = function() {};
+glam.EventService = function() {};
 
-goog.inherits(Vizi.EventService, Vizi.Service);
+goog.inherits(glam.EventService, glam.Service);
 
 //---------------------------------------------------------------------
 // Initialization/Termination
@@ -47736,44 +47869,44 @@ goog.inherits(Vizi.EventService, Vizi.Service);
 /**
  * Initializes the events system.
  */
-Vizi.EventService.prototype.initialize = function(param) {};
+glam.EventService.prototype.initialize = function(param) {};
 
 /**
  * Terminates the events world.
  */
-Vizi.EventService.prototype.terminate = function() {};
+glam.EventService.prototype.terminate = function() {};
 
 
 /**
  * Updates the EventService.
  */
-Vizi.EventService.prototype.update = function()
+glam.EventService.prototype.update = function()
 {
 	do
 	{
-		Vizi.EventService.eventsPending = false;
-		Vizi.Application.instance.updateObjects();
+		glam.EventService.eventsPending = false;
+		glam.Application.instance.updateObjects();
 	}
-	while (Vizi.EventService.eventsPending);
+	while (glam.EventService.eventsPending);
 }/**
  * @fileoverview EventDispatcher is the base class for any object that sends/receives messages
  * 
  * @author Tony Parisi
  */
-goog.provide('Vizi.EventDispatcher');
-goog.require('Vizi.EventService');
-goog.require('Vizi.Time');
+goog.provide('glam.EventDispatcher');
+goog.require('glam.EventService');
+goog.require('glam.Time');
 
 /**
  * @constructor
  */
-Vizi.EventDispatcher = function() {
+glam.EventDispatcher = function() {
     this.eventTypes = {};
     this.timestamps = {};
     this.connections = {};
 }
 
-Vizi.EventDispatcher.prototype.addEventListener = function(type, listener) {
+glam.EventDispatcher.prototype.addEventListener = function(type, listener) {
     var listeners = this.eventTypes[type];
     if (listeners)
     {
@@ -47792,7 +47925,7 @@ Vizi.EventDispatcher.prototype.addEventListener = function(type, listener) {
     listeners.push(listener);
 }
 
-Vizi.EventDispatcher.prototype.removeEventListener =  function(type, listener) {
+glam.EventDispatcher.prototype.removeEventListener =  function(type, listener) {
     if (listener)
     {
         var listeners = this.eventTypes[type];
@@ -47813,17 +47946,17 @@ Vizi.EventDispatcher.prototype.removeEventListener =  function(type, listener) {
     }
 }
 
-Vizi.EventDispatcher.prototype.dispatchEvent = function(type) {
+glam.EventDispatcher.prototype.dispatchEvent = function(type) {
     var listeners = this.eventTypes[type];
 
     if (listeners)
     {
-    	var now = Vizi.Time.instance.currentTime;
+    	var now = glam.Time.instance.currentTime;
     	
     	if (this.timestamps[type] < now)
     	{
     		this.timestamps[type] = now;
-	    	Vizi.EventService.eventsPending = true;
+	    	glam.EventService.eventsPending = true;
 	    	
     		[].shift.call(arguments);
 	    	for (var i = 0; i < listeners.length; i++)
@@ -47834,7 +47967,7 @@ Vizi.EventDispatcher.prototype.dispatchEvent = function(type) {
     }
 }
 
-Vizi.EventDispatcher.prototype.hasEventListener = function (subscribers, subscriber) {
+glam.EventDispatcher.prototype.hasEventListener = function (subscribers, subscriber) {
     var listeners = this.eventTypes[type];
     if (listeners)
         return (listeners.indexOf(listener) != -1)
@@ -47842,7 +47975,7 @@ Vizi.EventDispatcher.prototype.hasEventListener = function (subscribers, subscri
     	return false;
 }
 
-Vizi.EventDispatcher.prototype.connect = function(type, target, targetProp) {
+glam.EventDispatcher.prototype.connect = function(type, target, targetProp) {
     var connections = this.connections[type];
     if (connections)
     {
@@ -47867,7 +48000,7 @@ Vizi.EventDispatcher.prototype.connect = function(type, target, targetProp) {
     var connection = this.addEventListener(type, listener);
 }
 
-Vizi.EventDispatcher.prototype.handleConnection = function(sourceProp, target, targetProp, args) {
+glam.EventDispatcher.prototype.handleConnection = function(sourceProp, target, targetProp, args) {
 	var targetValue = target[targetProp];
 	
 	if (typeof targetValue == "function") {
@@ -47884,466 +48017,24 @@ Vizi.EventDispatcher.prototype.handleConnection = function(sourceProp, target, t
 }
 
     /**
- * @fileoverview Object collects a group of Components that define an object and its behaviors
- * 
- * @author Tony Parisi
- */
-goog.provide('Vizi.Object');
-goog.require('Vizi.EventDispatcher');
-
-/**
- * Creates a new Object.
- * @constructor
- * @extends {Vizi.EventDispatcher}
- */
-Vizi.Object = function(param) {
-    Vizi.EventDispatcher.call(this);
-    
-    /**
-     * @type {number}
-     * @private
-     */
-    this._id = Vizi.Object.nextId++;
-
-    /**
-     * @type {Vizi.Object}
-     * @private
-     */
-    this._parent = null;
-
-    /**
-     * @type {Array.<Vizi.Object>}
-     * @private
-     */
-    this._children = [];
-
-    /**
-     * @type {Array}
-     * @private
-     */
-    this._components = [];
-
-    /**
-     * @type {String}
-     * @public
-     */
-    this.name = "";
- 
-    /**
-     * @type {Boolean}
-     * @private
-     */
-    this._realizing = false;
-    
-    /**
-     * @type {Boolean}
-     * @private
-     */
-    this._realized = false;
-    
-    // Automatically create a transform component unless the caller says not to 
-    var autoCreateTransform = true;
-    if (param && param.autoCreateTransform !== undefined)
-    	autoCreateTransform = param.autoCreateTransform;
-    
-	if (autoCreateTransform)
-	{
-		this.addComponent(new Vizi.Transform(param));
-	}
-}
-
-goog.inherits(Vizi.Object, Vizi.EventDispatcher);
-
-/**
- * The next identifier to hand out.
- * @type {number}
- * @private
- */
-Vizi.Object.nextId = 0;
-
-Vizi.Object.prototype.getID = function() {
-    return this._id;
-}
-
-//---------------------------------------------------------------------
-// Hierarchy methods
-//---------------------------------------------------------------------
-
-/**
- * Sets the parent of the Object.
- * @param {Vizi.Object} parent The parent of the Object.
- * @private
- */
-Vizi.Object.prototype.setParent = function(parent) {
-    this._parent = parent;
-}
-
-/**
- * Adds a child to the Object.
- * @param {Vizi.Object} child The child to add.
- */
-Vizi.Object.prototype.addChild = function(child) {
-    if (!child)
-    {
-        throw new Error('Cannot add a null child');
-    }
-
-    if (child._parent)
-    {
-        throw new Error('Child is already attached to an Object');
-    }
-
-    child.setParent(this);
-    this._children.push(child);
-
-    if ((this._realizing || this._realized) && !child._realized)
-    {
-    	child.realize();
-    }
-
-}
-
-/**
- * Removes a child from the Object
- * @param {Vizi.Object} child The child to remove.
- */
-Vizi.Object.prototype.removeChild = function(child) {
-    var i = this._children.indexOf(child);
-
-    if (i != -1)
-    {
-        this._children.splice(i, 1);
-        child.removeAllComponents();
-        child.setParent(null);
-        child._realized = child._realizing = false;
-    }
-}
-
-/**
- * Removes a child from the Object
- * @param {Vizi.Object} child The child to remove.
- */
-Vizi.Object.prototype.getChild = function(index) {
-	if (index >= this._children.length)
-		return null;
-	
-	return this._children[index];
-}
-
-//---------------------------------------------------------------------
-// Component methods
-//---------------------------------------------------------------------
-
-/**
- * Adds a Component to the Object.
- * @param {Vizi.Component} component.
- */
-Vizi.Object.prototype.addComponent = function(component) {
-    if (!component)
-    {
-        throw new Error('Cannot add a null component');
-    }
-    
-    if (component._object)
-    {
-        throw new Error('Component is already attached to an Object')
-    }
-
-    var proto = Object.getPrototypeOf(component);
-    if (proto._componentProperty)
-    {
-    	if (this[proto._componentProperty])
-    	{
-    		var t = proto._componentPropertyType;
-            Vizi.System.warn('Object already has a ' + t + ' component');
-            return;
-    	}
-    	
-    	this[proto._componentProperty] = component;
-    }
-
-    if (proto._componentCategory)
-    {
-    	if (!this[proto._componentCategory])
-    		this[proto._componentCategory] = [];
-    	
-    	this[proto._componentCategory].push(component);
-    }
-    
-    this._components.push(component);
-    component.setObject(this);
-    
-    if ((this._realizing || this._realized) && !component._realized)
-    {
-    	component.realize();
-    }
-}
-
-/**
- * Removes a Component from the Object.
- * @param {Vizi.Component} component.
- */
-Vizi.Object.prototype.removeComponent = function(component) {
-	if (!component)
-		return;
-	
-    var i = this._components.indexOf(component);
-
-    if (i != -1)
-    {
-    	if (component.removeFromScene)
-    	{
-    		component.removeFromScene();
-    	}
-    	
-        this._components.splice(i, 1);
-        component.setObject(null);
-    }
-    
-    var proto = Object.getPrototypeOf(component);
-    if (proto._componentProperty)
-    {
-    	this[proto._componentProperty] = null;
-    }
-
-    if (proto._componentCategory)
-    {
-    	if (this[proto._componentCategory]) {
-    		var cat = this[proto._componentCategory];
-    		i = cat.indexOf(component);
-    		if (i != -1)
-    			cat.splice(i, 1);
-    	}
-    }
-
-}
-
-/**
- * Removes all Components from the Object in one call
- * @param {Vizi.Component} component.
- */
-Vizi.Object.prototype.removeAllComponents = function() {
-    var i, len = this._components.length;
-
-    for (i = 0; i < len; i++)
-    {
-    	var component = this._components[i];
-    	if (component.removeFromScene)
-    	{
-    		component.removeFromScene();
-    		component._realized = component._realizing = false;
-    	}
-    	
-        component.setObject(null);
-    }
-}
-
-/**
- * Retrieves a Component of a given type in the Object.
- * @param {Object} type.
- */
-Vizi.Object.prototype.getComponent = function(type) {
-	var i, len = this._components.length;
-	
-	for (i = 0; i < len; i++)
-	{
-		var component = this._components[i];
-		if (component instanceof type)
-		{
-			return component;
-		}
-	}
-	
-	return null;
-}
-
-/**
- * Retrieves a Component of a given type in the Object.
- * @param {Object} type.
- */
-Vizi.Object.prototype.getComponents = function(type) {
-	var i, len = this._components.length;
-	
-	var components = [];
-	
-	for (i = 0; i < len; i++)
-	{
-		var component = this._components[i];
-		if (component instanceof type)
-		{
-			components.push(component);
-		}
-	}
-	
-	return components;
-}
-
-//---------------------------------------------------------------------
-//Initialize methods
-//---------------------------------------------------------------------
-
-Vizi.Object.prototype.realize = function() {
-    this._realizing = true;
-    
-    this.realizeComponents();
-    this.realizeChildren();
-        
-    this._realized = true;
-}
-
-/**
- * @private
- */
-Vizi.Object.prototype.realizeComponents = function() {
-    var component;
-    var count = this._components.length;
-    var i = 0;
-
-    for (; i < count; ++i)
-    {
-        if (!this._components[i]._realized) {
-        	// in case we're part of a previously-removed object getting re-parented
-        	this._components[i].setObject(this);
-        	this._components[i].realize();
-        }
-    }
-}
-
-/**
- * @private
- */
-Vizi.Object.prototype.realizeChildren = function() {
-    var child;
-    var count = this._children.length;
-    var i = 0;
-
-    for (; i < count; ++i)
-    {
-        if (!this._children[i]._realized) {
-        	this._children[i].realize();
-        }
-    }
-}
-
-//---------------------------------------------------------------------
-// Update methods
-//---------------------------------------------------------------------
-
-Vizi.Object.prototype.update = function() {
-    this.updateComponents();
-    this.updateChildren();
-}
-
-/**
- * @private
- */
-Vizi.Object.prototype.updateComponents = function() {
-    var component;
-    var count = this._components.length;
-    var i = 0;
-
-    for (; i < count; ++i)
-    {
-        this._components[i].update();
-    }
-}
-
-/**
- * @private
- */
-Vizi.Object.prototype.updateChildren = function() {
-    var child;
-    var count = this._children.length;
-    var i = 0;
-
-    for (; i < count; ++i)
-    {
-        this._children[i].update();
-    }
-}
-
-//---------------------------------------------------------------------
-// Traversal and query methods
-//---------------------------------------------------------------------
-
-Vizi.Object.prototype.traverse = function (callback) {
-
-	callback(this);
-
-    var i, count = this._children.length;
-	for (i = 0; i < count ; i ++ ) {
-
-		this._children[ i ].traverse( callback );
-	}
-}
-
-Vizi.Object.prototype.findCallback = function(n, query, found) {
-	if (typeof(query) == "string")
-	{
-		if (n.name == query)
-			found.push(n);
-	}
-	else if (query instanceof RegExp)
-	{
-		var match  = n.name.match(query);
-		if (match && match.length)
-			found.push(n);
-	}
-	else if (query instanceof Function) {
-		if (n instanceof query)
-			found.push(n);
-		else {
-			var components = n.getComponents(query);
-			var i, len = components.length;
-			for (i = 0; i < len; i++)
-				found.push(components[i]);
-		}
-	}
-}
-
-Vizi.Object.prototype.findNode = function(str) {
-	var that = this;
-	var found = [];
-	this.traverse(function (o) { that.findCallback(o, str, found); });
-	
-	return found[0];
-}
-
-Vizi.Object.prototype.findNodes = function(query) {
-	var that = this;
-	var found = [];
-	this.traverse(function (o) { that.findCallback(o, query, found); });
-	
-	return found;
-}
-
-Vizi.Object.prototype.map = function(query, callback){
-	var found = this.findNodes(query);
-	var i, len = found.length;
-	
-	for (i = 0; i < len; i++) {
-		callback(found[i]);
-	}
-}
-/**
  * @fileoverview Component is the base class for defining capabilities used within an Object
  * 
  * @author Tony Parisi
  */
-goog.provide('Vizi.Component');
-goog.require('Vizi.EventDispatcher');
+goog.provide('glam.Component');
+goog.require('glam.EventDispatcher');
 
 /**
  * Creates a new Component.
  * @constructor
  */
-Vizi.Component = function(param) {
-    Vizi.EventDispatcher.call(this);
+glam.Component = function(param) {
+    glam.EventDispatcher.call(this);
 	
 	param = param || {};
 
     /**
-     * @type {Vizi.Object}
+     * @type {glam.Object}
      * @private
      */
     this._object = null;
@@ -48355,45 +48046,421 @@ Vizi.Component = function(param) {
     this._realized = false;
 }
 
-goog.inherits(Vizi.Component, Vizi.EventDispatcher);
+goog.inherits(glam.Component, glam.EventDispatcher);
 
 /**
  * Gets the Object the Component is associated with.
- * @returns {Vizi.Object} The Object the Component is associated with.
+ * @returns {glam.Object} The Object the Component is associated with.
  */
-Vizi.Component.prototype.getObject = function() {
+glam.Component.prototype.getObject = function() {
     return this._object;
 }
 
 /**
  * Sets the Object the Component is associated with.
- * @param {Vizi.Object} object
+ * @param {glam.Object} object
  */
-Vizi.Component.prototype.setObject = function(object) {
+glam.Component.prototype.setObject = function(object) {
     this._object = object;
 }
 
-Vizi.Component.prototype.realize = function() {
+glam.Component.prototype.realize = function() {
     this._realized = true;
 }
 
-Vizi.Component.prototype.update = function() {
+glam.Component.prototype.update = function() {
+}
+/**
+ * @fileoverview Behavior component - base class for time-based behaviors
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.Behavior');
+goog.require('glam.Component');
+
+glam.Behavior = function(param) {
+	param = param || {};
+	this.startTime = 0;
+	this.running = false;
+	this.loop = (param.loop !== undefined) ? param.loop : false;
+	this.autoStart = (param.autoStart !== undefined) ? param.autoStart : false;
+    glam.Component.call(this, param);
+}
+
+goog.inherits(glam.Behavior, glam.Component);
+
+glam.Behavior.prototype._componentCategory = "behaviors";
+
+glam.Behavior.prototype.realize = function()
+{
+	glam.Component.prototype.realize.call(this);
+	
+	if (this.autoStart)
+		this.start();
+}
+
+glam.Behavior.prototype.start = function()
+{
+	this.startTime = glam.Time.instance.currentTime;
+	this.running = true;
+}
+
+glam.Behavior.prototype.stop = function()
+{
+	this.startTime = 0;
+	this.running = false;
+}
+
+glam.Behavior.prototype.toggle = function()
+{
+	if (this.running)
+		this.stop();
+	else
+		this.start();
+}
+
+glam.Behavior.prototype.update = function()
+{
+	if (this.running)
+	{
+		// N.B.: soon, add logic to subtract suspend times
+		var now = glam.Time.instance.currentTime;
+		var elapsedTime = (now - this.startTime) / 1000;
+		
+		this.evaluate(elapsedTime);
+	}
+}
+
+glam.Behavior.prototype.evaluate = function(t)
+{
+	if (glam.Behavior.WARN_ON_ABSTRACT)
+		glam.System.warn("Abstract Behavior.evaluate called");
+}
+
+glam.Behavior.WARN_ON_ABSTRACT = true;
+/**
+ * @fileoverview BounceBehavior - simple angular rotation
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.BounceBehavior');
+goog.require('glam.Behavior');
+
+glam.BounceBehavior = function(param) {
+	param = param || {};
+	this.duration = (param.duration !== undefined) ? param.duration : 1;
+	this.bounceVector = (param.bounceVector !== undefined) ? param.bounceVector : new THREE.Vector3(0, 1, 0);
+	this.tweenUp = null;
+	this.tweenDown = null;
+    glam.Behavior.call(this, param);
+}
+
+goog.inherits(glam.BounceBehavior, glam.Behavior);
+
+glam.BounceBehavior.prototype.start = function()
+{
+	if (this.running)
+		return;
+	
+	this.bouncePosition = new THREE.Vector3;
+	this.bounceEndPosition = this.bounceVector.clone();
+	this.prevBouncePosition = new THREE.Vector3;
+	this.bounceDelta = new THREE.Vector3;
+	this.tweenUp = new TWEEN.Tween(this.bouncePosition).to(this.bounceEndPosition, this.duration / 2 * 1000)
+	.easing(TWEEN.Easing.Quadratic.InOut)
+	.repeat(0)
+	.start();
+	
+	glam.Behavior.prototype.start.call(this);
+}
+
+glam.BounceBehavior.prototype.evaluate = function(t)
+{
+	this.bounceDelta.copy(this.bouncePosition).sub(this.prevBouncePosition);
+	this.prevBouncePosition.copy(this.bouncePosition);
+	
+	this._object.transform.position.add(this.bounceDelta);
+	
+	if (t >= (this.duration / 2))
+	{
+		if (this.tweenUp)
+		{
+			this.tweenUp.stop();
+			this.tweenUp = null;
+		}
+
+		if (!this.tweenDown)
+		{
+			this.bouncePosition = this._object.transform.position.clone();
+			this.bounceEndPosition = this.bouncePosition.clone().sub(this.bounceVector);
+			this.prevBouncePosition = this.bouncePosition.clone();
+			this.bounceDelta = new THREE.Vector3;
+			this.tweenDown = new TWEEN.Tween(this.bouncePosition).to(this.bounceEndPosition, this.duration / 2 * 1000)
+			.easing(TWEEN.Easing.Quadratic.InOut)
+			.repeat(0)
+			.start();
+		}
+	}
+	
+	if (t >= this.duration)
+	{
+		this.tweenDown.stop();
+		this.tweenDown = null;
+		this.stop();
+		
+		if (this.loop)
+			this.start();
+	}
+}/**
+ * @fileoverview General-purpose key frame animation
+ * @author Tony Parisi
+ */
+goog.provide('glam.KeyFrameAnimator');
+goog.require('glam.Component');
+
+// KeyFrameAnimator class
+// Construction/initialization
+glam.KeyFrameAnimator = function(param) 
+{
+    glam.Component.call(this, param);
+	    		
+	param = param || {};
+	
+	this.interpdata = param.interps || [];
+	this.animationData = param.animations;
+	this.running = false;
+	this.direction = glam.KeyFrameAnimator.FORWARD_DIRECTION;
+	this.duration = param.duration ? param.duration : glam.KeyFrameAnimator.default_duration;
+	this.loop = param.loop ? param.loop : false;
+	this.easing = param.easing;
+}
+
+goog.inherits(glam.KeyFrameAnimator, glam.Component);
+	
+glam.KeyFrameAnimator.prototype.realize = function()
+{
+	glam.Component.prototype.realize.call(this);
+	
+	if (this.interpdata)
+	{
+		this.createInterpolators(this.interpdata);
+	}
+	
+	if (this.animationData)
+	{
+		this.animations = [];
+		var i, len = this.animationData.length;
+		for (i = 0; i < len; i++)
+		{				
+			var animdata = this.animationData[i];
+			if (animdata instanceof THREE.glTFAnimation) {
+				this.animations.push(animdata);
+			}
+			else {
+				
+				THREE.AnimationHandler.add(animdata);
+				var animation = new THREE.KeyFrameAnimation(animdata.node, animdata.name);
+//			animation.timeScale = .01; // why?
+				this.animations.push(animation);
+			}
+		}
+	}
+}
+
+glam.KeyFrameAnimator.prototype.createInterpolators = function(interpdata)
+{
+	this.interps = [];
+	
+	var i, len = interpdata.length;
+	for (i = 0; i < len; i++)
+	{
+		var data = interpdata[i];
+		var interp = new glam.Interpolator({ keys: data.keys, values: data.values, target: data.target });
+		interp.realize();
+		this.interps.push(interp);
+	}
+}
+
+// Start/stop
+glam.KeyFrameAnimator.prototype.start = function()
+{
+	if (this.running)
+		return;
+	
+	this.startTime = Date.now();
+	this.lastTime = this.startTime;
+	this.running = true;
+	
+	if (this.animations)
+	{
+		var i, len = this.animations.length;
+		for (i = 0; i < len; i++)
+		{
+			this.animations[i].loop = this.loop;
+			if (this.animations[i] instanceof THREE.glTFAnimation) {
+				this.animations[i].direction = 
+					(this.direction == glam.KeyFrameAnimator.FORWARD_DIRECTION) ?
+						THREE.glTFAnimation.FORWARD_DIRECTION : 
+						THREE.glTFAnimation.REVERSE_DIRECTION;
+			}
+			this.animations[i].play(this.loop, 0);
+			this.endTime = this.startTime + this.animations[i].endTime / this.animations[i].timeScale;
+			if (isNaN(this.endTime))
+				this.endTime = this.startTime + this.animations[i].duration * 1000;
+		}
+	}
+}
+
+glam.KeyFrameAnimator.prototype.stop = function()
+{
+	this.running = false;
+	this.dispatchEvent("complete");
+
+	if (this.animations)
+	{
+		var i, len = this.animations.length;
+		for (i = 0; i < len; i++)
+		{
+			this.animations[i].stop();
+		}
+	}
+
+}
+
+// Update - drive key frame evaluation
+glam.KeyFrameAnimator.prototype.update = function()
+{
+	if (!this.running)
+		return;
+	
+	if (this.animations)
+	{
+		this.updateAnimations();
+		return;
+	}
+	
+	var now = Date.now();
+	var deltat = (now - this.startTime) % this.duration;
+	var nCycles = Math.floor((now - this.startTime) / this.duration);
+	var fract = deltat / this.duration;
+	if (this.easing)
+		fract = this.easing(fract);
+
+	if (nCycles >= 1 && !this.loop)
+	{
+		this.running = false;
+		this.dispatchEvent("complete");
+		var i, len = this.interps.length;
+		for (i = 0; i < len; i++)
+		{
+			this.interps[i].interp(1);
+		}
+		return;
+	}
+	else
+	{
+		var i, len = this.interps.length;
+		for (i = 0; i < len; i++)
+		{
+			this.interps[i].interp(fract);
+		}
+	}
+}
+
+glam.KeyFrameAnimator.prototype.updateAnimations = function()
+{
+	var now = Date.now();
+	var deltat = now - this.lastTime;
+	var complete = false;
+	
+	var i, len = this.animations.length;
+	for (i = 0; i < len; i++)
+	{
+		this.animations[i].update(deltat);
+		if (!this.loop && (now >= this.endTime))
+			complete = true;
+	}
+	this.lastTime = now;	
+	
+	if (complete)
+	{
+		this.stop();
+	}
+}
+
+// Statics
+glam.KeyFrameAnimator.default_duration = 1000;
+glam.KeyFrameAnimator.FORWARD_DIRECTION = 0;
+glam.KeyFrameAnimator.REVERSE_DIRECTION = 1;/**
+ * @fileoverview camera parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.CameraElement');
+
+glam.CameraElement.DEFAULT_FOV = 45;
+glam.CameraElement.DEFAULT_NEAR = 1;
+glam.CameraElement.DEFAULT_FAR = 10000;
+
+glam.CameraElement.create = function(docelt, style, app) {
+	
+	var fov = docelt.getAttribute('fov') || glam.CameraElement.DEFAULT_FOV;
+	var near = docelt.getAttribute('near') || glam.CameraElement.DEFAULT_NEAR;
+	var far = docelt.getAttribute('far') || glam.CameraElement.DEFAULT_FAR;
+	var aspect = docelt.getAttribute('aspect');
+	
+	if (style) {
+		if (style.fov)
+			fov = style.fov;
+		if (style.near)
+			near = style.near;
+		if (style.far)
+			far = style.far;
+		if (style.aspect)
+			aspect = style.aspect;
+	}
+	
+	fov = parseFloat(fov);
+	near = parseFloat(near);
+	far = parseFloat(far);
+	
+	var param = {
+			fov : fov,
+			near : near,
+			far : far,
+	};
+
+	if (aspect) {
+		aspect = parseFloat(aspect);
+		param.aspect = aspect;
+	}
+	
+	var camera = new glam.Object;	
+	var cam = new glam.PerspectiveCamera(param);
+	camera.addComponent(cam);
+	
+	app.addCamera(cam, docelt.id);
+	
+	return camera;
 }
 /**
  * @fileoverview Base class for visual elements.
  * @author Tony Parisi
  */
-goog.provide('Vizi.SceneComponent');
-goog.require('Vizi.Component');
+goog.provide('glam.SceneComponent');
+goog.require('glam.Component');
 
 /**
  * @constructor
  */
-Vizi.SceneComponent = function(param)
+glam.SceneComponent = function(param)
 {	
 	param = param || {};
 
-	Vizi.Component.call(this, param);
+	glam.Component.call(this, param);
     
     // Create accessors for all properties... just pass-throughs to Three.js
     Object.defineProperties(this, {
@@ -48471,25 +48538,25 @@ Vizi.SceneComponent = function(param)
     this.layer = param.layer;
 } ;
 
-goog.inherits(Vizi.SceneComponent, Vizi.Component);
+goog.inherits(glam.SceneComponent, glam.Component);
 
-Vizi.SceneComponent.prototype.realize = function()
+glam.SceneComponent.prototype.realize = function()
 {
 	if (this.object && !this.object.data)
 	{
 		this.addToScene();
 	}
 	
-	Vizi.Component.prototype.realize.call(this);
+	glam.Component.prototype.realize.call(this);
 }
 
-Vizi.SceneComponent.prototype.update = function()
+glam.SceneComponent.prototype.update = function()
 {	
-	Vizi.Component.prototype.update.call(this);
+	glam.Component.prototype.update.call(this);
 }
 
-Vizi.SceneComponent.prototype.addToScene = function() {
-	var scene = this.layer ? this.layer.scene : Vizi.Graphics.instance.scene;
+glam.SceneComponent.prototype.addToScene = function() {
+	var scene = this.layer ? this.layer.scene : glam.Graphics.instance.scene;
 	if (this._object) {
 		
 		// only add me if the object's transform component actually points
@@ -48515,8 +48582,8 @@ Vizi.SceneComponent.prototype.addToScene = function() {
 	}
 }
 
-Vizi.SceneComponent.prototype.removeFromScene = function() {
-	var scene = this.layer ? this.layer.scene : Vizi.Graphics.instance.scene;
+glam.SceneComponent.prototype.removeFromScene = function() {
+	var scene = this.layer ? this.layer.scene : glam.Graphics.instance.scene;
 	if (this._object)
 	{
 		var parent = this._object.transform ? this._object.transform.object : scene;
@@ -48537,124 +48604,1837 @@ Vizi.SceneComponent.prototype.removeFromScene = function() {
 	
 	this._realized = false;
 }
-goog.provide('Vizi.Camera');
-goog.require('Vizi.SceneComponent');
+goog.provide('glam.Light');
+goog.require('glam.SceneComponent');
 
-Vizi.Camera = function(param)
+glam.Light = function(param)
 {
 	param = param || {};
+	glam.SceneComponent.call(this, param);
 	
-	Vizi.SceneComponent.call(this, param);
-
-    // Accessors
+    // Create accessors for all properties... just pass-throughs to Three.js
     Object.defineProperties(this, {
-        active: {
+        color: {
 	        get: function() {
-	            return this._active;
+	            return this.object.color;
+	        }
+    	},
+        intensity: {
+	        get: function() {
+	            return this.object.intensity;
 	        },
 	        set: function(v) {
-	        	this._active = v;
-	        	// N.B.: trying this out for now... TP
-	        	if (/*this._realized && */ this._active)
-	        	{
-	        		Vizi.CameraManager.setActiveCamera(this);
-	        	}
+	        	this.object.intensity = v;
 	        }
     	},    	
 
     });
 	
-	this._active = param.active || false;
-	var position = param.position || Vizi.Camera.DEFAULT_POSITION;
-    //this.position.copy(position);	
 }
 
-goog.inherits(Vizi.Camera, Vizi.SceneComponent);
+goog.inherits(glam.Light, glam.SceneComponent);
 
-Vizi.Camera.prototype._componentProperty = "camera";
-Vizi.Camera.prototype._componentPropertyType = "Camera";
+glam.Light.prototype._componentProperty = "light";
+glam.Light.prototype._componentPropertyType = "Light";
 
-Vizi.Camera.prototype.realize = function() 
+glam.Light.prototype.realize = function() 
 {
-	Vizi.SceneComponent.prototype.realize.call(this);
+	glam.SceneComponent.prototype.realize.call(this);
+}
+
+glam.Light.DEFAULT_COLOR = 0xFFFFFF;
+glam.Light.DEFAULT_INTENSITY = 1;
+glam.Light.DEFAULT_RANGE = 10000;goog.provide('glam.SpotLight');
+goog.require('glam.Light');
+
+glam.SpotLight = function(param)
+{
+	param = param || {};
+
+	this.scaledDir = new THREE.Vector3;
+	this.positionVec = new THREE.Vector3;
+	this.castShadows = ( param.castShadows !== undefined ) ? param.castShadows : glam.SpotLight.DEFAULT_CAST_SHADOWS;
 	
-	this.addToScene();
+	glam.Light.call(this, param);
+
+	if (param.object) {
+		this.object = param.object; 
+		this.direction = param.object.position.clone().normalize().negate();
+		this.targetPos = param.object.target.position.clone();
+		this.shadowDarkness = param.object.shadowDarkness;
+	}
+	else {
+		this.direction = param.direction || new THREE.Vector3(0, 0, -1);
+		this.targetPos = new THREE.Vector3;
+		this.shadowDarkness = ( param.shadowDarkness !== undefined ) ? param.shadowDarkness : glam.SpotLight.DEFAULT_SHADOW_DARKNESS;
+
+		var angle = ( param.angle !== undefined ) ? param.angle : glam.SpotLight.DEFAULT_ANGLE;
+		var distance = ( param.distance !== undefined ) ? param.distance : glam.SpotLight.DEFAULT_DISTANCE;
+		var exponent = ( param.exponent !== undefined ) ? param.exponent : glam.SpotLight.DEFAULT_EXPONENT;
+
+		this.object = new THREE.SpotLight(param.color, param.intensity, distance, angle, exponent);
+	}
 	
-	Vizi.CameraManager.addCamera(this);
+    // Create accessors for all properties... just pass-throughs to Three.js
+    Object.defineProperties(this, {
+        angle: {
+	        get: function() {
+	            return this.object.angle;
+	        },
+	        set: function(v) {
+	        	this.object.angle = v;
+	        }
+		},    	
+        distance: {
+	        get: function() {
+	            return this.object.distance;
+	        },
+	        set: function(v) {
+	        	this.object.distance = v;
+	        }
+    	},    	
+        exponent: {
+	        get: function() {
+	            return this.object.exponent;
+	        },
+	        set: function(v) {
+	        	this.object.exponent = v;
+	        }
+    	},    	
+
+    });
 	
-	if (this._active && !Vizi.CameraManager.activeCamera)
+}
+
+goog.inherits(glam.SpotLight, glam.Light);
+
+glam.SpotLight.prototype.realize = function() 
+{
+	glam.Light.prototype.realize.call(this);
+}
+
+glam.SpotLight.prototype.update = function() 
+{
+	// D'oh Three.js doesn't seem to transform light directions automatically
+	// Really bizarre semantics
+	if (this.object)
 	{
-		Vizi.CameraManager.setActiveCamera(this);
+		this.positionVec.set(0, 0, 0);
+		var worldmat = this.object.parent.matrixWorld;
+		this.positionVec.applyMatrix4(worldmat);
+		this.position.copy(this.positionVec);
+
+		this.scaledDir.copy(this.direction);
+		this.scaledDir.multiplyScalar(glam.Light.DEFAULT_RANGE);
+		this.targetPos.copy(this.position);
+		this.targetPos.add(this.scaledDir);	
+		// this.object.target.position.copy(this.targetPos);
+		
+		this.updateShadows();
+	}
+	
+	// Update the rest
+	glam.Light.prototype.update.call(this);
+}
+
+glam.SpotLight.prototype.updateShadows = function()
+{
+	if (this.castShadows)
+	{
+		this.object.castShadow = true;
+		this.object.shadowCameraNear = 1;
+		this.object.shadowCameraFar = glam.Light.DEFAULT_RANGE;
+		this.object.shadowCameraFov = 90;
+
+		// light.shadowCameraVisible = true;
+
+		this.object.shadowBias = 0.0001;
+		this.object.shadowDarkness = this.shadowDarkness;
+
+		this.object.shadowMapWidth = 1024;
+		this.object.shadowMapHeight = 1024;
+		
+		glam.Graphics.instance.enableShadows(true);
+	}	
+}
+
+glam.SpotLight.DEFAULT_DISTANCE = 0;
+glam.SpotLight.DEFAULT_ANGLE = Math.PI / 2;
+glam.SpotLight.DEFAULT_EXPONENT = 10;
+glam.SpotLight.DEFAULT_CAST_SHADOWS = false;
+glam.SpotLight.DEFAULT_SHADOW_DARKNESS = 0.3;
+/**
+ *
+ */
+goog.provide('glam.Transform');
+goog.require('glam.SceneComponent');
+
+glam.Transform = function(param) {
+	param = param || {};
+    glam.SceneComponent.call(this, param);
+
+    if (param.object) {
+		this.object = param.object;    	
+    }
+    else {
+    	this.object = new THREE.Object3D();
+    }
+}
+
+goog.inherits(glam.Transform, glam.SceneComponent);
+
+glam.Transform.prototype._componentProperty = "transform";
+glam.Transform.prototype._componentPropertyType = "Transform";
+
+glam.Transform.prototype.addToScene = function() {
+	var scene = this.layer ? this.layer.scene : glam.Graphics.instance.scene;
+	if (this._object)
+	{
+		var parent = (this._object._parent && this._object._parent.transform) ? this._object._parent.transform.object : scene;
+		if (parent)
+		{
+		    parent.add(this.object);
+		    this.object.data = this; // backpointer for picking and such
+		}
+		else
+		{
+			// N.B.: throw something?
+		}
+	}
+	else
+	{
+		// N.B.: throw something?
 	}
 }
 
-Vizi.Camera.prototype.lookAt = function(v) 
+glam.Transform.prototype.removeFromScene = function() {
+	var scene = this.layer ? this.layer.scene : glam.Graphics.instance.scene;
+	if (this._object)
+	{
+		var parent = (this._object._parent && this._object._parent.transform) ? this._object._parent.transform.object : scene;
+		if (parent)
+		{
+			this.object.data = null;
+		    parent.remove(this.object);
+		}
+		else
+		{
+			// N.B.: throw something?
+		}
+	}
+	else
+	{
+		// N.B.: throw something?
+	}
+}
+/**
+ * @fileoverview Main interface to the graphics and rendering subsystem
+ * 
+ * @author Tony Parisi
+ */
+goog.provide('glam.Graphics');
+
+glam.Graphics = function()
 {
-	this.object.lookAt(v);
+	// Freak out if somebody tries to make 2
+    if (glam.Graphics.instance)
+    {
+        throw new Error('Graphics singleton already exists')
+    }
+	
+	glam.Graphics.instance = this;
+}
+	        
+glam.Graphics.instance = null;
+/**
+ * @fileoverview Main interface to the graphics and rendering subsystem
+ * 
+ * @author Tony Parisi
+ */
+goog.require('glam.Graphics');
+goog.provide('glam.GraphicsThreeJS');
+
+glam.GraphicsThreeJS = function()
+{
+	glam.Graphics.call(this);
 }
 
-Vizi.Camera.DEFAULT_POSITION = new THREE.Vector3(0, 0, 0);
-Vizi.Camera.DEFAULT_NEAR = 1;
-Vizi.Camera.DEFAULT_FAR = 10000;
+goog.inherits(glam.GraphicsThreeJS, glam.Graphics);
+
+glam.GraphicsThreeJS.prototype.initialize = function(param)
+{
+	param = param || {};
+	
+	// call all the setup functions
+	this.initOptions(param);
+	this.initPageElements(param);
+	this.initScene();
+	this.initRenderer(param);
+	this.initMouse();
+	this.initKeyboard();
+	this.addDomHandlers();
+}
+
+glam.GraphicsThreeJS.prototype.focus = function()
+{
+	if (this.renderer && this.renderer.domElement)
+	{
+		this.renderer.domElement.focus();
+	}
+}
+
+glam.GraphicsThreeJS.prototype.initOptions = function(param)
+{
+	this.displayStats = (param && param.displayStats) ? 
+			param.displayStats : glam.GraphicsThreeJS.default_display_stats;
+}
+
+glam.GraphicsThreeJS.prototype.initPageElements = function(param)
+{
+    if (param.container)
+    {
+    	this.container = param.container;
+    }
+   	else
+   	{
+		this.container = document.createElement( 'div' );
+	    document.body.appendChild( this.container );
+   	}
+
+    this.saved_cursor = this.container.style.cursor;
+    
+    if (this.displayStats)
+    {
+    	if (window.Stats)
+    	{
+	        var stats = new Stats();
+	        stats.domElement.style.position = 'absolute';
+	        stats.domElement.style.top = '0px';
+	        stats.domElement.style.left = '0px';
+	        stats.domElement.style.height = '40px';
+	        this.container.appendChild( stats.domElement );
+	        this.stats = stats;
+    	}
+    	else
+    	{
+    		glam.System.warn("No Stats module found. Make sure to include stats.min.js");
+    	}
+    }
+}
+
+glam.GraphicsThreeJS.prototype.initScene = function()
+{
+    var scene = new THREE.Scene();
+
+//    scene.add( new THREE.AmbientLight(0xffffff) ); //  0x505050 ) ); // 
+	
+    var camera = new THREE.PerspectiveCamera( 45, 
+    		this.container.offsetWidth / this.container.offsetHeight, 1, 10000 );
+    camera.position.copy(glam.Camera.DEFAULT_POSITION);
+
+    scene.add(camera);
+    
+    this.scene = scene;
+	this.camera = camera;
+	
+	this.backgroundLayer = {};
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera( 45, 
+    		this.container.offsetWidth / this.container.offsetHeight, 0.01, 10000 );
+    camera.position.set( 0, 0, 10 );	
+    scene.add(camera);
+    
+    this.backgroundLayer.scene = scene;
+    this.backgroundLayer.camera = camera;
+}
+
+glam.GraphicsThreeJS.prototype.initRenderer = function(param)
+{
+	var antialias = (param.antialias !== undefined) ? param.antialias : true;
+	var alpha = (param.alpha !== undefined) ? param.alpha : true;
+	//var devicePixelRatio = (param.devicePixelRatio !== undefined) ? param.devicePixelRatio : 1;
+	
+    var renderer = // glam.Config.USE_WEBGL ?
+    	new THREE.WebGLRenderer( { antialias: antialias, 
+    		alpha: alpha,
+    		/*devicePixelRatio : devicePixelRatio */ } ); // :
+    	// new THREE.CanvasRenderer;
+    	
+    renderer.sortObjects = false;
+    renderer.setSize( this.container.offsetWidth, this.container.offsetHeight );
+
+    if (param && param.backgroundColor)
+    {
+    	renderer.domElement.style.backgroundColor = param.backgroundColor;
+    	renderer.domElement.setAttribute('z-index', -1);
+    }
+    
+    this.container.appendChild( renderer.domElement );
+
+    var projector = new THREE.Projector();
+
+    this.renderer = renderer;
+    this.projector = projector;
+
+    this.lastFrameTime = 0;
+    
+    if (param.riftRender) {
+    	this.riftCam = new THREE.VREffect(this.renderer, function(err) {
+			if (err) {
+				console.log("Error creating VR renderer: ", err);
+			}
+    	});
+    }
+    else if (param.cardboard) {
+    	this.cardboard = new THREE.StereoEffect(this.renderer);
+    	this.cardboard.setSize( this.container.offsetWidth, this.container.offsetHeight );
+    }
+    
+    // Placeholder for effects composer
+    this.composer = null;
+}
+
+glam.GraphicsThreeJS.prototype.initMouse = function()
+{
+	var dom = this.renderer.domElement;
+	
+	var that = this;
+	dom.addEventListener( 'mousemove', 
+			function(e) { that.onDocumentMouseMove(e); }, false );
+	dom.addEventListener( 'mousedown', 
+			function(e) { that.onDocumentMouseDown(e); }, false );
+	dom.addEventListener( 'mouseup', 
+			function(e) { that.onDocumentMouseUp(e); }, false ); 
+ 	dom.addEventListener( 'click', 
+			function(e) { that.onDocumentMouseClick(e); }, false );
+	dom.addEventListener( 'dblclick', 
+			function(e) { that.onDocumentMouseDoubleClick(e); }, false );
+
+	dom.addEventListener( 'mousewheel', 
+			function(e) { that.onDocumentMouseScroll(e); }, false );
+	dom.addEventListener( 'DOMMouseScroll', 
+			function(e) { that.onDocumentMouseScroll(e); }, false );
+	
+	dom.addEventListener( 'touchstart', 
+			function(e) { that.onDocumentTouchStart(e); }, false );
+	dom.addEventListener( 'touchmove', 
+			function(e) { that.onDocumentTouchMove(e); }, false );
+	dom.addEventListener( 'touchend', 
+			function(e) { that.onDocumentTouchEnd(e); }, false );
+}
+
+glam.GraphicsThreeJS.prototype.initKeyboard = function()
+{
+	var dom = this.renderer.domElement;
+	
+	var that = this;
+	dom.addEventListener( 'keydown', 
+			function(e) { that.onKeyDown(e); }, false );
+	dom.addEventListener( 'keyup', 
+			function(e) { that.onKeyUp(e); }, false );
+	dom.addEventListener( 'keypress', 
+			function(e) { that.onKeyPress(e); }, false );
+
+	// so it can take focus
+	dom.setAttribute("tabindex", 1);
+    
+}
+
+glam.GraphicsThreeJS.prototype.addDomHandlers = function()
+{
+	var that = this;
+	window.addEventListener( 'resize', function(event) { that.onWindowResize(event); }, false );
+
+	setTimeout(function(event) { that.onWindowResize(event); }, 10);
+	
+	var fullScreenChange =
+		this.renderer.domElement.mozRequestFullScreen? 'mozfullscreenchange' : 'webkitfullscreenchange';
+	
+	document.addEventListener( fullScreenChange, 
+			function(e) {that.onFullScreenChanged(e); }, false );
+
+}
+
+glam.GraphicsThreeJS.prototype.objectFromMouse = function(event)
+{
+	var eltx = event.elementX, elty = event.elementY;
+	
+	// translate client coords into vp x,y
+    var vpx = ( eltx / this.container.offsetWidth ) * 2 - 1;
+    var vpy = - ( elty / this.container.offsetHeight ) * 2 + 1;
+    
+    var vector = new THREE.Vector3( vpx, vpy, 0.5 );
+
+    this.projector.unprojectVector( vector, this.camera );
+	
+    var pos = new THREE.Vector3;
+    pos = pos.applyMatrix4(this.camera.matrixWorld);
+	
+    var raycaster = new THREE.Raycaster( pos, vector.sub( pos ).normalize() );
+
+	var intersects = raycaster.intersectObjects( this.scene.children, true );
+	
+    if ( intersects.length > 0 ) {
+    	var i = 0;
+    	while(i < intersects.length && (!intersects[i].object.visible || 
+    			intersects[i].object.ignorePick))
+    	{
+    		i++;
+    	}
+    	
+    	var intersected = intersects[i];
+    	
+    	if (i >= intersects.length)
+    	{
+        	return { object : null, point : null, normal : null };
+    	}
+    	
+    	return (this.findObjectFromIntersected(intersected.object, intersected.point, intersected.face));        	    	                             
+    }
+    else
+    {
+    	return { object : null, point : null, normal : null };
+    }
+}
+
+glam.GraphicsThreeJS.prototype.objectFromRay = function(hierarchy, origin, direction, near, far)
+{
+    var raycaster = new THREE.Raycaster(origin, direction, near, far);
+
+    var objects = null;
+    if (hierarchy) {
+    	objects = hierarchy.transform.object.children; 
+    }
+    else {
+    	objects = this.scene.children;
+    }
+    
+	var intersects = raycaster.intersectObjects( objects, true );
+	
+    if ( intersects.length > 0 ) {
+    	var i = 0;
+    	while(i < intersects.length && (!intersects[i].object.visible || 
+    			intersects[i].object.ignoreCollision))
+    	{
+    		i++;
+    	}
+    	
+    	var intersected = intersects[i];
+    	
+    	if (i >= intersects.length)
+    	{
+        	return { object : null, point : null, normal : null };
+    	}
+    	
+    	return (this.findObjectFromIntersected(intersected.object, intersected.point, intersected.face));        	    	                             
+    }
+    else
+    {
+    	return { object : null, point : null, normal : null };
+    }
+}
+
+
+glam.GraphicsThreeJS.prototype.findObjectFromIntersected = function(object, point, face)
+{
+	if (object.data)
+	{
+		// The intersect point comes in as world units
+		var hitPointWorld = point.clone();
+		// Get the model space units for our event
+		var modelMat = new THREE.Matrix4;
+		modelMat.getInverse(object.matrixWorld);
+		point.applyMatrix4(modelMat);
+		// Use the intersected face's normal if it's there
+		var normal = face ? face.normal : null
+		return { object: object.data, point: point, hitPointWorld : hitPointWorld, face: face, normal: normal };
+	}
+	else if (object.parent)
+	{
+		return this.findObjectFromIntersected(object.parent, point, face);
+	}
+	else
+	{
+		return { object : null, point : null, face : null, normal : null };
+	}
+}
+
+glam.GraphicsThreeJS.prototype.nodeFromMouse = function(event)
+{
+	// Blerg, this is to support code outside the SB components & picker framework
+	// Returns a raw Three.js node
+	
+	// translate client coords into vp x,y
+	var eltx = event.elementX, elty = event.elementY;
+	
+    var vpx = ( eltx / this.container.offsetWidth ) * 2 - 1;
+    var vpy = - ( elty / this.container.offsetHeight ) * 2 + 1;
+    
+    var vector = new THREE.Vector3( vpx, vpy, 0.5 );
+
+    this.projector.unprojectVector( vector, this.camera );
+	
+    var pos = new THREE.Vector3;
+    pos = pos.applyMatrix4(this.camera.matrixWorld);
+
+    var raycaster = new THREE.Raycaster( pos, vector.sub( pos ).normalize() );
+
+	var intersects = raycaster.intersectObjects( this.scene.children, true );
+	
+    if ( intersects.length > 0 ) {
+    	var i = 0;
+    	while(!intersects[i].object.visible)
+    	{
+    		i++;
+    	}
+    	
+    	var intersected = intersects[i];
+    	if (intersected)
+    	{
+    		return { node : intersected.object, 
+    				 point : intersected.point, 
+    				 normal : intersected.face.normal
+    				}
+    	}
+    	else
+    		return null;
+    }
+    else
+    {
+    	return null;
+    }
+}
+
+glam.GraphicsThreeJS.prototype.getObjectIntersection = function(x, y, object)
+{
+	// Translate client coords into viewport x,y
+	var vpx = ( x / this.renderer.domElement.offsetWidth ) * 2 - 1;
+	var vpy = - ( y / this.renderer.domElement.offsetHeight ) * 2 + 1;
+	
+    var vector = new THREE.Vector3( vpx, vpy, 0.5 );
+
+    this.projector.unprojectVector( vector, this.camera );
+	
+    var pos = new THREE.Vector3;
+    pos = pos.applyMatrix4(this.camera.matrixWorld);
+	
+    var raycaster = new THREE.Raycaster( pos, vector.sub( pos ).normalize() );
+
+	var intersects = raycaster.intersectObject( object, true );
+	if (intersects.length)
+	{
+		var intersection = intersects[0];
+		var modelMat = new THREE.Matrix4;
+		modelMat.getInverse(intersection.object.matrixWorld);
+		intersection.point.applyMatrix4(modelMat);
+		return intersection;
+	}
+	else
+		return null;
+		
+}
+
+glam.GraphicsThreeJS.prototype.calcElementOffset = function(offset) {
+
+	offset.left = this.renderer.domElement.offsetLeft;
+	offset.top = this.renderer.domElement.offsetTop;
+	
+	var parent = this.renderer.domElement.offsetParent;
+	while(parent) {
+		offset.left += parent.offsetLeft;
+		offset.top += parent.offsetTop;
+		parent = parent.offsetParent;
+	}
+}
+
+glam.GraphicsThreeJS.prototype.onDocumentMouseMove = function(event)
+{
+    event.preventDefault();
+    
+	var offset = {};
+	this.calcElementOffset(offset);
+	
+	var eltx = event.pageX - offset.left;
+	var elty = event.pageY - offset.top;
+	
+	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
+	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
+	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey };
+	
+    glam.Mouse.instance.onMouseMove(evt);
+    
+    if (glam.PickManager)
+    {
+    	glam.PickManager.handleMouseMove(evt);
+    }
+    
+    glam.Application.handleMouseMove(evt);
+}
+
+glam.GraphicsThreeJS.prototype.onDocumentMouseDown = function(event)
+{
+    event.preventDefault();
+    
+	var offset = {};
+	this.calcElementOffset(offset);
+	
+	var eltx = event.pageX - offset.left;
+	var elty = event.pageY - offset.top;
+		
+	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
+	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
+	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey  };
+	
+    glam.Mouse.instance.onMouseDown(evt);
+    
+    if (glam.PickManager)
+    {
+    	glam.PickManager.handleMouseDown(evt);
+    }
+    
+    glam.Application.handleMouseDown(evt);
+}
+
+glam.GraphicsThreeJS.prototype.onDocumentMouseUp = function(event)
+{
+    event.preventDefault();
+
+	var offset = {};
+	this.calcElementOffset(offset);
+	
+	var eltx = event.pageX - offset.left;
+	var elty = event.pageY - offset.top;
+	
+	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
+	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
+	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey  };
+    
+    glam.Mouse.instance.onMouseUp(evt);
+    
+    if (glam.PickManager)
+    {
+    	glam.PickManager.handleMouseUp(evt);
+    }	            
+
+    glam.Application.handleMouseUp(evt);
+}
+
+glam.GraphicsThreeJS.prototype.onDocumentMouseClick = function(event)
+{
+    event.preventDefault();
+
+	var offset = {};
+	this.calcElementOffset(offset);
+	
+	var eltx = event.pageX - offset.left;
+	var elty = event.pageY - offset.top;
+	
+	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
+	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
+	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey  };
+    
+    glam.Mouse.instance.onMouseClick(evt);
+    
+    if (glam.PickManager)
+    {
+    	glam.PickManager.handleMouseClick(evt);
+    }	            
+
+    glam.Application.handleMouseClick(evt);
+}
+
+glam.GraphicsThreeJS.prototype.onDocumentMouseDoubleClick = function(event)
+{
+    event.preventDefault();
+
+	var offset = {};
+	this.calcElementOffset(offset);
+	
+	var eltx = event.pageX - offset.left;
+	var elty = event.pageY - offset.top;
+	
+	var eltx = event.pageX - offset.left;
+	var elty = event.pageY - offset.top;
+	
+	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
+	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
+	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey  };
+    
+    glam.Mouse.instance.onMouseDoubleClick(evt);
+    
+    if (glam.PickManager)
+    {
+    	glam.PickManager.handleMouseDoubleClick(evt);
+    }	            
+
+    glam.Application.handleMouseDoubleClick(evt);
+}
+
+glam.GraphicsThreeJS.prototype.onDocumentMouseScroll = function(event)
+{
+    event.preventDefault();
+
+	var delta = 0;
+
+	if ( event.wheelDelta ) { // WebKit / Opera / Explorer 9
+
+		delta = event.wheelDelta;
+
+	} else if ( event.detail ) { // Firefox
+
+		delta = - event.detail;
+
+	}
+
+	var evt = { type : "mousescroll", delta : delta };
+    
+    glam.Mouse.instance.onMouseScroll(evt);
+
+    if (glam.PickManager)
+    {
+    	glam.PickManager.handleMouseScroll(evt);
+    }
+    
+    glam.Application.handleMouseScroll(evt);
+}
+
+// Touch events
+glam.GraphicsThreeJS.prototype.translateTouch = function(touch, offset) {
+
+	var eltx = touch.pageX - offset.left;
+	var elty = touch.pageY - offset.top;
+
+	return {
+	    'screenX': touch.screenX,
+	    'screenY': touch.screenY,
+	    'clientX': touch.clientX,
+	    'clientY': touch.clientY,
+	    'pageX': touch.pageX,
+	    'pageY': touch.pageY,
+	    'elementX': eltx,
+	    'elementY': elty,
+	}
+}
+
+glam.GraphicsThreeJS.prototype.onDocumentTouchStart = function(event)
+{
+    event.preventDefault();
+    
+	var offset = {};
+	this.calcElementOffset(offset);
+
+	var touches = [];
+	var i, len = event.touches.length;
+	for (i = 0; i < len; i++) {
+		touches.push(this.translateTouch(event.touches[i], offset));
+	}
+
+	var evt = { type : event.type, touches : touches };
+	
+    if (glam.PickManager)
+    {
+    	glam.PickManager.handleTouchStart(evt);
+    }
+    
+    glam.Application.handleTouchStart(evt);
+}
+
+glam.GraphicsThreeJS.prototype.onDocumentTouchMove = function(event)
+{
+    event.preventDefault();
+    
+	var offset = {};
+	this.calcElementOffset(offset);
+	
+	var touches = [];
+	var i, len = event.touches.length;
+	for (i = 0; i < len; i++) {
+		touches.push(this.translateTouch(event.touches[i], offset));
+	}
+
+	var changedTouches = [];
+	var i, len = event.changedTouches.length;
+	for (i = 0; i < len; i++) {
+		changedTouches.push(this.translateTouch(event.changedTouches[i], offset));
+	}
+
+	var evt = { type : event.type, touches : touches, changedTouches : changedTouches };
+		    
+    if (glam.PickManager)
+    {
+    	glam.PickManager.handleTouchMove(evt);
+    }
+    
+    glam.Application.handleTouchMove(evt);
+}
+
+glam.GraphicsThreeJS.prototype.onDocumentTouchEnd = function(event)
+{
+    event.preventDefault();
+
+	var offset = {};
+	this.calcElementOffset(offset);
+	
+	var touches = [];
+	var i, len = event.touches.length;
+	for (i = 0; i < len; i++) {
+		touches.push(this.translateTouch(event.touches[i], offset));
+	}
+
+	var changedTouches = [];
+	var i, len = event.changedTouches.length;
+	for (i = 0; i < len; i++) {
+		changedTouches.push(this.translateTouch(event.changedTouches[i], offset));
+	}
+
+	var evt = { type : event.type, touches : touches, changedTouches : changedTouches };
+    
+    if (glam.PickManager)
+    {
+    	glam.PickManager.handleTouchEnd(evt);
+    }	            
+
+    glam.Application.handleTouchEnd(evt);
+}
+
+
+glam.GraphicsThreeJS.prototype.onKeyDown = function(event)
+{
+	// N.B.: Chrome doesn't deliver keyPress if we don't bubble... keep an eye on this
+	event.preventDefault();
+
+    glam.Keyboard.instance.onKeyDown(event);
+    
+	glam.Application.handleKeyDown(event);
+}
+
+glam.GraphicsThreeJS.prototype.onKeyUp = function(event)
+{
+	// N.B.: Chrome doesn't deliver keyPress if we don't bubble... keep an eye on this
+	event.preventDefault();
+
+    glam.Keyboard.instance.onKeyUp(event);
+    
+	glam.Application.handleKeyUp(event);
+}
+	        
+glam.GraphicsThreeJS.prototype.onKeyPress = function(event)
+{
+	// N.B.: Chrome doesn't deliver keyPress if we don't bubble... keep an eye on this
+	event.preventDefault();
+
+    glam.Keyboard.instance.onKeyPress(event);
+    
+	glam.Application.handleKeyPress(event);
+}
+
+glam.GraphicsThreeJS.prototype.onWindowResize = function(event)
+{
+	var width = this.container.offsetWidth,
+		height = this.container.offsetHeight;
+
+	// HACK HACK HACK seems to be the only reliable thing and even this
+	// is dicey on Chrome. Is there a race condition?
+	if (this.riftCam) {
+		width = window.innerWidth;
+		height = window.innerHeight;
+	}
+
+	if (this.cardboard) {
+		this.cardboard.setSize(width, height);
+	}
+	
+	this.renderer.setSize(width, height);
+	
+	if (this.composer) {
+		this.composer.setSize(width, height);
+	}
+	
+	
+	if (glam.CameraManager && glam.CameraManager.handleWindowResize(this.container.offsetWidth, this.container.offsetHeight))
+	{		
+	}
+	else
+	{
+		this.camera.aspect = this.container.offsetWidth / this.container.offsetHeight;
+		this.camera.updateProjectionMatrix();
+	}
+}
+
+glam.GraphicsThreeJS.prototype.onFullScreenChanged = function(event) {
+	
+	if ( !document.mozFullscreenElement && !document.webkitFullscreenElement ) {
+		this.fullscreen = false;
+	}
+	else {
+		this.fullscreen = true;
+	}
+}
+
+
+
+
+glam.GraphicsThreeJS.prototype.setCursor = function(cursor)
+{
+	if (!cursor)
+		cursor = this.saved_cursor;
+	
+	this.container.style.cursor = cursor;
+}
+
+
+glam.GraphicsThreeJS.prototype.update = function()
+{
+    var frameTime = Date.now();
+    var deltat = (frameTime - this.lastFrameTime) / 1000;
+    this.frameRate = 1 / deltat;
+
+    this.lastFrameTime = frameTime;
+
+	// N.B.: start with hack, let's see how it goes...
+	if (this.composer) {
+		this.renderEffects(deltat);
+	}
+	else if (this.cardboard) {
+		this.renderStereo();
+	}
+    else if (this.riftCam && this.riftCam._vrHMD) {
+		this.renderVR();
+	}
+	else {
+		this.render();
+	}
+	
+    if (this.stats)
+    {
+    	this.stats.update();
+    }
+}
+
+glam.GraphicsThreeJS.prototype.render = function() {
+    this.renderer.setClearColor( 0, 0 );
+	this.renderer.autoClearColor = true;
+    this.renderer.render( this.backgroundLayer.scene, this.backgroundLayer.camera );
+    this.renderer.setClearColor( 0, 1 );
+	this.renderer.autoClearColor = false;
+    this.renderer.render( this.scene, this.camera );
+}
+
+glam.GraphicsThreeJS.prototype.renderVR = function() {
+	// start with 2 layer to test; will need to work in postprocessing when that's ready
+    this.riftCam.render([this.backgroundLayer.scene, this.scene], [this.backgroundLayer.camera, this.camera]);
+}
+
+glam.GraphicsThreeJS.prototype.renderEffects = function(deltat) {
+	this.composer.render(deltat);
+}
+
+glam.GraphicsThreeJS.prototype.renderStereo = function() {
+	// start with 2 layer to test; will need to work in postprocessing when that's ready
+    this.cardboard.render([this.backgroundLayer.scene, this.scene], [this.backgroundLayer.camera, this.camera]);
+//    this.cardboard.render(this.scene, this.camera);
+}
+
+glam.GraphicsThreeJS.prototype.enableShadows = function(enable)
+{
+	this.renderer.shadowMapEnabled = enable;
+	this.renderer.shadowMapSoft = enable;
+	this.renderer.shadowMapCullFrontFaces = false;
+}
+
+glam.GraphicsThreeJS.prototype.setFullScreen = function(enable)
+{
+	if (this.riftCam) {
+
+		this.fullscreen = enable;
+		
+		this.riftCam.setFullScreen(enable);
+	}
+	else if (this.cardboard) {
+
+		var canvas = this.renderer.domElement;
+		
+		if (enable) {
+			if ( this.container.mozRequestFullScreen ) {
+				this.container.mozRequestFullScreen();
+			} else {
+				this.container.webkitRequestFullscreen();
+			}
+		}
+		else {
+			if ( document.mozCancelFullScreen ) {
+				document.mozCancelFullScreen();
+			} else {
+				document.webkitExitFullscreen();
+			}
+		}
+	}
+}
+
+glam.GraphicsThreeJS.prototype.setCamera = function(camera) {
+	this.camera = camera;
+	if (this.composer) {
+		this.composer.setCamera(camera);
+	}
+}
+
+glam.GraphicsThreeJS.prototype.addEffect = function(effect) {
+	
+	if (!this.composer) {
+		this.composer = new glam.Composer();
+	}
+	
+	if (!this.effects) {
+		this.effects  = [];
+	}
+	
+	if (effect.isShaderEffect) {
+		for (var i = 0; i < this.effects.length; i++) {
+			var ef = this.effects[i];
+//			ef.pass.renderToScreen = false;
+		}	
+//		effect.pass.renderToScreen = true;
+	}
+	
+	this.effects.push(effect);
+	this.composer.addEffect(effect);
+}
+
+glam.GraphicsThreeJS.default_display_stats = false;
 /**
+ *
+ */
+goog.require('glam.Service');
+goog.provide('glam.TweenService');
+
+/**
+ * The TweenService.
+ *
+ * @extends {glam.Service}
+ */
+glam.TweenService = function() {};
+
+goog.inherits(glam.TweenService, glam.Service);
+
+//---------------------------------------------------------------------
+// Initialization/Termination
+//---------------------------------------------------------------------
+
+/**
+ * Initializes the events system.
+ */
+glam.TweenService.prototype.initialize = function(param) {};
+
+/**
+ * Terminates the events world.
+ */
+glam.TweenService.prototype.terminate = function() {};
+
+
+/**
+ * Updates the TweenService.
+ */
+glam.TweenService.prototype.update = function()
+{
+	if (window.TWEEN)
+		TWEEN.update();
+}
+/**
+ * @fileoverview Service locator for various game services.
+ */
+goog.provide('glam.Services');
+goog.require('glam.Time');
+goog.require('glam.Input');
+goog.require('glam.TweenService');
+goog.require('glam.EventService');
+goog.require('glam.GraphicsThreeJS');
+
+glam.Services = {};
+
+glam.Services._serviceMap = 
+{ 
+		"time" : { object : glam.Time },
+		"input" : { object : glam.Input },
+		"tween" : { object : glam.TweenService },
+		"events" : { object : glam.EventService },
+		"graphics" : { object : glam.GraphicsThreeJS },
+};
+
+glam.Services.create = function(serviceName)
+{
+	var serviceType = glam.Services._serviceMap[serviceName];
+	if (serviceType)
+	{
+		var prop = serviceType.property;
+		
+		if (glam.Services[serviceName])
+		{
+	        throw new Error('Cannot create two ' + serviceName + ' service instances');
+		}
+		else
+		{
+			if (serviceType.object)
+			{
+				var service = new serviceType.object;
+				glam.Services[serviceName] = service;
+
+				return service;
+			}
+			else
+			{
+		        throw new Error('No object type supplied for creating service ' + serviceName + '; cannot create');
+			}
+		}
+	}
+	else
+	{
+        throw new Error('Unknown service: ' + serviceName + '; cannot create');
+	}
+}
+
+glam.Services.registerService = function(serviceName, object)
+{
+	if (glam.Services._serviceMap[serviceName])
+	{
+        throw new Error('Service ' + serviceName + 'already registered; cannot register twice');
+	}
+	else
+	{
+		var serviceType = { object: object };
+		glam.Services._serviceMap[serviceName] = serviceType;
+	}
+}/**
+ * @fileoverview glam namespace and globals
+ * 
+ * @author Tony Parisi
+ */
+
+
+goog.provide('glam.DOM');
+
+glam.DOM = {
+
+		documents : {},
+		
+		documentIndex : 0,
+				
+		styles : {},
+
+		viewers : {},
+
+		animations : {},
+		
+};
+
+glam.DOM.isReady = false;
+glam.DOM.ready = function() {
+	if (glam.DOM.isReady)
+		return;
+	
+	glam.DOMParser.parseDocument();
+	glam.DOM.createViewers();
+	
+	glam.DOM.isReady = true;
+}
+
+glam.DOM.createViewers = function() {
+	for (var docname in glam.DOM.documents) {
+		var doc = glam.DOM.documents[docname];
+		var viewer = new glam.DOMViewer(doc);
+		glam.DOM.viewers[docname] = viewer;
+		viewer.go();
+	}
+}
+
+
+glam.DOM.addStyle = function(selector, style)
+{
+	glam.DOM.styles[selector] = style;
+}
+
+glam.DOM.getStyle = function(selector)
+{
+	return glam.DOM.styles[selector];
+}
+
+glam.DOM.addAnimation = function(id, animation)
+{
+	glam.DOM.animations[id] = animation;
+}
+
+glam.DOM.getAnimation = function(id) {
+	return glam.DOM.animations[id];
+}
+
+
+$(document).ready(function(){
+
+	glam.DOM.ready();
+});
+
+
+/**
+ * @fileoverview Picker component - add one to get picking support on your object
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.Picker');
+goog.require('glam.Component');
+
+glam.Picker = function(param) {
+	param = param || {};
+	
+    glam.Component.call(this, param);
+    this.overCursor = param.overCursor;
+    this.enabled = (param.enabled !== undefined) ? param.enabled : true;
+}
+
+goog.inherits(glam.Picker, glam.Component);
+
+glam.Picker.prototype._componentCategory = "pickers";
+
+glam.Picker.prototype.realize = function()
+{
+	glam.Component.prototype.realize.call(this);
+	
+    this.lastHitPoint = new THREE.Vector3;
+    this.lastHitNormal = new THREE.Vector3;
+    this.lastHitFace = new THREE.Face3;
+}
+
+glam.Picker.prototype.update = function()
+{
+}
+
+glam.Picker.prototype.toModelSpace = function(vec)
+{
+	var modelMat = new THREE.Matrix4;
+	modelMat.getInverse(this._object.transform.object.matrixWorld);
+	vec.applyMatrix4(modelMat);
+}
+
+glam.Picker.prototype.onMouseOver = function(event)
+{
+    this.dispatchEvent("mouseover", event);
+}
+
+glam.Picker.prototype.onMouseOut = function(event)
+{
+    this.dispatchEvent("mouseout", event);
+}
+	        	        
+glam.Picker.prototype.onMouseMove = function(event)
+{
+	var mouseOverObject = glam.PickManager.objectFromMouse(event);
+	if (this._object == glam.PickManager.clickedObject || this._object == mouseOverObject)
+	{
+		if (event.point)
+			this.lastHitPoint.copy(event.point);
+		if (event.normal)
+			this.lastHitNormal.copy(event.normal);
+		if (event.face)
+			this.lastHitFace = event.face;
+
+		if (event.point) {
+			this.dispatchEvent("mousemove", event);
+		}
+	}
+}
+
+glam.Picker.prototype.onMouseDown = function(event)
+{
+	this.lastHitPoint.copy(event.point);
+	if (event.normal)
+		this.lastHitNormal.copy(event.normal);
+	if (event.face)
+		this.lastHitFace = event.face;
+	
+    this.dispatchEvent("mousedown", event);
+}
+
+glam.Picker.prototype.onMouseUp = function(event)
+{
+	var mouseOverObject = glam.PickManager.objectFromMouse(event);
+	if (mouseOverObject != this._object)
+	{
+		event.point = this.lastHitPoint;
+		event.normal = this.lastHitNormal;
+		event.face = this.lastHitNormal;
+		this.dispatchEvent("mouseout", event);
+	}
+
+	this.dispatchEvent("mouseup", event);
+}
+
+glam.Picker.prototype.onMouseClick = function(event)
+{
+	this.lastHitPoint.copy(event.point);
+	if (event.normal)
+		this.lastHitNormal.copy(event.normal);
+	if (event.face)
+		this.lastHitFace = event.face;
+
+	this.dispatchEvent("click", event);
+}
+	        
+glam.Picker.prototype.onMouseDoubleClick = function(event)
+{
+	this.lastHitPoint.copy(event.point);
+	if (event.normal)
+		this.lastHitNormal.copy(event.normal);
+	if (event.face)
+		this.lastHitFace = event.face;
+
+	this.dispatchEvent("dblclick", event);
+}
+	
+glam.Picker.prototype.onMouseScroll = function(event)
+{
+    this.dispatchEvent("mousescroll", event);
+}
+
+glam.Picker.prototype.onTouchMove = function(event)
+{
+	this.dispatchEvent("touchmove", event);
+}
+
+glam.Picker.prototype.onTouchStart = function(event)
+{	
+    this.dispatchEvent("touchstart", event);
+}
+
+glam.Picker.prototype.onTouchEnd = function(event)
+{
+	this.dispatchEvent("touchend", event);
+}
+
+
+/**
+ * @fileoverview Picker component - get drag for an object along the surface of a reference object
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.SurfaceDragger');
+goog.require('glam.Picker');
+
+glam.SurfaceDragger = function(param) {
+	
+	param = param || {};
+	
+    glam.Picker.call(this, param);
+    
+    this.reference = param.reference;
+	this.dragPlane = new THREE.Plane();
+}
+
+goog.inherits(glam.SurfaceDragger, glam.Picker);
+
+glam.SurfaceDragger.prototype.realize = function()
+{
+	glam.Picker.prototype.realize.call(this);
+
+}
+
+glam.SurfaceDragger.prototype.update = function()
+{
+}
+
+glam.SurfaceDragger.prototype.onMouseDown = function(event)
+{
+	glam.Picker.prototype.onMouseDown.call(this, event);
+	
+	var visual = this.reference.visuals[0];
+	var intersection = glam.Graphics.instance.getObjectIntersection(event.elementX, event.elementY, visual.object);
+	if (intersection) {
+
+		var hitpoint = intersection.point.clone();
+		this.dragOffset = event.point.clone().sub(this._object.transform.position);
+        this.dispatchEvent("dragstart", {
+            type : "dragstart",
+            offset : hitpoint
+        });
+	}
+
+}
+
+glam.SurfaceDragger.prototype.onMouseUp = function(event) {
+	glam.Picker.prototype.onMouseUp.call(this, event);
+    this.dispatchEvent("dragend", {
+        type : "dragend",
+    });
+}
+
+glam.SurfaceDragger.prototype.onMouseMove = function(event)
+{
+	glam.Picker.prototype.onMouseMove.call(this, event);
+	
+	var visual = this.reference.visuals[0];
+	var intersection = glam.Graphics.instance.getObjectIntersection(event.elementX, event.elementY, visual.object);
+	
+	if (intersection) {
+		var hitpoint = intersection.point.clone();
+		var hitnormal = intersection.face.normal.clone();
+		var verts = visual.geometry.vertices;
+		var v1 = verts[intersection.face.a];
+		var v2 = verts[intersection.face.b];
+		var v3 = verts[intersection.face.c];
+
+		this.dragPlane = new THREE.Plane().setFromCoplanarPoints(v1, v2, v3);
+
+		//var projectedPoint = hitpoint.clone();
+		//projectedPoint.sub(this.dragOffset);
+		var offset = hitpoint.clone();; // .sub(this.dragOffset);
+		var vec = offset.clone().add(hitnormal);
+		var up = new THREE.Vector3(0, hitnormal.z, -hitnormal.y).normalize();
+		if (!up.lengthSq())
+			up.set(0, hitnormal.x, hitnormal.y).normalize();
+		if (hitnormal.x < 0 || hitnormal.z < 0)
+			up.negate();
+		
+		this.dispatchEvent("drag", {
+				type : "drag", 
+				offset : offset,
+				normal : hitnormal,
+				up : up,
+				lookAt : vec
+			}
+		);
+		
+	}
+}
+
+
+
+/**
+ * @fileoverview renderer parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.DOMRenderer');
+
+glam.DOMRenderer = {
+};
+/**
+ * @fileoverview Base class for visual elements.
+ * @author Tony Parisi
+ */
+goog.provide('glam.Visual');
+goog.require('glam.SceneComponent');
+
+/**
+ * @constructor
+ */
+glam.Visual = function(param)
+{
+	param = param || {};
+	
+	glam.SceneComponent.call(this, param);
+
+	if (param.object) {
+		this.object = param.object;
+		this.geometry = this.object.geometry;
+		this.material = this.object.material;
+	}
+	else {
+		this.geometry = param.geometry;
+		this.material = param.material;
+	}
+}
+
+goog.inherits(glam.Visual, glam.SceneComponent);
+
+// We're going to let this slide until we figure out the glTF mulit-material mesh
+//glam.Visual.prototype._componentProperty = "visual";
+//glam.Visual.prototype._componentPropertyType = "Visual";
+glam.Visual.prototype._componentCategory = "visuals";
+
+glam.Visual.prototype.realize = function()
+{
+	glam.SceneComponent.prototype.realize.call(this);
+	
+	if (!this.object && this.geometry && this.material) {
+		this.object = new THREE.Mesh(this.geometry, this.material);
+		this.object.ignorePick = false;
+	    this.addToScene();
+	}	
+}
+
+/**
+ * @fileoverview Base class for visual decoration - like glam.Visual but not pickable.
+ * @author Tony Parisi
+ */
+goog.provide('glam.Decoration');
+goog.require('glam.Visual');
+
+/**
+ * @constructor
+ */
+glam.Decoration = function(param)
+{
+	param = param || {};
+	
+	glam.Visual.call(this, param);
+
+}
+
+goog.inherits(glam.Decoration, glam.Visual);
+
+glam.Decoration.prototype._componentCategory = "decorations";
+
+glam.Decoration.prototype.realize = function()
+{
+	glam.Visual.prototype.realize.call(this);
+	this.object.ignorePick = true;
+}/**
+ * @fileoverview Interpolator for key frame animation
+ * @author Tony Parisi
+ */
+goog.provide('glam.Interpolator');
+goog.require('glam.EventDispatcher');
+
+//Interpolator class
+//Construction/initialization
+glam.Interpolator = function(param) 
+{
+	glam.EventDispatcher.call(param);
+	    		
+	param = param || {};
+	
+	this.keys = param.keys || [];
+	this.values = param.values || [];
+	this.target = param.target ? param.target : null;
+	this.running = false;
+}
+
+goog.inherits(glam.Interpolator, glam.EventDispatcher);
+	
+glam.Interpolator.prototype.realize = function()
+{
+	if (this.keys && this.values)
+	{
+		this.setValue(this.keys, this.values);
+	}	    		
+}
+
+glam.Interpolator.prototype.setValue = function(keys, values)
+{
+	this.keys = [];
+	this.values = [];
+	if (keys && keys.length && values && values.length)
+	{
+		this.copyKeys(keys, this.keys);
+		this.copyValues(values, this.values);
+	}
+}
+
+//Copying helper functions
+glam.Interpolator.prototype.copyKeys = function(from, to)
+{
+	var i = 0, len = from.length;
+	for (i = 0; i < len; i++)
+	{
+		to[i] = from[i];
+	}
+}
+
+glam.Interpolator.prototype.copyValues = function(from, to)
+{
+	var i = 0, len = from.length;
+	for (i = 0; i < len; i++)
+	{
+		var val = {};
+		this.copyValue(from[i], val);
+		to[i] = val;
+	}
+}
+
+glam.Interpolator.prototype.copyValue = function(from, to)
+{
+	for ( var property in from ) {
+		
+		if ( from[ property ] === null ) {		
+		continue;		
+		}
+
+		to[ property ] = from[ property ];
+	}
+}
+
+//Interpolation and tweening methods
+glam.Interpolator.prototype.interp = function(fract)
+{
+	var value;
+	var i, len = this.keys.length;
+	if (fract == this.keys[0])
+	{
+		value = this.values[0];
+	}
+	else if (fract >= this.keys[len - 1])
+	{
+		value = this.values[len - 1];
+	}
+
+	for (i = 0; i < len - 1; i++)
+	{
+		var key1 = this.keys[i];
+		var key2 = this.keys[i + 1];
+
+		if (fract >= key1 && fract <= key2)
+		{
+			var val1 = this.values[i];
+			var val2 = this.values[i + 1];
+			value = this.tween(val1, val2, (fract - key1) / (key2 - key1));
+		}
+	}
+	
+	if (this.target)
+	{
+		this.copyValue(value, this.target);
+	}
+	else
+	{
+		this.publish("value", value);
+	}
+}
+
+glam.Interpolator.prototype.tween = function(from, to, fract)
+{
+	var value = {};
+	for ( var property in from ) {
+		
+		if ( from[ property ] === null ) {		
+		continue;		
+		}
+
+		var range = to[property] - from[property];
+		var delta = range * fract;
+		value[ property ] = from[ property ] + delta;
+	}
+	
+	return value;
+}
+/**
+ * @fileoverview 2D arc parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.ArcElement');
+
+glam.ArcElement.DEFAULT_RADIUS = 2;
+glam.ArcElement.DEFAULT_RADIUS_SEGMENTS = 32;
+glam.ArcElement.DEFAULT_START_ANGLE = "0deg";
+glam.ArcElement.DEFAULT_END_ANGLE = "360deg";
+
+glam.ArcElement.create = function(docelt, style) {
+	return glam.VisualElement.create(docelt, style, glam.ArcElement);
+}
+
+glam.ArcElement.getAttributes = function(docelt, style, param) {
+
+	function parseRotation(r) {
+		return glam.DOMTransform.parseRotation(r);
+	}
+	
+	var radius = docelt.getAttribute('radius') || glam.ArcElement.DEFAULT_RADIUS;
+	var radiusSegments = docelt.getAttribute('radiusSegments') || glam.ArcElement.DEFAULT_RADIUS_SEGMENTS;
+
+	var startAngle = docelt.getAttribute('startAngle') || glam.ArcElement.DEFAULT_START_ANGLE;
+	var endAngle = docelt.getAttribute('endAngle') || glam.ArcElement.DEFAULT_END_ANGLE;
+	
+	if (style) {
+		if (style.radius)
+			radius = style.radius;
+		if (style.radiusSegments)
+			radiusSegments = style.radiusSegments;
+		if (style.startAngle)
+			startAngle = style.startAngle;
+		if (style.endAngle)
+			endAngle = style.endAngle;
+	}
+	
+	radius = parseFloat(radius);
+	radiusSegments = parseInt(radiusSegments);
+	startAngle = parseRotation(startAngle);
+	endAngle = parseRotation(endAngle);
+
+	param.radius = radius;
+	param.radiusSegments = radiusSegments;
+	param.startAngle = startAngle;
+	param.endAngle = endAngle;
+}
+
+glam.ArcElement.createVisual = function(docelt, material, param) {
+	
+	var visual = new glam.Visual(
+			{ geometry: new THREE.CircleGeometry(param.radius, param.radiusSegments, param.startAngle, param.endAngle),
+				material: material
+			});
+
+	return visual;
+}
+/**
+ * @fileoverview Contains prefab assemblies for core GLAM package
+ * @author Tony Parisi
+ */
+goog.provide('glam.Prefabs');/**
  * @fileoverview Behavior component - base class for time-based behaviors
  * 
  * @author Tony Parisi
  */
 
-goog.provide('Vizi.Script');
-goog.require('Vizi.Component');
+goog.provide('glam.Script');
+goog.require('glam.Component');
 
-Vizi.Script = function(param) {
+glam.Script = function(param) {
 	param = param || {};
-    Vizi.Component.call(this, param);
+    glam.Component.call(this, param);
 }
 
-goog.inherits(Vizi.Script, Vizi.Component);
+goog.inherits(glam.Script, glam.Component);
 
-Vizi.Script.prototype._componentCategory = "scripts";
+glam.Script.prototype._componentCategory = "scripts";
 
-Vizi.Script.prototype.realize = function()
+glam.Script.prototype.realize = function()
 {
-	Vizi.Component.prototype.realize.call(this);
+	glam.Component.prototype.realize.call(this);
 }
 
-Vizi.Script.prototype.update = function()
+glam.Script.prototype.update = function()
 {
-	if (Vizi.Script.WARN_ON_ABSTRACT)
-		Vizi.System.warn("Abstract Script.evaluate called");
+	if (glam.Script.WARN_ON_ABSTRACT)
+		glam.System.warn("Abstract Script.evaluate called");
 }
 
-Vizi.Script.WARN_ON_ABSTRACT = true;
-/**
- * @fileoverview Contains prefab assemblies for core Vizi package
- * @author Tony Parisi
- */
-goog.provide('Vizi.Prefabs');
-goog.require('Vizi.Prefabs');
+glam.Script.WARN_ON_ABSTRACT = true;
 
-Vizi.Prefabs.FirstPersonController = function(param)
+goog.require('glam.Prefabs');
+
+glam.Prefabs.FirstPersonController = function(param)
 {
 	param = param || {};
 	
-	var controller = new Vizi.Object(param);
-	var controllerScript = new Vizi.FirstPersonControllerScript(param);
+	var controller = new glam.Object(param);
+	var controllerScript = new glam.FirstPersonControllerScript(param);
 	controller.addComponent(controllerScript);
 
 	var intensity = param.headlight ? 1 : 0;
 	
-	var headlight = new Vizi.DirectionalLight({ intensity : intensity });
+	var headlight = new glam.DirectionalLight({ intensity : intensity });
 	controller.addComponent(headlight);
 	
 	return controller;
 }
 
-goog.provide('Vizi.FirstPersonControllerScript');
-goog.require('Vizi.Script');
+goog.provide('glam.FirstPersonControllerScript');
+goog.require('glam.Script');
 
-Vizi.FirstPersonControllerScript = function(param)
+glam.FirstPersonControllerScript = function(param)
 {
-	Vizi.Script.call(this, param);
+	glam.Script.call(this, param);
 
 	this._enabled = (param.enabled !== undefined) ? param.enabled : true;
 	this._move = (param.move !== undefined) ? param.move : true;
@@ -48726,17 +50506,17 @@ Vizi.FirstPersonControllerScript = function(param)
     });
 }
 
-goog.inherits(Vizi.FirstPersonControllerScript, Vizi.Script);
+goog.inherits(glam.FirstPersonControllerScript, glam.Script);
 
-Vizi.FirstPersonControllerScript.prototype.realize = function()
+glam.FirstPersonControllerScript.prototype.realize = function()
 {
-	this.headlight = this._object.getComponent(Vizi.DirectionalLight);
+	this.headlight = this._object.getComponent(glam.DirectionalLight);
 	this.headlight.intensity = this._headlightOn ? 1 : 0;
 }
 
-Vizi.FirstPersonControllerScript.prototype.createControls = function(camera)
+glam.FirstPersonControllerScript.prototype.createControls = function(camera)
 {
-	var controls = new Vizi.FirstPersonControls(camera.object, Vizi.Graphics.instance.container);
+	var controls = new glam.FirstPersonControls(camera.object, glam.Graphics.instance.container);
 	controls.mouseLook = this._mouseLook;
 	controls.movementSpeed = this._move ? this.moveSpeed : 0;
 	controls.lookSpeed = this._look ? this.lookSpeed  : 0;
@@ -48747,7 +50527,7 @@ Vizi.FirstPersonControllerScript.prototype.createControls = function(camera)
 	return controls;
 }
 
-Vizi.FirstPersonControllerScript.prototype.update = function()
+glam.FirstPersonControllerScript.prototype.update = function()
 {
 	this.saveCamera();
 	this.controls.update(this.clock.getDelta());
@@ -48773,31 +50553,31 @@ Vizi.FirstPersonControllerScript.prototype.update = function()
 	}	
 }
 
-Vizi.FirstPersonControllerScript.prototype.setEnabled = function(enabled)
+glam.FirstPersonControllerScript.prototype.setEnabled = function(enabled)
 {
 	this._enabled = enabled;
 	this.controls.enabled = enabled;
 }
 
-Vizi.FirstPersonControllerScript.prototype.setMove = function(move)
+glam.FirstPersonControllerScript.prototype.setMove = function(move)
 {
 	this._move = move;
 	this.controls.movementSpeed = move ? this.moveSpeed : 0;
 }
 
-Vizi.FirstPersonControllerScript.prototype.setLook = function(look)
+glam.FirstPersonControllerScript.prototype.setLook = function(look)
 {
 	this._look = look;
 	this.controls.lookSpeed = look ? 1.0 : 0;
 }
 
-Vizi.FirstPersonControllerScript.prototype.setMouseLook = function(mouseLook)
+glam.FirstPersonControllerScript.prototype.setMouseLook = function(mouseLook)
 {
 	this._mouseLook = mouseLook;
 	this.controls.mouseLook = mouseLook;
 }
 
-Vizi.FirstPersonControllerScript.prototype.setCamera = function(camera) {
+glam.FirstPersonControllerScript.prototype.setCamera = function(camera) {
 	this._camera = camera;
 	this.controls = this.createControls(camera);
 	this.controls.movementSpeed = this.moveSpeed;
@@ -48805,20 +50585,20 @@ Vizi.FirstPersonControllerScript.prototype.setCamera = function(camera) {
 
 }
 
-Vizi.FirstPersonControllerScript.prototype.saveCamera = function() {
+glam.FirstPersonControllerScript.prototype.saveCamera = function() {
 	this.savedCameraPos.copy(this._camera.position);
 }
 
-Vizi.FirstPersonControllerScript.prototype.restoreCamera = function() {
+glam.FirstPersonControllerScript.prototype.restoreCamera = function() {
 	this._camera.position.copy(this.savedCameraPos);
 }
 
-Vizi.FirstPersonControllerScript.prototype.testCollision = function() {
+glam.FirstPersonControllerScript.prototype.testCollision = function() {
 	
 	this.movementVector.copy(this._camera.position).sub(this.savedCameraPos);
 	if (this.movementVector.length()) {
 		
-        var collide = Vizi.Graphics.instance.objectFromRay(null, 
+        var collide = glam.Graphics.instance.objectFromRay(null, 
         		this.savedCameraPos,
         		this.movementVector, 1, 2);
 
@@ -48832,11 +50612,11 @@ Vizi.FirstPersonControllerScript.prototype.testCollision = function() {
 	return null;
 }
 
-Vizi.FirstPersonControllerScript.prototype.testTerrain = function() {
+glam.FirstPersonControllerScript.prototype.testTerrain = function() {
 	return false;
 }
 
-Vizi.FirstPersonControllerScript.prototype.setHeadlightOn = function(on)
+glam.FirstPersonControllerScript.prototype.setHeadlightOn = function(on)
 {
 	this._headlightOn = on;
 	if (this.headlight) {
@@ -48848,38 +50628,38 @@ Vizi.FirstPersonControllerScript.prototype.setHeadlightOn = function(on)
  * @fileoverview General-purpose transitions
  * @author Tony Parisi
  */
-goog.provide('Vizi.Transition');
-goog.require('Vizi.Component');
+goog.provide('glam.Transition');
+goog.require('glam.Component');
 
 // Transition class
 // Construction/initialization
-Vizi.Transition = function(param) 
+glam.Transition = function(param) 
 {
-    Vizi.Component.call(this, param);
+    glam.Component.call(this, param);
 	    		
 	param = param || {};
 	
 	this.running = false;
-	this.duration = param.duration ? param.duration : Vizi.Transition.default_duration;
+	this.duration = param.duration ? param.duration : glam.Transition.default_duration;
 	this.loop = param.loop ? param.loop : false;
 	this.autoStart = param.autoStart || false;
-	this.easing = param.easing || Vizi.Transition.default_easing;
+	this.easing = param.easing || glam.Transition.default_easing;
 	this.target = param.target;
 	this.to = param.to;
 }
 
-goog.inherits(Vizi.Transition, Vizi.Component);
+goog.inherits(glam.Transition, glam.Component);
 	
-Vizi.Transition.prototype.realize = function()
+glam.Transition.prototype.realize = function()
 {
-	Vizi.Component.prototype.realize.call(this);
+	glam.Component.prototype.realize.call(this);
 	this.createTweens();
 	if (this.autoStart) {
 		this.start();
 	}
 }
 
-Vizi.Transition.prototype.createTweens = function()
+glam.Transition.prototype.createTweens = function()
 {
 	var repeatCount = this.loop ? Infinity : 0;
 	
@@ -48895,7 +50675,7 @@ Vizi.Transition.prototype.createTweens = function()
 }
 
 // Start/stop
-Vizi.Transition.prototype.start = function()
+glam.Transition.prototype.start = function()
 {
 	if (this.running)
 		return;
@@ -48905,7 +50685,7 @@ Vizi.Transition.prototype.start = function()
 	this.tween.start();
 }
 
-Vizi.Transition.prototype.stop = function()
+glam.Transition.prototype.stop = function()
 {
 	if (!this.running)
 		return;
@@ -48916,321 +50696,266 @@ Vizi.Transition.prototype.stop = function()
 	this.tween.stop();
 }
 
-Vizi.Transition.prototype.onTweenComplete = function()
+glam.Transition.prototype.onTweenComplete = function()
 {
 	this.running = false;
 	this.dispatchEvent("complete");
 }
 // Statics
-Vizi.Transition.default_duration = 1000;
-Vizi.Transition.default_easing = TWEEN.Easing.Linear.None;/**
- * @fileoverview Picker component - add one to get picking support on your object
+glam.Transition.default_duration = 1000;
+glam.Transition.default_easing = TWEEN.Easing.Linear.None;/**
+ * @fileoverview GLAM Effects Composer - postprocessing effects composer, wraps Three.js
  * 
  * @author Tony Parisi
  */
 
-goog.provide('Vizi.Picker');
-goog.require('Vizi.Component');
-
-Vizi.Picker = function(param) {
-	param = param || {};
-	
-    Vizi.Component.call(this, param);
-    this.overCursor = param.overCursor;
-    this.enabled = (param.enabled !== undefined) ? param.enabled : true;
-}
-
-goog.inherits(Vizi.Picker, Vizi.Component);
-
-Vizi.Picker.prototype._componentCategory = "pickers";
-
-Vizi.Picker.prototype.realize = function()
-{
-	Vizi.Component.prototype.realize.call(this);
-	
-    this.lastHitPoint = new THREE.Vector3;
-    this.lastHitNormal = new THREE.Vector3;
-    this.lastHitFace = new THREE.Face3;
-}
-
-Vizi.Picker.prototype.update = function()
-{
-}
-
-Vizi.Picker.prototype.toModelSpace = function(vec)
-{
-	var modelMat = new THREE.Matrix4;
-	modelMat.getInverse(this._object.transform.object.matrixWorld);
-	vec.applyMatrix4(modelMat);
-}
-
-Vizi.Picker.prototype.onMouseOver = function(event)
-{
-    this.dispatchEvent("mouseover", event);
-}
-
-Vizi.Picker.prototype.onMouseOut = function(event)
-{
-    this.dispatchEvent("mouseout", event);
-}
-	        	        
-Vizi.Picker.prototype.onMouseMove = function(event)
-{
-	var mouseOverObject = Vizi.PickManager.objectFromMouse(event);
-	if (this._object == Vizi.PickManager.clickedObject || this._object == mouseOverObject)
-	{
-		if (event.point)
-			this.lastHitPoint.copy(event.point);
-		if (event.normal)
-			this.lastHitNormal.copy(event.normal);
-		if (event.face)
-			this.lastHitFace = event.face;
-
-		if (event.point) {
-			this.dispatchEvent("mousemove", event);
-		}
-	}
-}
-
-Vizi.Picker.prototype.onMouseDown = function(event)
-{
-	this.lastHitPoint.copy(event.point);
-	if (event.normal)
-		this.lastHitNormal.copy(event.normal);
-	if (event.face)
-		this.lastHitFace = event.face;
-	
-    this.dispatchEvent("mousedown", event);
-}
-
-Vizi.Picker.prototype.onMouseUp = function(event)
-{
-	var mouseOverObject = Vizi.PickManager.objectFromMouse(event);
-	if (mouseOverObject != this._object)
-	{
-		event.point = this.lastHitPoint;
-		event.normal = this.lastHitNormal;
-		event.face = this.lastHitNormal;
-		this.dispatchEvent("mouseout", event);
-	}
-
-	this.dispatchEvent("mouseup", event);
-}
-
-Vizi.Picker.prototype.onMouseClick = function(event)
-{
-	this.lastHitPoint.copy(event.point);
-	if (event.normal)
-		this.lastHitNormal.copy(event.normal);
-	if (event.face)
-		this.lastHitFace = event.face;
-
-	this.dispatchEvent("click", event);
-}
-	        
-Vizi.Picker.prototype.onMouseDoubleClick = function(event)
-{
-	this.lastHitPoint.copy(event.point);
-	if (event.normal)
-		this.lastHitNormal.copy(event.normal);
-	if (event.face)
-		this.lastHitFace = event.face;
-
-	this.dispatchEvent("dblclick", event);
-}
-	
-Vizi.Picker.prototype.onMouseScroll = function(event)
-{
-    this.dispatchEvent("mousescroll", event);
-}
-
-Vizi.Picker.prototype.onTouchMove = function(event)
-{
-	this.dispatchEvent("touchmove", event);
-}
-
-Vizi.Picker.prototype.onTouchStart = function(event)
-{	
-    this.dispatchEvent("touchstart", event);
-}
-
-Vizi.Picker.prototype.onTouchEnd = function(event)
-{
-	this.dispatchEvent("touchend", event);
-}
-
+goog.provide('glam.Composer');
 
 /**
- * @fileoverview Picker component - get drag for an object along the surface of a reference object
+ * @constructor
+ */
+
+glam.Composer = function(param)
+{
+	// Freak out if somebody tries to make 2
+    if (glam.Composer.instance)
+    {
+        throw new Error('Composer singleton already exists')
+    }
+
+	glam.Composer.instance = this;
+
+    // Create the effects composer
+    // For now, create default render pass to start it up
+	var graphics = glam.Graphics.instance;
+	graphics.renderer.autoClear = false;
+    this.composer = new THREE.EffectComposer( graphics.riftCam ? graphics.riftCam : graphics.renderer );
+    var bgPass = new THREE.RenderPass( graphics.backgroundLayer.scene, graphics.backgroundLayer.camera );
+    bgPass.clear = true;
+	this.composer.addPass( bgPass );
+	var fgPass = new THREE.RenderPass( graphics.scene, graphics.camera );
+	fgPass.clear = false;
+	this.composer.addPass(fgPass);
+	var copyPass = new THREE.ShaderPass( THREE.CopyShader );
+	copyPass.renderToScreen = true;
+	this.composer.addPass(copyPass);
+}
+
+glam.Composer.prototype.render = function(deltat) {
+
+	// for now just pass it through
+	this.composer.render(deltat);	
+}
+
+glam.Composer.prototype.addEffect = function(effect) {
+
+	var index = this.composer.passes.length - 1;
+	this.composer.insertPass(effect.pass, index);	
+}
+
+glam.Composer.prototype.setCamera = function(camera) {
+	var renderpass = this.composer.passes[1];
+	renderpass.camera = camera;
+}
+
+glam.Composer.prototype.setSize = function(width, height) {
+	this.composer.setSize(width, height);
+}
+
+glam.Composer.instance = null;/**
+ * @fileoverview cube primitive parser/implementation
  * 
  * @author Tony Parisi
  */
 
-goog.provide('Vizi.SurfaceDragger');
-goog.require('Vizi.Picker');
+goog.provide('glam.BoxElement');
 
-Vizi.SurfaceDragger = function(param) {
+glam.BoxElement.DEFAULT_WIDTH = 2;
+glam.BoxElement.DEFAULT_HEIGHT = 2;
+glam.BoxElement.DEFAULT_DEPTH = 2;
+
+glam.BoxElement.create = function(docelt, style) {
+	return glam.VisualElement.create(docelt, style, glam.BoxElement);
+}
+
+glam.BoxElement.getAttributes = function(docelt, style, param) {
+
+	var width = docelt.getAttribute('width') || glam.BoxElement.DEFAULT_WIDTH;
+	var height = docelt.getAttribute('height') || glam.BoxElement.DEFAULT_HEIGHT;
+	var depth = docelt.getAttribute('depth') || glam.BoxElement.DEFAULT_DEPTH;
 	
+	if (style) {
+		if (style.width)
+			width = style.width
+		if (style.height)
+			height = style.height;
+		if (style.depth)
+			depth = style.depth;
+	}
+	
+	width = parseFloat(width);
+	height = parseFloat(height);
+	depth = parseFloat(depth);
+	
+	param.width = width;
+	param.height = height;
+	param.depth = depth;
+}
+
+glam.BoxElement.createVisual = function(docelt, material, param) {
+
+	var visual = new glam.Visual(
+			{ geometry: new THREE.BoxGeometry(param.width, param.height, param.depth),
+				material: material
+			});
+	
+	return visual;
+}
+goog.provide('glam.Camera');
+goog.require('glam.SceneComponent');
+
+glam.Camera = function(param)
+{
 	param = param || {};
 	
-    Vizi.Picker.call(this, param);
-    
-    this.reference = param.reference;
-	this.dragPlane = new THREE.Plane();
-}
+	glam.SceneComponent.call(this, param);
 
-goog.inherits(Vizi.SurfaceDragger, Vizi.Picker);
+    // Accessors
+    Object.defineProperties(this, {
+        active: {
+	        get: function() {
+	            return this._active;
+	        },
+	        set: function(v) {
+	        	this._active = v;
+	        	// N.B.: trying this out for now... TP
+	        	if (/*this._realized && */ this._active)
+	        	{
+	        		glam.CameraManager.setActiveCamera(this);
+	        	}
+	        }
+    	},    	
 
-Vizi.SurfaceDragger.prototype.realize = function()
-{
-	Vizi.Picker.prototype.realize.call(this);
-
-}
-
-Vizi.SurfaceDragger.prototype.update = function()
-{
-}
-
-Vizi.SurfaceDragger.prototype.onMouseDown = function(event)
-{
-	Vizi.Picker.prototype.onMouseDown.call(this, event);
-	
-	var visual = this.reference.visuals[0];
-	var intersection = Vizi.Graphics.instance.getObjectIntersection(event.elementX, event.elementY, visual.object);
-	if (intersection) {
-
-		var hitpoint = intersection.point.clone();
-		this.dragOffset = event.point.clone().sub(this._object.transform.position);
-        this.dispatchEvent("dragstart", {
-            type : "dragstart",
-            offset : hitpoint
-        });
-	}
-
-}
-
-Vizi.SurfaceDragger.prototype.onMouseUp = function(event) {
-	Vizi.Picker.prototype.onMouseUp.call(this, event);
-    this.dispatchEvent("dragend", {
-        type : "dragend",
     });
+	
+	this._active = param.active || false;
+	var position = param.position || glam.Camera.DEFAULT_POSITION;
+    //this.position.copy(position);	
 }
 
-Vizi.SurfaceDragger.prototype.onMouseMove = function(event)
+goog.inherits(glam.Camera, glam.SceneComponent);
+
+glam.Camera.prototype._componentProperty = "camera";
+glam.Camera.prototype._componentPropertyType = "Camera";
+
+glam.Camera.prototype.realize = function() 
 {
-	Vizi.Picker.prototype.onMouseMove.call(this, event);
+	glam.SceneComponent.prototype.realize.call(this);
 	
-	var visual = this.reference.visuals[0];
-	var intersection = Vizi.Graphics.instance.getObjectIntersection(event.elementX, event.elementY, visual.object);
+	this.addToScene();
 	
-	if (intersection) {
-		var hitpoint = intersection.point.clone();
-		var hitnormal = intersection.face.normal.clone();
-		var verts = visual.geometry.vertices;
-		var v1 = verts[intersection.face.a];
-		var v2 = verts[intersection.face.b];
-		var v3 = verts[intersection.face.c];
-
-		this.dragPlane = new THREE.Plane().setFromCoplanarPoints(v1, v2, v3);
-
-		//var projectedPoint = hitpoint.clone();
-		//projectedPoint.sub(this.dragOffset);
-		var offset = hitpoint.clone();; // .sub(this.dragOffset);
-		var vec = offset.clone().add(hitnormal);
-		var up = new THREE.Vector3(0, hitnormal.z, -hitnormal.y).normalize();
-		if (!up.lengthSq())
-			up.set(0, hitnormal.x, hitnormal.y).normalize();
-		if (hitnormal.x < 0 || hitnormal.z < 0)
-			up.negate();
-		
-		this.dispatchEvent("drag", {
-				type : "drag", 
-				offset : offset,
-				normal : hitnormal,
-				up : up,
-				lookAt : vec
-			}
-		);
-		
+	glam.CameraManager.addCamera(this);
+	
+	if (this._active && !glam.CameraManager.activeCamera)
+	{
+		glam.CameraManager.setActiveCamera(this);
 	}
 }
 
-
-
-/**
- *
- */
-goog.provide('Vizi.Mouse');
-
-Vizi.Mouse = function()
+glam.Camera.prototype.lookAt = function(v) 
 {
-	// N.B.: freak out if somebody tries to make 2
-	// throw (...)
-
-	this.state = 
-	{ x : Vizi.Mouse.NO_POSITION, y: Vizi.Mouse.NO_POSITION,
-
-	buttons : { left : false, middle : false, right : false },
-	scroll : 0,
-	};
-
-	Vizi.Mouse.instance = this;
-};
-
-Vizi.Mouse.prototype.onMouseMove = function(event)
-{
-    this.state.x = event.elementX;
-    this.state.y = event.elementY;	            
+	this.object.lookAt(v);
 }
 
-Vizi.Mouse.prototype.onMouseDown = function(event)
-{
-    this.state.x = event.elementX;
-    this.state.y = event.elementY;	            
-    this.state.buttons.left = true;
+glam.Camera.DEFAULT_POSITION = new THREE.Vector3(0, 0, 0);
+glam.Camera.DEFAULT_NEAR = 1;
+glam.Camera.DEFAULT_FAR = 10000;
+goog.provide('glam.PerspectiveCamera');
+goog.require('glam.Camera');
+
+glam.PerspectiveCamera = function(param) {
+	param = param || {};
+	
+	if (param.object) {
+		this.object = param.object;
+	}
+	else {		
+		var fov = param.fov || 45;
+		var near = param.near || glam.Camera.DEFAULT_NEAR;
+		var far = param.far || glam.Camera.DEFAULT_FAR;
+		var container = glam.Graphics.instance.container;
+		var aspect = param.aspect || (container.offsetWidth / container.offsetHeight);
+		this.updateProjection = false;
+		
+		this.object = new THREE.PerspectiveCamera( fov, aspect, near, far );
+	}
+	
+    // Create accessors for all properties... just pass-throughs to Three.js
+    Object.defineProperties(this, {
+        fov: {
+	        get: function() {
+	            return this.object.fov;
+	        },
+	        set: function(v) {
+	        	this.object.fov = v;
+	        	this.updateProjection = true;
+	        }
+		},    	
+        aspect: {
+	        get: function() {
+	            return this.object.aspect;
+	        },
+	        set: function(v) {
+	        	this.object.aspect = v;
+	        	this.updateProjection = true;
+	        }
+    	},    	
+        near: {
+	        get: function() {
+	            return this.object.near;
+	        },
+	        set: function(v) {
+	        	this.object.near = v;
+	        	this.updateProjection = true;
+	        }
+    	},    	
+        far: {
+	        get: function() {
+	            return this.object.far;
+	        },
+	        set: function(v) {
+	        	this.object.far = v;
+	        	this.updateProjection = true;
+	        }
+    	},    	
+
+    });
+
+	glam.Camera.call(this, param);
+	
+    
 }
 
-Vizi.Mouse.prototype.onMouseUp = function(event)
-{
-    this.state.x = event.elementX;
-    this.state.y = event.elementY;	            
-    this.state.buttons.left = false;	            
+goog.inherits(glam.PerspectiveCamera, glam.Camera);
+
+glam.PerspectiveCamera.prototype.realize = function()  {
+	glam.Camera.prototype.realize.call(this);	
 }
 
-Vizi.Mouse.prototype.onMouseClick = function(event)
-{
-    this.state.x = event.elementX;
-    this.state.y = event.elementY;	            
-    this.state.buttons.left = false;	            
+glam.PerspectiveCamera.prototype.update = function()  {
+	if (this.updateProjection)
+	{
+		this.object.updateProjectionMatrix();
+		this.updateProjection = false;
+	}
 }
-
-Vizi.Mouse.prototype.onMouseDoubleClick = function(event)
-{
-    this.state.x = event.elementX;
-    this.state.y = event.elementY;	            
-    this.state.buttons.left = false;	            
-}
-
-Vizi.Mouse.prototype.onMouseScroll = function(event, delta)
-{
-    this.state.scroll = 0; // PUNT!
-}
-
-
-Vizi.Mouse.prototype.getState = function()
-{
-	return this.state;
-}
-
-Vizi.Mouse.instance = null;
-Vizi.Mouse.NO_POSITION = Number.MIN_VALUE;
 /**
  * @author mrdoob / http://mrdoob.com/
  */
 
-goog.provide('Vizi.PointerLockControls');
+goog.provide('glam.PointerLockControls');
 
-Vizi.PointerLockControls = function ( camera ) {
+glam.PointerLockControls = function ( camera ) {
 
   var scope = this;
   this.speed = 0.05
@@ -49428,230 +51153,676 @@ Vizi.PointerLockControls = function ( camera ) {
 
 };
 /**
- * @fileoverview Timer - component that generates time events
+ * @fileoverview visual base type - used by all thing seen on screen
  * 
  * @author Tony Parisi
  */
-goog.provide('Vizi.Timer');
-goog.require('Vizi.Component');
 
-Vizi.Timer = function(param)
-{
-    Vizi.Component.call(this);
-    param = param || {};
-    
-    this.currentTime = Vizi.Time.instance.currentTime;
-    this.running = false;
-    this.duration = param.duration ? param.duration : 0;
-    this.loop = (param.loop !== undefined) ? param.loop : false;
-    this.lastFraction = 0;
-}
+goog.provide('glam.VisualElement');
 
-goog.inherits(Vizi.Timer, Vizi.Component);
+glam.VisualElement.create = function(docelt, style, cls) {
 
-Vizi.Timer.prototype.update = function()
-{
-	if (!this.running)
-		return;
+	var param = {
+	};
 	
-	var now = Vizi.Time.instance.currentTime;
-	var deltat = now - this.currentTime;
+	cls.getAttributes(docelt, style, param);
 	
-	if (deltat)
-	{
-	    this.dispatchEvent("time", now);		
+	var obj = new glam.Object;	
+	
+	var material = glam.DOMMaterial.create(style, function(material) {
+		glam.VisualElement.createVisual(obj, cls, docelt, material, param);
+	});
+	
+	if (material) {
+		glam.VisualElement.createVisual(obj, cls, docelt, material, param);
 	}
 	
-	if (this.duration)
-	{
-		var mod = now % this.duration;
-		var fract = mod / this.duration;
-		
-		this.dispatchEvent("fraction", fract);
-		
-		if (fract < this.lastFraction)
-		{
-			this.dispatchEvent("cycleTime");
-			
-			if (!this.loop)
-			{
-				this.stop();
+	return obj;
+}
+
+glam.VisualElement.createVisual = function(obj, cls, docelt, material, param) {
+	var visual = cls.createVisual(docelt, material, param);	
+	if (visual) {
+		obj.addComponent(visual);
+		glam.VisualElement.addProperties(docelt, obj);
+	}
+}
+
+glam.VisualElement.addProperties = function(docelt, obj) {
+
+	var visuals = obj.getComponents(glam.Visual);
+	var visual = visuals[0];
+	
+	if (visual) {
+		// Is this the API?	
+		docelt.geometry = visual.geometry;
+		docelt.material = visual.material;
+	}
+}
+/**
+ * @fileoverview viewer - creates WebGL (Three.js/GLAM scene) by traversing document
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.DOMViewer');
+
+glam.DOMViewer = function(doc) {
+
+	this.document = doc;
+	this.documentParent = doc.parentElement;
+	this.riftRender = glam.DOM.riftRender || false;
+	this.cardboardRender = glam.DOM.cardboardRender || false;
+	this.displayStats = glam.DOM.displayStats || false;
+}
+
+glam.DOMViewer.prototype = new Object;
+
+glam.DOMViewer.prototype.initRenderer = function() {
+	var renderers = this.document.getElementsByTagName('renderer');
+	if (renderers) {
+		var renderer = renderers[0];
+		if (renderer) {
+			var type = renderer.getAttribute("type").toLowerCase();
+			if (type == "rift") {
+				this.riftRender = true;
+			}
+			else if (type == "cardboard") {
+				this.cardboardRender = true;
 			}
 		}
+	}
+	this.app = new glam.Viewer({ container : this.documentParent, 
+		headlight: false, 
+		riftRender:this.riftRender, 
+		cardboard:this.cardboardRender,
+		displayStats:this.displayStats });
+}
+
+glam.DOMViewer.prototype.initDefaultScene = function() {
+	
+	this.scene = new glam.Object;
+	this.app.sceneRoot.addChild(this.scene);
+	this.app.defaultCamera.position.set(0, 0, 5);
+}
+
+glam.DOMViewer.prototype.traverseScene = function() {
+	var scenes = this.document.getElementsByTagName('scene');
+	if (scenes) {
+		var scene = scenes[0];
+		this.traverse(scene, this.scene);
+	}
+	else {
+		console.warn("Document error! glam requires one 'scene' element");
+		return;
+	}
+}
+
+glam.DOMViewer.prototype.traverse = function(docelt, sceneobj) {
+
+	var tag = docelt.tagName;
+
+	var i, len, children = docelt.childNodes, len = children.length;
+	for (i = 0; i < len; i++) {
+		var childelt = children[i];
+		var tag = childelt.tagName;
+		if (tag)
+			tag = tag.toLowerCase();
+
+		var fn = null;
+		var type = tag ? glam.DOMTypes.types[tag] : null;
+		if (type && type.cls && (fn = type.cls.create) && typeof(fn) == "function") {
+			// console.log("    * found it in table!");
+			glam.DOMElement.init(childelt);
+			var style = glam.DOMElement.getStyle(childelt);
+			var obj = fn.call(this, childelt, style, this.app);
+			if (obj) {
+				childelt.glam.object = obj;
+				this.addFeatures(childelt, style, obj, type);
+				sceneobj.addChild(obj);
+				this.traverse(childelt, obj);
+			}
+		}
+	}
+	
+}
+
+glam.DOMViewer.prototype.addNode = function(docelt) {
+
+	var tag = docelt.tagName;
+	if (tag)
+		tag = tag.toLowerCase();
+	var fn = null;
+	var type = tag ? glam.DOMTypes.types[tag] : null;
+	if (type && type.cls && (fn = type.cls.create) && typeof(fn) == "function") {
+
+		glam.DOMElement.init(docelt);
+		var style = glam.DOMElement.getStyle(docelt);
+		var obj = fn.call(this, docelt, style, this.app);
 		
-		this.lastFraction = fract;
+		if (obj) {
+			docelt.glam.object = obj;
+			this.addFeatures(docelt, style, obj, type);
+			this.scene.addChild(obj);
+			this.traverse(docelt, obj);
+		}
+	}
+}
+
+glam.DOMViewer.prototype.removeNode = function(docelt) {
+
+	var obj = docelt.glam.object;
+	if (obj) {
+		obj._parent.removeChild(obj);
+	}
+}
+
+glam.DOMViewer.prototype.addFeatures = function(docelt, style, obj, type) {
+
+	if (type.transform) {
+		glam.DOMTransform.parse(docelt, style, obj);
 	}
 	
-	this.currentTime = now;
+	if (type.animation) {
+		glam.AnimationElement.parse(docelt, style, obj);
+		glam.TransitionElement.parse(docelt, style, obj);
+	}
+
+	if (type.input) {
+		glam.DOMInput.add(docelt, obj);
+	}
 	
+	if (type.visual) {
+		glam.VisualElement.addProperties(docelt, obj);
+		glam.DOMMaterial.addHandlers(docelt, style, obj);
+	}
 }
 
-Vizi.Timer.prototype.start = function()
-{
-	this.running = true;
-	this.currentTime = Vizi.Time.instance.currentTime;
+glam.DOMViewer.prototype.go = function() {
+	// Run it
+	this.initRenderer();
+	this.initDefaultScene();
+	this.traverseScene();
+	this.prepareViewsAndControllers();
+	this.app.run();
 }
 
-Vizi.Timer.prototype.stop = function()
-{
-	this.running = false;
+glam.DOMViewer.prototype.prepareViewsAndControllers = function() {
+	
+	var cameras = this.app.cameras;
+	if (cameras && cameras.length) {
+		var cam = cameras[0];
+		var controller = glam.Application.instance.controllerScript;
+		controller.camera = cam;
+		controller.enabled = true;
+		cam.active = true;
+	}
 }
 
 /**
- *
- */
-goog.provide('Vizi.Transform');
-goog.require('Vizi.SceneComponent');
-
-Vizi.Transform = function(param) {
-	param = param || {};
-    Vizi.SceneComponent.call(this, param);
-
-    if (param.object) {
-		this.object = param.object;    	
-    }
-    else {
-    	this.object = new THREE.Object3D();
-    }
-}
-
-goog.inherits(Vizi.Transform, Vizi.SceneComponent);
-
-Vizi.Transform.prototype._componentProperty = "transform";
-Vizi.Transform.prototype._componentPropertyType = "Transform";
-
-Vizi.Transform.prototype.addToScene = function() {
-	var scene = this.layer ? this.layer.scene : Vizi.Graphics.instance.scene;
-	if (this._object)
-	{
-		var parent = (this._object._parent && this._object._parent.transform) ? this._object._parent.transform.object : scene;
-		if (parent)
-		{
-		    parent.add(this.object);
-		    this.object.data = this; // backpointer for picking and such
-		}
-		else
-		{
-			// N.B.: throw something?
-		}
-	}
-	else
-	{
-		// N.B.: throw something?
-	}
-}
-
-Vizi.Transform.prototype.removeFromScene = function() {
-	var scene = this.layer ? this.layer.scene : Vizi.Graphics.instance.scene;
-	if (this._object)
-	{
-		var parent = (this._object._parent && this._object._parent.transform) ? this._object._parent.transform.object : scene;
-		if (parent)
-		{
-			this.object.data = null;
-		    parent.remove(this.object);
-		}
-		else
-		{
-			// N.B.: throw something?
-		}
-	}
-	else
-	{
-		// N.B.: throw something?
-	}
-}
-/**
- * @fileoverview Behavior component - base class for time-based behaviors
+ * @fileoverview Object collects a group of Components that define an object and its behaviors
  * 
  * @author Tony Parisi
  */
+goog.provide('glam.Object');
+goog.require('glam.EventDispatcher');
 
-goog.provide('Vizi.Behavior');
-goog.require('Vizi.Component');
+/**
+ * Creates a new Object.
+ * @constructor
+ * @extends {glam.EventDispatcher}
+ */
+glam.Object = function(param) {
+    glam.EventDispatcher.call(this);
+    
+    /**
+     * @type {number}
+     * @private
+     */
+    this._id = glam.Object.nextId++;
 
-Vizi.Behavior = function(param) {
-	param = param || {};
-	this.startTime = 0;
-	this.running = false;
-	this.loop = (param.loop !== undefined) ? param.loop : false;
-	this.autoStart = (param.autoStart !== undefined) ? param.autoStart : false;
-    Vizi.Component.call(this, param);
-}
+    /**
+     * @type {glam.Object}
+     * @private
+     */
+    this._parent = null;
 
-goog.inherits(Vizi.Behavior, Vizi.Component);
+    /**
+     * @type {Array.<glam.Object>}
+     * @private
+     */
+    this._children = [];
 
-Vizi.Behavior.prototype._componentCategory = "behaviors";
+    /**
+     * @type {Array}
+     * @private
+     */
+    this._components = [];
 
-Vizi.Behavior.prototype.realize = function()
-{
-	Vizi.Component.prototype.realize.call(this);
-	
-	if (this.autoStart)
-		this.start();
-}
-
-Vizi.Behavior.prototype.start = function()
-{
-	this.startTime = Vizi.Time.instance.currentTime;
-	this.running = true;
-}
-
-Vizi.Behavior.prototype.stop = function()
-{
-	this.startTime = 0;
-	this.running = false;
-}
-
-Vizi.Behavior.prototype.toggle = function()
-{
-	if (this.running)
-		this.stop();
-	else
-		this.start();
-}
-
-Vizi.Behavior.prototype.update = function()
-{
-	if (this.running)
+    /**
+     * @type {String}
+     * @public
+     */
+    this.name = "";
+ 
+    /**
+     * @type {Boolean}
+     * @private
+     */
+    this._realizing = false;
+    
+    /**
+     * @type {Boolean}
+     * @private
+     */
+    this._realized = false;
+    
+    // Automatically create a transform component unless the caller says not to 
+    var autoCreateTransform = true;
+    if (param && param.autoCreateTransform !== undefined)
+    	autoCreateTransform = param.autoCreateTransform;
+    
+	if (autoCreateTransform)
 	{
-		// N.B.: soon, add logic to subtract suspend times
-		var now = Vizi.Time.instance.currentTime;
-		var elapsedTime = (now - this.startTime) / 1000;
-		
-		this.evaluate(elapsedTime);
+		this.addComponent(new glam.Transform(param));
 	}
 }
 
-Vizi.Behavior.prototype.evaluate = function(t)
-{
-	if (Vizi.Behavior.WARN_ON_ABSTRACT)
-		Vizi.System.warn("Abstract Behavior.evaluate called");
+goog.inherits(glam.Object, glam.EventDispatcher);
+
+/**
+ * The next identifier to hand out.
+ * @type {number}
+ * @private
+ */
+glam.Object.nextId = 0;
+
+glam.Object.prototype.getID = function() {
+    return this._id;
 }
 
-Vizi.Behavior.WARN_ON_ABSTRACT = true;
+//---------------------------------------------------------------------
+// Hierarchy methods
+//---------------------------------------------------------------------
+
+/**
+ * Sets the parent of the Object.
+ * @param {glam.Object} parent The parent of the Object.
+ * @private
+ */
+glam.Object.prototype.setParent = function(parent) {
+    this._parent = parent;
+}
+
+/**
+ * Adds a child to the Object.
+ * @param {glam.Object} child The child to add.
+ */
+glam.Object.prototype.addChild = function(child) {
+    if (!child)
+    {
+        throw new Error('Cannot add a null child');
+    }
+
+    if (child._parent)
+    {
+        throw new Error('Child is already attached to an Object');
+    }
+
+    child.setParent(this);
+    this._children.push(child);
+
+    if ((this._realizing || this._realized) && !child._realized)
+    {
+    	child.realize();
+    }
+
+}
+
+/**
+ * Removes a child from the Object
+ * @param {glam.Object} child The child to remove.
+ */
+glam.Object.prototype.removeChild = function(child) {
+    var i = this._children.indexOf(child);
+
+    if (i != -1)
+    {
+        this._children.splice(i, 1);
+        child.removeAllComponents();
+        child.setParent(null);
+        child._realized = child._realizing = false;
+    }
+}
+
+/**
+ * Removes a child from the Object
+ * @param {glam.Object} child The child to remove.
+ */
+glam.Object.prototype.getChild = function(index) {
+	if (index >= this._children.length)
+		return null;
+	
+	return this._children[index];
+}
+
+//---------------------------------------------------------------------
+// Component methods
+//---------------------------------------------------------------------
+
+/**
+ * Adds a Component to the Object.
+ * @param {glam.Component} component.
+ */
+glam.Object.prototype.addComponent = function(component) {
+    if (!component)
+    {
+        throw new Error('Cannot add a null component');
+    }
+    
+    if (component._object)
+    {
+        throw new Error('Component is already attached to an Object')
+    }
+
+    var proto = Object.getPrototypeOf(component);
+    if (proto._componentProperty)
+    {
+    	if (this[proto._componentProperty])
+    	{
+    		var t = proto._componentPropertyType;
+            glam.System.warn('Object already has a ' + t + ' component');
+            return;
+    	}
+    	
+    	this[proto._componentProperty] = component;
+    }
+
+    if (proto._componentCategory)
+    {
+    	if (!this[proto._componentCategory])
+    		this[proto._componentCategory] = [];
+    	
+    	this[proto._componentCategory].push(component);
+    }
+    
+    this._components.push(component);
+    component.setObject(this);
+    
+    if ((this._realizing || this._realized) && !component._realized)
+    {
+    	component.realize();
+    }
+}
+
+/**
+ * Removes a Component from the Object.
+ * @param {glam.Component} component.
+ */
+glam.Object.prototype.removeComponent = function(component) {
+	if (!component)
+		return;
+	
+    var i = this._components.indexOf(component);
+
+    if (i != -1)
+    {
+    	if (component.removeFromScene)
+    	{
+    		component.removeFromScene();
+    	}
+    	
+        this._components.splice(i, 1);
+        component.setObject(null);
+    }
+    
+    var proto = Object.getPrototypeOf(component);
+    if (proto._componentProperty)
+    {
+    	this[proto._componentProperty] = null;
+    }
+
+    if (proto._componentCategory)
+    {
+    	if (this[proto._componentCategory]) {
+    		var cat = this[proto._componentCategory];
+    		i = cat.indexOf(component);
+    		if (i != -1)
+    			cat.splice(i, 1);
+    	}
+    }
+
+}
+
+/**
+ * Removes all Components from the Object in one call
+ * @param {glam.Component} component.
+ */
+glam.Object.prototype.removeAllComponents = function() {
+    var i, len = this._components.length;
+
+    for (i = 0; i < len; i++)
+    {
+    	var component = this._components[i];
+    	if (component.removeFromScene)
+    	{
+    		component.removeFromScene();
+    		component._realized = component._realizing = false;
+    	}
+    	
+        component.setObject(null);
+    }
+}
+
+/**
+ * Retrieves a Component of a given type in the Object.
+ * @param {Object} type.
+ */
+glam.Object.prototype.getComponent = function(type) {
+	var i, len = this._components.length;
+	
+	for (i = 0; i < len; i++)
+	{
+		var component = this._components[i];
+		if (component instanceof type)
+		{
+			return component;
+		}
+	}
+	
+	return null;
+}
+
+/**
+ * Retrieves a Component of a given type in the Object.
+ * @param {Object} type.
+ */
+glam.Object.prototype.getComponents = function(type) {
+	var i, len = this._components.length;
+	
+	var components = [];
+	
+	for (i = 0; i < len; i++)
+	{
+		var component = this._components[i];
+		if (component instanceof type)
+		{
+			components.push(component);
+		}
+	}
+	
+	return components;
+}
+
+//---------------------------------------------------------------------
+//Initialize methods
+//---------------------------------------------------------------------
+
+glam.Object.prototype.realize = function() {
+    this._realizing = true;
+    
+    this.realizeComponents();
+    this.realizeChildren();
+        
+    this._realized = true;
+}
+
+/**
+ * @private
+ */
+glam.Object.prototype.realizeComponents = function() {
+    var component;
+    var count = this._components.length;
+    var i = 0;
+
+    for (; i < count; ++i)
+    {
+        if (!this._components[i]._realized) {
+        	// in case we're part of a previously-removed object getting re-parented
+        	this._components[i].setObject(this);
+        	this._components[i].realize();
+        }
+    }
+}
+
+/**
+ * @private
+ */
+glam.Object.prototype.realizeChildren = function() {
+    var child;
+    var count = this._children.length;
+    var i = 0;
+
+    for (; i < count; ++i)
+    {
+        if (!this._children[i]._realized) {
+        	this._children[i].realize();
+        }
+    }
+}
+
+//---------------------------------------------------------------------
+// Update methods
+//---------------------------------------------------------------------
+
+glam.Object.prototype.update = function() {
+    this.updateComponents();
+    this.updateChildren();
+}
+
+/**
+ * @private
+ */
+glam.Object.prototype.updateComponents = function() {
+    var component;
+    var count = this._components.length;
+    var i = 0;
+
+    for (; i < count; ++i)
+    {
+        this._components[i].update();
+    }
+}
+
+/**
+ * @private
+ */
+glam.Object.prototype.updateChildren = function() {
+    var child;
+    var count = this._children.length;
+    var i = 0;
+
+    for (; i < count; ++i)
+    {
+        this._children[i].update();
+    }
+}
+
+//---------------------------------------------------------------------
+// Traversal and query methods
+//---------------------------------------------------------------------
+
+glam.Object.prototype.traverse = function (callback) {
+
+	callback(this);
+
+    var i, count = this._children.length;
+	for (i = 0; i < count ; i ++ ) {
+
+		this._children[ i ].traverse( callback );
+	}
+}
+
+glam.Object.prototype.findCallback = function(n, query, found) {
+	if (typeof(query) == "string")
+	{
+		if (n.name == query)
+			found.push(n);
+	}
+	else if (query instanceof RegExp)
+	{
+		var match  = n.name.match(query);
+		if (match && match.length)
+			found.push(n);
+	}
+	else if (query instanceof Function) {
+		if (n instanceof query)
+			found.push(n);
+		else {
+			var components = n.getComponents(query);
+			var i, len = components.length;
+			for (i = 0; i < len; i++)
+				found.push(components[i]);
+		}
+	}
+}
+
+glam.Object.prototype.findNode = function(str) {
+	var that = this;
+	var found = [];
+	this.traverse(function (o) { that.findCallback(o, str, found); });
+	
+	return found[0];
+}
+
+glam.Object.prototype.findNodes = function(query) {
+	var that = this;
+	var found = [];
+	this.traverse(function (o) { that.findCallback(o, query, found); });
+	
+	return found;
+}
+
+glam.Object.prototype.map = function(query, callback){
+	var found = this.findNodes(query);
+	var i, len = found.length;
+	
+	for (i = 0; i < len; i++) {
+		callback(found[i]);
+	}
+}
 /**
  * @fileoverview FadeBehavior - simple angular rotation
  * 
  * @author Tony Parisi
  */
 
-goog.provide('Vizi.FadeBehavior');
-goog.require('Vizi.Behavior');
+goog.provide('glam.FadeBehavior');
+goog.require('glam.Behavior');
 
-Vizi.FadeBehavior = function(param) {
+glam.FadeBehavior = function(param) {
 	param = param || {};
 	this.duration = (param.duration !== undefined) ? param.duration : 1;
 	this.opacity = (param.opacity !== undefined) ? param.opacity : 0.5;
 	this.savedOpacities = [];
 	this.savedTransparencies = [];
 	this.tween = null;
-    Vizi.Behavior.call(this, param);
+    glam.Behavior.call(this, param);
 }
 
-goog.inherits(Vizi.FadeBehavior, Vizi.Behavior);
+goog.inherits(glam.FadeBehavior, glam.Behavior);
 
-Vizi.FadeBehavior.prototype.start = function()
+glam.FadeBehavior.prototype.start = function()
 {
 	if (this.running)
 		return;
@@ -49673,10 +51844,10 @@ Vizi.FadeBehavior.prototype.start = function()
 	.repeat(0)
 	.start();
 	
-	Vizi.Behavior.prototype.start.call(this);
+	glam.Behavior.prototype.start.call(this);
 }
 
-Vizi.FadeBehavior.prototype.evaluate = function(t)
+glam.FadeBehavior.prototype.evaluate = function(t)
 {
 	if (t >= this.duration)
 	{
@@ -49697,438 +51868,2332 @@ Vizi.FadeBehavior.prototype.evaluate = function(t)
 }
 
 
-Vizi.FadeBehavior.prototype.stop = function()
+glam.FadeBehavior.prototype.stop = function()
 {
 	if (this.tween)
 		this.tween.stop();
 
-	Vizi.Behavior.prototype.stop.call(this);
-}
-goog.provide('Vizi.Light');
-goog.require('Vizi.SceneComponent');
-
-Vizi.Light = function(param)
-{
-	param = param || {};
-	Vizi.SceneComponent.call(this, param);
-	
-    // Create accessors for all properties... just pass-throughs to Three.js
-    Object.defineProperties(this, {
-        color: {
-	        get: function() {
-	            return this.object.color;
-	        }
-    	},
-        intensity: {
-	        get: function() {
-	            return this.object.intensity;
-	        },
-	        set: function(v) {
-	        	this.object.intensity = v;
-	        }
-    	},    	
-
-    });
-	
-}
-
-goog.inherits(Vizi.Light, Vizi.SceneComponent);
-
-Vizi.Light.prototype._componentProperty = "light";
-Vizi.Light.prototype._componentPropertyType = "Light";
-
-Vizi.Light.prototype.realize = function() 
-{
-	Vizi.SceneComponent.prototype.realize.call(this);
-}
-
-Vizi.Light.DEFAULT_COLOR = 0xFFFFFF;
-Vizi.Light.DEFAULT_INTENSITY = 1;
-Vizi.Light.DEFAULT_RANGE = 10000;goog.provide('Vizi.DirectionalLight');
-goog.require('Vizi.Light');
-
-Vizi.DirectionalLight = function(param)
-{
-	param = param || {};
-
-	this.scaledDir = new THREE.Vector3;
-	this.castShadows = ( param.castShadows !== undefined ) ? param.castShadows : Vizi.DirectionalLight.DEFAULT_CAST_SHADOWS;
-	
-	Vizi.Light.call(this, param);
-
-	if (param.object) {
-		this.object = param.object; 
-		this.direction = param.object.position.clone().normalize().negate();
-		this.targetPos = param.object.target.position.clone();
-		this.shadowDarkness = param.object.shadowDarkness;
-	}
-	else {
-		this.direction = param.direction || new THREE.Vector3(0, 0, -1);
-		this.object = new THREE.DirectionalLight(param.color, param.intensity, 0);
-		this.targetPos = new THREE.Vector3;
-		this.shadowDarkness = ( param.shadowDarkness !== undefined ) ? param.shadowDarkness : Vizi.DirectionalLight.DEFAULT_SHADOW_DARKNESS;
-	}
-}
-
-goog.inherits(Vizi.DirectionalLight, Vizi.Light);
-
-Vizi.DirectionalLight.prototype.realize = function() 
-{
-	Vizi.Light.prototype.realize.call(this);
-}
-
-Vizi.DirectionalLight.prototype.update = function() 
-{
-	// D'oh Three.js doesn't seem to transform light directions automatically
-	// Really bizarre semantics
-	this.position.copy(this.direction).normalize().negate();
-	var worldmat = this.object.parent.matrixWorld;
-	this.position.applyMatrix4(worldmat);
-	this.scaledDir.copy(this.direction);
-	this.scaledDir.multiplyScalar(Vizi.Light.DEFAULT_RANGE);
-	this.targetPos.copy(this.position);
-	this.targetPos.add(this.scaledDir);	
- 	this.object.target.position.copy(this.targetPos);
-
-	this.updateShadows();
-	
-	Vizi.Light.prototype.update.call(this);
-}
-
-Vizi.DirectionalLight.prototype.updateShadows = function()
-{
-	if (this.castShadows)
-	{
-		this.object.castShadow = true;
-		this.object.shadowCameraNear = 1;
-		this.object.shadowCameraFar = Vizi.Light.DEFAULT_RANGE;
-		this.object.shadowCameraFov = 90;
-
-		// light.shadowCameraVisible = true;
-
-		this.object.shadowBias = 0.0001;
-		this.object.shadowDarkness = this.shadowDarkness;
-
-		this.object.shadowMapWidth = 1024;
-		this.object.shadowMapHeight = 1024;
-		
-		Vizi.Graphics.instance.enableShadows(true);
-	}	
-}
-
-
-Vizi.DirectionalLight.DEFAULT_CAST_SHADOWS = false;
-Vizi.DirectionalLight.DEFAULT_SHADOW_DARKNESS = 0.3;
-goog.provide('Vizi.PointLight');
-goog.require('Vizi.Light');
-
-Vizi.PointLight = function(param)
-{
-	param = param || {};
-	
-	Vizi.Light.call(this, param);
-	
-	this.positionVec = new THREE.Vector3;
-	
-	if (param.object) {
-		this.object = param.object; 
-	}
-	else {
-		var distance = ( param.distance !== undefined ) ? param.distance : Vizi.PointLight.DEFAULT_DISTANCE;
-		this.object = new THREE.PointLight(param.color, param.intensity, distance);
-	}
-	
-    // Create accessors for all properties... just pass-throughs to Three.js
-    Object.defineProperties(this, {
-        distance: {
-	        get: function() {
-	            return this.object.distance;
-	        },
-	        set: function(v) {
-	        	this.object.distance = v;
-	        }
-    	},    	
-
-    });
-
-}
-
-goog.inherits(Vizi.PointLight, Vizi.Light);
-
-Vizi.PointLight.prototype.realize = function() 
-{
-	Vizi.Light.prototype.realize.call(this);
-}
-
-Vizi.PointLight.prototype.update = function() 
-{
-	if (this.object)
-	{
-		this.positionVec.set(0, 0, 0);
-		var worldmat = this.object.parent.matrixWorld;
-		this.positionVec.applyMatrix4(worldmat);
-		this.position.copy(this.positionVec);
-	}
-	
-	// Update the rest
-	Vizi.Light.prototype.update.call(this);
-}
-
-Vizi.PointLight.DEFAULT_DISTANCE = 0;
-
-goog.require('Vizi.Prefabs');
-
-Vizi.Prefabs.DeviceOrientationController = function(param)
-{
-	param = param || {};
-	
-	var controller = new Vizi.Object(param);
-	var controllerScript = new Vizi.DeviceOrientationControllerScript(param);
-	controller.addComponent(controllerScript);
-
-	var intensity = param.headlight ? 1 : 0;
-	
-	var headlight = new Vizi.DirectionalLight({ intensity : intensity });
-	controller.addComponent(headlight);
-		
-	return controller;
-}
-
-goog.provide('Vizi.DeviceOrientationControllerScript');
-goog.require('Vizi.Script');
-
-Vizi.DeviceOrientationControllerScript = function(param)
-{
-	Vizi.Script.call(this, param);
-
-	this._enabled = (param.enabled !== undefined) ? param.enabled : true;
-	this._headlightOn = param.headlight;
-	this.roll = (param.roll !== undefined) ? param.roll : true;
-		
-    Object.defineProperties(this, {
-    	camera: {
-			get : function() {
-				return this._camera;
-			},
-			set: function(camera) {
-				this.setCamera(camera);
-			}
-		},
-    	enabled : {
-    		get: function() {
-    			return this._enabled;
-    		},
-    		set: function(v) {
-    			this.setEnabled(v);
-    		}
-    	},
-        headlightOn: {
-	        get: function() {
-	            return this._headlightOn;
-	        },
-	        set:function(v)
-	        {
-	        	this.setHeadlightOn(v);
-	        }
-    	},
-    });
-}
-
-goog.inherits(Vizi.DeviceOrientationControllerScript, Vizi.Script);
-
-Vizi.DeviceOrientationControllerScript.prototype.realize = function() {
-	this.headlight = this._object.getComponent(Vizi.DirectionalLight);
-	this.headlight.intensity = this._headlightOn ? 1 : 0;
-}
-
-Vizi.DeviceOrientationControllerScript.prototype.createControls = function(camera)
-{
-	var controls = new Vizi.DeviceOrientationControlsCB(camera.object);
-	
-	if (this._enabled)
-		controls.connect();
-	
-	controls.roll = this.roll;
-	return controls;
-}
-
-Vizi.DeviceOrientationControllerScript.prototype.update = function()
-{
-	if (this._enabled)
-		this.controls.update();
-
-	if (this._headlightOn)
-	{
-		this.headlight.direction.copy(this._camera.position).negate();
-	}	
-}
-
-Vizi.DeviceOrientationControllerScript.prototype.setEnabled = function(enabled)
-{
-	this._enabled = enabled;
-	if (this._enabled)
-		this.controls.connect();
-	else
-		this.controls.disconnect();
-}
-
-Vizi.DeviceOrientationControllerScript.prototype.setHeadlightOn = function(on)
-{
-	this._headlightOn = on;
-	if (this.headlight) {
-		this.headlight.intensity = on ? 1 : 0;
-	}
-}
-
-Vizi.DeviceOrientationControllerScript.prototype.setCamera = function(camera) {
-	this._camera = camera;
-	this.controls = this.createControls(camera);
+	glam.Behavior.prototype.stop.call(this);
 }
 /**
- * @fileoverview Base class for visual elements.
+ * @fileoverview Object collects a group of Components that define an object and its behaviors
+ * 
  * @author Tony Parisi
  */
-goog.provide('Vizi.Visual');
-goog.require('Vizi.SceneComponent');
+
+
+goog.require('glam.Prefabs');
+
+glam.Prefabs.Skybox = function(param)
+{
+	param = param || {};
+	
+	var box = new glam.Object({layer:glam.Graphics.instance.backgroundLayer});
+
+	var textureCube = null;
+
+	var shader = THREE.ShaderLib[ "cube" ];
+	shader.uniforms[ "tCube" ].value = textureCube;
+
+	var material = new THREE.ShaderMaterial( {
+
+		fragmentShader: shader.fragmentShader,
+		vertexShader: shader.vertexShader,
+		uniforms: shader.uniforms,
+		side: THREE.BackSide
+
+	} );
+
+	var visual = new glam.Visual(
+			{ geometry: new THREE.BoxGeometry( 10000, 10000, 10000 ),
+				material: material,
+			});
+	box.addComponent(visual);
+	
+	var script = new glam.SkyboxScript(param);
+	box.addComponent(script);
+	
+	box.realize();
+
+	return box;
+}
+
+goog.provide('glam.SkyboxScript');
+goog.require('glam.Script');
+
+glam.SkyboxScript = function(param)
+{
+	glam.Script.call(this, param);
+
+	this.maincampos = new THREE.Vector3; 
+	this.maincamrot = new THREE.Quaternion; 
+	this.maincamscale = new THREE.Vector3; 
+	
+    Object.defineProperties(this, {
+    	texture: {
+			get : function() {
+				return this.uniforms[ "tCube" ].value;
+			},
+			set: function(texture) {
+				this.uniforms[ "tCube" ].value = texture;
+			}
+		},
+    });
+}
+
+goog.inherits(glam.SkyboxScript, glam.Script);
+
+glam.SkyboxScript.prototype.realize = function()
+{
+	var visual = this._object.getComponent(glam.Visual);
+	this.uniforms = visual.material.uniforms;
+
+	this.camera = glam.Graphics.instance.backgroundLayer.camera;
+	this.camera.far = 20000;
+	this.camera.position.set(0, 0, 0);
+}
+
+glam.SkyboxScript.prototype.update = function()
+{
+	var maincam = glam.Graphics.instance.camera;
+	maincam.updateMatrixWorld();
+	maincam.matrixWorld.decompose(this.maincampos, this.maincamrot, this.maincamscale);
+	this.camera.quaternion.copy(this.maincamrot);
+}
+
+/**
+ * @fileoverview line primitive parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.LineElement');
+
+glam.LineElement.create = function(docelt, style) {
+		
+	var material = glam.DOMMaterial.create(style, null, "line");
+	
+	var geometry = new THREE.Geometry;
+	
+	glam.LineElement.parse(docelt, geometry, material);
+	
+	var line = new THREE.Line(geometry, material);
+	
+	var obj = new glam.Object;	
+	var visual = new glam.Visual(
+			{
+				object : line,
+			});
+	obj.addComponent(visual);
+
+	// Is this the API?
+	docelt.geometry = geometry;
+	docelt.material = material;
+	
+	return obj;
+}
+
+glam.LineElement.parse = function(docelt, geometry, material) {
+
+	var verts = docelt.getElementsByTagName('vertices');
+	if (verts) {
+		verts = verts[0];
+		glam.DOMTypes.parseVector3Array(verts, geometry.vertices);
+	}
+	
+	var vertexColors = [];
+	var colors = docelt.getElementsByTagName('colors');
+	if (colors) {
+		colors = colors[0];
+		if (colors) {
+			glam.DOMTypes.parseColor3Array(colors, vertexColors);
+	
+			var i, len = vertexColors.length;
+	
+			for (i = 0; i < len; i++) {			
+				var c = vertexColors[i];
+				geometry.colors.push(c.clone());
+			}
+	
+			material.vertexColors = THREE.VertexColors;
+		}
+	}
+
+
+}
+
+/**
+ * @fileoverview The base Application class
+ * 
+ * @author Tony Parisi
+ */
+goog.provide('glam.Application');
+goog.require('glam.EventDispatcher');
+goog.require('glam.Time');
+goog.require('glam.Input');
+goog.require('glam.Services');
 
 /**
  * @constructor
  */
-Vizi.Visual = function(param)
-{
-	param = param || {};
-	
-	Vizi.SceneComponent.call(this, param);
-
-	if (param.object) {
-		this.object = param.object;
-		this.geometry = this.object.geometry;
-		this.material = this.object.material;
-	}
-	else {
-		this.geometry = param.geometry;
-		this.material = param.material;
-	}
-}
-
-goog.inherits(Vizi.Visual, Vizi.SceneComponent);
-
-// We're going to let this slide until we figure out the glTF mulit-material mesh
-//Vizi.Visual.prototype._componentProperty = "visual";
-//Vizi.Visual.prototype._componentPropertyType = "Visual";
-Vizi.Visual.prototype._componentCategory = "visuals";
-
-Vizi.Visual.prototype.realize = function()
-{
-	Vizi.SceneComponent.prototype.realize.call(this);
-	
-	if (!this.object && this.geometry && this.material) {
-		this.object = new THREE.Mesh(this.geometry, this.material);
-		this.object.ignorePick = false;
-	    this.addToScene();
-	}	
-}
-
-/**
- * @fileoverview A visual containing a model in Collada format
- * @author Tony Parisi
- */
-goog.provide('Vizi.SceneVisual');
-goog.require('Vizi.Visual');
-
-Vizi.SceneVisual = function(param) 
-{
-	param = param || {};
-	
-    Vizi.Visual.call(this, param);
-
-    this.object = param.scene;
-}
-
-goog.inherits(Vizi.SceneVisual, Vizi.Visual);
-
-Vizi.SceneVisual.prototype.realize = function()
-{
-	Vizi.Visual.prototype.realize.call(this);
-	
-    this.addToScene();
-}
-/**
- *
- */
-goog.provide('Vizi.Keyboard');
-
-Vizi.Keyboard = function()
+glam.Application = function(param)
 {
 	// N.B.: freak out if somebody tries to make 2
 	// throw (...)
 
-	Vizi.Keyboard.instance = this;
+	glam.EventDispatcher.call(this);
+	glam.Application.instance = this;
+	this.initialize(param);
 }
 
-Vizi.Keyboard.prototype.onKeyDown = function(event)
+goog.inherits(glam.Application, glam.EventDispatcher);
+
+glam.Application.prototype.initialize = function(param)
+{
+	param = param || {};
+
+	this.running = false;
+	this.tabstop = param.tabstop;
+	
+	this._services = [];
+	this._objects = [];
+
+	// Add required services first
+	this.addService("time");
+	this.addService("input");
+	
+	// Add optional (game-defined) services next
+	this.addOptionalServices();
+
+	// Add events and rendering services last - got to;
+	this.addService("tween");
+	this.addService("events");
+	this.addService("graphics");
+	
+	// Start all the services
+	this.initServices(param);
+}
+
+glam.Application.prototype.addService = function(serviceName)
+{
+	var service = glam.Services.create(serviceName);
+	this._services.push(service);	
+}
+
+glam.Application.prototype.initServices = function(param)
+{
+	var i, len;
+	len = this._services.length;
+	for (i = 0; i < len; i++)
+	{
+		this._services[i].initialize(param);
+	}
+}
+
+glam.Application.prototype.addOptionalServices = function()
 {
 }
 
-Vizi.Keyboard.prototype.onKeyUp = function(event)
+glam.Application.prototype.focus = function()
 {
+	// Hack hack hack should be the input system
+	glam.Graphics.instance.focus();
 }
 
-Vizi.Keyboard.prototype.onKeyPress = function(event)
+glam.Application.prototype.run = function()
 {
-}	        
+    // core game loop here
+	this.realizeObjects();
+	glam.Graphics.instance.scene.updateMatrixWorld();
+	this.lastFrameTime = Date.now();
+	this.running = true;
+	this.runloop();
+}
+	        
+glam.Application.prototype.runloop = function()
+{
+	var now = Date.now();
+	var deltat = now - this.lastFrameTime;
+	
+	if (deltat >= glam.Application.minFrameTime)
+	{
+		this.updateServices();
+        this.lastFrameTime = now;
+	}
+	
+	var that = this;
+    requestAnimationFrame( function() { that.runloop(); } );
+}
 
-Vizi.Keyboard.instance = null;
+glam.Application.prototype.updateServices = function()
+{
+	var i, len;
+	len = this._services.length;
+	for (i = 0; i < len; i++)
+	{
+		this._services[i].update();
+	}
+}
 
-/* key codes
-37: left
-38: up
-39: right
-40: down
-*/
-Vizi.Keyboard.KEY_LEFT  = 37;
-Vizi.Keyboard.KEY_UP  = 38;
-Vizi.Keyboard.KEY_RIGHT  = 39;
-Vizi.Keyboard.KEY_DOWN  = 40;
+glam.Application.prototype.updateObjects = function()
+{
+	var i, len = this._objects.length;
+	
+	for (i = 0; i < len; i++)
+	{
+		this._objects[i].update();
+	}
+	
+}
+
+glam.Application.prototype.addObject = function(o)
+{
+	this._objects.push(o);
+	if (this.running) {
+		o.realize();
+	}
+}
+
+glam.Application.prototype.removeObject = function(o) {
+    var i = this._objects.indexOf(o);
+    if (i != -1) {
+    	// N.B.: I suppose we could be paranoid and check to see if I actually own this component
+        this._objects.splice(i, 1);
+    }
+}
+
+glam.Application.prototype.realizeObjects = function()
+{
+	var i, len = this._objects.length;
+	
+	for (i = 0; i < len; i++)
+	{
+		this._objects[i].realize();
+	}
+	
+}
+	
+glam.Application.prototype.onMouseMove = function(event)
+{
+	if (this.mouseDelegate  && this.mouseDelegate.onMouseMove)
+	{
+		this.mouseDelegate.onMouseMove(event);
+	}
+}
+
+glam.Application.prototype.onMouseDown = function(event)
+{
+	if (this.mouseDelegate && this.mouseDelegate.onMouseDown)
+	{
+		this.mouseDelegate.onMouseDown(event);
+	}
+}
+
+glam.Application.prototype.onMouseUp = function(event)
+{
+	if (this.mouseDelegate && this.mouseDelegate.onMouseUp)
+	{
+		this.mouseDelegate.onMouseUp(event);
+	}
+}
+
+glam.Application.prototype.onMouseClick = function(event)
+{
+	if (this.mouseDelegate && this.mouseDelegate.onMouseClick)
+	{
+		this.mouseDelegate.onMouseClick(event);
+	}
+}
+
+glam.Application.prototype.onMouseDoubleClick = function(event)
+{
+	if (this.mouseDelegate && this.mouseDelegate.onMouseDoubleClick)
+	{
+		this.mouseDelegate.onMouseDoubleClick(event);
+	}
+}
+
+glam.Application.prototype.onMouseScroll = function(event)
+{
+	if (this.mouseDelegate  && this.mouseDelegate.onMouseScroll)
+	{
+		this.mouseDelegate.onMouseScroll(event);
+	}
+}
+
+glam.Application.prototype.onKeyDown = function(event)
+{
+	if (this.keyboardDelegate && this.keyboardDelegate.onKeyDown)
+	{
+		this.keyboardDelegate.onKeyDown(event);
+	}
+}
+
+glam.Application.prototype.onKeyUp = function(event)
+{
+	if (this.keyboardDelegate && this.keyboardDelegate.onKeyUp)
+	{
+		this.keyboardDelegate.onKeyUp(event);
+	}
+}
+
+glam.Application.prototype.onKeyPress = function(event)
+{
+	if (this.keyboardDelegate  && this.keyboardDelegate.onKeyPress)
+	{
+		this.keyboardDelegate.onKeyPress(event);
+	}
+}	
+
+/* statics */
+
+glam.Application.instance = null;
+glam.Application.curObjectID = 0;
+glam.Application.minFrameTime = 1;
+	    	
+glam.Application.handleMouseMove = function(event)
+{
+    if (glam.PickManager && glam.PickManager.clickedObject)
+    	return;
+    
+    if (glam.Application.instance.onMouseMove)
+    	glam.Application.instance.onMouseMove(event);	            	
+}
+
+glam.Application.handleMouseDown = function(event)
+{
+    // Click to focus
+    if (glam.Application.instance.tabstop)
+    	glam.Application.instance.focus();
+        
+    if (glam.PickManager && glam.PickManager.clickedObject)
+    	return;
+    
+    if (glam.Application.instance.onMouseDown)
+    	glam.Application.instance.onMouseDown(event);	            	
+}
+
+glam.Application.handleMouseUp = function(event)
+{
+    if (glam.PickManager && glam.PickManager.clickedObject)
+    	return;
+    
+    if (glam.Application.instance.onMouseUp)
+    	glam.Application.instance.onMouseUp(event);	            	
+}
+
+glam.Application.handleMouseClick = function(event)
+{
+    if (glam.PickManager && glam.PickManager.clickedObject)
+    	return;
+    
+    if (glam.Application.instance.onMouseClick)
+    	glam.Application.instance.onMouseClick(event);	            	
+}
+
+glam.Application.handleMouseDoubleClick = function(event)
+{
+    if (glam.PickManager && glam.PickManager.clickedObject)
+    	return;
+    
+    if (glam.Application.instance.onMouseDoubleClick)
+    	glam.Application.instance.onMouseDoubleClick(event);	            	
+}
+
+glam.Application.handleMouseScroll = function(event)
+{
+    if (glam.PickManager && glam.PickManager.overObject)
+    	return;
+    
+    if (glam.Application.instance.onMouseScroll)
+    	glam.Application.instance.onMouseScroll(event);	            	
+}
+
+glam.Application.handleTouchStart = function(event)
+{
+    if (glam.PickManager && glam.PickManager.clickedObject)
+    	return;
+    
+    if (glam.Application.instance.onTouchStart)
+    	glam.Application.instance.onTouchStart(event);	            	
+}
+
+glam.Application.handleTouchMove = function(event)
+{
+    if (glam.PickManager && glam.PickManager.clickedObject)
+    	return;
+    
+    if (glam.Application.instance.onTouchMove)
+    	glam.Application.instance.onTouchMove(event);	            	
+}
+
+glam.Application.handleTouchEnd = function(event)
+{
+    if (glam.PickManager && glam.PickManager.clickedObject)
+    	return;
+    
+    if (glam.Application.instance.onTouchEnd)
+    	glam.Application.instance.onTouchEnd(event);	            	
+}
+
+glam.Application.handleKeyDown = function(event)
+{
+    if (glam.Application.instance.onKeyDown)
+    	glam.Application.instance.onKeyDown(event);	            	
+}
+
+glam.Application.handleKeyUp = function(event)
+{
+    if (glam.Application.instance.onKeyUp)
+    	glam.Application.instance.onKeyUp(event);	            	
+}
+
+glam.Application.handleKeyPress = function(event)
+{
+    if (glam.Application.instance.onKeyPress)
+    	glam.Application.instance.onKeyPress(event);	            	
+}
+
+glam.Application.prototype.onTouchMove = function(event)
+{
+	if (this.touchDelegate  && this.touchDelegate.onTouchMove)
+	{
+		this.touchDelegate.onTouchMove(event);
+	}
+}
+
+glam.Application.prototype.onTouchStart = function(event)
+{
+	if (this.touchDelegate && this.touchDelegate.onTouchStart)
+	{
+		this.touchDelegate.onTouchStart(event);
+	}
+}
+
+glam.Application.prototype.onTouchEnd = function(event)
+{
+	if (this.touchDelegate && this.touchDelegate.onTouchEnd)
+	{
+		this.touchDelegate.onTouchEnd(event);
+	}
+}
+
 /**
- * @fileoverview Main interface to the graphics and rendering subsystem
+ * @fileoverview Picker component - add one to get picking support on your object
  * 
  * @author Tony Parisi
  */
-goog.provide('Vizi.Graphics');
 
-Vizi.Graphics = function()
-{
-	// Freak out if somebody tries to make 2
-    if (Vizi.Graphics.instance)
-    {
-        throw new Error('Graphics singleton already exists')
-    }
+goog.provide('glam.ViewPicker');
+goog.require('glam.Component');
+
+glam.ViewPicker = function(param) {
+	param = param || {};
 	
-	Vizi.Graphics.instance = this;
+    glam.Component.call(this, param);
+
+    this.enabled = (param.enabled !== undefined) ? param.enabled : true;
+
+	this.position = new THREE.Vector3();
+	this.mouse = new THREE.Vector3(0,0, 1);
+	this.unprojectedMouse = new THREE.Vector3();
+
+	this.raycaster = new THREE.Raycaster();
+	this.projector = new THREE.Projector();
+
+	this.over = false;
 }
+
+goog.inherits(glam.ViewPicker, glam.Component);
+
+glam.ViewPicker.prototype._componentCategory = "pickers";
+
+glam.ViewPicker.prototype.realize = function() {
+	glam.Component.prototype.realize.call(this);
+}
+
+glam.ViewPicker.prototype.update = function() {
+
+	this.unprojectMouse();
+	var intersected = this.checkForIntersections(this.unprojectedMouse);
+
+	if (intersected != this.over) {
+		this.over = intersected;
+		if (this.over) {
+			this.onViewOver();
+		}
+		else {
+			this.onViewOut();
+		}
+	}
+}
+
+glam.ViewPicker.prototype.unprojectMouse = function() {
+
+	this.unprojectedMouse.copy(this.mouse);
+	this.projector.unprojectVector(this.unprojectedMouse, glam.Graphics.instance.camera);
+}
+
+glam.ViewPicker.prototype.checkForIntersections = function(position) {
+
+	var origin = position;
+	var direction = origin.clone()
+	var pos = new THREE.Vector3();
+	pos.applyMatrix4(glam.Graphics.instance.camera.matrixWorld);
+	direction.sub(pos);
+	direction.normalize();
+
+	this.raycaster.set(pos, direction);
+	this.raycaster.near = glam.Graphics.instance.camera.near;
+	this.raycaster.far = glam.Graphics.instance.camera.far;
+
+	var intersected = this.raycaster.intersectObjects(this._object.transform.object.children);
+
+	return (intersected.length > 0);
+}
+
+glam.ViewPicker.prototype.onViewOver = function() {
+    this.dispatchEvent("viewover", { type : "viewover" });
+}
+
+glam.ViewPicker.prototype.onViewOut = function() {
+    this.dispatchEvent("viewout", { type : "viewout" });
+}
+
+/**
+ * @fileoverview class list - emulate DOM classList property for glam
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.DOMClassList');
+
+glam.DOMClassList = function(docelt) {
+	this.docelt = docelt;
+	Array.call(this);
+}
+
+glam.DOMClassList.prototype = new Array;
+
+glam.DOMClassList.prototype.item = function(i) {
+	return this[i];
+}
+
+glam.DOMClassList.prototype.add = function(item) {
+	return this.push(item);
+}
+
+glam.DOMClassList.prototype.remove = function(item) {
+	var i = this.indexOf(item);
+	if (i != -1) {
+		this.splice(i, 1)
+	}
+}
+
+goog.provide('glam.ParticleEmitter');
+goog.require('glam.Component');
+
+glam.ParticleEmitter = function(param) {
+	this.param = param || {};
+	
+	glam.Component.call(this, param);
+
+	var size = this.param.size || glam.ParticleEmitter.DEFAULT_SIZE;
+	var sizeEnd = this.param.sizeEnd || glam.ParticleEmitter.DEFAULT_SIZE_END;
+	var colorStart = this.param.colorStart || glam.ParticleEmitter.DEFAULT_COLOR_START;
+	var colorEnd = this.param.colorEnd || glam.ParticleEmitter.DEFAULT_COLOR_END;
+	var particlesPerSecond = this.param.particlesPerSecond || glam.ParticleEmitter.DEFAULT_PARTICLES_PER_SECOND;
+	var opacityStart = this.param.opacityStart || glam.ParticleEmitter.DEFAULT_OPACITY_START;
+	var opacityMiddle = this.param.opacityMiddle || glam.ParticleEmitter.DEFAULT_OPACITY_MIDDLE;
+	var opacityEnd = this.param.opacityEnd || glam.ParticleEmitter.DEFAULT_OPACITY_END;
+	var velocity = this.param.velocity || glam.ParticleEmitter.DEFAULT_VELOCITY;
+	var acceleration = this.param.acceleration || glam.ParticleEmitter.DEFAULT_ACCELERATION;
+	var positionSpread = this.param.positionSpread || glam.ParticleEmitter.DEFAULT_POSITION_SPREAD;
+	var accelerationSpread = this.param.accelerationSpread || glam.ParticleEmitter.DEFAULT_ACCELERATION_SPREAD;
+	var blending = this.param.blending || glam.ParticleEmitter.DEFAULT_BLENDING;
+
+	this._active = false;
+
+	this.object = new ShaderParticleEmitter({
+		size: size,
+        sizeEnd: sizeEnd,
+        colorStart: colorStart,
+        colorEnd: colorEnd,
+        particlesPerSecond: particlesPerSecond,
+        opacityStart: opacityStart,
+        opacityMiddle: opacityMiddle,
+        opacityEnd: opacityEnd,
+        velocity: velocity,
+        acceleration: acceleration,
+        positionSpread: positionSpread,
+        accelerationSpread: accelerationSpread,
+        blending: blending,
+      });
+	
+    Object.defineProperties(this, {
+        active: {
+	        get: function() {
+	            return this._active;
+	        },
+	        set: function(v) {
+	        	this.setActive(v);
+	        }
+    	},
+    });
+
+}
+
+goog.inherits(glam.ParticleEmitter, glam.Component);
+
+glam.ParticleEmitter.prototype.realize = function() {
+
+}
+
+glam.ParticleEmitter.prototype.update = function() {
+
+}
+
+glam.ParticleEmitter.prototype.setActive = function(active) {
+
+    this._active = active;
+    
+    if (this._active) {
+    	this.object.enable();
+    }
+    else {
+    	this.object.disable();
+    }
+}
+
+glam.ParticleEmitter.DEFAULT_SIZE = 1;
+glam.ParticleEmitter.DEFAULT_SIZE_END = 1;
+glam.ParticleEmitter.DEFAULT_COLOR_START = new THREE.Color;
+glam.ParticleEmitter.DEFAULT_COLOR_END = new THREE.Color;
+glam.ParticleEmitter.DEFAULT_PARTICLES_PER_SECOND = 10;
+glam.ParticleEmitter.DEFAULT_OPACITY_START = 0.1;
+glam.ParticleEmitter.DEFAULT_OPACITY_MIDDLE = 0.5;
+glam.ParticleEmitter.DEFAULT_OPACITY_END = 0.0;
+glam.ParticleEmitter.DEFAULT_VELOCITY = new THREE.Vector3(0, 10, 0);
+glam.ParticleEmitter.DEFAULT_ACCELERATION = new THREE.Vector3(0, 1, 0);
+glam.ParticleEmitter.DEFAULT_POSITION_SPREAD = new THREE.Vector3(0, 0, 0);
+glam.ParticleEmitter.DEFAULT_ACCELERATION_SPREAD = new THREE.Vector3(0, 1, 0);
+glam.ParticleEmitter.DEFAULT_BLENDING = THREE.NoBlending;
+
+
+goog.provide('glam.ParticleSystemScript');
+goog.require('glam.Script');
+goog.require('glam.ParticleEmitter');
+
+glam.ParticleSystem = function(param) {
+
+	param = param || {};
+	
+	var obj = new glam.Object;
+
+	var texture = param.texture || null;
+	var maxAge = param.maxAge || glam.ParticleSystemScript.DEFAULT_MAX_AGE;
+
+	var visual = null;
+	if (param.geometry) {
+		
+		var color = (param.color !== undefined) ? param.color : glam.ParticleSystem.DEFAULT_COLOR;
+		var material = new THREE.PointCloudMaterial({color:color, size:param.size, map:param.map,
+			transparent: (param.map !== null), 
+		    depthWrite: false,
+			vertexColors: (param.geometry.colors.length > 0)});
+		var ps = new THREE.PointCloud(param.geometry, material);
+		ps.sortParticles = true;
+
+		if (param.map)
+			ps.sortParticles = true;
+		
+	    visual = new glam.Visual({object:ps});
+	}
+	else {
+		
+		var particleGroup = new ShaderParticleGroup({
+	        texture: texture,
+	        maxAge: maxAge,
+	      });
+		    
+	    visual = new glam.Visual({object:particleGroup.mesh});
+	}
+	
+    obj.addComponent(visual);
+    
+	param.particleGroup = particleGroup;
+	
+	var pScript = new glam.ParticleSystemScript(param);
+	obj.addComponent(pScript);
+	
+	return obj;
+}
+
+
+glam.ParticleSystemScript = function(param) {
+	glam.Script.call(this, param);
+
+	this.particleGroup = param.particleGroup;
+	
+	this._active = true;
+	
+    Object.defineProperties(this, {
+        active: {
+	        get: function() {
+	            return this._active;
+	        },
+	        set: function(v) {
+	        	this.setActive(v);
+	        }
+    	},
+    });
+
+}
+
+goog.inherits(glam.ParticleSystemScript, glam.Script);
+
+glam.ParticleSystemScript.prototype.realize = function()
+{
+    this.initEmitters();
+
+}
+
+glam.ParticleSystemScript.prototype.initEmitters = function() {
+	
+	var emitters = this._object.getComponents(glam.ParticleEmitter);
+	
+	var i = 0, len = emitters.length;
+	
+    for (i = 0; i < len; i++) {
+    	var emitter = emitters[i];
+    	this.particleGroup.addEmitter(emitter.object);
+    	emitter.active = this._active;
+    }
+    
+    this.emitters = emitters;
+}
+
+glam.ParticleSystemScript.prototype.setActive = function(active) {
+
+	var emitters = this.emitters;
+	if (!emitters)
+		return;
+	
+	var i = 0, len = emitters.length;
+	
+    for (i = 0; i < len; i++) {
+    	var emitter = emitters[i];
+    	emitter.active = active;
+    }
+
+    this._active = active;
+}
+
+glam.ParticleSystemScript.prototype.update = function() {
+	if (this.particleGroup) {
+		this.particleGroup.tick();
+	}
+}
+
+glam.ParticleSystem.DEFAULT_COLOR = 0xffffff;
+glam.ParticleSystemScript.DEFAULT_MAX_AGE = 1;
+
+/**
+ * @fileoverview ScaleBehavior - simple scale up/down over time
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.ScaleBehavior');
+goog.require('glam.Behavior');
+
+glam.ScaleBehavior = function(param) {
+	param = param || {};
+	this.duration = (param.duration !== undefined) ? param.duration : 1;
+	this.startScale = (param.startScale !== undefined) ? param.startScale.clone() : 
+		new THREE.Vector3(1, 1, 1);
+	this.endScale = (param.endScale !== undefined) ? param.endScale.clone() : 
+		new THREE.Vector3(2, 2, 2);
+	this.tween = null;
+    glam.Behavior.call(this, param);
+}
+
+goog.inherits(glam.ScaleBehavior, glam.Behavior);
+
+glam.ScaleBehavior.prototype.start = function()
+{
+	if (this.running)
+		return;
+
+	this.scale = this.startScale.clone();
+	this.originalScale = this._object.transform.scale.clone();
+	this.tween = new TWEEN.Tween(this.scale).to(this.endScale, this.duration * 1000)
+	.easing(TWEEN.Easing.Quadratic.InOut)
+	.repeat(0)
+	.start();
+	
+	glam.Behavior.prototype.start.call(this);
+}
+
+glam.ScaleBehavior.prototype.evaluate = function(t)
+{
+	if (t >= this.duration)
+	{
+		this.stop();
+		if (this.loop) {
+			this.start();
+		}
+		else {
+			this.dispatchEvent("complete");
+		}
+	}
+	
+	var sx = this.originalScale.x * this.scale.x;
+	var sy = this.originalScale.y * this.scale.y;
+	var sz = this.originalScale.z * this.scale.z;
+	
+	this._object.transform.scale.set(sx, sy, sz);
+}
+
+
+glam.ScaleBehavior.prototype.stop = function()
+{
+	if (this.tween)
+		this.tween.stop();
+	
+	glam.Behavior.prototype.stop.call(this);
+}/**
+ *
+ */
+goog.require('glam.Service');
+goog.provide('glam.AnimationService');
+
+/**
+ * The AnimationService.
+ *
+ * @extends {glam.Service}
+ */
+glam.AnimationService = function() {};
+
+goog.inherits(glam.AnimationService, glam.Service);
+
+//---------------------------------------------------------------------
+// Initialization/Termination
+//---------------------------------------------------------------------
+
+/**
+ * Initializes the events system.
+ */
+glam.AnimationService.prototype.initialize = function(param) {};
+
+/**
+ * Terminates the events world.
+ */
+glam.AnimationService.prototype.terminate = function() {};
+
+
+/**
+ * Updates the AnimationService.
+ */
+glam.AnimationService.prototype.update = function()
+{
+	if (window.TWEEN)
+		THREE.glTFAnimator.update();
+}
+/**
+ * @fileoverview material parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.DOMMaterial');
+
+glam.DOMMaterial.create = function(style, createCB, objtype) {
+	var material = null;
+	
+	if (style) {
+		var param = glam.DOMMaterial.parseStyle(style);
+		if (style.shader) {
+			switch (style.shader.toLowerCase()) {
+				case "phong" :
+				case "blinn" :
+					material = new THREE.MeshPhongMaterial(param);
+					break;
+				case "lambert" :
+					material = new THREE.MeshLambertMaterial(param);
+					break;
+				case "line" :
+					material = new THREE.LineBasicMaterial(param);
+					break;
+				case "basic" :
+				default :
+					material = new THREE.MeshBasicMaterial(param);
+					break;
+			}
+		}
+		else if (style["vertex-shader"] && style["fragment-shader"] && style["shader-uniforms"]) {
+			material = glam.DOMMaterial.createShaderMaterial(style, param, createCB);
+		}
+		else if (objtype == "line") {
+			if (param.dashSize !== undefined  || param.gapSize !== undefined) {
+				material = new THREE.LineDashedMaterial(param);
+			}
+			else {
+				material = new THREE.LineBasicMaterial(param);
+			}
+		}
+		else {
+			material = new THREE.MeshBasicMaterial(param);
+		}
+	}
+	else {
+		material = new THREE.MeshBasicMaterial();
+	}
+	
+	return material;
+}
+
+glam.DOMMaterial.parseStyle = function(style) {
+	var image = "";
+	if (style.image) {
+		image = glam.DOMMaterial.parseUrl(style.image);
+	}
+
+	var normalMap = "";
+	if (style["normal-image"]) {
+		normalMap = glam.DOMMaterial.parseUrl(style["normal-image"]);
+	}
+
+	var bumpMap = "";
+	if (style["bump-image"]) {
+		bumpMap = glam.DOMMaterial.parseUrl(style["bump-image"]);
+	}
+
+	var specularMap = "";
+	if (style["specular-image"]) {
+		specularMap = glam.DOMMaterial.parseUrl(style["specular-image"]);
+	}
+
+	var reflectivity;
+	if (style.reflectivity)
+		reflectivity = parseFloat(style.reflectivity);
+	
+	var refractionRatio;
+	if (style.refractionRatio)
+		refractionRatio = parseFloat(style.refractionRatio);
+	
+	var envMap = glam.DOMMaterial.tryParseEnvMap(style);
+	
+	var color;
+	var diffuse;
+	var specular;
+	var ambient;
+	var css = "";
+
+	if (css = style["color"]) {
+		color = new THREE.Color().setStyle(css).getHex();
+	}
+	if (css = style["diffuse-color"]) {
+		diffuse = new THREE.Color().setStyle(css).getHex();
+	}
+	if (css = style["specular-color"]) {
+		specular = new THREE.Color().setStyle(css).getHex();
+	}
+	if (css = style["ambient-color"]) {
+		ambient = new THREE.Color().setStyle(css).getHex();
+	}
+	
+	var opacity;
+	if (style.opacity)
+		opacity = parseFloat(style.opacity);
+
+	var side = THREE.FrontSide;
+	if (style["backface-visibility"]) {
+		switch (style["backface-visibility"].toLowerCase()) {
+			case "visible" :
+				side = THREE.DoubleSide;
+				break;
+			case "hidden" :
+				side = THREE.FrontSide;
+				break;
+		}
+	}
+	
+	var wireframe;
+	if (style.hasOwnProperty("render-mode"))
+		wireframe = (style["render-mode"] == "wireframe");
+	
+	var linewidth;
+	if (style["line-width"]) {
+		linewidth = parseInt(style["line-width"]);
+	}
+	
+	var dashSize;
+	if (style["dash-size"]) {
+		dashSize = parseInt(style["dash-size"]);
+	}
+
+	var gapSize;
+	if (style["gap-size"]) {
+		gapSize = parseInt(style["gap-size"]);
+	}
+	
+	var param = {
+	};
+	
+	if (image)
+		param.map = THREE.ImageUtils.loadTexture(image);
+	if (envMap)
+		param.envMap = envMap;
+	if (normalMap)
+		param.normalMap = THREE.ImageUtils.loadTexture(normalMap);
+	if (bumpMap)
+		param.bumpMap = THREE.ImageUtils.loadTexture(bumpMap);
+	if (specularMap)
+		param.specularMap = THREE.ImageUtils.loadTexture(specularMap);
+	if (color !== undefined)
+		param.color = color;
+	if (diffuse !== undefined)
+		param.color = diffuse;
+	if (specular !== undefined)
+		param.specular = specular;
+	if (ambient !== undefined)
+		param.ambient = ambient;
+	if (opacity !== undefined) {
+		param.opacity = opacity;
+		param.transparent = opacity < 1;
+	}
+	if (wireframe !== undefined) {
+		param.wireframe = wireframe;
+	}
+	if (linewidth !== undefined) {
+		param.linewidth = linewidth;
+	}
+	if (dashSize !== undefined) {
+		param.dashSize = dashSize;
+	}
+	if (gapSize !== undefined) {
+		param.gapSize = gapSize;
+	}
+	if (reflectivity !== undefined)
+		param.reflectivity = reflectivity;
+	if (refractionRatio !== undefined)
+		param.refractionRatio = refractionRatio;
+
+	param.side = side;
+	
+	return param;
+}
+
+glam.DOMMaterial.parseUrl = function(image) {
+	var regExp = /\(([^)]+)\)/;
+	var matches = regExp.exec(image);
+	image = matches[1];
+	return image;
+}
+
+glam.DOMMaterial.tryParseEnvMap = function(style) {
+	var urls = [];
+	
+	if (style["cube-image-right"])
+		urls.push(glam.DOMMaterial.parseUrl(style["cube-image-right"]));
+	if (style["cube-image-left"])
+		urls.push(glam.DOMMaterial.parseUrl(style["cube-image-left"]));
+	if (style["cube-image-top"])
+		urls.push(glam.DOMMaterial.parseUrl(style["cube-image-top"]));
+	if (style["cube-image-bottom"])
+		urls.push(glam.DOMMaterial.parseUrl(style["cube-image-bottom"]));
+	if (style["cube-image-front"])
+		urls.push(glam.DOMMaterial.parseUrl(style["cube-image-front"]));
+	if (style["cube-image-back"])
+		urls.push(glam.DOMMaterial.parseUrl(style["cube-image-back"]));
+	
+	if (urls.length == 6) {
+		var cubeTexture = THREE.ImageUtils.loadTextureCube( urls );
+		return cubeTexture;
+	}
+	
+	if (style["sphere-image"])
+		return THREE.ImageUtils.loadTexture(glam.DOMMaterial.parseUrl(style["sphere-image"]), THREE.SphericalRefractionMapping);
+	
+	return null;
+}
+
+glam.DOMMaterial.createShaderMaterial = function(style, param, createCB) {
+	
+	function done() {
+		var material = new THREE.ShaderMaterial({
+			vertexShader : vstext,
+			fragmentShader : fstext,
+			uniforms: uniforms,
+		});
+		
+		glam.DOMMaterial.saveShaderMaterial(vsurl, fsurl, material);
+		glam.DOMMaterial.callShaderMaterialCallbacks(vsurl, fsurl);
+	}
+	
+	var vs = style["vertex-shader"];
+	var fs = style["fragment-shader"];
+	var uniforms = glam.DOMMaterial.parseUniforms(style["shader-uniforms"], param);
+
+	var vsurl = glam.DOMMaterial.parseUrl(vs);
+	var fsurl = glam.DOMMaterial.parseUrl(fs);
+
+	if (!vsurl || !fsurl) {
+		var vselt = document.getElementById(vs);
+		var vstext = vselt.textContent;
+		var fselt = document.getElementById(fs);
+		var fstext = fselt.textContent;
+		
+		if (vstext && fstext) {
+			return new THREE.ShaderMaterial({
+				vertexShader : vstext,
+				fragmentShader : fstext,
+				uniforms: uniforms,
+			});
+		}
+		else {
+			return null;
+		}
+	}	
+	
+	var material = glam.DOMMaterial.getShaderMaterial(vsurl, fsurl);
+	if (material)
+		return material;
+	
+	glam.DOMMaterial.addShaderMaterialCallback(vsurl, fsurl, createCB);
+	
+	if (glam.DOMMaterial.getShaderMaterialLoading(vsurl, fsurl))
+		return;
+	
+	glam.DOMMaterial.setShaderMaterialLoading(vsurl, fsurl);
+	
+	var vstext = "";
+	var fstext = "";
+	
+	$.ajax({
+	      type: 'GET',
+	      url: vsurl,
+	      dataType: "text",
+	      success: function(result) { vstext = result; if (fstext) done(); },
+	});	
+	
+	
+	$.ajax({
+	      type: 'GET',
+	      url: fsurl,
+	      dataType: "text",
+	      success: function(result) { fstext = result; if (vstext) done(); },
+	});	
+}
+
+glam.DOMMaterial.parseUniforms = function(uniformsText, param) {
+	
+	var uniforms = {
+	};
+	
+	var tokens = uniformsText.split(" ");
+
+	var i, len = tokens.length / 3;
+	for (i = 0; i < len; i++) {
+		var name = tokens[i * 3];
+		var type = tokens[i * 3 + 1];
+		var value = tokens[i * 3 + 2];
+		
+		if (type == "f")
+			value = parseFloat(value);
+		if (type == "c") {
+			var c = new THREE.Color();
+			c.setStyle(value);
+			value = c;
+		}
+		else if (type == "t") {
+			value = value.toLowerCase();
+			if (value == "cube") {
+				value = param.envMap;
+			}
+			else {
+				var image = glam.DOMMaterial.parseUrl(value);
+				value = THREE.ImageUtils.loadTexture(image);
+				value.wrapS = value.wrapT = THREE.Repeat;
+			}
+		}
+		
+		var uniform =  {
+			type : type,
+			value : value,
+		};
+		
+		uniforms[name] = uniform;
+	}
+		
+	return uniforms;
+}
+
+glam.DOMMaterial.shaderMaterials = {};
+
+glam.DOMMaterial.saveShaderMaterial = function(vsurl, fsurl, material) {
+	var key = vsurl + fsurl;
+	var entry = glam.DOMMaterial.shaderMaterials[key];
+	entry.material = material;
+	entry.loading = false;
+}
+
+glam.DOMMaterial.addShaderMaterialCallback = function(vsurl, fsurl, cb) {
+	var key = vsurl + fsurl;
+	
+	var entry = glam.DOMMaterial.shaderMaterials[key];
+	if (!entry) {
+		glam.DOMMaterial.shaderMaterials[key] = {
+			material : null,
+			loading : false,
+			callbacks : [],
+		};
+	}
+	
+	glam.DOMMaterial.shaderMaterials[key].callbacks.push(cb);
+}
+
+glam.DOMMaterial.callShaderMaterialCallbacks = function(vsurl, fsurl) {
+	var key = vsurl + fsurl;
+	
+	var entry = glam.DOMMaterial.shaderMaterials[key];
+	if (entry && entry.material) {
+		for (var cb in entry.callbacks) {
+			entry.callbacks[cb](entry.material);
+		}
+	}
+}
+
+glam.DOMMaterial.getShaderMaterial = function(vsurl, fsurl) {
+	
+	var key = vsurl + fsurl;
+	var entry = glam.DOMMaterial.shaderMaterials[key];
+	if (entry) {
+		return entry.material;
+	}
+	else {
+		return null;
+	}
+}
+
+glam.DOMMaterial.setShaderMaterialLoading = function(vsurl, fsurl) {
+	
+	var key = vsurl + fsurl;
+	var entry = glam.DOMMaterial.shaderMaterials[key];
+	if (entry) {
+		entry.loading = true;
+	}
+}
+
+glam.DOMMaterial.getShaderMaterialLoading = function(vsurl, fsurl) {
+	
+	var key = vsurl + fsurl;
+	var entry = glam.DOMMaterial.shaderMaterials[key];
+	return (entry && entry.loading);
+}
+
+glam.DOMMaterial.addHandlers = function(docelt, style, obj) {
+
+	docelt.glam.setAttributeHandlers.push(function(attr, val) {
+		glam.DOMMaterial.onSetAttribute(obj, docelt, attr, val);
+	});
+	
+	style.setPropertyHandlers.push(function(attr, val) {
+		glam.DOMMaterial.onSetProperty(obj, docelt, attr, val);
+	});
+}
+
+glam.DOMMaterial.onSetAttribute = function(obj, docelt, attr, val) {
+
+	var material = obj.visuals[0].material;
+	switch (attr) {
+		case "color" :
+		case "diffuse-color" :
+		case "diffuseColor" :
+			material.color.setStyle(val);
+			break;
+	}
+}
+
+glam.DOMMaterial.onSetProperty = function(obj, docelt, attr, val) {
+
+	var material = obj.visuals[0].material;
+	switch (attr) {
+		case "color" :
+		case "diffuse-color" :
+		case "diffuseColor" :
+			material.color.setStyle(val);
+			break;
+	}
+}
+/**
+ * @fileoverview mesh parser/implementation. currently only supports triangle sets
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.MeshElement');
+
+glam.MeshElement.VERTEX_NORMALS = false;
+glam.MeshElement.VERTEX_COLORS = false;
+
+glam.MeshElement.create = function(docelt, style) {
+	
+	return glam.VisualElement.create(docelt, style, glam.MeshElement);
+}
+
+glam.MeshElement.getAttributes = function(docelt, style, param) {
+	
+	var vertexNormals = docelt.getAttribute('vertexNormals');
+	if (vertexNormals !== null) {
+		vertexNormals = true;
+	}
+	else {
+		vertexNormals = glam.MeshElement.VERTEX_NORMALS;
+	}
+	
+	var vertexColors = docelt.getAttribute('vertexColors');
+	if (vertexColors !== null) {
+		vertexColors = true;
+	}
+	else {
+		vertexColors = glam.MeshElement.VERTEX_COLORS;
+	}
+	
+	if (style) {
+		if (style.vertexNormals)
+			vertexNormals = style.vertexNormals;
+		if (style.vertexColors)
+			vertexColors = style.vertexColors;
+	}
+	
+	param.vertexNormals = vertexNormals;
+	param.vertexColors = vertexColors;
+}
+
+glam.MeshElement.createVisual = function(docelt, material, param) {
+
+	var geometry = new THREE.Geometry;
+	
+	glam.MeshElement.parse(docelt, geometry, material, param);
+	
+	var mesh = new THREE.Mesh(geometry, material);
+	var visual = new glam.Visual(
+			{
+				object : mesh,
+			});
+	
+	return visual;
+}
+
+glam.MeshElement.parse = function(docelt, geometry, material, param) {
+
+	var verts = docelt.getElementsByTagName('vertices');
+	if (verts) {
+		verts = verts[0];
+		if (verts) {
+			glam.DOMTypes.parseVector3Array(verts, geometry.vertices);
+		}
+	}
+	
+	var uvs = docelt.getElementsByTagName('uvs');
+	if (uvs) {
+		uvs = uvs[0];
+		if (uvs) {
+			glam.DOMTypes.parseUVArray(uvs, geometry.faceVertexUvs[0]);
+		}
+	}
+
+	var faces = docelt.getElementsByTagName('faces');
+	if (faces) {
+		faces = faces[0];
+		if (faces) {
+			glam.DOMTypes.parseFaceArray(faces, geometry.faces);
+		}
+	}
+
+	var vertexNormals = [];
+	var normals = docelt.getElementsByTagName('normals');
+	if (normals) {
+		normals = normals[0];
+		if (normals) {
+			glam.DOMTypes.parseVector3Array(normals, vertexNormals);
+			
+			if (param.vertexNormals) {
+				
+				var i, len = geometry.faces.length;
+	
+				for (i = 0; i < len; i++) {
+					
+					var face = geometry.faces[i];
+					if (face) {
+						var norm = vertexNormals[face.a].normalize().clone();
+						face.vertexNormals[0] = norm;
+						var norm = vertexNormals[face.b].normalize().clone();
+						face.vertexNormals[1] = norm;
+						var norm = vertexNormals[face.c].normalize().clone();
+						face.vertexNormals[2] = norm;
+					}
+				}
+			}
+			else {
+				
+				var i, len = geometry.faces.length;
+	
+				for (i = 0; i < len; i++) {
+					
+					var face = geometry.faces[i];
+					if (face) {
+						var norm = vertexNormals[i].normalize();
+						face.normal.copy(norm);
+					}
+				}
+			}
+		}
+	}
+	
+	var vertexColors = [];
+	var colors = docelt.getElementsByTagName('colors');
+	if (colors) {
+		colors = colors[0];
+		if (colors) {
+			glam.DOMTypes.parseColor3Array(colors, vertexColors);
+	
+			if (param.vertexColors) {
+	
+				var i, len = geometry.faces.length;
+	
+				for (i = 0; i < len; i++) {
+					
+					var face = geometry.faces[i];
+					if (face) {
+						var c = vertexColors[face.a];
+						if (c) {
+							face.vertexColors[0] = c.clone();
+						}
+						var c = vertexColors[face.b];
+						if (c) {
+							face.vertexColors[1] = c.clone();
+						}
+						var c = vertexColors[face.c];
+						if (c) {
+							face.vertexColors[2] = c.clone();
+						}
+					}
+				}
+	
+				material.vertexColors = THREE.VertexColors;
+			}
+			else {
+				
+				var i, len = geometry.faces.length;
+	
+				for (i = 0; i < len; i++) {
+					
+					var face = geometry.faces[i];
+					if (face) {
+						var c = vertexColors[i];
+						if (c) {
+							face.color.copy(c);
+						}
+					}
+				}
+				
+				material.vertexColors = THREE.FaceColors; 
+			}
+		
+			geometry.colorsNeedUpdate = true;
+			geometry.buffersNeedUpdate = true;
+		}
+	}
+}
+
+/**
+ *
+ */
+goog.provide('glam.Gamepad');
+goog.require('glam.EventDispatcher');
+
+glam.Gamepad = function()
+{
+    glam.EventDispatcher.call(this);
+
+    // N.B.: freak out if somebody tries to make 2
+	// throw (...)
+
+    this.controllers = {
+    };
+    
+    this.values = {
+    };
+    
+	glam.Gamepad.instance = this;
+}       
+
+goog.inherits(glam.Gamepad, glam.EventDispatcher);
+
+glam.Gamepad.prototype.update = function() {
+
+	this.scanGamepads();
+
+	var buttonsChangedEvent = {
+			changedButtons: [],
+	};
+
+	var axesChangedEvent = {
+			changedAxes: [],
+	};
+	
+	for (var c in this.controllers) {
+	    var controller = this.controllers[c];
+	    this.testValues(controller, buttonsChangedEvent, axesChangedEvent);
+	    this.saveValues(controller);
+	}
+	
+	if (buttonsChangedEvent.changedButtons.length) {
+		this.dispatchEvent("buttonsChanged", buttonsChangedEvent);
+	}
+
+	if (axesChangedEvent.changedAxes.length) {
+		this.dispatchEvent("axesChanged", axesChangedEvent);
+	}
+}
+
+glam.Gamepad.prototype.testValues = function(gamepad, buttonsChangedEvent, axesChangedEvent) {
+	var values = this.values[gamepad.index];
+	if (values) {
+	    for (var i = 0; i < gamepad.buttons.length; i++) {
 	        
-Vizi.Graphics.instance = null;
+	        var val = gamepad.buttons[i];
+	        var pressed = val == 1.0;
+	        
+	        if (typeof(val) == "object") {
+	          pressed = val.pressed;
+	          val = val.value;
+	        }
+
+	        if (pressed != values.buttons[i]) {
+//	        	console.log("Pressed: ", i);
+	        	buttonsChangedEvent.changedButtons.push({
+	        		gamepad : gamepad.index,
+	        		button : i,
+	        		pressed : pressed,
+	        	});
+	        }	        	
+	      }
+
+	    for (var i = 0; i < gamepad.axes.length; i++) {
+	        var val = gamepad.axes[i];
+	        if (val != values.axes[i]) {
+//	        	console.log("Axis: ", i, val);
+	        	axesChangedEvent.changedAxes.push({
+	        		gamepad : gamepad.index,
+	        		axis : i,
+	        		value : val,
+	        	});
+	        }
+	      }		
+	}
+}
+
+glam.Gamepad.prototype.saveValues = function(gamepad) {
+	var values = this.values[gamepad.index];
+	if (values) {
+	    for (var i = 0; i < gamepad.buttons.length; i++) {
+	        
+	        var val = gamepad.buttons[i];
+	        var pressed = val == 1.0;
+	        
+	        if (typeof(val) == "object") {
+	          pressed = val.pressed;
+	          val = val.value;
+	        }
+
+	        values.buttons[i] = pressed;
+	      }
+
+	    for (var i = 0; i < gamepad.axes.length; i++) {
+	        var val = gamepad.axes[i];
+	        values.axes[i] = val;
+	      }		
+	}
+}
+
+glam.Gamepad.prototype.addGamepad = function(gamepad) {
+	  this.controllers[gamepad.index] = gamepad;
+	  this.values[gamepad.index] = {
+			  buttons : [],
+			  axes : [],
+	  };
+	  
+	  this.saveValues(gamepad);
+	  console.log("Gamepad added! ", gamepad.id);
+}
+
+glam.Gamepad.prototype.scanGamepads = function() {
+  var gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : []);
+  for (var i = 0; i < gamepads.length; i++) {
+    if (gamepads[i]) {
+      if (!(gamepads[i].index in this.controllers)) {
+    	  this.addGamepad(gamepads[i]);
+      } else {
+    	  this.controllers[gamepads[i].index] = gamepads[i];
+      }
+    }
+  }
+}
+
+glam.Gamepad.instance = null;
+
+/* input codes
+*/
+glam.Gamepad.BUTTON_A = glam.Gamepad.BUTTON_CROSS 		= 0;
+glam.Gamepad.BUTTON_B = glam.Gamepad.BUTTON_CIRCLE 		= 1;
+glam.Gamepad.BUTTON_X = glam.Gamepad.BUTTON_SQUARE 		= 2;
+glam.Gamepad.BUTTON_Y = glam.Gamepad.BUTTON_TRIANGLE 	= 3;
+glam.Gamepad.SHOULDER_LEFT 								= 4;
+glam.Gamepad.SHOULDER_RIGHT 							= 5;
+glam.Gamepad.TRIGGER_LEFT 								= 6;
+glam.Gamepad.TRIGGER_RIGHT 								= 7;
+glam.Gamepad.SELECT = glam.Gamepad.BACK 				= 8;
+glam.Gamepad.START 										= 9;
+glam.Gamepad.STICK_LEFT 								= 10;
+glam.Gamepad.STICK_RIGHT 								= 11;
+glam.Gamepad.DPAD_UP	 								= 12;
+glam.Gamepad.DPAD_DOWN	 								= 13;
+glam.Gamepad.DPAD_LEFT	 								= 14;
+glam.Gamepad.DPAD_RIGHT	 								= 15;
+glam.Gamepad.HOME = glam.Gamepad.MENU					= 16;
+glam.Gamepad.AXIS_LEFT_H								= 0;
+glam.Gamepad.AXIS_LEFT_V								= 1;
+glam.Gamepad.AXIS_RIGHT_H								= 2;
+glam.Gamepad.AXIS_RIGHT_V								= 3;
+/**
+ * @fileoverview glam document class
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.DOMDocument');
+
+glam.DOMDocument = {
+		
+	scenes : {},
+	
+	styles : [],
+
+	animations : {},
+	
+	addScene : function(script, scene)
+	{
+		glam.DOMDocument.scenes[script.id] = { parentElement : script.parentElement, scene : scene };
+	},
+
+	addStyle : function(declaration)
+	{
+		glam.DOMDocument.styles.push(declaration);
+	},
+	
+	addAnimation : function(id, animation)
+	{
+		glam.DOMDocument.animations[id] = animation;
+	},
+
+	parseDocument : function()
+	{
+		var dp = new DOMParser;
+
+		var i, len;
+		
+		var scripts = document.getElementsByTagName("script");
+		var len = scripts.length;
+		for (i = 0; i < len; i++)
+		{
+			if (scripts[i].type == "text/glam")
+			{
+				var scene = dp.parseFromString(scripts[i].textContent, "text/xml");
+				glam.DOMDocument.addScene(scripts[i], scene);
+			}
+		}
+		
+		var styles = document.head.getElementsByTagName("style");
+		var len = styles.length;
+		for (i = 0; i < len; i++)
+		{
+			{
+				$.parsecss(styles[i].childNodes[0].data,
+						function(css) {
+								glam.DOMDocument.addStyle(css);
+							}
+						);
+			}
+		}
+	},
+};
+/**
+ * @fileoverview animation parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.AnimationElement');
+
+glam.AnimationElement.DEFAULT_DURATION = "1s";
+glam.AnimationElement.DEFAULT_ITERATION_COUNT = "1";
+glam.AnimationElement.DEFAULT_TIMING_FUNCTION = "linear";
+glam.AnimationElement.DEFAULT_FRAME_TIME = "0%";
+glam.AnimationElement.DEFAULT_FRAME_PROPERTY = "transform";
+
+glam.AnimationElement.create = function(docelt) {
+
+	var id = docelt.id;
+	var duration = docelt.getAttribute('duration') || glam.AnimationElement.DEFAULT_DURATION;
+	var iterationCount = docelt.getAttribute('iteration-count') || glam.AnimationElement.DEFAULT_ITERATION_COUNT;
+	var timingFunction = docelt.getAttribute('timing-function') || glam.AnimationElement.DEFAULT_TIMING_FUNCTION;
+	
+	duration = glam.AnimationElement.parseTime(duration);
+	var easing = glam.AnimationElement.parseTimingFunction(timingFunction);
+	var loop = (iterationCount.toLowerCase() == "infinite") ? true : false;
+	
+	var i, 
+		children = docelt.childNodes, 
+		len = children.length,
+		frames = [];
+	
+	for (i = 0; i < len; i++) {
+		var childelt = children[i];
+		var tag = childelt.tagName;
+		if (tag)
+			tag = tag.toLowerCase();
+		
+		if (tag == "keyframe") {
+			var frame = glam.AnimationElement.parseFrame(childelt);
+			frames.push(frame);
+		}
+	}
+	
+	var anim = glam.AnimationElement.build(duration, loop, easing, frames);
+	
+	glam.DOM.addAnimation(id, anim);
+	glam.AnimationElement.callParseCallbacks(id, anim);
+}
+
+glam.AnimationElement.parseFrame = function(docelt) {
+
+	var time = docelt.getAttribute('time') || glam.AnimationElement.DEFAULT_FRAME_TIME;
+	var frametime = glam.AnimationElement.parseFrameTime(time);
+	var property = docelt.getAttribute('property') || glam.AnimationElement.DEFAULT_FRAME_PROPERTY;
+	var value = docelt.getAttribute('value') || "";
+	
+	if (property == "transform") {
+		var t = {};
+		glam.DOMTransform.parseTransform(value, t);
+
+		return {
+			time : frametime,
+			value : t,
+			type : "transform",
+		};
+	}
+	else if (property == "material") {
+
+		var s = glam.AnimationElement.parseMaterial(value);
+		var param = glam.DOMMaterial.parseStyle(s);
+
+		return {
+			time : frametime,
+			value : param,
+			type : "material",
+		};
+	}
+	
+}
+
+glam.AnimationElement.createFromStyle = function(docelt, style, obj) {
+	var animationSpec,
+		animationName,
+		duration,
+		timingFunction,
+		easing,
+		delayTime,
+		iterationCount,
+		loop;
+
+	animationName = style["animation-name"]
+	                          || style["-webkit-animation-name"]
+	 		                  || style["-moz-animation-name"];
+	
+	if (animationName) {
+		duration = style["animation-duration"]
+	            || style["-webkit-animation-duration"]
+	 		      || style["-moz-animation-duration"];
+
+		
+		timingFunction = style["animation-timing-function"]
+		                    || style["-webkit-animation-timing-function"]
+				 		      || style["-moz-animation-timing-function"];
+		
+		iterationCount = style["animation-iteration-count"]
+			                    || style["-webkit-animation-iteration-count"]
+					 		      || style["-moz-animation-iteration-count"];
+	}
+	else {
+		animationSpec = style["animation"]
+		                      || style["-webkit-animation"]
+		 		 		      || style["-moz-animation"];
+		
+		if (animationSpec) {
+			// name duration timing-function delay iteration-count direction
+			var split = animationSpec.split("\\s+");
+			animationName = split[0];
+			duration = split[1];
+			timingFunction = split[2];
+			delayTime = split[3];
+			iterationCount = split[4];
+			
+		}
+	}
+	
+    duration = duration || glam.AnimationElement.DEFAULT_DURATION;
+	duration = glam.AnimationElement.parseTime(duration);
+    timingFunction = timingFunction || glam.AnimationElement.DEFAULT_TIMING_FUNCTION;
+	easing = glam.AnimationElement.parseTimingFunction(timingFunction);
+    iterationCount = iterationCount || glam.AnimationElement.DEFAULT_ITERATION_COUNT;
+	loop = (iterationCount.toLowerCase() == "infinite") ? true : false;				
+	
+	if (animationName) {
+		var animation = glam.DOM.getStyle(animationName);
+		
+		var frames = [];
+		
+		for (var k in animation) {
+			var frametime;
+			if (k == 'from') {
+				frametime = 0; 
+			}
+			else if (k == 'to') {
+				frametime = 1;
+			}
+			else {
+				frametime = glam.AnimationElement.parseFrameTime(k);
+			}
+
+			var framevalue;
+			var framedata = animation[k];
+			for (var prop in framedata) {
+				var value = framedata[prop];
+				var type;
+				if (prop == "transform" ||
+						prop == "-webkit-transform" ||
+						prop == "-moz-transform") {
+					
+					type = "transform";
+					framevalue = {};
+					glam.DOMTransform.parseTransform(value, framevalue);
+				}
+				else if (prop == "opacity" || prop == "color") {
+					type = "material";
+					framevalue = glam.DOMMaterial.parseStyle(framedata);
+				}
+				
+				var frame = {
+						time : frametime,
+						value : framevalue,
+						type : type,
+					};
+				frames.push(frame);
+			}			
+		}
+		
+		var anim = glam.AnimationElement.build(duration, loop, easing, frames);
+		glam.AnimationElement.addAnimationToObject(anim, obj);
+	}
+	
+}
+
+glam.AnimationElement.build = function(duration, loop, easing, frames) {
+
+	var poskeys = [];
+	var posvalues = [];
+	var rotkeys = [];
+	var rotvalues = [];
+	var sclkeys = [];
+	var sclvalues = [];
+	var opakeys = [];
+	var opavalues = [];
+	var colorkeys = [];
+	var colorvalues = [];
+	
+	var i, len = frames.length;
+	
+	for (i = 0; i < len; i++) {
+		var frame = frames[i];
+		var val = frame.value;
+		if (frame.type == "transform") {
+			if ("x" in val || "y" in val || "z" in val) {
+				poskeys.push(frame.time);
+				var value = {
+				};
+				if ("x" in val) {
+					value.x = val.x;
+				}
+				if ("y" in val) {
+					value.y = val.y;
+				}
+				if ("z" in val) {
+					value.z = val.z;
+				}
+				posvalues.push(value);
+			}
+			if ("rx" in val || "ry" in val || "rz" in val) {
+				rotkeys.push(frame.time);
+				var value = {
+				};
+				if ("rx" in val) {
+					value.x = val.rx;
+				}
+				if ("ry" in val) {
+					value.y = val.ry;
+				}
+				if ("rz" in val) {
+					value.z = val.rz;
+				}
+				rotvalues.push(value);
+			}
+			if ("sx" in val || "sy" in val || "sz" in val) {
+				sclkeys.push(frame.time);
+				var value = {
+				};
+				if ("sx" in val) {
+					value.x = val.sx;
+				}
+				if ("sy" in val) {
+					value.y = val.sy;
+				}
+				if ("sz" in val) {
+					value.z = val.sz;
+				}
+				sclvalues.push(value);
+			}
+		}
+		else if (frame.type == "material") {
+			if ("opacity" in val) {
+				opakeys.push(frame.time);
+				opavalues.push( { opacity : parseFloat(val.opacity) });
+			}
+			if ("color" in val) {
+				colorkeys.push(frame.time);
+				var rgbColor = new THREE.Color(val.color);
+				colorvalues.push( { r : rgbColor.r, g: rgbColor.g, b: rgbColor.b });
+			}
+		}
+	}
+	
+	var anim = {
+		duration : duration,
+		loop : loop,
+		easing : easing,
+		poskeys : poskeys,
+		posvalues : posvalues,
+		rotkeys : rotkeys,
+		rotvalues : rotvalues,
+		sclkeys : sclkeys,
+		sclvalues : sclvalues,
+		opakeys : opakeys,
+		opavalues : opavalues,
+		colorkeys : colorkeys,
+		colorvalues : colorvalues,
+	};
+
+	return anim;
+}
+
+glam.AnimationElement.parseTime = function(time) {
+	var index = time.indexOf("ms");
+	if (index != -1)
+		return parseFloat(time.split("ms")[0]);
+	
+	var index = time.indexOf("s");
+	if (index != -1)
+		return parseFloat(time.split("s")[0]) * 1000;
+	
+}
+
+glam.AnimationElement.parseFrameTime = function(time) {
+	var index = time.indexOf("%");
+	if (index != -1)
+		return parseFloat(time.split("%")[0]) / 100;
+	else
+		return parseFloat(time);
+}
+
+glam.AnimationElement.parseTimingFunction = function(timingFunction) {
+	timingFunction = timingFunction.toLowerCase();
+	switch (timingFunction) {
+	
+		case "linear" :
+			return TWEEN.Easing.Linear.None;
+			break;
+		
+		case "ease-in-out" :
+		default :
+			return TWEEN.Easing.Quadratic.InOut;
+			break;
+		
+	}
+}
+
+glam.AnimationElement.parseMaterial = function(value) {
+
+	var s = {};
+	
+	var values = value.split(";");
+	var i, len = values.length;
+	for (i = 0; i < len; i++) {
+		var val = values[i];
+		if (val) {
+			var valsplit = val.split(":");
+			var valname = valsplit[0];
+			var valval = valsplit[1];
+			
+			s[valname] = valval;
+		}
+	}
+	
+	return s;
+}
+
+glam.AnimationElement.parse = function(docelt, style, obj) {
+	var animationId = docelt.getAttribute('animation');
+	if (animationId) {
+		var animation = glam.DOM.getAnimation(animationId);
+		if (animation) {
+			glam.AnimationElement.addAnimationToObject(animation, obj);
+		}
+		else {
+			glam.AnimationElement.addParseCallback(animationId, function(animation) {
+				glam.AnimationElement.addAnimationToObject(animation, obj);				
+			});
+		}
+	}
+	else {
+		glam.AnimationElement.createFromStyle(docelt, style, obj);
+	}
+}
+
+glam.AnimationElement.addAnimationToObject = function(animation, obj) {
+		
+	var interps = [];
+	if (animation.poskeys.length) {
+		interps.push({
+			keys : animation.poskeys,
+			values : animation.posvalues,
+			target : obj.transform.position,
+		});
+	}
+	if (animation.rotkeys.length) {
+		interps.push({
+			keys : animation.rotkeys,
+			values : animation.rotvalues,
+			target : obj.transform.rotation,
+		});
+	}
+	if (animation.sclkeys.length) {
+		interps.push({
+			keys : animation.sclkeys,
+			values : animation.sclvalues,
+			target : obj.transform.scale,
+		});
+	}
+	if (animation.opakeys.length) {
+		interps.push({
+			keys : animation.opakeys,
+			values : animation.opavalues,
+			target : obj.visuals[0].material,
+		});
+	}
+	if (animation.colorkeys.length) {
+		interps.push({
+			keys : animation.colorkeys,
+			values : animation.colorvalues,
+			target : obj.visuals[0].material.color,
+		});
+	}
+	var loop = animation.iterationCount > 1;
+	
+	if (interps.length) {
+		var kf = new glam.KeyFrameAnimator({ interps: interps, 
+			duration : animation.duration, 
+			loop : animation.loop, 
+			easing: animation.easing
+		});
+		obj.addComponent(kf);
+		
+		kf.start();
+	}
+}
+
+glam.AnimationElement.parseCallbacks = {};
+
+glam.AnimationElement.addParseCallback = function(id, cb) {
+	var cbs = glam.AnimationElement.parseCallbacks[id];
+	if (!cbs) {
+		cbs = { callbacks : [] };
+		glam.AnimationElement.parseCallbacks[id] = cbs;
+	}
+
+	cbs.callbacks.push(cb);
+	
+}
+
+glam.AnimationElement.callParseCallbacks = function(id, anim) {
+	var cbs = glam.AnimationElement.parseCallbacks[id];
+	if (cbs) {
+		var callbacks = cbs.callbacks;
+		var i, len = callbacks.length;
+		for (i = 0; i < len; i++) {
+			var cb = callbacks[i];
+			cb(anim);
+		}
+	}
+}
+/**
+ * @fileoverview transition parser/implementation - still WIP
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.TransitionElement');
+goog.require('glam.AnimationElement');
+
+glam.TransitionElement.DEFAULT_DURATION = glam.AnimationElement.DEFAULT_DURATION;
+glam.TransitionElement.DEFAULT_TIMING_FUNCTION =  glam.AnimationElement.DEFAULT_TIMING_FUNCTION;
+
+// transition:transform 2s, background-color 5s linear 2s;
+
+glam.TransitionElement.parse = function(docelt, style, obj) {
+
+	var transition = style.transition || "";
+	
+	var transitions = {
+	};
+	
+	var comps = transition.split(",");
+	var i, len = comps.length;
+	for (i = 0; i < len; i++) {
+		var comp = comps[i];
+		if (comp) {
+			var params = comp.split(" ");
+			if (params[0] == "")
+				params.shift();
+			var propname = params[0];
+			var duration = params[1];
+			var timingFunction = params[2] || glam.TransitionElement.DEFAULT_TIMING_FUNCTION;
+			var delay = params[3] || "";
+			
+			duration = glam.AnimationElement.parseTime(duration);
+			timingFunction = glam.AnimationElement.parseTimingFunction(timingFunction);
+			delay = glam.AnimationElement.parseTime(delay);
+			
+			transitions[propname] = {
+					duration : duration,
+					timingFunction : timingFunction,
+					delay : delay
+			};
+		}
+	}
+	
+}
+/**
+ * @fileoverview grouping element parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.GroupElement');
+
+glam.GroupElement.create = function(docelt, style) {
+
+	// Create the group
+	var group = new glam.Object;
+	
+	return group;
+}
+/**
+ * @fileoverview HighlightBehavior - simple angular rotation
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.HighlightBehavior');
+goog.require('glam.Behavior');
+
+glam.HighlightBehavior = function(param) {
+	param = param || {};
+	this.highlightColor = (param.highlightColor !== undefined) ? param.highlightColor : 0xffffff;
+	this.savedColors = [];
+    glam.Behavior.call(this, param);
+}
+
+goog.inherits(glam.HighlightBehavior, glam.Behavior);
+
+glam.HighlightBehavior.prototype.start = function()
+{
+	glam.Behavior.prototype.start.call(this);
+	
+	if (this._realized && this._object.visuals) {
+		var visuals = this._object.visuals;
+		var i, len = visuals.length;
+		for (i = 0; i < len; i++) {
+			this.savedColors.push(visuals[i].material.color.getHex());
+			visuals[i].material.color.setHex(this.highlightColor);
+		}	
+	}
+}
+
+glam.HighlightBehavior.prototype.evaluate = function(t)
+{
+}
+
+glam.HighlightBehavior.prototype.stop = function()
+{
+	glam.Behavior.prototype.stop.call(this);
+
+	if (this._realized && this._object.visuals)
+	{
+		var visuals = this._object.visuals;
+		var i, len = visuals.length;
+		for (i = 0; i < len; i++) {
+			visuals[i].material.color.setHex(this.savedColors[i]);
+		}	
+	}
+
+}
+
+// Alias a few functions - syntactic sugar
+glam.HighlightBehavior.prototype.on = glam.HighlightBehavior.prototype.start;
+glam.HighlightBehavior.prototype.off = glam.HighlightBehavior.prototype.stop;
 /**
  * @fileoverview MoveBehavior - simple angular rotation
  * 
  * @author Tony Parisi
  */
 
-goog.provide('Vizi.MoveBehavior');
-goog.require('Vizi.Behavior');
+goog.provide('glam.MoveBehavior');
+goog.require('glam.Behavior');
 
-Vizi.MoveBehavior = function(param) {
+glam.MoveBehavior = function(param) {
 	param = param || {};
 	this.duration = (param.duration !== undefined) ? param.duration : 1;
 	this.moveVector = (param.moveVector !== undefined) ? param.moveVector : new THREE.Vector3(0, 1, 0);
 	this.tween = null;
-    Vizi.Behavior.call(this, param);
+    glam.Behavior.call(this, param);
 }
 
-goog.inherits(Vizi.MoveBehavior, Vizi.Behavior);
+goog.inherits(glam.MoveBehavior, glam.Behavior);
 
-Vizi.MoveBehavior.prototype.start = function()
+glam.MoveBehavior.prototype.start = function()
 {
 	if (this.running)
 		return;
@@ -50142,10 +54207,10 @@ Vizi.MoveBehavior.prototype.start = function()
 	.repeat(0)
 	.start();
 	
-	Vizi.Behavior.prototype.start.call(this);
+	glam.Behavior.prototype.start.call(this);
 }
 
-Vizi.MoveBehavior.prototype.evaluate = function(t)
+glam.MoveBehavior.prototype.evaluate = function(t)
 {
 	if (t >= this.duration)
 	{
@@ -50164,587 +54229,278 @@ Vizi.MoveBehavior.prototype.evaluate = function(t)
 }
 
 
-Vizi.MoveBehavior.prototype.stop = function()
+glam.MoveBehavior.prototype.stop = function()
 {
 	if (this.tween)
 		this.tween.stop();
 	
-	Vizi.Behavior.prototype.stop.call(this);
+	glam.Behavior.prototype.stop.call(this);
 }/**
- * @fileoverview Pick Manager - singleton to manage currently picked object(s)
+ * @fileoverview 2D circle parser/implementation
  * 
  * @author Tony Parisi
  */
 
-goog.provide('Vizi.PickManager');
+goog.provide('glam.CircleElement');
 
-Vizi.PickManager.handleMouseMove = function(event)
-{
-    if (Vizi.PickManager.clickedObject)
-    {
-    	var pickers = Vizi.PickManager.clickedObject.pickers;
-    	var i, len = pickers.length;
-    	for (i = 0; i < len; i++) {
-    		if (pickers[i].enabled && pickers[i].onMouseMove) {
-    			pickers[i].onMouseMove(event);
-    		}
-    	}
-    }
-    else
-    {
-        var oldObj = Vizi.PickManager.overObject;
-        Vizi.PickManager.overObject = Vizi.PickManager.objectFromMouse(event);
+glam.CircleElement.DEFAULT_RADIUS = 2;
+glam.CircleElement.DEFAULT_RADIUS_SEGMENTS = 32;
 
-        if (Vizi.PickManager.overObject != oldObj)
-        {
-    		if (oldObj)
-    		{
-    			Vizi.Graphics.instance.setCursor(null);
-
-    			event.type = "mouseout";
-    	    	var pickers = oldObj.pickers;
-    	    	var i, len = pickers.length;
-    	    	for (i = 0; i < len; i++) {
-    	    		if (pickers[i].enabled && pickers[i].onMouseOut) {
-    	    			pickers[i].onMouseOut(event);
-    	    		}
-    	    	}
-    		}
-
-            if (Vizi.PickManager.overObject)
-            {            	
-        		event.type = "mouseover";
-    	    	var pickers = Vizi.PickManager.overObject.pickers;
-    	    	var i, len = pickers.length;
-    	    	for (i = 0; i < len; i++) {
-    	    		
-    	    		if (pickers[i].enabled && pickers[i].overCursor) {
-    	        		Vizi.Graphics.instance.setCursor(pickers[i].overCursor);
-    	    		}
-    	    		
-    	        	if (pickers[i].enabled && pickers[i].onMouseOver) {
-    	        		pickers[i].onMouseOver(event);
-    	        	}
-    	    	}
-
-            }
-        }
-        
-        if (Vizi.PickManager.overObject) {
-	    	var pickers = Vizi.PickManager.overObject.pickers;
-	    	var i, len = pickers.length;
-	    	for (i = 0; i < len; i++) {
-	    		
-	    		if (pickers[i].enabled && pickers[i].moveWithoutCapture && pickers[i].onMouseMove) {
-	        		event.type = "mousemove";
-	    			pickers[i].onMouseMove(event);
-	    		}
-	    	}
-        }
-    }
+glam.CircleElement.create = function(docelt, style) {
+	return glam.VisualElement.create(docelt, style, glam.CircleElement);
 }
 
-Vizi.PickManager.handleMouseDown = function(event)
-{
-    Vizi.PickManager.clickedObject = Vizi.PickManager.objectFromMouse(event);
-    if (Vizi.PickManager.clickedObject)
-    {
-    	var pickers = Vizi.PickManager.clickedObject.pickers;
-    	var i, len = pickers.length;
-    	for (i = 0; i < len; i++) {
-    		if (pickers[i].enabled && pickers[i].onMouseDown) {
-    			pickers[i].onMouseDown(event);
-    		}
-    	}
-    }
-}
+glam.CircleElement.getAttributes = function(docelt, style, param) {
 
-Vizi.PickManager.handleMouseUp = function(event)
-{
-    if (Vizi.PickManager.clickedObject)
-    {
-    	var overobject = Vizi.PickManager.objectFromMouse(event);
-    	var pickers = Vizi.PickManager.clickedObject.pickers;
-    	var i, len = pickers.length;
-    	for (i = 0; i < len; i++) {
-    		if (pickers[i].enabled && pickers[i].onMouseUp) {
-    			pickers[i].onMouseUp(event);
-    			// Also deliver a click event if we're over the same object as when
-    			// the mouse was first pressed
-    			if (overobject == Vizi.PickManager.clickedObject) {
-    				event.type = "click";
-    				pickers[i].onMouseClick(event);
-    			}
-    		}
-    	}
-    }
-
-    Vizi.PickManager.clickedObject = null;
-}
-
-Vizi.PickManager.handleMouseClick = function(event)
-{
-	/* N.B.: bailing out here, not sure why, leave this commented out
-	return;
+	var radius = docelt.getAttribute('radius') || glam.CircleElement.DEFAULT_RADIUS;
+	var radiusSegments = docelt.getAttribute('radiusSegments') || glam.CircleElement.DEFAULT_RADIUS_SEGMENTS;
 	
-    Vizi.PickManager.clickedObject = Vizi.PickManager.objectFromMouse(event);
-    
-    if (Vizi.PickManager.clickedObject)
-    {
-    	var pickers = Vizi.PickManager.clickedObject.pickers;
-    	var i, len = pickers.length;
-    	for (i = 0; i < len; i++) {
-    		if (pickers[i].enabled && pickers[i].onMouseClick) {
-    			pickers[i].onMouseClick(event);
-    		}
-    	}
-    }
-
-    Vizi.PickManager.clickedObject = null;
-    */
-}
-
-Vizi.PickManager.handleMouseDoubleClick = function(event)
-{
-    Vizi.PickManager.clickedObject = Vizi.PickManager.objectFromMouse(event);
-    
-    if (Vizi.PickManager.clickedObject)
-    {
-    	var pickers = Vizi.PickManager.clickedObject.pickers;
-    	var i, len = pickers.length;
-    	for (i = 0; i < len; i++) {
-    		if (pickers[i].enabled && pickers[i].onMouseDoubleClick) {
-    			pickers[i].onMouseDoubleClick(event);
-    		}
-    	}
-    }
-
-    Vizi.PickManager.clickedObject = null;
-}
-
-Vizi.PickManager.handleMouseScroll = function(event)
-{
-    if (Vizi.PickManager.overObject)
-    {
-    	var pickers = Vizi.PickManager.overObject.pickers;
-    	var i, len = pickers.length;
-    	for (i = 0; i < len; i++) {
-    		if (pickers[i].enabled && pickers[i].onMouseScroll) {
-    			pickers[i].onMouseScroll(event);
-    		}
-    	}
-    }
-
-    Vizi.PickManager.clickedObject = null;
-}
-
-Vizi.PickManager.handleTouchStart = function(event)
-{
-	if (event.touches.length > 0) {
-		event.screenX = event.touches[0].screenX;
-		event.screenY = event.touches[0].screenY;
-		event.clientX = event.touches[0].clientX;
-		event.clientY = event.touches[0].clientY;
-		event.pageX = event.touches[0].pageX;
-		event.pageY = event.touches[0].pageY;
-		event.elementX = event.touches[0].elementX;
-		event.elementY = event.touches[0].elementY;
-	    Vizi.PickManager.clickedObject = Vizi.PickManager.objectFromMouse(event);
-	    if (Vizi.PickManager.clickedObject)
-	    {
-	    	var pickers = Vizi.PickManager.clickedObject.pickers;
-	    	var i, len = pickers.length;
-	    	for (i = 0; i < len; i++) {
-	    		if (pickers[i].enabled && pickers[i].onTouchStart) {
-	    			pickers[i].onTouchStart(event);
-	    		}
-	    	}
-	    }
+	if (style) {
+		if (style.radius)
+			radius = style.radius;
+		if (style.radiusSegments)
+			radiusSegments = style.radiusSegments;
 	}
+
+	radius = parseFloat(radius);
+	radiusSegments = parseInt(radiusSegments);
+	
+	param.radius = radius;
+	param.radiusSegments = radiusSegments;
 }
 
-Vizi.PickManager.handleTouchMove = function(event)
-{
-	if (event.touches.length > 0) {
-		event.screenX = event.touches[0].screenX;
-		event.screenY = event.touches[0].screenY;
-		event.clientX = event.touches[0].clientX;
-		event.clientY = event.touches[0].clientY;
-		event.pageX = event.touches[0].pageX;
-		event.pageY = event.touches[0].pageY;
-		event.elementX = event.touches[0].elementX;
-		event.elementY = event.touches[0].elementY;
+glam.CircleElement.createVisual = function(docelt, material, param) {
+	
+	var visual = new glam.Visual(
+			{ geometry: new THREE.CircleGeometry(param.radius, param.radiusSegments),
+				material: material
+			});
+	
+	return visual;
+}
+/**
+ * @fileoverview 2D rectangle parser/implementation
+ * 
+ * @author Tony Parisi
+ */
 
-		if (Vizi.PickManager.clickedObject) {
-	    	var pickers = Vizi.PickManager.clickedObject.pickers;
-	    	var i, len = pickers.length;
-	    	for (i = 0; i < len; i++) {
-	    		if (pickers[i].enabled && pickers[i].onTouchMove) {
-	    			pickers[i].onTouchMove(event);
-	    		}
-	    	}
-	    }
+
+goog.provide('glam.RectElement');
+
+glam.RectElement.DEFAULT_WIDTH = 2;
+glam.RectElement.DEFAULT_HEIGHT = 2;
+glam.RectElement.DEFAULT_WIDTH_SEGMENTS = 1;
+glam.RectElement.DEFAULT_HEIGHT_SEGMENTS = 1;
+
+glam.RectElement.create = function(docelt, style) {
+	return glam.VisualElement.create(docelt, style, glam.RectElement);
+}
+
+glam.RectElement.getAttributes = function(docelt, style, param) {
+
+	var width = docelt.getAttribute('width') || glam.RectElement.DEFAULT_WIDTH;
+	var height = docelt.getAttribute('height') || glam.RectElement.DEFAULT_HEIGHT;
+	var widthSegments = docelt.getAttribute('width') || glam.RectElement.DEFAULT_WIDTH_SEGMENTS;
+	var heightSegments = docelt.getAttribute('height') || glam.RectElement.DEFAULT_HEIGHT_SEGMENTS;
+	
+	if (style) {
+		if (style.width)
+			width = style.width;
+		if (style.height)
+			height = style.height;
+		if (style.widthSegments)
+			widthSegments = style.widthSegments;
+		if (style.heightSegments)
+			heightSegments = style.heightSegments;
 	}
+	
+	width = parseFloat(width);
+	height = parseFloat(height);
+	widthSegments = parseInt(widthSegments);
+	heightSegments = parseInt(heightSegments);
+
+	param.width = width;
+	param.height = height;
+	param.widthSegments = widthSegments;
+	param.heightSegments = heightSegments;
 }
 
-Vizi.PickManager.handleTouchEnd = function(event)
-{
-	if (event.changedTouches.length > 0) {
-		event.screenX = event.changedTouches[0].screenX;
-		event.screenY = event.changedTouches[0].screenY;
-		event.clientX = event.changedTouches[0].clientX;
-		event.clientY = event.changedTouches[0].clientY;
-		event.pageX = event.changedTouches[0].pageX;
-		event.pageY = event.changedTouches[0].pageY;
-		event.elementX = event.changedTouches[0].elementX;
-		event.elementY = event.changedTouches[0].elementY;
-	    if (Vizi.PickManager.clickedObject)
-	    {
-	    	var pickers = Vizi.PickManager.clickedObject.pickers;
-	    	var i, len = pickers.length;
-	    	for (i = 0; i < len; i++) {
-	    		if (pickers[i].enabled && pickers[i].onTouchEnd) {
-	    			pickers[i].onTouchEnd(event);
-	    		}
-	    	}
-	    }
-	    
-	    Vizi.PickManager.clickedObject = null;
-	}	
-}
+glam.RectElement.createVisual = function(docelt, material, param) {
 
-Vizi.PickManager.objectFromMouse = function(event)
-{
-	var intersected = Vizi.Graphics.instance.objectFromMouse(event);
-	if (intersected.object)
-	{
-		event.face = intersected.face;
-		event.normal = intersected.normal;
-		event.point = intersected.point;
-		event.object = intersected.object;
+	var visual = new glam.Visual(
+			{ geometry: new THREE.PlaneGeometry(param.width, param.height, param.widthSegments, param.heightSegments),
+				material: material
+			});
+
+	return visual;
+}
+/**
+ * @fileoverview light parser/implementation. supports point, spot, directional, ambient
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.LightElement');
+
+glam.LightElement.DEFAULT_TYPE = "directional";
+glam.LightElement.DEFAULT_COLOR = "#ffffff";
+glam.LightElement.DEFAULT_ANGLE = "90deg";
+glam.LightElement.DEFAULT_DISTANCE = 0;
+glam.LightElement.DEFAULT_EXPONENT = glam.SpotLight.DEFAULT_EXPONENT;
+
+glam.LightElement.create = function(docelt, style, app) {
+	
+	function parseAngle(t) {
+		return glam.DOMTransform.parseRotation(t);
+	}
 		
-    	if (intersected.object._object.pickers)
-    	{
-    		var pickers = intersected.object._object.pickers;
-    		var i, len = pickers.length;
-    		for (i = 0; i < len; i++) {
-    			if (pickers[i].enabled) { // just need one :-)
-    				return intersected.object._object;
-    			}
-    		}
-    	}
-
-		return Vizi.PickManager.findObjectPicker(event, intersected.hitPointWorld, intersected.object.object);
+	var type = docelt.getAttribute('type') || glam.LightElement.DEFAULT_TYPE;
+	var color = docelt.getAttribute('color') || glam.LightElement.DEFAULT_COLOR;
+	var angle = docelt.getAttribute('angle') || glam.LightElement.DEFAULT_ANGLE;
+	var distance = docelt.getAttribute('distance') || glam.LightElement.DEFAULT_DISTANCE;
+	var exponent = docelt.getAttribute('exponent') || glam.LightElement.DEFAULT_EXPONENT;
+	
+	var direction = new THREE.Vector3(0, 0, -1);
+	
+	var dx = parseFloat(docelt.getAttribute('dx')) || 0;
+	var dy = parseFloat(docelt.getAttribute('dy')) || 0;
+	var dz = parseFloat(docelt.getAttribute('dz')) || 0;
+	if (dx || dy || dz) {
+		direction.set(dx, dy, dz);
 	}
-	else
-	{
-		return null;
-	}
-}
-
-Vizi.PickManager.findObjectPicker = function(event, hitPointWorld, object) {
-	while (object) {
-		
-		if (object.data && object.data._object.pickers) {
-    		var pickers = object.data._object.pickers;
-    		var i, len = pickers.length;
-    		for (i = 0; i < len; i++) {
-    			if (pickers[i].enabled) { // just need one :-)
-    				// Get the model space units for our event
-    				var modelMat = new THREE.Matrix4;
-    				modelMat.getInverse(object.matrixWorld);
-    				event.point = hitPointWorld.clone();
-    				event.point.applyMatrix4(modelMat);
-    				return object.data._object;
-    			}
-    		}
+	
+	direction.normalize();
+	
+	if (style) {
+		if (style.type) {
+			type = style.type;
 		}
+		if (style.color) {
+			color = style.color;
+		}
+		if (style.angle) {
+			angle = style.angle;
+		}
+		if (style.distance) {
+			distance = style.distance;
+		}
+	}
 
-		object = object.parent;
+	color = new THREE.Color().setStyle(color).getHex(); 
+	angle = parseAngle(angle);
+	distance = parseFloat(distance);
+	exponent = parseFloat(exponent);
+	
+	var param = {
+			color : color,
+			angle : angle,
+			direction : direction,
+			distance : distance,
+			exponent : exponent,
+	};
+	
+	var obj = new glam.Object;
+
+	var light = null;
+	switch (type.toLowerCase()) {
+	
+		case 'directional' :
+			light = new glam.DirectionalLight(param);
+			break;
+		case 'point' :
+			light = new glam.PointLight(param);
+			break;
+		case 'spot' :
+			light = new glam.SpotLight(param);
+			break;
+		case 'ambient' :
+			light = new glam.AmbientLight(param);
+			break;
+	}
+	
+	if (light) {
+		obj.addComponent(light);
+		return obj;
 	}
 	
 	return null;
 }
+goog.provide('glam.DirectionalLight');
+goog.require('glam.Light');
 
-
-Vizi.PickManager.clickedObject = null;
-Vizi.PickManager.overObject  =  null;goog.provide('Vizi.AmbientLight');
-goog.require('Vizi.Light');
-
-Vizi.AmbientLight = function(param)
+glam.DirectionalLight = function(param)
 {
 	param = param || {};
+
+	this.scaledDir = new THREE.Vector3;
+	this.castShadows = ( param.castShadows !== undefined ) ? param.castShadows : glam.DirectionalLight.DEFAULT_CAST_SHADOWS;
 	
-	Vizi.Light.call(this, param);
+	glam.Light.call(this, param);
 
 	if (param.object) {
 		this.object = param.object; 
+		this.direction = param.object.position.clone().normalize().negate();
+		this.targetPos = param.object.target.position.clone();
+		this.shadowDarkness = param.object.shadowDarkness;
 	}
 	else {
-		this.object = new THREE.AmbientLight(param.color);
+		this.direction = param.direction || new THREE.Vector3(0, 0, -1);
+		this.object = new THREE.DirectionalLight(param.color, param.intensity, 0);
+		this.targetPos = new THREE.Vector3;
+		this.shadowDarkness = ( param.shadowDarkness !== undefined ) ? param.shadowDarkness : glam.DirectionalLight.DEFAULT_SHADOW_DARKNESS;
 	}
 }
 
-goog.inherits(Vizi.AmbientLight, Vizi.Light);
+goog.inherits(glam.DirectionalLight, glam.Light);
 
-Vizi.AmbientLight.prototype.realize = function() 
+glam.DirectionalLight.prototype.realize = function() 
 {
-	Vizi.Light.prototype.realize.call(this);
+	glam.Light.prototype.realize.call(this);
 }
+
+glam.DirectionalLight.prototype.update = function() 
+{
+	// D'oh Three.js doesn't seem to transform light directions automatically
+	// Really bizarre semantics
+	this.position.copy(this.direction).normalize().negate();
+	var worldmat = this.object.parent.matrixWorld;
+	this.position.applyMatrix4(worldmat);
+	this.scaledDir.copy(this.direction);
+	this.scaledDir.multiplyScalar(glam.Light.DEFAULT_RANGE);
+	this.targetPos.copy(this.position);
+	this.targetPos.add(this.scaledDir);	
+ 	this.object.target.position.copy(this.targetPos);
+
+	this.updateShadows();
+	
+	glam.Light.prototype.update.call(this);
+}
+
+glam.DirectionalLight.prototype.updateShadows = function()
+{
+	if (this.castShadows)
+	{
+		this.object.castShadow = true;
+		this.object.shadowCameraNear = 1;
+		this.object.shadowCameraFar = glam.Light.DEFAULT_RANGE;
+		this.object.shadowCameraFov = 90;
+
+		// light.shadowCameraVisible = true;
+
+		this.object.shadowBias = 0.0001;
+		this.object.shadowDarkness = this.shadowDarkness;
+
+		this.object.shadowMapWidth = 1024;
+		this.object.shadowMapHeight = 1024;
+		
+		glam.Graphics.instance.enableShadows(true);
+	}	
+}
+
+
+glam.DirectionalLight.DEFAULT_CAST_SHADOWS = false;
+glam.DirectionalLight.DEFAULT_SHADOW_DARKNESS = 0.3;
 /**
- *
- */
-goog.provide('Vizi.Input');
-goog.require('Vizi.Service');
-goog.require('Vizi.Mouse');
-goog.require('Vizi.Keyboard');
-
-Vizi.Input = function()
-{
-	// N.B.: freak out if somebody tries to make 2
-	// throw (...)
-
-	this.mouse = new Vizi.Mouse();
-	this.keyboard = new Vizi.Keyboard();
-	this.gamepad = new Vizi.Gamepad();
-	Vizi.Input.instance = this;
-}
-
-goog.inherits(Vizi.Input, Vizi.Service);
-
-Vizi.Input.prototype.update = function() {
-	if (this.gamepad && this.gamepad.update)
-		this.gamepad.update();
-}
-
-Vizi.Input.instance = null;/**
- * @fileoverview Picker component - add one to get picking support on your object
- * 
- * @author Tony Parisi
- */
-
-goog.provide('Vizi.CylinderDragger');
-goog.require('Vizi.Picker');
-
-Vizi.CylinderDragger = function(param) {
-	
-	param = param || {};
-	
-    Vizi.Picker.call(this, param);
-    
-    this.normal = param.normal || new THREE.Vector3(0, 1, 0);
-    this.position = param.position || new THREE.Vector3;
-    this.color = 0xaa0000;
-}
-
-goog.inherits(Vizi.CylinderDragger, Vizi.Picker);
-
-Vizi.CylinderDragger.prototype.realize = function()
-{
-	Vizi.Picker.prototype.realize.call(this);
-
-    // And some helpers
-    this.dragObject = null;
-	this.dragOffset = new THREE.Euler;
-	this.currentOffset = new THREE.Euler;
-	this.dragHitPoint = new THREE.Vector3;
-	this.dragStartPoint = new THREE.Vector3;
-	this.dragPlane = this.createDragPlane();
-	this.dragPlane.visible = Vizi.CylinderDragger.SHOW_DRAG_PLANE;
-	this.dragPlane.ignorePick = true;
-	this.dragPlane.ignoreBounds = true;
-	this._object.transform.object.add(this.dragPlane);
-}
-
-Vizi.CylinderDragger.prototype.createDragPlane = function() {
-
-	var size = 2000;
-	var normal = this.normal;
-	var position = this.position;
-	
-	var u = new THREE.Vector3(0, normal.z, -normal.y).normalize().multiplyScalar(size);
-	if (!u.lengthSq())
-		u = new THREE.Vector3(-normal.z, normal.x, 0).normalize().multiplyScalar(size);
-
-	var v = u.clone().cross(normal).normalize().multiplyScalar(size);
-	
-	var p1 = position.clone().sub(u).sub(v);
-	var p2 = position.clone().add(u).sub(v);
-	var p3 = position.clone().add(u).add(v);
-	var p4 = position.clone().sub(u).add(v);
-	
-	var planegeom = new THREE.Geometry();
-	planegeom.vertices.push(p1, p2, p3, p4); 
-	var planeface = new THREE.Face3( 0, 2, 1 );
-	planeface.normal.copy( normal );
-	planeface.vertexNormals.push( normal.clone(), normal.clone(), normal.clone(), normal.clone() );
-	planegeom.faces.push(planeface);
-	var planeface = new THREE.Face3( 0, 3, 2 );
-	planeface.normal.copy( normal );
-	planeface.vertexNormals.push( normal.clone(), normal.clone(), normal.clone(), normal.clone() );
-	planegeom.faces.push(planeface);
-	planegeom.computeFaceNormals();
-
-	var mat = new THREE.MeshBasicMaterial({color:this.color, transparent: true, side:THREE.DoubleSide, opacity:0.1 });
-
-	var mesh = new THREE.Mesh(planegeom, mat);
-	
-	return mesh;
-}
-
-Vizi.CylinderDragger.prototype.update = function()
-{
-}
-
-Vizi.CylinderDragger.prototype.onMouseDown = function(event) {
-	Vizi.Picker.prototype.onMouseDown.call(this, event);
-	this.handleMouseDown(event);
-}
-
-Vizi.CylinderDragger.prototype.handleMouseDown = function(event) {
-	
-	if (this.dragPlane) {
-		
-		var intersection = Vizi.Graphics.instance.getObjectIntersection(event.elementX, event.elementY, this.dragPlane);
-		
-		if (intersection)
-		{			
-//			this.toModelSpace(intersection.point);
-			this.dragStartPoint.copy(intersection.point).normalize();
-//			this.dragOffset.copy(this._object.transform.rotation);
-			this.dragObject = event.object;
-		    this.dispatchEvent("dragstart", {
-		        type : "dragstart",
-		        offset : intersection.point
-		    });
-		    
-		}
-	    
-	}
-	
-	if (Vizi.CylinderDragger.SHOW_DRAG_NORMAL) {
-		
-		if (this.arrowDecoration)
-			this._object.removeComponent(this.arrowDecoration);
-		
-		var mesh = new THREE.ArrowHelper(this.normal, new THREE.Vector3, 500, 0x00ff00, 5, 5);
-		var visual = new Vizi.Decoration({object:mesh});
-		this._object.addComponent(visual);
-		this.arrowDecoration = visual;
-		
-	}
-}
-
-Vizi.CylinderDragger.prototype.onMouseMove = function(event) {
-	Vizi.Picker.prototype.onMouseMove.call(this, event);
-	this.handleMouseMove(event);
-}
-
-Vizi.CylinderDragger.prototype.handleMouseMove = function(event) {
-	
-	var intersection = Vizi.Graphics.instance.getObjectIntersection(event.elementX, event.elementY, this.dragPlane);
-	
-	if (intersection)
-	{
-//		this.toModelSpace(intersection.point);
-		var projectedPoint = intersection.point.clone().normalize();
-		var theta = Math.acos(projectedPoint.dot(this.dragStartPoint));
-		var cross = projectedPoint.clone().cross(this.dragStartPoint);
-		if (this.normal.dot(cross) > 0)
-			theta = -theta;
-		
-		this.currentOffset.set(this.dragOffset.x + this.normal.x * theta, 
-				this.dragOffset.y + this.normal.y * theta,
-				this.dragOffset.z + this.normal.z * theta);
-			
-		this.dispatchEvent("drag", {
-				type : "drag", 
-				offset : this.currentOffset,
-			}
-		);
-	}
-}
-
-Vizi.CylinderDragger.prototype.onMouseUp = function(event) {
-	Vizi.Picker.prototype.onMouseUp.call(this, event);
-	this.handleMouseUp(event);
-}
-
-Vizi.CylinderDragger.prototype.handleMouseUp = function(event) {
-	
-	if (this.arrowDecoration)
-		this._object.removeComponent(this.arrowDecoration);
-
-}
-
-Vizi.CylinderDragger.prototype.onTouchStart = function(event) {
-	Vizi.Picker.prototype.onTouchStart.call(this, event);
-
-	this.handleMouseDown(event);
-}
-
-Vizi.CylinderDragger.prototype.onTouchMove = function(event) {
-	Vizi.Picker.prototype.onTouchMove.call(this, event);
-
-	this.handleMouseMove(event);
-}
-
-Vizi.CylinderDragger.prototype.onTouchEnd = function(event) {
-	Vizi.Picker.prototype.onTouchEnd.call(this, event);
-
-	this.handleMouseUp(event);
-}
-
-Vizi.CylinderDragger.SHOW_DRAG_PLANE = false;
-Vizi.CylinderDragger.SHOW_DRAG_NORMAL = false;
-/**
- * @fileoverview RotateBehavior - simple angular rotation
- * 
- * @author Tony Parisi
- */
-
-goog.provide('Vizi.RotateBehavior');
-goog.require('Vizi.Behavior');
-
-Vizi.RotateBehavior = function(param) {
-	param = param || {};
-	this.duration = (param.duration !== undefined) ? param.duration : 1;
-	this.velocity = (param.velocity !== undefined) ? param.velocity : (Math.PI / 2 / this.duration);
-	this.startAngle = 0;
-	this.angle = 0;
-    Vizi.Behavior.call(this, param);
-}
-
-goog.inherits(Vizi.RotateBehavior, Vizi.Behavior);
-
-Vizi.RotateBehavior.prototype.start = function()
-{
-	this.angle = 0;
-	this._object.transform.rotation.y = this._object.transform.rotation.y % (Math.PI * 2);
-	this.startAngle = this._object.transform.rotation.y;
-	
-	Vizi.Behavior.prototype.start.call(this);
-}
-
-Vizi.RotateBehavior.prototype.evaluate = function(t)
-{
-	var twopi = Math.PI * 2;
-	this.angle = this.velocity * t;
-	if (this.angle >= twopi)
-	{
-		if (this.once) 
-			this.angle = twopi;
-		else
-			this.angle = this.angle % twopi;
-	}
-		
-	this._object.transform.rotation.y = this.startAngle + this.angle;
-	
-	if (this.once && this.angle >= twopi)
-	{
-		this.stop();
-	}
-}/**
  * DeviceOrientationControls - applies device orientation on object rotation
  *
  * @param {Object} object - instance of THREE.Object3D
@@ -50755,15 +54511,15 @@ Vizi.RotateBehavior.prototype.evaluate = function(t)
  * @author jonobr1 / http://jonobr1.com
  * @author arodic / http://aleksandarrodic.com
  * @author doug / http://github.com/doug
- * @author tparisi / http://github.com/tparisi for Vizi
+ * @author tparisi / http://github.com/tparisi for GLAM
  *
  * W3C Device Orientation control
  * (http://w3c.github.io/deviceorientation/spec-source-orientation.html)
  */
 
-goog.provide('Vizi.DeviceOrientationControlsCB');
+goog.provide('glam.DeviceOrientationControlsCB');
 
-Vizi.DeviceOrientationControlsCB = function(object) {
+glam.DeviceOrientationControlsCB = function(object) {
 
   this.object = object;
 
@@ -50950,542 +54706,761 @@ Vizi.DeviceOrientationControlsCB = function(object) {
 };
 
 /**
- * @author mrdoob / http://mrdoob.com/
- * @author alteredq / http://alteredqualia.com/
- * @author paulirish / http://paulirish.com/
- */
-
-/* Heavily adapted version of Three.js FirstPerson controls for Vizi
+ * @fileoverview cone primitive parser/implementation
  * 
+ * @author Tony Parisi
  */
 
-goog.provide('Vizi.FirstPersonControls');
+goog.provide('glam.ConeElement');
 
-Vizi.FirstPersonControls = function ( object, domElement ) {
+glam.ConeElement.DEFAULT_RADIUS = 2;
+glam.ConeElement.DEFAULT_HEIGHT = 2;
 
-	this.object = object;
-	this.target = new THREE.Vector3( 0, 0, 0 );
+glam.ConeElement.create = function(docelt, style) {
+	return glam.VisualElement.create(docelt, style, glam.ConeElement);
+}
 
-	this.domElement = ( domElement !== undefined ) ? domElement : document;
+glam.ConeElement.getAttributes = function(docelt, style, param) {
 
-	this.movementSpeed = 1.0;
-	this.lookSpeed = 1.0;
+	var radius = docelt.getAttribute('radius') || glam.ConeElement.DEFAULT_RADIUS;
+	var height = docelt.getAttribute('height') || glam.ConeElement.DEFAULT_HEIGHT;
+	
+	if (style) {
+		if (style.radius)
+			radius = style.radius;
+		if (style.height)
+			height = style.height;
+	}
 
-	this.turnSpeed = 5; // degs
+	radius = parseFloat(radius);
+	height = parseFloat(height);
+	
+	param.radius = radius;
+	param.height = height;
+}
+
+glam.ConeElement.createVisual = function(docelt, material, param) {
+	
+	var visual = new glam.Visual(
+			{ geometry: new THREE.CylinderGeometry(0, param.radius, param.height, 32),
+				material: material
+			});
+
+	return visual;
+}
+
+goog.require('glam.Prefabs');
+
+glam.Prefabs.PointerLockController = function(param)
+{
+	param = param || {};
+	
+	var controller = new glam.Object(param);
+	var controllerScript = new glam.PointerLockControllerScript(param);
+	controller.addComponent(controllerScript);
+
+	var intensity = param.headlight ? 1 : 0;
+	
+	var headlight = new glam.DirectionalLight({ intensity : intensity });
+	controller.addComponent(headlight);
+	
+	return controller;
+}
+
+goog.provide('glam.PointerLockControllerScript');
+goog.require('glam.Script');
+
+glam.PointerLockControllerScript = function(param)
+{
+	glam.Script.call(this, param);
+
+	this._enabled = (param.enabled !== undefined) ? param.enabled : true;
+	this._move = (param.move !== undefined) ? param.move : true;
+	this._look = (param.look !== undefined) ? param.look : true;
+	this._turn = (param.turn !== undefined) ? param.turn : true;
+	this._tilt = (param.tilt !== undefined) ? param.tilt : true;
+	this._mouseLook = (param.mouseLook !== undefined) ? param.mouseLook : false;
+	
+	this.collisionDistance = 10;
+	this.moveSpeed = 13;
+	this.turnSpeed = 5;
 	this.tiltSpeed = 5;
-	this.turnAngle = 0;
-	this.tiltAngle = 0;
+	this.lookSpeed = 1;
 	
-	this.mouseX = 0;
-	this.mouseY = 0;
-	this.lastMouseX = 0;
-	this.lastMouseY = 0;
-
-	this.touchScreenX = 0;
-	this.touchScreenY = 0;
-	this.lookTouchId = -1;
-	this.moveTouchId = -1;
+	this.savedCameraPos = new THREE.Vector3;	
+	this.movementVector = new THREE.Vector3;
 	
-	this.lat = 0;
-	this.lon = 0;
-	this.phi = 0;
-	this.theta = 0;
+    Object.defineProperties(this, {
+    	camera: {
+			get : function() {
+				return this._camera;
+			},
+			set: function(camera) {
+				this.setCamera(camera);
+			}
+		},
+    	enabled : {
+    		get: function() {
+    			return this._enabled;
+    		},
+    		set: function(v) {
+    			this.setEnabled(v);
+    		}
+    	},
+    	move : {
+    		get: function() {
+    			return this._move;
+    		},
+    		set: function(v) {
+    			this.setMove(v);
+    		}
+    	},
+    	look : {
+    		get: function() {
+    			return this._look;
+    		},
+    		set: function(v) {
+    			this.setLook(v);
+    		}
+    	},
+    	mouseLook : {
+    		get: function() {
+    			return this._mouseLook;
+    		},
+    		set: function(v) {
+    			this.setMouseLook(v);
+    		}
+    	},
+        headlightOn: {
+	        get: function() {
+	            return this._headlightOn;
+	        },
+	        set:function(v)
+	        {
+	        	this.setHeadlightOn(v);
+	        }
+    	},
+    });
+}
 
-	this.moveForward = false;
-	this.moveBackward = false;
-	this.moveLeft = false;
-	this.moveRight = false;
+goog.inherits(glam.PointerLockControllerScript, glam.Script);
 
-	this.turnRight = false;
-	this.turnLeft = false;
-	this.tiltUp = false;
-	this.tiltDown = false;
-	
-	this.mouseDragOn = false;
-	this.mouseLook = false;
+glam.PointerLockControllerScript.prototype.realize = function()
+{
+	this.headlight = this._object.getComponent(glam.DirectionalLight);
+	this.headlight.intensity = this._headlightOn ? 1 : 0;
+}
 
-	this.viewHalfX = 0;
-	this.viewHalfY = 0;
+glam.PointerLockControllerScript.prototype.createControls = function(camera)
+{
+	var controls = new glam.PointerLockControls(camera.object, glam.Graphics.instance.container);
+	controls.mouseLook = this._mouseLook;
+	controls.movementSpeed = this._move ? this.moveSpeed : 0;
+	controls.lookSpeed = this._look ? this.lookSpeed  : 0;
+	controls.turnSpeed = this._turn ? this.turnSpeed : 0;
+	controls.tiltSpeed = this._tilt ? this.tiltSpeed : 0;
 
-	if ( this.domElement !== document ) {
+	this.clock = new THREE.Clock();
+	return controls;
+}
 
-		this.domElement.setAttribute( 'tabindex', -1 );
-
+glam.PointerLockControllerScript.prototype.update = function()
+{
+	this.saveCamera();
+	this.controls.update(this.clock.getDelta());
+	var collide = this.testCollision();
+	if (collide && collide.object) {
+		this.restoreCamera();
+		this.dispatchEvent("collide", collide);
 	}
+	
+	if (this.testTerrain()) {
+		this.restoreCamera();
+	}
+	
+	if (this._headlightOn)
+	{
+		this.headlight.direction.copy(this._camera.position).negate();
+	}	
+}
 
-	this.handleResize = function () {
+glam.PointerLockControllerScript.prototype.setEnabled = function(enabled)
+{
+	this._enabled = enabled;
+	this.controls.enabled = enabled;
+}
 
-		if ( this.domElement === document ) {
+glam.PointerLockControllerScript.prototype.setMove = function(move)
+{
+	this._move = move;
+	this.controls.movementSpeed = move ? this.moveSpeed : 0;
+}
 
-			this.viewHalfX = window.innerWidth / 2;
-			this.viewHalfY = window.innerHeight / 2;
+glam.PointerLockControllerScript.prototype.setLook = function(look)
+{
+	this._look = look;
+	this.controls.lookSpeed = look ? 1.0 : 0;
+}
 
-		} else {
+glam.PointerLockControllerScript.prototype.setMouseLook = function(mouseLook)
+{
+	this._mouseLook = mouseLook;
+	this.controls.mouseLook = mouseLook;
+}
 
-			this.viewHalfX = this.domElement.offsetWidth / 2;
-			this.viewHalfY = this.domElement.offsetHeight / 2;
+glam.PointerLockControllerScript.prototype.setCamera = function(camera) {
+	this._camera = camera;
+	this.controls = this.createControls(camera);
+	this.controls.movementSpeed = this.moveSpeed;
+	this.controls.lookSpeed = this._look ?  0.1 : 0;
 
-		}
+}
 
+glam.PointerLockControllerScript.prototype.saveCamera = function() {
+	this.savedCameraPos.copy(this._camera.position);
+}
+
+glam.PointerLockControllerScript.prototype.restoreCamera = function() {
+	this._camera.position.copy(this.savedCameraPos);
+}
+
+glam.PointerLockControllerScript.prototype.testCollision = function() {
+	
+	this.movementVector.copy(this._camera.position).sub(this.savedCameraPos);
+	if (this.movementVector.length()) {
+		
+        var collide = glam.Graphics.instance.objectFromRay(null, 
+        		this.savedCameraPos,
+        		this.movementVector, 1, 2);
+
+        if (collide && collide.object) {
+        	var dist = this.savedCameraPos.distanceTo(collide.hitPointWorld);
+        }
+        
+        return collide;
+	}
+	
+	return null;
+}
+
+glam.PointerLockControllerScript.prototype.testTerrain = function() {
+	return false;
+}
+
+glam.PointerLockControllerScript.prototype.setHeadlightOn = function(on)
+{
+	this._headlightOn = on;
+	if (this.headlight) {
+		this.headlight.intensity = on ? 1 : 0;
+	}
+}
+
+/**
+ * @fileoverview base node class
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.DOMElement');
+
+glam.DOMElement.init = function(docelt) {
+
+	docelt.glam = {
 	};
-
-	this.onMouseDown = function ( event ) {
-
-		if ( this.domElement === document ) {
-
-			this.mouseX = event.pageX - this.viewHalfX;
-			this.mouseY = event.pageY - this.viewHalfY;
-
-		} else {
-
-			this.mouseX = event.pageX - this.domElement.offsetLeft - this.viewHalfX;
-			this.mouseY = event.pageY - this.domElement.offsetTop - this.viewHalfY;
-
-		}
-				
-		this.lastMouseX = this.mouseX;
-		this.lastMouseY = this.mouseY;
-		this.mouseDragOn = true;
-
-	};
-
-	this.onMouseUp = function ( event ) {
-
-		this.mouseDragOn = false;
-
-	};
-
-	this.onMouseMove = function ( event ) {
-
-		if ( this.domElement === document ) {
-
-			this.mouseX = event.pageX - this.viewHalfX;
-			this.mouseY = event.pageY - this.viewHalfY;
-
-		} else {
-
-			this.mouseX = event.pageX - this.domElement.offsetLeft - this.viewHalfX;
-			this.mouseY = event.pageY - this.domElement.offsetTop - this.viewHalfY;
-
-		}
-
-	};
-
-	this.onTouchStart = function ( event ) {
-
-		event.preventDefault();
-		
-		if (event.touches.length > 0) {
-
-			if (this.lookTouchId == -1) {
-				this.lookTouchId = event.touches[0].identifier;
-			
-				// synthesize a left mouse button event
-				var mouseEvent = {
-					'type': 'mousedown',
-				    'view': event.view,
-				    'bubbles': event.bubbles,
-				    'cancelable': event.cancelable,
-				    'detail': event.detail,
-				    'screenX': event.touches[0].screenX,
-				    'screenY': event.touches[0].screenY,
-				    'clientX': event.touches[0].clientX,
-				    'clientY': event.touches[0].clientY,
-				    'pageX': event.touches[0].pageX,
-				    'pageY': event.touches[0].pageY,
-				    'button': 0,
-				    'preventDefault' : event.preventDefault
-					};
-				
-				this.onMouseDown(mouseEvent);
-			}
-			else {
-				// second touch does move
-				this.touchScreenX = event.touches[1].screenX; 
-				this.touchScreenY = event.touches[1].screenY;
-				this.moveTouchId = event.touches[1].identifier;
-			}
-			
-		}
-		
-	}
-
 	
-	this.onTouchMove = function ( event ) {
-
-		event.preventDefault();
-		
-		var lookTouch = null, moveTouch = null, 
-			len = event.changedTouches.length;
-		
-		for (var i = 0; i < len; i++) {
-			
-			if (event.changedTouches[i].identifier == this.lookTouchId)
-				lookTouch = event.changedTouches[i];
-			
-			if (event.changedTouches[i].identifier == this.moveTouchId)
-				moveTouch = event.changedTouches[i];
-				
-		}
-		
-		if (lookTouch) {
-			// synthesize a left mouse button event
-			var mouseEvent = {
-				'type': 'mousemove',
-			    'view': event.view,
-			    'bubbles': event.bubbles,
-			    'cancelable': event.cancelable,
-			    'detail': event.detail,
-			    'screenX': lookTouch.screenX,
-			    'screenY': lookTouch.screenY,
-			    'clientX': lookTouch.clientX,
-			    'clientY': lookTouch.clientY,
-			    'pageX': lookTouch.pageX,
-			    'pageY': lookTouch.pageY,
-			    'button': 0,
-			    'preventDefault' : event.preventDefault
-				};
-			
-			this.onMouseMove(mouseEvent);
-		}
-
-
-		if (moveTouch) {
-			// second touch does move
-			var deltaX = moveTouch.screenX - this.touchScreenX;
-			var deltaY = moveTouch.screenY - this.touchScreenY;
-			
-			this.touchScreenX = moveTouch.screenX; 
-			this.touchScreenY = moveTouch.screenY; 
-			
-			if (deltaX > 0) {
-				this.moveRight = true;
-			}
-			
-			if (deltaX < 0) {
-				this.moveLeft = true;
-			}
-
-			if (deltaY > 0) {
-				this.moveBackward = true;
-			}
-			
-			if (deltaY < 0) {
-				this.moveForward = true;
-			}
-
-			
-		}
-	
-	}
-
-	
-	this.onTouchEnd = function ( event ) {
-		
-		event.preventDefault();
-		
-		var lookTouch = null, moveTouch = null, 
-		len = event.changedTouches.length;
-	
-		for (var i = 0; i < len; i++) {
-			
-			if (event.changedTouches[i].identifier == this.lookTouchId)
-				lookTouch = event.changedTouches[i];
-			
-			if (event.changedTouches[i].identifier == this.moveTouchId)
-				moveTouch = event.changedTouches[i];
-				
-		}
-
-		if (lookTouch) {
-			// synthesize a left mouse button event
-			var mouseEvent = {
-				'type': 'mouseup',
-			    'view': event.view,
-			    'bubbles': event.bubbles,
-			    'cancelable': event.cancelable,
-			    'detail': event.detail,
-			    'screenX': lookTouch.screenX,
-			    'screenY': lookTouch.screenY,
-			    'clientX': lookTouch.clientX,
-			    'clientY': lookTouch.clientY,
-			    'pageX': lookTouch.pageX,
-			    'pageY': lookTouch.pageY,
-			    'button': 0,
-			    'preventDefault' : event.preventDefault
-			};
-			
-			this.onMouseUp(mouseEvent);
-			
-			this.lookTouchId = -1;
-		}
-		
-		if (moveTouch) {
-			// second touch does move
-			this.touchScreenX = moveTouch.screenX; 
-			this.touchScreenY = moveTouch.screenY; 
-			
-			this.moveRight = false;		
-			this.moveLeft = false;
-			this.moveBackward = false;
-			this.moveForward = false;
-			
-			this.moveTouchId = -1;
-		}
-		
-	}
-	
-	this.onGamepadButtonsChanged = function ( event ) {
-	}
-	
-	var MOVE_VTHRESHOLD = 0.2;
-	var MOVE_HTHRESHOLD = 0.5;
-	this.onGamepadAxesChanged = function ( event ) {
-
-		var axes = event.changedAxes;
-		var i, len = axes.length;
+	docelt.glam.setAttributeHandlers = [];
+	docelt.glam.onSetAttribute = function(attr, val) {
+		var i, len = docelt.glam.setAttributeHandlers.length;
 		for (i = 0; i < len; i++) {
-			var axis = axes[i];
-			
-			if (axis.axis == Vizi.Gamepad.AXIS_LEFT_V) {
-				// +Y is down
-				if (axis.value < -MOVE_VTHRESHOLD) {
-					this.moveForward = true;
-					this.moveBackward = false;
-				}
-				else if (axis.value > MOVE_VTHRESHOLD) {
-					this.moveBackward = true;
-					this.moveForward = false;
-				}
-				else {
-					this.moveBackward = false;
-					this.moveForward = false;
-				}
-			}
-			else if (axis.axis == Vizi.Gamepad.AXIS_LEFT_H) {
-				// +X is to the right
-				if (axis.value > MOVE_HTHRESHOLD) {
-					this.moveRight = true;
-					this.moveLeft = false;
-				}
-				else if (axis.value < -MOVE_HTHRESHOLD) {
-					this.moveLeft = true;
-					this.moveRight = false;
-				}
-				else {
-					this.moveLeft = false;
-					this.moveRight = false;
-				}
-			}
-			else if (axis.axis == Vizi.Gamepad.AXIS_RIGHT_V) {
-				// +Y is down
-				if (axis.value < -MOVE_VTHRESHOLD) {
-					this.tiltUp = true;
-					this.tiltDown = false;
-				}
-				else if (axis.value > MOVE_VTHRESHOLD) {
-					this.tiltDown = true;
-					this.tiltUp = false;
-				}
-				else {
-					this.tiltDown = false;
-					this.tiltUp = false;
-				}
-			}
-			else if (axis.axis == Vizi.Gamepad.AXIS_RIGHT_H) {
-				if (axis.value > MOVE_HTHRESHOLD) {
-					this.turnLeft = true;
-					this.turnRight = false;
-				}
-				else if (axis.value < -MOVE_HTHRESHOLD) {
-					this.turnRight = true;
-					this.turnLeft = false;
-				}
-				else {
-					this.turnLeft = false;
-					this.turnRight = false;
-				}
-			}
-		
-		}
-	};
-	
-	this.onKeyDown = function ( event ) {
-
-		//event.preventDefault();
-
-		switch ( event.keyCode ) {
-
-			case 38: /*up*/
-			case 87: /*W*/ this.moveForward = true; break;
-
-			case 37: /*left*/
-			case 65: /*A*/ this.moveLeft = true; break;
-
-			case 40: /*down*/
-			case 83: /*S*/ this.moveBackward = true; break;
-
-			case 39: /*right*/
-			case 68: /*D*/ this.moveRight = true; break;
-
-			case 82: /*R*/ this.moveUp = true; break;
-			case 70: /*F*/ this.moveDown = true; break;
-
-		}
-
-	};
-
-	this.onKeyUp = function ( event ) {
-
-		switch( event.keyCode ) {
-
-			case 38: /*up*/
-			case 87: /*W*/ this.moveForward = false; break;
-
-			case 37: /*left*/
-			case 65: /*A*/ this.moveLeft = false; break;
-
-			case 40: /*down*/
-			case 83: /*S*/ this.moveBackward = false; break;
-
-			case 39: /*right*/
-			case 68: /*D*/ this.moveRight = false; break;
-
-			case 82: /*R*/ this.moveUp = false; break;
-			case 70: /*F*/ this.moveDown = false; break;
-
-		}
-
-	};
-
-	this.update = function( delta ) {
-
-		if ( this.enabled === false ) return;
-		
-		this.startY = this.object.position.y;
-		
-		var actualMoveSpeed = delta * this.movementSpeed;
-
-		if ( this.moveForward ) 
-			this.object.translateZ( - actualMoveSpeed );
-		if ( this.moveBackward ) 
-			this.object.translateZ( actualMoveSpeed );
-
-		if ( this.moveLeft ) 
-			this.object.translateX( - actualMoveSpeed );
-		if ( this.moveRight ) 
-			this.object.translateX( actualMoveSpeed );
-
-		this.object.position.y = this.startY;
-		
-		var actualLookSpeed = delta * this.lookSpeed;
-
-		var DRAG_DEAD_ZONE = 1;
-		
-		if ((this.mouseDragOn || this.mouseLook) && this.lookSpeed) {
-			
-			var deltax = this.lastMouseX - this.mouseX;
-			if (Math.abs(deltax) < DRAG_DEAD_ZONE)
-				dlon = 0;
-			var dlon = deltax / this.viewHalfX * 900;
-			this.lon += dlon * this.lookSpeed;
-
-			var deltay = this.lastMouseY - this.mouseY;
-			if (Math.abs(deltay) < DRAG_DEAD_ZONE)
-				dlat = 0;
-			var dlat = deltay / this.viewHalfY * 900;
-			this.lat += dlat * this.lookSpeed;
-			
-			this.theta = THREE.Math.degToRad( this.lon );
-
-			this.lat = Math.max( - 85, Math.min( 85, this.lat ) );
-			this.phi = THREE.Math.degToRad( this.lat );
-
-			var targetPosition = this.target,
-				position = this.object.position;
-	
-			targetPosition.x = position.x - Math.sin( this.theta );
-			targetPosition.y = position.y + Math.sin( this.phi );
-			targetPosition.z = position.z - Math.cos( this.theta );
-	
-			this.object.lookAt( targetPosition );
-			
-			this.lastMouseX = this.mouseX;
-			this.lastMouseY = this.mouseY;
-		}
-		
-		if (this.turnRight || this.turnLeft || this.tiltUp || this.tiltDown) {
-			
-			var dlon = 0;
-			if (this.turnRight)
-				dlon = 1;
-			else if (this.turnLeft)
-				dlon = -1;
-			this.lon += dlon * this.turnSpeed;
-			
-			var dlat = 0;
-			if (this.tiltUp)
-				dlat = 1;
-			else if (this.tiltDown)
-				dlat = -1;
-
-			this.lat += dlat * this.tiltSpeed;
-
-			this.theta = THREE.Math.degToRad( this.lon );
-
-			this.lat = Math.max( - 85, Math.min( 85, this.lat ) );
-			this.phi = THREE.Math.degToRad( this.lat );
-
-			var targetPosition = this.target,
-				position = this.object.position;
-	
-			if (this.turnSpeed) {
-				targetPosition.x = position.x - Math.sin( this.theta );
-			}
-			
-			if (this.tiltSpeed) {
-				targetPosition.y = position.y + Math.sin( this.phi );
-				targetPosition.z = position.z - Math.cos( this.theta );
-			}
-			
-			if (this.turnSpeed || this.tiltSpeed) {
-				this.object.lookAt( targetPosition );
+			var handler = docelt.glam.setAttributeHandlers[i];
+			if (handler) {
+				handler(attr, val);
 			}
 		}
-	};
+	}
+}
 
-
-	this.domElement.addEventListener( 'contextmenu', function ( event ) { event.preventDefault(); }, false );
-
-	this.domElement.addEventListener( 'mousemove', bind( this, this.onMouseMove ), true );
-	this.domElement.addEventListener( 'mousedown', bind( this, this.onMouseDown ), false );
-	this.domElement.addEventListener( 'mouseup', bind( this, this.onMouseUp ), false );
-	this.domElement.addEventListener( 'touchstart', bind( this, this.onTouchStart), false );
-	this.domElement.addEventListener( 'touchmove', bind( this, this.onTouchMove), false );
-	this.domElement.addEventListener( 'touchend', bind( this, this.onTouchEnd), false );
-	this.domElement.addEventListener( 'keydown', bind( this, this.onKeyDown ), false );
-	this.domElement.addEventListener( 'keyup', bind( this, this.onKeyUp ), false );
-	this.domElement.addEventListener( 'resize', bind( this, this.handleResize ), false );
+glam.DOMElement.getStyle = function(docelt) {
 	
-	var gamepad = Vizi.Gamepad.instance;
-	if (gamepad) {
-		gamepad.addEventListener( 'buttonsChanged', bind( this, this.onGamepadButtonsChanged ), false );
-		gamepad.addEventListener( 'axesChanged', bind( this, this.onGamepadAxesChanged ), false );
+	var glamClassList = new glam.DOMClassList(docelt);
+	docelt.glam.classList = glamClassList;
+	
+	var style = new glam.DOMStyle(docelt);
+	
+	if (docelt.id) {
+		var styl = glam.DOM.getStyle("#" + docelt.id);
+		style.addProperties(styl);
 	}
 	
-	function bind( scope, fn ) {
+	var klass = docelt.getAttribute('class');
+	if (!klass)
+		klass = docelt['class'];
+	
+	if (klass) {
+		
+		var klasses = klass.split(" ");
+		for (var klassname in klasses) {
+			var kls = klasses[klassname];
+			if (kls) {
+				var styl = glam.DOM.getStyle("." + kls);
+				style.addProperties(styl);
+				
+				glamClassList.add(kls);
+			}
+		}
+	}
+	
+	var styl = docelt.getAttribute("style");
+	if (styl) {
+		style.addPropertiesFromString(styl);
+	}
+	
+	docelt.glam.style = style;
+	
+	return style;
+}
+/**
+ * @fileoverview parser base; see also viewer.js
+ * 
+ * @author Tony Parisi
+ */
 
-		return function () {
+goog.provide('glam.DOMParser');
 
-			fn.apply( scope, arguments );
+glam.DOMParser = {
+		
+	addDocument : function(doc)
+	{
+		// create an observer instance
+		var mo = (window.WebKitMutationObserver !== undefined) ? window.WebKitMutationObserver : window.MutationObserver;
+		var observer = new mo(function(mutations) {
+		  mutations.forEach(function(mutation) {
+		    if (mutation.type == "childList") {
+		    	var i, len = mutation.addedNodes.length;
+		    	for (i = 0; i < len; i++) {
+		    		var node = mutation.addedNodes[i];
+		    		var viewer = glam.DOM.viewers[doc.id];
+			    	viewer.addNode(node);
+		    	}
+		    	var i, len = mutation.removedNodes.length;
+		    	for (i = 0; i < len; i++) {
+		    		var node = mutation.removedNodes[i];
+		    		var viewer = glam.DOM.viewers[doc.id];
+			    	viewer.removeNode(node);
+		    	}
+		    }
+		    else if (mutation.type == "attributes") {
+		    	var onSetAttribute = mutation.target.glam ? mutation.target.glam.onSetAttribute : null;
+		    	if (onSetAttribute) {
+		    		var attr = mutation.attributeName;
+		    		var val = mutation.target.getAttribute(attr);
+		    		onSetAttribute(attr, val);
+		    	}
+		    }
+		  });    
+		});
+		 
+		// configuration of the observer:
+		var config = { attributes: true, childList: true, characterData: true, subtree: true };
+		 
+		// pass in the target node, as well as the observer options
+		observer.observe(doc, config);		
+	},
 
-		};
+	addStyle : function(declaration)
+	{
+		for (var selector in declaration) {
+			glam.DOM.addStyle(selector, declaration[selector]);
+		}
+	},
+	
+	getStyle : function(selector)
+	{
+		return glam.DOM.getStyle(selector);
+	},
+	
+	parseDocument : function()
+	{
+		var dp = new DOMParser;
 
-	};
+		var i, len;
+		
+		var docs = document.getElementsByTagName("glam");
+		var len = docs.length;
+		for (i = 0; i < len; i++)
+		{
+			var doc = docs[i];
+			if (!doc.id) {
+				doc.id = "#glamDocument" + glam.DOM.documentIndex++;
+			}
+			glam.DOMParser.addDocument(doc);
+			glam.DOM.documents[doc.id] = doc;
+			doc.style.display = 'none';
+			glam.DOMParser.addEventHandlers(doc);
+		}
+		
+		var styles = document.head.getElementsByTagName("style");
+		var len = styles.length;
+		for (i = 0; i < len; i++)
+		{
+			if (styles[i].childNodes.length) {
+				$.parsecss(styles[i].childNodes[0].data,
+						function(css) {
+								glam.DOMParser.addStyle(css);
+							}
+						);
+			}
+		}
+	},
+	
+	addEventHandlers : function(elt) {
 
-	this.handleResize();
-
+		// Trap all mouse events to keep page from going bonkers
+		elt.addEventListener("mouseover", function(event) {
+			event.preventDefault();
+			event.stopPropagation();
+		});
+		elt.addEventListener("mouseout", function(event) {
+			event.preventDefault();
+			event.stopPropagation();
+		});
+		elt.addEventListener("mousedown", function(event) {
+			event.preventDefault();
+			event.stopPropagation();
+		});
+		elt.addEventListener("mouseup", function(event) {
+			event.preventDefault();
+			event.stopPropagation();
+		});
+		elt.addEventListener("mousemove", function(event) {
+			event.preventDefault();
+			event.stopPropagation();
+		});
+		elt.addEventListener("click", function(event) {
+			event.preventDefault();
+			event.stopPropagation();
+		});
+		
+	},
 };
+
+/**
+ * @fileoverview sphere primitive parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.SphereElement');
+
+glam.SphereElement.DEFAULT_RADIUS = 2;
+glam.SphereElement.DEFAULT_WIDTH_SEGMENTS = 32;
+glam.SphereElement.DEFAULT_HEIGHT_SEGMENTS = 32;
+
+glam.SphereElement.create = function(docelt, style) {
+	return glam.VisualElement.create(docelt, style, glam.SphereElement);
+}
+
+glam.SphereElement.getAttributes = function(docelt, style, param) {
+	
+	var radius = docelt.getAttribute('radius') || glam.SphereElement.DEFAULT_RADIUS;
+	var widthSegments = docelt.getAttribute('width-segments') || glam.SphereElement.DEFAULT_WIDTH_SEGMENTS;
+	var heightSegments = docelt.getAttribute('height-segments') || glam.SphereElement.DEFAULT_HEIGHT_SEGMENTS;
+	
+	if (style) {
+		if (style.radius)
+			radius = style.radius;
+		if (style.widthSegments || style["width-segments"])
+			widthSegments = style.widthSegments || style["width-segments"];
+		if (style.heightSegments || style["height-segments"])
+			heightSegments = style.heightSegments || style["height-segments"];
+	}
+
+	radius = parseFloat(radius);
+	widthSegments = parseInt(widthSegments);
+	heightSegments = parseInt(heightSegments);
+	
+	param.radius = radius;
+	param.widthSegments = widthSegments;
+	param.heightSegments = heightSegments;
+}
+
+glam.SphereElement.createVisual = function(docelt, material, param) {
+
+	var visual = new glam.Visual(
+			{ geometry: new THREE.SphereGeometry(param.radius, param.widthSegments, param.heightSegments),
+				material: material
+			});
+	
+	return visual;
+}
+
+goog.require('glam.Prefabs');
+
+glam.Prefabs.RiftController = function(param)
+{
+	param = param || {};
+	
+	var controller = new glam.Object(param);
+	var controllerScript = new glam.RiftControllerScript(param);
+	controller.addComponent(controllerScript);
+
+	var intensity = param.headlight ? 1 : 0;
+	
+	var headlight = new glam.DirectionalLight({ intensity : intensity });
+	controller.addComponent(headlight);
+
+	return controller;
+}
+
+goog.provide('glam.RiftControllerScript');
+goog.require('glam.Script');
+
+glam.RiftControllerScript = function(param)
+{
+	glam.Script.call(this, param);
+
+	this._enabled = (param.enabled !== undefined) ? param.enabled : true;
+	this.riftControls = null;
+
+	this._headlightOn = param.headlight;
+	
+	this.cameraDir = new THREE.Vector3;
+	
+    Object.defineProperties(this, {
+    	camera: {
+			get : function() {
+				return this._camera;
+			},
+			set: function(camera) {
+				this.setCamera(camera);
+			}
+		},
+    	enabled : {
+    		get: function() {
+    			return this._enabled;
+    		},
+    		set: function(v) {
+    			this.setEnabled(v);
+    		}
+    	},
+    });
+}
+
+goog.inherits(glam.RiftControllerScript, glam.Script);
+
+glam.RiftControllerScript.prototype.realize = function()
+{
+	this.headlight = this._object.getComponent(glam.DirectionalLight);
+	this.headlight.intensity = this._headlightOn ? 1 : 0;
+}
+
+glam.RiftControllerScript.prototype.update = function()
+{
+	if (this._enabled && this.riftControls) {
+		this.riftControls.update();
+	}
+	
+	if (this._headlightOn)
+	{
+		this.cameraDir.set(0, 0, -1);
+		this.cameraDir.transformDirection(this.camera.object.matrixWorld);
+		
+		this.headlight.direction.copy(this.cameraDir);
+	}	
+}
+
+glam.RiftControllerScript.prototype.setEnabled = function(enabled)
+{
+	this._enabled = enabled;
+}
+
+glam.RiftControllerScript.prototype.setCamera = function(camera) {
+	this._camera = camera;
+	this.riftControls = this.createControls(camera);
+}
+
+glam.RiftControllerScript.prototype.createControls = function(camera)
+{
+	var controls = new THREE.VRControls(camera.object, function(err) {
+			if (err) {
+				console.log("Error creating VR controller: ", err);
+			}
+		});
+
+	// N.B.: this only works because the callback up there is synchronous...
+	return controls;
+}
+
+
+/**
+ * @fileoverview built-in types and utilities to support glam parser
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.DOMTypes');
+
+glam.DOMTypes = {
+};
+
+// statics
+glam.DOMTypes.types = {
+		"box" :  { cls : glam.BoxElement, transform:true, animation:true, input:true, visual:true },
+		"cone" :  { cls : glam.ConeElement, transform:true, animation:true, input:true, visual:true },
+		"cylinder" :  { cls : glam.CylinderElement, transform:true, animation:true, input:true, visual:true },
+		"sphere" :  { cls : glam.SphereElement, transform:true, animation:true, input:true, visual:true },
+		"rect" :  { cls : glam.RectElement, transform:true, animation:true, input:true, visual:true },
+		"circle" :  { cls : glam.CircleElement, transform:true, animation:true, input:true, visual:true },
+		"arc" :  { cls : glam.ArcElement, transform:true, animation:true, input:true, visual:true },
+		"group" :  { cls : glam.GroupElement, transform:true, animation:true, input:true },
+		"animation" :  { cls : glam.AnimationElement },
+		"background" :  { cls : glam.BackgroundElement },
+		"import" :  { cls : glam.ImportElement, transform:true, animation:true },
+		"camera" :  { cls : glam.CameraElement, transform:true, animation:true },
+		"controller" :  { cls : glam.ControllerElement },
+		"text" :  { cls : glam.TextElement, transform:true, animation:true, input:true, visual:true },
+		"mesh" :  { cls : glam.MeshElement, transform:true, animation:true, input:true, visual:true },
+		"line" :  { cls : glam.LineElement, transform:true, animation:true, visual:true },
+		"light" :  { cls : glam.LightElement, transform:true, animation:true },
+		"particles" :  { cls : glam.ParticlesElement, transform:true, animation:true },
+		"effect" :  { cls : glam.EffectElement, },
+};
+
+
+glam.DOMTypes.parseVector3Array = function(element, vertices) {
+
+	var text = element.textContent;
+	var nums = text.split(" ");
+	
+	var i, len = nums.length;
+	if (len < 3)
+		return;
+	
+	for (i = 0; i < len; i += 3) {
+		
+		var x = parseFloat(nums[i]), 
+			y = parseFloat(nums[i + 1]), 
+			z = parseFloat(nums[i + 2]);
+		
+		var vec = new THREE.Vector3(x, y, z);
+		vertices.push(vec);
+	}
+}
+
+glam.DOMTypes.parseVector3 = function(text, vec) {
+
+	var nums = text.split(" ");
+	
+	var i, len = nums.length;
+	if (len < 3)
+		return;
+	
+	var x = parseFloat(nums[0]), 
+		y = parseFloat(nums[1]), 
+		z = parseFloat(nums[2]);
+	
+	vec.set(x, y, z);
+}
+
+glam.DOMTypes.parseVector2Array = function(element, uvs) {
+	var text = element.textContent;
+	var nums = text.split(" ");
+	
+	var i, len = nums.length;
+	if (len < 2)
+		return;
+	
+	for (i = 0; i < len; i += 2) {
+		
+		var x = parseFloat(nums[i]), 
+			y = parseFloat(nums[i + 1]);
+		
+		var vec = new THREE.Vector2(x, y);
+		uvs.push(vec);
+	}
+
+}
+
+glam.DOMTypes.parseColor3Array = function(element, colors) {
+	var text = element.textContent;
+	var nums = text.split(" ");
+	
+	var i, len = nums.length;
+	if (len < 3)
+		return;
+	
+	for (i = 0; i < len; i += 3) {
+		
+		var r = parseFloat(nums[i]), 
+			g = parseFloat(nums[i + 1]), 
+			b = parseFloat(nums[i + 2]);
+		
+		var c = new THREE.Color(r, g, b);
+		colors.push(c);
+	}
+
+}
+
+
+glam.DOMTypes.parseColor3 = function(text, c) {
+
+	var nums = text.split(" ");
+	
+	var i, len = nums.length;
+	if (len < 3)
+		return;
+	
+	var r = parseFloat(nums[0]), 
+		g = parseFloat(nums[1]), 
+		b = parseFloat(nums[2]);
+	
+	c.setRGB(r, g, b);
+}
+
+glam.DOMTypes.parseFaceArray = function(element, faces) {
+	
+	var text = element.textContent;
+	var nums = text.split(" ");
+	
+	var i, len = nums.length;
+	if (len < 1)
+		return;
+	
+	for (i = 0; i < len; i += 3) {
+		
+		var a = parseInt(nums[i]), 
+			b = parseInt(nums[i + 1]), 
+			c = parseInt(nums[i + 2]);
+		
+		var face = new THREE.Face3(a, b, c);
+		faces.push(face);
+	}
+
+}
+
+glam.DOMTypes.parseUVArray = function(element, uvs) {
+	var text = element.textContent;
+	var nums = text.split(" ");
+	
+	var i, len = nums.length;
+	if (len < 6)
+		return;
+	
+	for (i = 0; i < len; i += 6) {
+		
+		var faceUvs = [];
+		
+		for (var j = 0; j < 3; j++) {
+			var x = parseFloat(nums[i + j * 2]);
+			var y = parseFloat(nums[i + j * 2 + 1]);
+			var vec = new THREE.Vector2(x, y);
+			faceUvs.push(vec);
+		}
+		
+		uvs.push(faceUvs);
+	}
+
+}
 /**
  * @author qiao / https://github.com/qiao
  * @author mrdoob / http://mrdoob.com
@@ -51493,14 +55468,14 @@ Vizi.FirstPersonControls = function ( object, domElement ) {
  * @author WestLangley / http://github.com/WestLangley
  */
 
-/* Hacked-up version of Three.js orbit controls for Vizi
+/* Hacked-up version of Three.js orbit controls for GLAM
  * Adds mode for one-button operation and optional userMinY
  * 
  */
 
-goog.provide('Vizi.OrbitControls');
+goog.provide('glam.OrbitControls');
 
-Vizi.OrbitControls = function ( object, domElement ) {
+glam.OrbitControls = function ( object, domElement ) {
 
 	this.object = object;
 	this.domElement = ( domElement !== undefined ) ? domElement : document;
@@ -51975,2555 +55950,972 @@ Vizi.OrbitControls = function ( object, domElement ) {
 
 };
 
-Vizi.OrbitControls.prototype = Object.create( THREE.EventDispatcher.prototype );
+glam.OrbitControls.prototype = Object.create( THREE.EventDispatcher.prototype );
 /**
- * @fileoverview Main interface to the graphics and rendering subsystem
+ * @fileoverview text primitive parser/implementation. only supports helvetiker and optimer fonts right now.
  * 
  * @author Tony Parisi
  */
-goog.require('Vizi.Graphics');
-goog.provide('Vizi.GraphicsThreeJS');
 
-Vizi.GraphicsThreeJS = function()
-{
-	Vizi.Graphics.call(this);
+goog.provide('glam.TextElement');
+
+glam.TextElement.DEFAULT_FONT_SIZE = 1;
+glam.TextElement.DEFAULT_FONT_DEPTH = .2;
+glam.TextElement.DEFAULT_FONT_BEVEL = "none";
+glam.TextElement.DEFAULT_BEVEL_SIZE = .01;
+glam.TextElement.DEFAULT_BEVEL_THICKNESS = .02;
+glam.TextElement.DEFAULT_FONT_FAMILY = "helvetica";
+glam.TextElement.DEFAULT_FONT_WEIGHT = "normal";
+glam.TextElement.DEFAULT_FONT_STYLE = "normal";
+
+glam.TextElement.BEVEL_EPSILON = 0.0001;
+
+glam.TextElement.DEFAULT_VALUE = "",
+
+glam.TextElement.create = function(docelt, style) {
+	return glam.VisualElement.create(docelt, style, glam.TextElement);
 }
 
-goog.inherits(Vizi.GraphicsThreeJS, Vizi.Graphics);
+glam.TextElement.getAttributes = function(docelt, style, param) {
 
-Vizi.GraphicsThreeJS.prototype.initialize = function(param)
-{
-	param = param || {};
+	// Font stuff
+	// for now: helvetiker, optimer - typeface.js stuff
+	// could also do: gentilis, droid sans, droid serif but the files are big.
+	var fontFamily = docelt.getAttribute('fontFamily') || glam.TextElement.DEFAULT_FONT_FAMILY; // "optimer";
+	var fontWeight = docelt.getAttribute('fontWeight') || glam.TextElement.DEFAULT_FONT_WEIGHT; // "bold"; // normal bold
+	var fontStyle = docelt.getAttribute('fontStyle') || glam.TextElement.DEFAULT_FONT_STYLE; // "normal"; // normal italic
+
+	// Size, depth, bevel etc.
+	var fontSize = docelt.getAttribute('fontSize') || glam.TextElement.DEFAULT_FONT_SIZE;
+	var fontDepth = docelt.getAttribute('fontDepth') || glam.TextElement.DEFAULT_FONT_DEPTH;
+	var fontBevel = docelt.getAttribute('fontBevel') || glam.TextElement.DEFAULT_FONT_BEVEL;
+	var bevelSize = docelt.getAttribute('bevelSize') || glam.TextElement.DEFAULT_BEVEL_SIZE;
+	var bevelThickness = docelt.getAttribute('bevelThickness') || glam.TextElement.DEFAULT_BEVEL_THICKNESS;
 	
-	// call all the setup functions
-	this.initOptions(param);
-	this.initPageElements(param);
-	this.initScene();
-	this.initRenderer(param);
-	this.initMouse();
-	this.initKeyboard();
-	this.addDomHandlers();
-}
-
-Vizi.GraphicsThreeJS.prototype.focus = function()
-{
-	if (this.renderer && this.renderer.domElement)
-	{
-		this.renderer.domElement.focus();
+	if (style) {
+		if (style["font-family"])
+			fontFamily = style["font-family"];
+		if (style["font-weight"])
+			fontWeight = style["font-weight"];
+		if (style["font-style"])
+			fontStyle = style["font-style"];
+		if (style["font-size"])
+			fontSize = style["font-size"];
+		if (style["font-depth"])
+			fontDepth = style["font-depth"];
+		if (style["font-bevel"])
+			fontBevel = style["font-bevel"];
+		if (style["bevel-size"])
+			bevelSize = style["bevel-size"];
+		if (style["bevel-thickness"])
+			bevelThickness = style["bevel-thickness"];
 	}
-}
 
-Vizi.GraphicsThreeJS.prototype.initOptions = function(param)
-{
-	this.displayStats = (param && param.displayStats) ? 
-			param.displayStats : Vizi.GraphicsThreeJS.default_display_stats;
-}
-
-Vizi.GraphicsThreeJS.prototype.initPageElements = function(param)
-{
-    if (param.container)
-    {
-    	this.container = param.container;
-    }
-   	else
-   	{
-		this.container = document.createElement( 'div' );
-	    document.body.appendChild( this.container );
-   	}
-
-    this.saved_cursor = this.container.style.cursor;
-    
-    if (this.displayStats)
-    {
-    	if (window.Stats)
-    	{
-	        var stats = new Stats();
-	        stats.domElement.style.position = 'absolute';
-	        stats.domElement.style.top = '0px';
-	        stats.domElement.style.left = '0px';
-	        stats.domElement.style.height = '40px';
-	        this.container.appendChild( stats.domElement );
-	        this.stats = stats;
-    	}
-    	else
-    	{
-    		Vizi.System.warn("No Stats module found. Make sure to include stats.min.js");
-    	}
-    }
-}
-
-Vizi.GraphicsThreeJS.prototype.initScene = function()
-{
-    var scene = new THREE.Scene();
-
-//    scene.add( new THREE.AmbientLight(0xffffff) ); //  0x505050 ) ); // 
-	
-    var camera = new THREE.PerspectiveCamera( 45, 
-    		this.container.offsetWidth / this.container.offsetHeight, 1, 10000 );
-    camera.position.copy(Vizi.Camera.DEFAULT_POSITION);
-
-    scene.add(camera);
-    
-    this.scene = scene;
-	this.camera = camera;
-	
-	this.backgroundLayer = {};
-    var scene = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera( 45, 
-    		this.container.offsetWidth / this.container.offsetHeight, 0.01, 10000 );
-    camera.position.set( 0, 0, 10 );	
-    scene.add(camera);
-    
-    this.backgroundLayer.scene = scene;
-    this.backgroundLayer.camera = camera;
-}
-
-Vizi.GraphicsThreeJS.prototype.initRenderer = function(param)
-{
-	var antialias = (param.antialias !== undefined) ? param.antialias : true;
-	var alpha = (param.alpha !== undefined) ? param.alpha : true;
-	//var devicePixelRatio = (param.devicePixelRatio !== undefined) ? param.devicePixelRatio : 1;
-	
-    var renderer = // Vizi.Config.USE_WEBGL ?
-    	new THREE.WebGLRenderer( { antialias: antialias, 
-    		alpha: alpha,
-    		/*devicePixelRatio : devicePixelRatio */ } ); // :
-    	// new THREE.CanvasRenderer;
-    	
-    renderer.sortObjects = false;
-    renderer.setSize( this.container.offsetWidth, this.container.offsetHeight );
-
-    if (param && param.backgroundColor)
-    {
-    	renderer.domElement.style.backgroundColor = param.backgroundColor;
-    	renderer.domElement.setAttribute('z-index', -1);
-    }
-    
-    this.container.appendChild( renderer.domElement );
-
-    var projector = new THREE.Projector();
-
-    this.renderer = renderer;
-    this.projector = projector;
-
-    this.lastFrameTime = 0;
-    
-    if (param.riftRender) {
-    	this.riftCam = new THREE.VREffect(this.renderer, function(err) {
-			if (err) {
-				console.log("Error creating VR renderer: ", err);
-			}
-    	});
-    }
-    else if (param.cardboard) {
-    	this.cardboard = new THREE.StereoEffect(this.renderer);
-    	this.cardboard.setSize( this.container.offsetWidth, this.container.offsetHeight );
-    }
-    
-    // Placeholder for effects composer
-    this.composer = null;
-}
-
-Vizi.GraphicsThreeJS.prototype.initMouse = function()
-{
-	var dom = this.renderer.domElement;
-	
-	var that = this;
-	dom.addEventListener( 'mousemove', 
-			function(e) { that.onDocumentMouseMove(e); }, false );
-	dom.addEventListener( 'mousedown', 
-			function(e) { that.onDocumentMouseDown(e); }, false );
-	dom.addEventListener( 'mouseup', 
-			function(e) { that.onDocumentMouseUp(e); }, false ); 
- 	dom.addEventListener( 'click', 
-			function(e) { that.onDocumentMouseClick(e); }, false );
-	dom.addEventListener( 'dblclick', 
-			function(e) { that.onDocumentMouseDoubleClick(e); }, false );
-
-	dom.addEventListener( 'mousewheel', 
-			function(e) { that.onDocumentMouseScroll(e); }, false );
-	dom.addEventListener( 'DOMMouseScroll', 
-			function(e) { that.onDocumentMouseScroll(e); }, false );
-	
-	dom.addEventListener( 'touchstart', 
-			function(e) { that.onDocumentTouchStart(e); }, false );
-	dom.addEventListener( 'touchmove', 
-			function(e) { that.onDocumentTouchMove(e); }, false );
-	dom.addEventListener( 'touchend', 
-			function(e) { that.onDocumentTouchEnd(e); }, false );
-}
-
-Vizi.GraphicsThreeJS.prototype.initKeyboard = function()
-{
-	var dom = this.renderer.domElement;
-	
-	var that = this;
-	dom.addEventListener( 'keydown', 
-			function(e) { that.onKeyDown(e); }, false );
-	dom.addEventListener( 'keyup', 
-			function(e) { that.onKeyUp(e); }, false );
-	dom.addEventListener( 'keypress', 
-			function(e) { that.onKeyPress(e); }, false );
-
-	// so it can take focus
-	dom.setAttribute("tabindex", 1);
-    
-}
-
-Vizi.GraphicsThreeJS.prototype.addDomHandlers = function()
-{
-	var that = this;
-	window.addEventListener( 'resize', function(event) { that.onWindowResize(event); }, false );
-
-	setTimeout(function(event) { that.onWindowResize(event); }, 10);
-	
-	var fullScreenChange =
-		this.renderer.domElement.mozRequestFullScreen? 'mozfullscreenchange' : 'webkitfullscreenchange';
-	
-	document.addEventListener( fullScreenChange, 
-			function(e) {that.onFullScreenChanged(e); }, false );
-
-}
-
-Vizi.GraphicsThreeJS.prototype.objectFromMouse = function(event)
-{
-	var eltx = event.elementX, elty = event.elementY;
-	
-	// translate client coords into vp x,y
-    var vpx = ( eltx / this.container.offsetWidth ) * 2 - 1;
-    var vpy = - ( elty / this.container.offsetHeight ) * 2 + 1;
-    
-    var vector = new THREE.Vector3( vpx, vpy, 0.5 );
-
-    this.projector.unprojectVector( vector, this.camera );
-	
-    var pos = new THREE.Vector3;
-    pos = pos.applyMatrix4(this.camera.matrixWorld);
-	
-    var raycaster = new THREE.Raycaster( pos, vector.sub( pos ).normalize() );
-
-	var intersects = raycaster.intersectObjects( this.scene.children, true );
-	
-    if ( intersects.length > 0 ) {
-    	var i = 0;
-    	while(i < intersects.length && (!intersects[i].object.visible || 
-    			intersects[i].object.ignorePick))
-    	{
-    		i++;
-    	}
-    	
-    	var intersected = intersects[i];
-    	
-    	if (i >= intersects.length)
-    	{
-        	return { object : null, point : null, normal : null };
-    	}
-    	
-    	return (this.findObjectFromIntersected(intersected.object, intersected.point, intersected.face));        	    	                             
-    }
-    else
-    {
-    	return { object : null, point : null, normal : null };
-    }
-}
-
-Vizi.GraphicsThreeJS.prototype.objectFromRay = function(hierarchy, origin, direction, near, far)
-{
-    var raycaster = new THREE.Raycaster(origin, direction, near, far);
-
-    var objects = null;
-    if (hierarchy) {
-    	objects = hierarchy.transform.object.children; 
-    }
-    else {
-    	objects = this.scene.children;
-    }
-    
-	var intersects = raycaster.intersectObjects( objects, true );
-	
-    if ( intersects.length > 0 ) {
-    	var i = 0;
-    	while(i < intersects.length && (!intersects[i].object.visible || 
-    			intersects[i].object.ignoreCollision))
-    	{
-    		i++;
-    	}
-    	
-    	var intersected = intersects[i];
-    	
-    	if (i >= intersects.length)
-    	{
-        	return { object : null, point : null, normal : null };
-    	}
-    	
-    	return (this.findObjectFromIntersected(intersected.object, intersected.point, intersected.face));        	    	                             
-    }
-    else
-    {
-    	return { object : null, point : null, normal : null };
-    }
-}
-
-
-Vizi.GraphicsThreeJS.prototype.findObjectFromIntersected = function(object, point, face)
-{
-	if (object.data)
-	{
-		// The intersect point comes in as world units
-		var hitPointWorld = point.clone();
-		// Get the model space units for our event
-		var modelMat = new THREE.Matrix4;
-		modelMat.getInverse(object.matrixWorld);
-		point.applyMatrix4(modelMat);
-		// Use the intersected face's normal if it's there
-		var normal = face ? face.normal : null
-		return { object: object.data, point: point, hitPointWorld : hitPointWorld, face: face, normal: normal };
+	// set up defaults, safeguards; convert to typeface.js names
+	fontFamily = fontFamily.toLowerCase();
+	switch (fontFamily) {
+		case "optima" :
+			fontFamily = "optimer"; 
+			break;
+		case "helvetica" :
+		default :
+			fontFamily = "helvetiker"; 
+			break;
 	}
-	else if (object.parent)
-	{
-		return this.findObjectFromIntersected(object.parent, point, face);
+
+	// final safeguard, make sure font is there. if not, use helv
+	var face = THREE.FontUtils.faces[fontFamily];
+	if (!face) {
+		fontFamily = "helvetiker"; 
 	}
-	else
-	{
-		return { object : null, point : null, face : null, normal : null };
+	
+	fontWeight = fontWeight.toLowerCase();
+	if (fontWeight != "bold") {
+		fontWeight = "normal";
 	}
+
+	fontStyle = fontStyle.toLowerCase();
+	// N.B.: for now, just use normal, italic doesn't seem to work 
+	if (true) { // fontStyle != "italic") {
+		fontStyle = "normal";
+	}
+	
+	fontSize = parseFloat(fontSize);
+	fontDepth = parseFloat(fontDepth);
+	bevelSize = parseFloat(bevelSize);
+	bevelThickness = parseFloat(bevelThickness);
+	bevelEnabled = (fontBevel.toLowerCase() == "bevel") ? true : false;
+	if (!fontDepth) {
+		bevelEnabled = false;
+	}
+	// hack because no-bevel shading has bad normals along text edge
+	if (!bevelEnabled) {
+		bevelThickness = bevelSize = glam.TextElement.BEVEL_EPSILON;
+		bevelEnabled = true;
+	}
+
+	// The text value
+	var value = docelt.getAttribute('value') || glam.TextElement.DEFAULT_VALUE;
+
+	if (!value) {
+		value = docelt.textContent;
+	}
+	
+	param.value = value;
+	param.fontSize = fontSize;
+	param.fontDepth = fontDepth;
+	param.bevelSize = bevelSize;
+	param.bevelThickness = bevelThickness;
+	param.bevelEnabled = bevelEnabled;
+	param.fontFamily = fontFamily;
+	param.fontWeight = fontWeight;
+	param.fontStyle = fontStyle;
 }
 
-Vizi.GraphicsThreeJS.prototype.nodeFromMouse = function(event)
-{
-	// Blerg, this is to support code outside the SB components & picker framework
-	// Returns a raw Three.js node
-	
-	// translate client coords into vp x,y
-	var eltx = event.elementX, elty = event.elementY;
-	
-    var vpx = ( eltx / this.container.offsetWidth ) * 2 - 1;
-    var vpy = - ( elty / this.container.offsetHeight ) * 2 + 1;
-    
-    var vector = new THREE.Vector3( vpx, vpy, 0.5 );
+glam.TextElement.createVisual = function(docelt, material, param) {
 
-    this.projector.unprojectVector( vector, this.camera );
-	
-    var pos = new THREE.Vector3;
-    pos = pos.applyMatrix4(this.camera.matrixWorld);
-
-    var raycaster = new THREE.Raycaster( pos, vector.sub( pos ).normalize() );
-
-	var intersects = raycaster.intersectObjects( this.scene.children, true );
-	
-    if ( intersects.length > 0 ) {
-    	var i = 0;
-    	while(!intersects[i].object.visible)
-    	{
-    		i++;
-    	}
-    	
-    	var intersected = intersects[i];
-    	if (intersected)
-    	{
-    		return { node : intersected.object, 
-    				 point : intersected.point, 
-    				 normal : intersected.face.normal
-    				}
-    	}
-    	else
-    		return null;
-    }
-    else
-    {
-    	return null;
-    }
-}
-
-Vizi.GraphicsThreeJS.prototype.getObjectIntersection = function(x, y, object)
-{
-	// Translate client coords into viewport x,y
-	var vpx = ( x / this.renderer.domElement.offsetWidth ) * 2 - 1;
-	var vpy = - ( y / this.renderer.domElement.offsetHeight ) * 2 + 1;
-	
-    var vector = new THREE.Vector3( vpx, vpy, 0.5 );
-
-    this.projector.unprojectVector( vector, this.camera );
-	
-    var pos = new THREE.Vector3;
-    pos = pos.applyMatrix4(this.camera.matrixWorld);
-	
-    var raycaster = new THREE.Raycaster( pos, vector.sub( pos ).normalize() );
-
-	var intersects = raycaster.intersectObject( object, true );
-	if (intersects.length)
-	{
-		var intersection = intersects[0];
-		var modelMat = new THREE.Matrix4;
-		modelMat.getInverse(intersection.object.matrixWorld);
-		intersection.point.applyMatrix4(modelMat);
-		return intersection;
-	}
-	else
+	if (!param.value) {
 		return null;
+	}
+	
+	var curveSegments = 4;
+
+	var textGeo = new THREE.TextGeometry( param.value, {
+
+		font: param.fontFamily,
+		weight: param.fontWeight,
+		style: param.fontStyle,
+
+		size: param.fontSize,
+		height: param.fontDepth,
+		curveSegments: curveSegments,
+
+		bevelThickness: param.bevelThickness,
+		bevelSize: param.bevelSize,
+		bevelEnabled: param.bevelEnabled,
+
+		material: 0,
+		extrudeMaterial: 1
+
+	});
+
+	textGeo.computeBoundingBox();
+	textGeo.computeVertexNormals();
+
+	var frontMaterial = material.clone();
+	frontMaterial.shading = THREE.FlatShading;
+	var extrudeMaterial = material.clone();
+	extrudeMaterial.shading = THREE.SmoothShading;
+	var textmat = new THREE.MeshFaceMaterial( [ frontMaterial,  // front
+	                                            extrudeMaterial // side
+	                                            ]);
+
+
+	var visual = new glam.Visual(
+			{ geometry: textGeo,
+				material: textmat
+			});
+
+	textGeo.center();
+	
+	return visual;
+}
+/**
+ * @fileoverview Camera Manager - singleton to manage cameras, active, resize etc.
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.CameraManager');
+
+glam.CameraManager.addCamera = function(camera)
+{
+	glam.CameraManager.cameraList.push(camera);
+}
+
+glam.CameraManager.removeCamera = function(camera)
+{
+    var i = glam.CameraManager.cameraList.indexOf(camera);
+
+    if (i != -1)
+    {
+    	glam.CameraManager.cameraList.splice(i, 1);
+    }
+}
+
+glam.CameraManager.setActiveCamera = function(camera)
+{
+	if (glam.CameraManager.activeCamera && glam.CameraManager.activeCamera != camera)
+		glam.CameraManager.activeCamera.active = false;
+	
+	glam.CameraManager.activeCamera = camera;
+	glam.Graphics.instance.setCamera(camera.object);
+}
+
+
+glam.CameraManager.handleWindowResize = function(width, height)
+{
+	var cameras = glam.CameraManager.cameraList;
+	
+	if (cameras.length == 0)
+		return false;
+
+	var i, len = cameras.length;
+	for (i = 0; i < len; i++)
+	{
+		var camera = cameras[i];
+		camera.aspect = width / height;
+	}
+
+	return true;
+}
+
+
+glam.CameraManager.cameraList = [];
+glam.CameraManager.activeCamera = null;/**
+ * @fileoverview Viewer class - Application Subclass for Model/Scene Viewer
+ * @author Tony Parisi / http://www.tonyparisi.com
+ */
+
+goog.provide('glam.Viewer');
+goog.require('glam.Application');
+
+glam.Viewer = function(param)
+{
+	// Chain to superclass
+	glam.Application.call(this, param);
+	
+	// Set up stats info
+	this.lastFPSUpdateTime = 0;
+	
+	this.renderStats = { fps : 0 };
+	this.sceneStats = { meshCount : 0, faceCount : 0, boundingBox:new THREE.Box3 };
+	
+	// Tuck away prefs based on param
+	this.renderStatsUpdateInterval = (param.renderStatsUpdateInterval !== undefined) ? param.renderStatsUpdateInterval : 1000;
+	this.loopAnimations = (param.loopAnimations !== undefined) ? param.loopAnimations : false;
+	this.headlightOn = (param.headlight !== undefined) ? param.headlight : true;
+	this.headlightIntensity = param.headlightIntensity || glam.Viewer.DEFAULT_HEADLIGHT_INTENSITY;
+	this.riftController = (param.riftController !== undefined) ? param.riftController : false;
+	this.firstPerson = (param.firstPerson !== undefined) ? param.firstPerson : false;
+	this.showGrid = (param.showGrid !== undefined) ? param.showGrid : false;
+	this.createBoundingBoxes = (param.createBoundingBoxes !== undefined) ? param.createBoundingBoxes : false;
+	this.showBoundingBoxes = (param.showBoundingBoxes !== undefined) ? param.showBoundingBoxes : false;
+	this.allowPan = (param.allowPan !== undefined) ? param.allowPan : true;
+	this.allowZoom = (param.allowZoom !== undefined) ? param.allowZoom : true;
+	this.oneButton = (param.oneButton !== undefined) ? param.oneButton : false;
+	this.gridSize = param.gridSize || glam.Viewer.DEFAULT_GRID_SIZE;
+	this.gridStepSize = param.gridStepSize || glam.Viewer.DEFAULT_GRID_STEP_SIZE;
+	this.flipY = (param.flipY !== undefined) ? param.flipY : false;
+	this.highlightedObject = null;
+	this.highlightDecoration = null;
+	
+	// Set up backdrop objects for empty scene
+	this.initScene();
+
+	// Set up shadows - maybe make this a pref
+	glam.Graphics.instance.enableShadows(true);
+}
+
+goog.inherits(glam.Viewer, glam.Application);
+
+glam.Viewer.prototype.initScene = function()
+{
+	this.sceneRoot = new glam.Object;
+	this.addObject(this.sceneRoot);
+	if (this.flipY) {
+		this.sceneRoot.transform.rotation.x = -Math.PI / 2;
+	}
+
+	this.gridRoot = new glam.Object;
+	this.addObject(this.gridRoot);
+	this.grid = null;	
+	this.gridPicker = null;	
+	this.createGrid();
+	
+	if (this.firstPerson) {
+		this.controller = glam.Prefabs.FirstPersonController({active:true, 
+			headlight:true,
+			turn: !this.riftController,
+			look: !this.riftController,
+			});
+		this.controllerScript = this.controller.getComponent(glam.FirstPersonControllerScript);
+	}
+	else {
+		this.controller = glam.Prefabs.ModelController({active:true, headlight:true, 
+			allowPan:this.allowPan, allowZoom:this.allowZoom, oneButton:this.oneButton});
+		this.controllerScript = this.controller.getComponent(glam.ModelControllerScript);
+	}
+	this.addObject(this.controller);
+
+	var viewpoint = new glam.Object;
+	this.defaultCamera = new glam.PerspectiveCamera({active:true, 
+		position : glam.Viewer.DEFAULT_CAMERA_POSITION});
+	viewpoint.addComponent(this.defaultCamera);
+	viewpoint.name = "[default]";
+	this.addObject(viewpoint);
+
+	this.controllerScript.camera = this.defaultCamera;
+	
+	if (this.riftController) {
+		var controller = glam.Prefabs.RiftController({active:true, 
+			headlight:false,
+			mouseLook:false,
+			useVRJS : true,
+		});
+		var controllerScript = controller.getComponent(glam.RiftControllerScript);
+		controllerScript.camera = this.defaultCamera;
+		controllerScript.moveSpeed = 6;
 		
+		this.riftControllerScript = controllerScript;
+		this.addObject(controller);
+	}
+	
+	var ambientLightObject = new glam.Object;
+	this.ambientLight = new glam.AmbientLight({color:0xFFFFFF, intensity : this.ambientOn ? 1 : 0 });
+	this.addObject(ambientLightObject);
+	
+	this.scenes = [];
+	this.keyFrameAnimators = [];
+	this.keyFrameAnimatorNames = [];
+	this.cameras = [];
+	this.cameraNames = [];
+	this.lights = [];
+	this.lightNames = [];
+	this.lightIntensities = [];
+	this.lightColors = [];
 }
 
-Vizi.GraphicsThreeJS.prototype.calcElementOffset = function(offset) {
-
-	offset.left = this.renderer.domElement.offsetLeft;
-	offset.top = this.renderer.domElement.offsetTop;
+glam.Viewer.prototype.runloop = function()
+{
+	var updateInterval = this.renderStatsUpdateInterval;
 	
-	var parent = this.renderer.domElement.offsetParent;
-	while(parent) {
-		offset.left += parent.offsetLeft;
-		offset.top += parent.offsetTop;
-		parent = parent.offsetParent;
+	glam.Application.prototype.runloop.call(this);
+	if (glam.Graphics.instance.frameRate)
+	{
+		var now = Date.now();
+		var deltat = now - this.lastFPSUpdateTime;
+		if (deltat > updateInterval)
+		{
+			this.renderStats.fps = glam.Graphics.instance.frameRate;
+			this.dispatchEvent("renderstats", this.renderStats);
+			this.lastFPSUpdateTime = now;
+		}
 	}
 }
 
-Vizi.GraphicsThreeJS.prototype.onDocumentMouseMove = function(event)
+glam.Viewer.prototype.replaceScene = function(data)
 {
-    event.preventDefault();
-    
-	var offset = {};
-	this.calcElementOffset(offset);
+	// hack for now - do this for real after computing scene bounds
 	
-	var eltx = event.pageX - offset.left;
-	var elty = event.pageY - offset.top;
+	var i, len = this.sceneRoot._children.length;
+	var childrenToRemove = [];
+	for (i = 0; i < len; i++)
+	{
+		var child = this.sceneRoot._children[i];
+		childrenToRemove.push(child);
+	}
 	
-	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
-	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
-	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey };
+	for (i = 0; i < len; i++) {
+		this.sceneRoot.removeChild(childrenToRemove[i]);
+	}
 	
-    Vizi.Mouse.instance.onMouseMove(evt);
-    
-    if (Vizi.PickManager)
-    {
-    	Vizi.PickManager.handleMouseMove(evt);
-    }
-    
-    Vizi.Application.handleMouseMove(evt);
-}
-
-Vizi.GraphicsThreeJS.prototype.onDocumentMouseDown = function(event)
-{
-    event.preventDefault();
-    
-	var offset = {};
-	this.calcElementOffset(offset);
+	this.sceneRoot.removeComponent(this.sceneRoot.findNode(glam.Decoration));
 	
-	var eltx = event.pageX - offset.left;
-	var elty = event.pageY - offset.top;
+	this.scenes = [data.scene];
+	this.sceneRoot.addChild(data.scene);
+	
+	var bbox = glam.SceneUtils.computeBoundingBox(data.scene);
+	
+	if (this.keyFrameAnimators)
+	{
+		var i, len = this.keyFrameAnimators.length;
+		for (i = 0; i < len; i++)
+		{
+			this.sceneRoot.removeComponent(this.keyFrameAnimators[i]);
+		}
 		
-	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
-	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
-	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey  };
-	
-    Vizi.Mouse.instance.onMouseDown(evt);
-    
-    if (Vizi.PickManager)
-    {
-    	Vizi.PickManager.handleMouseDown(evt);
-    }
-    
-    Vizi.Application.handleMouseDown(evt);
-}
-
-Vizi.GraphicsThreeJS.prototype.onDocumentMouseUp = function(event)
-{
-    event.preventDefault();
-
-	var offset = {};
-	this.calcElementOffset(offset);
-	
-	var eltx = event.pageX - offset.left;
-	var elty = event.pageY - offset.top;
-	
-	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
-	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
-	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey  };
-    
-    Vizi.Mouse.instance.onMouseUp(evt);
-    
-    if (Vizi.PickManager)
-    {
-    	Vizi.PickManager.handleMouseUp(evt);
-    }	            
-
-    Vizi.Application.handleMouseUp(evt);
-}
-
-Vizi.GraphicsThreeJS.prototype.onDocumentMouseClick = function(event)
-{
-    event.preventDefault();
-
-	var offset = {};
-	this.calcElementOffset(offset);
-	
-	var eltx = event.pageX - offset.left;
-	var elty = event.pageY - offset.top;
-	
-	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
-	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
-	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey  };
-    
-    Vizi.Mouse.instance.onMouseClick(evt);
-    
-    if (Vizi.PickManager)
-    {
-    	Vizi.PickManager.handleMouseClick(evt);
-    }	            
-
-    Vizi.Application.handleMouseClick(evt);
-}
-
-Vizi.GraphicsThreeJS.prototype.onDocumentMouseDoubleClick = function(event)
-{
-    event.preventDefault();
-
-	var offset = {};
-	this.calcElementOffset(offset);
-	
-	var eltx = event.pageX - offset.left;
-	var elty = event.pageY - offset.top;
-	
-	var eltx = event.pageX - offset.left;
-	var elty = event.pageY - offset.top;
-	
-	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
-	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
-	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey  };
-    
-    Vizi.Mouse.instance.onMouseDoubleClick(evt);
-    
-    if (Vizi.PickManager)
-    {
-    	Vizi.PickManager.handleMouseDoubleClick(evt);
-    }	            
-
-    Vizi.Application.handleMouseDoubleClick(evt);
-}
-
-Vizi.GraphicsThreeJS.prototype.onDocumentMouseScroll = function(event)
-{
-    event.preventDefault();
-
-	var delta = 0;
-
-	if ( event.wheelDelta ) { // WebKit / Opera / Explorer 9
-
-		delta = event.wheelDelta;
-
-	} else if ( event.detail ) { // Firefox
-
-		delta = - event.detail;
-
-	}
-
-	var evt = { type : "mousescroll", delta : delta };
-    
-    Vizi.Mouse.instance.onMouseScroll(evt);
-
-    if (Vizi.PickManager)
-    {
-    	Vizi.PickManager.handleMouseScroll(evt);
-    }
-    
-    Vizi.Application.handleMouseScroll(evt);
-}
-
-// Touch events
-Vizi.GraphicsThreeJS.prototype.translateTouch = function(touch, offset) {
-
-	var eltx = touch.pageX - offset.left;
-	var elty = touch.pageY - offset.top;
-
-	return {
-	    'screenX': touch.screenX,
-	    'screenY': touch.screenY,
-	    'clientX': touch.clientX,
-	    'clientY': touch.clientY,
-	    'pageX': touch.pageX,
-	    'pageY': touch.pageY,
-	    'elementX': eltx,
-	    'elementY': elty,
-	}
-}
-
-Vizi.GraphicsThreeJS.prototype.onDocumentTouchStart = function(event)
-{
-    event.preventDefault();
-    
-	var offset = {};
-	this.calcElementOffset(offset);
-
-	var touches = [];
-	var i, len = event.touches.length;
-	for (i = 0; i < len; i++) {
-		touches.push(this.translateTouch(event.touches[i], offset));
-	}
-
-	var evt = { type : event.type, touches : touches };
-	
-    if (Vizi.PickManager)
-    {
-    	Vizi.PickManager.handleTouchStart(evt);
-    }
-    
-    Vizi.Application.handleTouchStart(evt);
-}
-
-Vizi.GraphicsThreeJS.prototype.onDocumentTouchMove = function(event)
-{
-    event.preventDefault();
-    
-	var offset = {};
-	this.calcElementOffset(offset);
-	
-	var touches = [];
-	var i, len = event.touches.length;
-	for (i = 0; i < len; i++) {
-		touches.push(this.translateTouch(event.touches[i], offset));
-	}
-
-	var changedTouches = [];
-	var i, len = event.changedTouches.length;
-	for (i = 0; i < len; i++) {
-		changedTouches.push(this.translateTouch(event.changedTouches[i], offset));
-	}
-
-	var evt = { type : event.type, touches : touches, changedTouches : changedTouches };
-		    
-    if (Vizi.PickManager)
-    {
-    	Vizi.PickManager.handleTouchMove(evt);
-    }
-    
-    Vizi.Application.handleTouchMove(evt);
-}
-
-Vizi.GraphicsThreeJS.prototype.onDocumentTouchEnd = function(event)
-{
-    event.preventDefault();
-
-	var offset = {};
-	this.calcElementOffset(offset);
-	
-	var touches = [];
-	var i, len = event.touches.length;
-	for (i = 0; i < len; i++) {
-		touches.push(this.translateTouch(event.touches[i], offset));
-	}
-
-	var changedTouches = [];
-	var i, len = event.changedTouches.length;
-	for (i = 0; i < len; i++) {
-		changedTouches.push(this.translateTouch(event.changedTouches[i], offset));
-	}
-
-	var evt = { type : event.type, touches : touches, changedTouches : changedTouches };
-    
-    if (Vizi.PickManager)
-    {
-    	Vizi.PickManager.handleTouchEnd(evt);
-    }	            
-
-    Vizi.Application.handleTouchEnd(evt);
-}
-
-
-Vizi.GraphicsThreeJS.prototype.onKeyDown = function(event)
-{
-	// N.B.: Chrome doesn't deliver keyPress if we don't bubble... keep an eye on this
-	event.preventDefault();
-
-    Vizi.Keyboard.instance.onKeyDown(event);
-    
-	Vizi.Application.handleKeyDown(event);
-}
-
-Vizi.GraphicsThreeJS.prototype.onKeyUp = function(event)
-{
-	// N.B.: Chrome doesn't deliver keyPress if we don't bubble... keep an eye on this
-	event.preventDefault();
-
-    Vizi.Keyboard.instance.onKeyUp(event);
-    
-	Vizi.Application.handleKeyUp(event);
-}
-	        
-Vizi.GraphicsThreeJS.prototype.onKeyPress = function(event)
-{
-	// N.B.: Chrome doesn't deliver keyPress if we don't bubble... keep an eye on this
-	event.preventDefault();
-
-    Vizi.Keyboard.instance.onKeyPress(event);
-    
-	Vizi.Application.handleKeyPress(event);
-}
-
-Vizi.GraphicsThreeJS.prototype.onWindowResize = function(event)
-{
-	var width = this.container.offsetWidth,
-		height = this.container.offsetHeight;
-
-	// HACK HACK HACK seems to be the only reliable thing and even this
-	// is dicey on Chrome. Is there a race condition?
-	if (this.riftCam) {
-		width = window.innerWidth;
-		height = window.innerHeight;
-	}
-
-	if (this.cardboard) {
-		this.cardboard.setSize(width, height);
+		this.keyFrameAnimators = [];
+		this.keyFrameAnimatorNames = [];
 	}
 	
-	this.renderer.setSize(width, height);
-	
-	if (this.composer) {
-		this.composer.setSize(width, height);
+	if (data.keyFrameAnimators)
+	{
+		var i, len = data.keyFrameAnimators.length;
+		for (i = 0; i < len; i++)
+		{
+			this.sceneRoot.addComponent(data.keyFrameAnimators[i]);
+			this.keyFrameAnimators.push(data.keyFrameAnimators[i]);
+			this.keyFrameAnimatorNames.push(data.keyFrameAnimators[i].animationData[0].name)
+		}		
 	}
 	
+	this.cameras = [];
+	this.cameraNames = [];
+	this.cameras.push(this.defaultCamera);
+	this.camera = this.defaultCamera;
+	this.cameraNames.push("[default]");
+
+	this.controllerScript.camera = this.defaultCamera;
+	this.controllerScript.camera.active = true;
 	
-	if (Vizi.CameraManager && Vizi.CameraManager.handleWindowResize(this.container.offsetWidth, this.container.offsetHeight))
-	{		
+	if (data.cameras)
+	{
+		var i, len = data.cameras.length;
+		for (i = 0; i < len; i++)
+		{
+			var camera = data.cameras[i];
+			camera.aspect = container.offsetWidth / container.offsetHeight;
+			
+			this.cameras.push(camera);
+			this.cameraNames.push(camera._object.name);
+		}		
+	}
+	
+	this.lights = [];
+	this.lightNames = [];
+	this.lightIntensities = [];
+	this.lightColors = [];
+	
+	if (data.lights)
+	{
+		var i, len = data.lights.length;
+		for (i = 0; i < len; i++)
+		{
+			var light = data.lights[i];
+			if (light instanceof THREE.SpotLight)
+			{
+				light.castShadow = true;
+				light.shadowCameraNear = 1;
+				light.shadowCameraFar = glam.Light.DEFAULT_RANGE;
+				light.shadowCameraFov = 90;
+
+				// light.shadowCameraVisible = true;
+
+				light.shadowBias = 0.0001;
+				light.shadowDarkness = 0.3;
+
+				light.shadowMapWidth = 2048;
+				light.shadowMapHeight = 2048;
+				
+				light.target.position.set(0, 0, 0);
+			}
+			
+			this.lights.push(data.lights[i]);
+			this.lightNames.push(data.lights[i]._object.name);
+			this.lightIntensities.push(data.lights[i].intensity);
+			this.lightColors.push(data.lights[i].color.clone());
+		}
+		
+		this.controllerScript.headlight.intensity = len ? 0 : this.headlightIntensity;
+		this.headlightOn = len <= 0;
 	}
 	else
 	{
-		this.camera.aspect = this.container.offsetWidth / this.container.offsetHeight;
-		this.camera.updateProjectionMatrix();
-	}
-}
-
-Vizi.GraphicsThreeJS.prototype.onFullScreenChanged = function(event) {
-	
-	if ( !document.mozFullscreenElement && !document.webkitFullscreenElement ) {
-		this.fullscreen = false;
-	}
-	else {
-		this.fullscreen = true;
-	}
-}
-
-
-
-
-Vizi.GraphicsThreeJS.prototype.setCursor = function(cursor)
-{
-	if (!cursor)
-		cursor = this.saved_cursor;
-	
-	this.container.style.cursor = cursor;
-}
-
-
-Vizi.GraphicsThreeJS.prototype.update = function()
-{
-    var frameTime = Date.now();
-    var deltat = (frameTime - this.lastFrameTime) / 1000;
-    this.frameRate = 1 / deltat;
-
-    this.lastFrameTime = frameTime;
-
-	// N.B.: start with hack, let's see how it goes...
-	if (this.composer) {
-		this.renderEffects(deltat);
-	}
-	else if (this.cardboard) {
-		this.renderStereo();
-	}
-    else if (this.riftCam && this.riftCam._vrHMD) {
-		this.renderVR();
-	}
-	else {
-		this.render();
+		this.controllerScript.headlight.intensity = this.headlightIntensity;
+		this.headlightOn = true;
 	}
 	
-    if (this.stats)
-    {
-    	this.stats.update();
-    }
+	this.initHighlight();
+	this.fitToScene();
+	this.calcSceneStats();
 }
 
-Vizi.GraphicsThreeJS.prototype.render = function() {
-    this.renderer.setClearColor( 0, 0 );
-	this.renderer.autoClearColor = true;
-    this.renderer.render( this.backgroundLayer.scene, this.backgroundLayer.camera );
-    this.renderer.setClearColor( 0, 1 );
-	this.renderer.autoClearColor = false;
-    this.renderer.render( this.scene, this.camera );
-}
-
-Vizi.GraphicsThreeJS.prototype.renderVR = function() {
-	// start with 2 layer to test; will need to work in postprocessing when that's ready
-    this.riftCam.render([this.backgroundLayer.scene, this.scene], [this.backgroundLayer.camera, this.camera]);
-}
-
-Vizi.GraphicsThreeJS.prototype.renderEffects = function(deltat) {
-	this.composer.render(deltat);
-}
-
-Vizi.GraphicsThreeJS.prototype.renderStereo = function() {
-	// start with 2 layer to test; will need to work in postprocessing when that's ready
-    this.cardboard.render([this.backgroundLayer.scene, this.scene], [this.backgroundLayer.camera, this.camera]);
-//    this.cardboard.render(this.scene, this.camera);
-}
-
-Vizi.GraphicsThreeJS.prototype.enableShadows = function(enable)
-{
-	this.renderer.shadowMapEnabled = enable;
-	this.renderer.shadowMapSoft = enable;
-	this.renderer.shadowMapCullFrontFaces = false;
-}
-
-Vizi.GraphicsThreeJS.prototype.setFullScreen = function(enable)
-{
-	if (this.riftCam) {
-
-		this.fullscreen = enable;
-		
-		this.riftCam.setFullScreen(enable);
-	}
-	else if (this.cardboard) {
-
-		var canvas = this.renderer.domElement;
-		
-		if (enable) {
-			if ( this.container.mozRequestFullScreen ) {
-				this.container.mozRequestFullScreen();
-			} else {
-				this.container.webkitRequestFullscreen();
-			}
-		}
-		else {
-			if ( document.mozCancelFullScreen ) {
-				document.mozCancelFullScreen();
-			} else {
-				document.webkitExitFullscreen();
-			}
-		}
-	}
-}
-
-Vizi.GraphicsThreeJS.prototype.setCamera = function(camera) {
-	this.camera = camera;
-	if (this.composer) {
-		this.composer.setCamera(camera);
-	}
-}
-
-Vizi.GraphicsThreeJS.prototype.addEffect = function(effect) {
+glam.Viewer.prototype.addToScene = function(data)
+{	
+	this.sceneRoot.addChild(data.scene);
 	
-	if (!this.composer) {
-		this.composer = new Vizi.Composer();
-	}
-	
-	if (!this.effects) {
-		this.effects  = [];
-	}
-	
-	if (effect.isShaderEffect) {
-		for (var i = 0; i < this.effects.length; i++) {
-			var ef = this.effects[i];
-//			ef.pass.renderToScreen = false;
-		}	
-//		effect.pass.renderToScreen = true;
-	}
-	
-	this.effects.push(effect);
-	this.composer.addEffect(effect);
-}
-
-Vizi.GraphicsThreeJS.default_display_stats = false;
-/**
- *
- */
-goog.require('Vizi.Service');
-goog.provide('Vizi.TweenService');
-
-/**
- * The TweenService.
- *
- * @extends {Vizi.Service}
- */
-Vizi.TweenService = function() {};
-
-goog.inherits(Vizi.TweenService, Vizi.Service);
-
-//---------------------------------------------------------------------
-// Initialization/Termination
-//---------------------------------------------------------------------
-
-/**
- * Initializes the events system.
- */
-Vizi.TweenService.prototype.initialize = function(param) {};
-
-/**
- * Terminates the events world.
- */
-Vizi.TweenService.prototype.terminate = function() {};
-
-
-/**
- * Updates the TweenService.
- */
-Vizi.TweenService.prototype.update = function()
-{
-	if (window.TWEEN)
-		TWEEN.update();
-}
-/**
- * @fileoverview Service locator for various game services.
- */
-goog.provide('Vizi.Services');
-goog.require('Vizi.Time');
-goog.require('Vizi.Input');
-goog.require('Vizi.TweenService');
-goog.require('Vizi.EventService');
-goog.require('Vizi.GraphicsThreeJS');
-
-Vizi.Services = {};
-
-Vizi.Services._serviceMap = 
-{ 
-		"time" : { object : Vizi.Time },
-		"input" : { object : Vizi.Input },
-		"tween" : { object : Vizi.TweenService },
-		"events" : { object : Vizi.EventService },
-		"graphics" : { object : Vizi.GraphicsThreeJS },
-};
-
-Vizi.Services.create = function(serviceName)
-{
-	var serviceType = Vizi.Services._serviceMap[serviceName];
-	if (serviceType)
+	if (!this.cameras.length)
 	{
-		var prop = serviceType.property;
-		
-		if (Vizi.Services[serviceName])
+		this.cameras = [];
+		this.cameraNames = [];
+		this.cameras.push(this.defaultCamera);
+		this.camera = this.defaultCamera;
+		this.cameraNames.push("[default]");
+
+		this.controllerScript.camera = this.defaultCamera;
+		this.controllerScript.camera.active = true;
+	}
+	
+	if (data.keyFrameAnimators)
+	{
+		var i, len = data.keyFrameAnimators.length;
+		for (i = 0; i < len; i++)
 		{
-	        throw new Error('Cannot create two ' + serviceName + ' service instances');
+			this.sceneRoot.addComponent(data.keyFrameAnimators[i]);
+			this.keyFrameAnimators.push(data.keyFrameAnimators[i]);
+			this.keyFrameAnimatorNames.push(data.keyFrameAnimators[i].animationData[0].name)
+		}		
+	}
+	
+	if (data.cameras)
+	{
+		var i, len = data.cameras.length;
+		for (i = 0; i < len; i++)
+		{
+			var camera = data.cameras[i];
+			camera.aspect = container.offsetWidth / container.offsetHeight;
+			
+			this.cameras.push(camera);
+			this.cameraNames.push(camera._object.name);
+		}		
+	}
+	
+	if (data.lights)
+	{
+		var i, len = data.lights.length;
+		for (i = 0; i < len; i++)
+		{
+			var light = data.lights[i];
+			if (light instanceof THREE.SpotLight)
+			{
+				light.castShadow = true;
+				light.shadowCameraNear = 1;
+				light.shadowCameraFar = glam.Light.DEFAULT_RANGE;
+				light.shadowCameraFov = 90;
+
+				// light.shadowCameraVisible = true;
+
+				light.shadowBias = 0.0001;
+				light.shadowDarkness = 0.3;
+
+				light.shadowMapWidth = 2048;
+				light.shadowMapHeight = 2048;
+				
+				light.target.position.set(0, 0, 0);
+			}
+			
+			this.lights.push(data.lights[i]);
+			this.lightNames.push(data.lights[i]._object.name);
+			this.lightIntensities.push(data.lights[i].intensity);
+			this.lightColors.push(data.lights[i].color.clone());
+		}		
+	}
+	else if (!this.lights.length)
+	{
+		this.controllerScript.headlight.intensity = this.headlightIntensity;
+		this.headlightOn = true;
+	}
+	
+	this.scenes.push(data.scene);
+	this.initHighlight();
+	this.fitToScene();
+	this.calcSceneStats();
+}
+
+glam.Viewer.prototype.createDefaultCamera = function() {
+	
+	var cam = this.controllerScript.viewpoint.camera.object;
+	cam.updateMatrixWorld();
+	var position = new THREE.Vector3;
+	var quaternion = new THREE.Quaternion;
+	var scale = new THREE.Vector3;
+	cam.matrixWorld.decompose(position, quaternion, scale);
+	var rotation = new THREE.Euler().setFromQuaternion(quaternion);
+
+	var newCamera = new THREE.PerspectiveCamera(cam.fov, cam.aspect, cam.near, cam.far);
+	return new glam.PerspectiveCamera({object:newCamera});
+}
+
+glam.Viewer.prototype.copyCameraValues = function(oldCamera, newCamera)
+{
+	// for now, assume newCamera is in world space, this is too friggin hard
+	var cam = oldCamera.object;
+	cam.updateMatrixWorld();
+	var position = new THREE.Vector3;
+	var quaternion = new THREE.Quaternion;
+	var scale = new THREE.Vector3;
+	cam.matrixWorld.decompose(position, quaternion, scale);
+	var rotation = new THREE.Euler().setFromQuaternion(quaternion);
+	
+	newCamera.position.copy(position);
+	newCamera.rotation.copy(rotation);
+	
+	newCamera.fov = oldCamera.fov;
+	newCamera.aspect = oldCamera.aspect;
+	newCamera.near = oldCamera.near;
+	newCamera.far = oldCamera.far;	
+}
+
+glam.Viewer.prototype.useCamera = function(id) {
+
+	var index = id;
+	
+	if (typeof(id) == "string") {
+		var cameraNames = this.cameraNames;
+		if (this.cameraNames) {
+			index = this.cameraNames.indexOf(id);
+		}
+	}
+
+	if (index >= 0 && this.cameras && this.cameras[index]) {
+		this.cameras[index].active = true;
+		this.controllerScript.enabled = (index == 0);
+	}
+}
+
+glam.Viewer.prototype.addCamera = function(camera, id) {
+
+	this.cameras.push(camera);
+	this.cameraNames.push(id);
+
+}
+
+glam.Viewer.prototype.getCamera = function(id) {
+
+	var index = id;
+	
+	if (typeof(id) == "string") {
+		var cameraNames = this.cameraNames;
+		if (this.cameraNames) {
+			index = this.cameraNames.indexOf(id);
+		}
+	}
+
+	if (index >= 0 && this.cameras && this.cameras[index]) {
+		return this.cameras[index];
+	}
+	else {
+		return null;
+	}
+}
+
+glam.Viewer.prototype.toggleLight = function(index)
+{
+	if (this.lights && this.lights[index])
+	{
+		var light = this.lights[index];
+		if (light instanceof glam.AmbientLight)
+		{
+			var color = light.color;
+			if (color.r != 0 || color.g != 0 || color.b != 0)
+				color.setRGB(0, 0, 0);
+			else
+				color.copy(this.lightColors[index]);
 		}
 		else
 		{
-			if (serviceType.object)
-			{
-				var service = new serviceType.object;
-				Vizi.Services[serviceName] = service;
-
-				return service;
-			}
+			var intensity = light.intensity;
+			if (intensity)
+				light.intensity = 0;
 			else
-			{
-		        throw new Error('No object type supplied for creating service ' + serviceName + '; cannot create');
-			}
-		}
-	}
-	else
-	{
-        throw new Error('Unknown service: ' + serviceName + '; cannot create');
-	}
-}
-
-Vizi.Services.registerService = function(serviceName, object)
-{
-	if (Vizi.Services._serviceMap[serviceName])
-	{
-        throw new Error('Service ' + serviceName + 'already registered; cannot register twice');
-	}
-	else
-	{
-		var serviceType = { object: object };
-		Vizi.Services._serviceMap[serviceName] = serviceType;
-	}
-}/**
- * @fileoverview The base Application class
- * 
- * @author Tony Parisi
- */
-goog.provide('Vizi.Application');
-goog.require('Vizi.EventDispatcher');
-goog.require('Vizi.Time');
-goog.require('Vizi.Input');
-goog.require('Vizi.Services');
-
-/**
- * @constructor
- */
-Vizi.Application = function(param)
-{
-	// N.B.: freak out if somebody tries to make 2
-	// throw (...)
-
-	Vizi.EventDispatcher.call(this);
-	Vizi.Application.instance = this;
-	this.initialize(param);
-}
-
-goog.inherits(Vizi.Application, Vizi.EventDispatcher);
-
-Vizi.Application.prototype.initialize = function(param)
-{
-	param = param || {};
-
-	this.running = false;
-	this.tabstop = param.tabstop;
-	
-	this._services = [];
-	this._objects = [];
-
-	// Add required services first
-	this.addService("time");
-	this.addService("input");
-	
-	// Add optional (game-defined) services next
-	this.addOptionalServices();
-
-	// Add events and rendering services last - got to;
-	this.addService("tween");
-	this.addService("events");
-	this.addService("graphics");
-	
-	// Start all the services
-	this.initServices(param);
-}
-
-Vizi.Application.prototype.addService = function(serviceName)
-{
-	var service = Vizi.Services.create(serviceName);
-	this._services.push(service);	
-}
-
-Vizi.Application.prototype.initServices = function(param)
-{
-	var i, len;
-	len = this._services.length;
-	for (i = 0; i < len; i++)
-	{
-		this._services[i].initialize(param);
-	}
-}
-
-Vizi.Application.prototype.addOptionalServices = function()
-{
-}
-
-Vizi.Application.prototype.focus = function()
-{
-	// Hack hack hack should be the input system
-	Vizi.Graphics.instance.focus();
-}
-
-Vizi.Application.prototype.run = function()
-{
-    // core game loop here
-	this.realizeObjects();
-	Vizi.Graphics.instance.scene.updateMatrixWorld();
-	this.lastFrameTime = Date.now();
-	this.running = true;
-	this.runloop();
-}
-	        
-Vizi.Application.prototype.runloop = function()
-{
-	var now = Date.now();
-	var deltat = now - this.lastFrameTime;
-	
-	if (deltat >= Vizi.Application.minFrameTime)
-	{
-		this.updateServices();
-        this.lastFrameTime = now;
-	}
-	
-	var that = this;
-    requestAnimationFrame( function() { that.runloop(); } );
-}
-
-Vizi.Application.prototype.updateServices = function()
-{
-	var i, len;
-	len = this._services.length;
-	for (i = 0; i < len; i++)
-	{
-		this._services[i].update();
-	}
-}
-
-Vizi.Application.prototype.updateObjects = function()
-{
-	var i, len = this._objects.length;
-	
-	for (i = 0; i < len; i++)
-	{
-		this._objects[i].update();
-	}
-	
-}
-
-Vizi.Application.prototype.addObject = function(o)
-{
-	this._objects.push(o);
-	if (this.running) {
-		o.realize();
-	}
-}
-
-Vizi.Application.prototype.removeObject = function(o) {
-    var i = this._objects.indexOf(o);
-    if (i != -1) {
-    	// N.B.: I suppose we could be paranoid and check to see if I actually own this component
-        this._objects.splice(i, 1);
-    }
-}
-
-Vizi.Application.prototype.realizeObjects = function()
-{
-	var i, len = this._objects.length;
-	
-	for (i = 0; i < len; i++)
-	{
-		this._objects[i].realize();
-	}
-	
-}
-	
-Vizi.Application.prototype.onMouseMove = function(event)
-{
-	if (this.mouseDelegate  && this.mouseDelegate.onMouseMove)
-	{
-		this.mouseDelegate.onMouseMove(event);
-	}
-}
-
-Vizi.Application.prototype.onMouseDown = function(event)
-{
-	if (this.mouseDelegate && this.mouseDelegate.onMouseDown)
-	{
-		this.mouseDelegate.onMouseDown(event);
-	}
-}
-
-Vizi.Application.prototype.onMouseUp = function(event)
-{
-	if (this.mouseDelegate && this.mouseDelegate.onMouseUp)
-	{
-		this.mouseDelegate.onMouseUp(event);
-	}
-}
-
-Vizi.Application.prototype.onMouseClick = function(event)
-{
-	if (this.mouseDelegate && this.mouseDelegate.onMouseClick)
-	{
-		this.mouseDelegate.onMouseClick(event);
-	}
-}
-
-Vizi.Application.prototype.onMouseDoubleClick = function(event)
-{
-	if (this.mouseDelegate && this.mouseDelegate.onMouseDoubleClick)
-	{
-		this.mouseDelegate.onMouseDoubleClick(event);
-	}
-}
-
-Vizi.Application.prototype.onMouseScroll = function(event)
-{
-	if (this.mouseDelegate  && this.mouseDelegate.onMouseScroll)
-	{
-		this.mouseDelegate.onMouseScroll(event);
-	}
-}
-
-Vizi.Application.prototype.onKeyDown = function(event)
-{
-	if (this.keyboardDelegate && this.keyboardDelegate.onKeyDown)
-	{
-		this.keyboardDelegate.onKeyDown(event);
-	}
-}
-
-Vizi.Application.prototype.onKeyUp = function(event)
-{
-	if (this.keyboardDelegate && this.keyboardDelegate.onKeyUp)
-	{
-		this.keyboardDelegate.onKeyUp(event);
-	}
-}
-
-Vizi.Application.prototype.onKeyPress = function(event)
-{
-	if (this.keyboardDelegate  && this.keyboardDelegate.onKeyPress)
-	{
-		this.keyboardDelegate.onKeyPress(event);
-	}
-}	
-
-/* statics */
-
-Vizi.Application.instance = null;
-Vizi.Application.curObjectID = 0;
-Vizi.Application.minFrameTime = 1;
-	    	
-Vizi.Application.handleMouseMove = function(event)
-{
-    if (Vizi.PickManager && Vizi.PickManager.clickedObject)
-    	return;
-    
-    if (Vizi.Application.instance.onMouseMove)
-    	Vizi.Application.instance.onMouseMove(event);	            	
-}
-
-Vizi.Application.handleMouseDown = function(event)
-{
-    // Click to focus
-    if (Vizi.Application.instance.tabstop)
-    	Vizi.Application.instance.focus();
-        
-    if (Vizi.PickManager && Vizi.PickManager.clickedObject)
-    	return;
-    
-    if (Vizi.Application.instance.onMouseDown)
-    	Vizi.Application.instance.onMouseDown(event);	            	
-}
-
-Vizi.Application.handleMouseUp = function(event)
-{
-    if (Vizi.PickManager && Vizi.PickManager.clickedObject)
-    	return;
-    
-    if (Vizi.Application.instance.onMouseUp)
-    	Vizi.Application.instance.onMouseUp(event);	            	
-}
-
-Vizi.Application.handleMouseClick = function(event)
-{
-    if (Vizi.PickManager && Vizi.PickManager.clickedObject)
-    	return;
-    
-    if (Vizi.Application.instance.onMouseClick)
-    	Vizi.Application.instance.onMouseClick(event);	            	
-}
-
-Vizi.Application.handleMouseDoubleClick = function(event)
-{
-    if (Vizi.PickManager && Vizi.PickManager.clickedObject)
-    	return;
-    
-    if (Vizi.Application.instance.onMouseDoubleClick)
-    	Vizi.Application.instance.onMouseDoubleClick(event);	            	
-}
-
-Vizi.Application.handleMouseScroll = function(event)
-{
-    if (Vizi.PickManager && Vizi.PickManager.overObject)
-    	return;
-    
-    if (Vizi.Application.instance.onMouseScroll)
-    	Vizi.Application.instance.onMouseScroll(event);	            	
-}
-
-Vizi.Application.handleTouchStart = function(event)
-{
-    if (Vizi.PickManager && Vizi.PickManager.clickedObject)
-    	return;
-    
-    if (Vizi.Application.instance.onTouchStart)
-    	Vizi.Application.instance.onTouchStart(event);	            	
-}
-
-Vizi.Application.handleTouchMove = function(event)
-{
-    if (Vizi.PickManager && Vizi.PickManager.clickedObject)
-    	return;
-    
-    if (Vizi.Application.instance.onTouchMove)
-    	Vizi.Application.instance.onTouchMove(event);	            	
-}
-
-Vizi.Application.handleTouchEnd = function(event)
-{
-    if (Vizi.PickManager && Vizi.PickManager.clickedObject)
-    	return;
-    
-    if (Vizi.Application.instance.onTouchEnd)
-    	Vizi.Application.instance.onTouchEnd(event);	            	
-}
-
-Vizi.Application.handleKeyDown = function(event)
-{
-    if (Vizi.Application.instance.onKeyDown)
-    	Vizi.Application.instance.onKeyDown(event);	            	
-}
-
-Vizi.Application.handleKeyUp = function(event)
-{
-    if (Vizi.Application.instance.onKeyUp)
-    	Vizi.Application.instance.onKeyUp(event);	            	
-}
-
-Vizi.Application.handleKeyPress = function(event)
-{
-    if (Vizi.Application.instance.onKeyPress)
-    	Vizi.Application.instance.onKeyPress(event);	            	
-}
-
-Vizi.Application.prototype.onTouchMove = function(event)
-{
-	if (this.touchDelegate  && this.touchDelegate.onTouchMove)
-	{
-		this.touchDelegate.onTouchMove(event);
-	}
-}
-
-Vizi.Application.prototype.onTouchStart = function(event)
-{
-	if (this.touchDelegate && this.touchDelegate.onTouchStart)
-	{
-		this.touchDelegate.onTouchStart(event);
-	}
-}
-
-Vizi.Application.prototype.onTouchEnd = function(event)
-{
-	if (this.touchDelegate && this.touchDelegate.onTouchEnd)
-	{
-		this.touchDelegate.onTouchEnd(event);
-	}
-}
-
-/**
- *
- */
-goog.require('Vizi.Service');
-goog.provide('Vizi.AnimationService');
-
-/**
- * The AnimationService.
- *
- * @extends {Vizi.Service}
- */
-Vizi.AnimationService = function() {};
-
-goog.inherits(Vizi.AnimationService, Vizi.Service);
-
-//---------------------------------------------------------------------
-// Initialization/Termination
-//---------------------------------------------------------------------
-
-/**
- * Initializes the events system.
- */
-Vizi.AnimationService.prototype.initialize = function(param) {};
-
-/**
- * Terminates the events world.
- */
-Vizi.AnimationService.prototype.terminate = function() {};
-
-
-/**
- * Updates the AnimationService.
- */
-Vizi.AnimationService.prototype.update = function()
-{
-	if (window.TWEEN)
-		THREE.glTFAnimator.update();
-}
-goog.require('Vizi.Prefabs');
-
-Vizi.Prefabs.ModelController = function(param)
-{
-	param = param || {};
-	
-	var controller = new Vizi.Object(param);
-	var controllerScript = new Vizi.ModelControllerScript(param);
-	controller.addComponent(controllerScript);
-
-	var intensity = param.headlight ? 1 : 0;
-	
-	var headlight = new Vizi.DirectionalLight({ intensity : intensity });
-	controller.addComponent(headlight);
-	
-	return controller;
-}
-
-goog.provide('Vizi.ModelControllerScript');
-goog.require('Vizi.Script');
-
-Vizi.ModelControllerScript = function(param)
-{
-	Vizi.Script.call(this, param);
-
-	this.radius = param.radius || Vizi.ModelControllerScript.default_radius;
-	this.minRadius = param.minRadius || Vizi.ModelControllerScript.default_min_radius;
-	this.minAngle = (param.minAngle !== undefined) ? param.minAngle : 
-		Vizi.ModelControllerScript.default_min_angle;
-	this.maxAngle = (param.maxAngle !== undefined) ? param.maxAngle : 
-		Vizi.ModelControllerScript.default_max_angle;
-	this.minDistance = (param.minDistance !== undefined) ? param.minDistance : 
-		Vizi.ModelControllerScript.default_min_distance;
-	this.maxDistance = (param.maxDistance !== undefined) ? param.maxDistance : 
-		Vizi.ModelControllerScript.default_max_distance;
-	this.allowPan = (param.allowPan !== undefined) ? param.allowPan : true;
-	this.allowZoom = (param.allowZoom !== undefined) ? param.allowZoom : true;
-	this.allowRotate = (param.allowRotate !== undefined) ? param.allowRotate : true;
-	this.oneButton = (param.oneButton !== undefined) ? param.oneButton : true;
-	this._enabled = (param.enabled !== undefined) ? param.enabled : true;
-	this._headlightOn = param.headlight;
-	this.cameras = [];
-	this.controlsList = [];
-	
-    Object.defineProperties(this, {
-    	camera: {
-			get : function() {
-				return this._camera;
-			},
-			set: function(camera) {
-				this.setCamera(camera);
-			}
-		},
-    	center : {
-    		get: function() {
-    			return this.controls.center;
-    		},
-    		set: function(c) {
-    			this.controls.center.copy(c);
-    		}
-    	},
-    	enabled : {
-    		get: function() {
-    			return this._enabled;
-    		},
-    		set: function(v) {
-    			this.setEnabled(v);
-    		}
-    	},
-        headlightOn: {
-	        get: function() {
-	            return this._headlightOn;
-	        },
-	        set:function(v)
-	        {
-	        	this.setHeadlightOn(v);
-	        }
-    	},
-    });
-}
-
-goog.inherits(Vizi.ModelControllerScript, Vizi.Script);
-
-Vizi.ModelControllerScript.prototype.realize = function()
-{
-	this.headlight = this._object.getComponent(Vizi.DirectionalLight);
-	this.headlight.intensity = this._headlightOn ? 1 : 0;
-}
-
-Vizi.ModelControllerScript.prototype.createControls = function(camera)
-{
-	var controls = new Vizi.OrbitControls(camera.object, Vizi.Graphics.instance.container);
-	controls.userMinY = this.minY;
-	controls.userMinZoom = this.minZoom;
-	controls.userMaxZoom = this.maxZoom;
-	controls.minPolarAngle = this.minAngle;
-	controls.maxPolarAngle = this.maxAngle;	
-	controls.minDistance = this.minDistance;	
-	controls.maxDistance = this.maxDistance;	
-	controls.oneButton = this.oneButton;
-	controls.userPan = this.allowPan;
-	controls.userZoom = this.allowZoom;
-	controls.userRotate = this.allowRotate;
-	controls.enabled = this._enabled;
-	return controls;
-}
-
-Vizi.ModelControllerScript.prototype.update = function()
-{
-	this.controls.update();
-	if (this._headlightOn)
-	{
-		this.headlight.direction.copy(this._camera.position).negate();
-	}	
-}
-
-Vizi.ModelControllerScript.prototype.setCamera = function(camera) {
-	this._camera = camera;
-	this._camera.position.set(0, this.radius / 2, this.radius);
-	this.controls = this.createControls(camera);
-}
-
-Vizi.ModelControllerScript.prototype.setHeadlightOn = function(on)
-{
-	this._headlightOn = on;
-	if (this.headlight) {
-		this.headlight.intensity = on ? 1 : 0;
-	}
-}
-
-Vizi.ModelControllerScript.prototype.setEnabled = function(enabled)
-{
-	this._enabled = enabled;
-	this.controls.enabled = enabled;
-}
-
-Vizi.ModelControllerScript.default_radius = 10;
-Vizi.ModelControllerScript.default_min_radius = 1;
-Vizi.ModelControllerScript.default_min_angle = 0;
-Vizi.ModelControllerScript.default_max_angle = Math.PI;
-Vizi.ModelControllerScript.default_min_distance = 0;
-Vizi.ModelControllerScript.default_max_distance = Infinity;
-Vizi.ModelControllerScript.MAX_X_ROTATION = 0; // Math.PI / 12;
-Vizi.ModelControllerScript.MIN_X_ROTATION = -Math.PI / 2;
-Vizi.ModelControllerScript.MAX_Y_ROTATION = Math.PI * 2;
-Vizi.ModelControllerScript.MIN_Y_ROTATION = -Math.PI * 2;
-/**
- * @fileoverview Object collects a group of Components that define an object and its behaviors
- * 
- * @author Tony Parisi
- */
-
-
-goog.require('Vizi.Prefabs');
-
-Vizi.Prefabs.Skybox = function(param)
-{
-	param = param || {};
-	
-	var box = new Vizi.Object({layer:Vizi.Graphics.instance.backgroundLayer});
-
-	var textureCube = null;
-
-	var shader = THREE.ShaderLib[ "cube" ];
-	shader.uniforms[ "tCube" ].value = textureCube;
-
-	var material = new THREE.ShaderMaterial( {
-
-		fragmentShader: shader.fragmentShader,
-		vertexShader: shader.vertexShader,
-		uniforms: shader.uniforms,
-		side: THREE.BackSide
-
-	} );
-
-	var visual = new Vizi.Visual(
-			{ geometry: new THREE.BoxGeometry( 10000, 10000, 10000 ),
-				material: material,
-			});
-	box.addComponent(visual);
-	
-	var script = new Vizi.SkyboxScript(param);
-	box.addComponent(script);
-	
-	box.realize();
-
-	return box;
-}
-
-goog.provide('Vizi.SkyboxScript');
-goog.require('Vizi.Script');
-
-Vizi.SkyboxScript = function(param)
-{
-	Vizi.Script.call(this, param);
-
-	this.maincampos = new THREE.Vector3; 
-	this.maincamrot = new THREE.Quaternion; 
-	this.maincamscale = new THREE.Vector3; 
-	
-    Object.defineProperties(this, {
-    	texture: {
-			get : function() {
-				return this.uniforms[ "tCube" ].value;
-			},
-			set: function(texture) {
-				this.uniforms[ "tCube" ].value = texture;
-			}
-		},
-    });
-}
-
-goog.inherits(Vizi.SkyboxScript, Vizi.Script);
-
-Vizi.SkyboxScript.prototype.realize = function()
-{
-	var visual = this._object.getComponent(Vizi.Visual);
-	this.uniforms = visual.material.uniforms;
-
-	this.camera = Vizi.Graphics.instance.backgroundLayer.camera;
-	this.camera.far = 20000;
-	this.camera.position.set(0, 0, 0);
-}
-
-Vizi.SkyboxScript.prototype.update = function()
-{
-	var maincam = Vizi.Graphics.instance.camera;
-	maincam.updateMatrixWorld();
-	maincam.matrixWorld.decompose(this.maincampos, this.maincamrot, this.maincamscale);
-	this.camera.quaternion.copy(this.maincamrot);
-}
-
-/**
- * @fileoverview Object collects a group of Components that define an object and its behaviors
- * 
- * @author Tony Parisi
- */
-
-
-goog.require('Vizi.Prefabs');
-
-Vizi.Prefabs.Skysphere = function(param)
-{
-	param = param || {};
-	
-	var sphere = new Vizi.Object({layer:Vizi.Graphics.instance.backgroundLayer});
-
-	var material = new THREE.MeshBasicMaterial( {
-		color:0xffffff,
-//		side: THREE.BackSide
-
-	} );
-
-	var geometry = new THREE.SphereGeometry( 500, 32, 32 );
-	geometry.applyMatrix( new THREE.Matrix4().makeScale( -1, 1, 1 ) );
-	var visual = new Vizi.Visual(
-			{ geometry: geometry,
-				material: material,
-			});
-	sphere.addComponent(visual);
-	
-	var script = new Vizi.SkysphereScript(param);
-	sphere.addComponent(script);
-	
-	sphere.realize();
-
-	return sphere;
-}
-
-goog.provide('Vizi.SkysphereScript');
-goog.require('Vizi.Script');
-
-Vizi.SkysphereScript = function(param)
-{
-	Vizi.Script.call(this, param);
-
-	this.maincampos = new THREE.Vector3; 
-	this.maincamrot = new THREE.Quaternion; 
-	this.maincamscale = new THREE.Vector3; 
-	
-    Object.defineProperties(this, {
-    	texture: {
-			get : function() {
-				return this.material.map;
-			},
-			set: function(texture) {
-				this.material.map = texture;
-			}
-		},
-    });
-}
-
-goog.inherits(Vizi.SkysphereScript, Vizi.Script);
-
-Vizi.SkysphereScript.prototype.realize = function()
-{
-	var visual = this._object.getComponent(Vizi.Visual);
-	this.material = visual.material;
-
-	this.camera = Vizi.Graphics.instance.backgroundLayer.camera;
-	this.camera.far = 20000;
-	this.camera.position.set(0, 0, 0);
-}
-
-Vizi.SkysphereScript.prototype.update = function()
-{
-	var maincam = Vizi.Graphics.instance.camera;
-	maincam.updateMatrixWorld();
-	maincam.matrixWorld.decompose(this.maincampos, this.maincamrot, this.maincamscale);
-	this.camera.quaternion.copy(this.maincamrot);
-}
-
-/**
- * @fileoverview General-purpose key frame animation
- * @author Tony Parisi
- */
-goog.provide('Vizi.KeyFrameAnimator');
-goog.require('Vizi.Component');
-
-// KeyFrameAnimator class
-// Construction/initialization
-Vizi.KeyFrameAnimator = function(param) 
-{
-    Vizi.Component.call(this, param);
-	    		
-	param = param || {};
-	
-	this.interpdata = param.interps || [];
-	this.animationData = param.animations;
-	this.running = false;
-	this.direction = Vizi.KeyFrameAnimator.FORWARD_DIRECTION;
-	this.duration = param.duration ? param.duration : Vizi.KeyFrameAnimator.default_duration;
-	this.loop = param.loop ? param.loop : false;
-	this.easing = param.easing;
-}
-
-goog.inherits(Vizi.KeyFrameAnimator, Vizi.Component);
-	
-Vizi.KeyFrameAnimator.prototype.realize = function()
-{
-	Vizi.Component.prototype.realize.call(this);
-	
-	if (this.interpdata)
-	{
-		this.createInterpolators(this.interpdata);
-	}
-	
-	if (this.animationData)
-	{
-		this.animations = [];
-		var i, len = this.animationData.length;
-		for (i = 0; i < len; i++)
-		{				
-			var animdata = this.animationData[i];
-			if (animdata instanceof THREE.glTFAnimation) {
-				this.animations.push(animdata);
-			}
-			else {
+				light.intensity = this.lightIntensities[index];
 				
-				THREE.AnimationHandler.add(animdata);
-				var animation = new THREE.KeyFrameAnimation(animdata.node, animdata.name);
-//			animation.timeScale = .01; // why?
-				this.animations.push(animation);
-			}
 		}
 	}
 }
 
-Vizi.KeyFrameAnimator.prototype.createInterpolators = function(interpdata)
+glam.Viewer.prototype.playAnimation = function(index, loop, reverse)
 {
-	this.interps = [];
+	if (loop === undefined)
+		loop = this.loopAnimations;
 	
-	var i, len = interpdata.length;
-	for (i = 0; i < len; i++)
+	if (this.keyFrameAnimators && this.keyFrameAnimators[index])
 	{
-		var data = interpdata[i];
-		var interp = new Vizi.Interpolator({ keys: data.keys, values: data.values, target: data.target });
-		interp.realize();
-		this.interps.push(interp);
-	}
-}
-
-// Start/stop
-Vizi.KeyFrameAnimator.prototype.start = function()
-{
-	if (this.running)
-		return;
-	
-	this.startTime = Date.now();
-	this.lastTime = this.startTime;
-	this.running = true;
-	
-	if (this.animations)
-	{
-		var i, len = this.animations.length;
-		for (i = 0; i < len; i++)
-		{
-			this.animations[i].loop = this.loop;
-			if (this.animations[i] instanceof THREE.glTFAnimation) {
-				this.animations[i].direction = 
-					(this.direction == Vizi.KeyFrameAnimator.FORWARD_DIRECTION) ?
-						THREE.glTFAnimation.FORWARD_DIRECTION : 
-						THREE.glTFAnimation.REVERSE_DIRECTION;
-			}
-			this.animations[i].play(this.loop, 0);
-			this.endTime = this.startTime + this.animations[i].endTime / this.animations[i].timeScale;
-			if (isNaN(this.endTime))
-				this.endTime = this.startTime + this.animations[i].duration * 1000;
-		}
-	}
-}
-
-Vizi.KeyFrameAnimator.prototype.stop = function()
-{
-	this.running = false;
-	this.dispatchEvent("complete");
-
-	if (this.animations)
-	{
-		var i, len = this.animations.length;
-		for (i = 0; i < len; i++)
-		{
-			this.animations[i].stop();
-		}
-	}
-
-}
-
-// Update - drive key frame evaluation
-Vizi.KeyFrameAnimator.prototype.update = function()
-{
-	if (!this.running)
-		return;
-	
-	if (this.animations)
-	{
-		this.updateAnimations();
-		return;
-	}
-	
-	var now = Date.now();
-	var deltat = (now - this.startTime) % this.duration;
-	var nCycles = Math.floor((now - this.startTime) / this.duration);
-	var fract = deltat / this.duration;
-	if (this.easing)
-		fract = this.easing(fract);
-
-	if (nCycles >= 1 && !this.loop)
-	{
-		this.running = false;
-		this.dispatchEvent("complete");
-		var i, len = this.interps.length;
-		for (i = 0; i < len; i++)
-		{
-			this.interps[i].interp(1);
-		}
-		return;
-	}
-	else
-	{
-		var i, len = this.interps.length;
-		for (i = 0; i < len; i++)
-		{
-			this.interps[i].interp(fract);
-		}
-	}
-}
-
-Vizi.KeyFrameAnimator.prototype.updateAnimations = function()
-{
-	var now = Date.now();
-	var deltat = now - this.lastTime;
-	var complete = false;
-	
-	var i, len = this.animations.length;
-	for (i = 0; i < len; i++)
-	{
-		this.animations[i].update(deltat);
-		if (!this.loop && (now >= this.endTime))
-			complete = true;
-	}
-	this.lastTime = now;	
-	
-	if (complete)
-	{
-		this.stop();
-	}
-}
-
-// Statics
-Vizi.KeyFrameAnimator.default_duration = 1000;
-Vizi.KeyFrameAnimator.FORWARD_DIRECTION = 0;
-Vizi.KeyFrameAnimator.REVERSE_DIRECTION = 1;
-goog.require('Vizi.Prefabs');
-
-Vizi.Prefabs.RiftController = function(param)
-{
-	param = param || {};
-	
-	var controller = new Vizi.Object(param);
-	var controllerScript = new Vizi.RiftControllerScript(param);
-	controller.addComponent(controllerScript);
-
-	var intensity = param.headlight ? 1 : 0;
-	
-	var headlight = new Vizi.DirectionalLight({ intensity : intensity });
-	controller.addComponent(headlight);
-
-	return controller;
-}
-
-goog.provide('Vizi.RiftControllerScript');
-goog.require('Vizi.Script');
-
-Vizi.RiftControllerScript = function(param)
-{
-	Vizi.Script.call(this, param);
-
-	this._enabled = (param.enabled !== undefined) ? param.enabled : true;
-	this.riftControls = null;
-
-	this._headlightOn = param.headlight;
-	
-	this.cameraDir = new THREE.Vector3;
-	
-    Object.defineProperties(this, {
-    	camera: {
-			get : function() {
-				return this._camera;
-			},
-			set: function(camera) {
-				this.setCamera(camera);
-			}
-		},
-    	enabled : {
-    		get: function() {
-    			return this._enabled;
-    		},
-    		set: function(v) {
-    			this.setEnabled(v);
-    		}
-    	},
-    });
-}
-
-goog.inherits(Vizi.RiftControllerScript, Vizi.Script);
-
-Vizi.RiftControllerScript.prototype.realize = function()
-{
-	this.headlight = this._object.getComponent(Vizi.DirectionalLight);
-	this.headlight.intensity = this._headlightOn ? 1 : 0;
-}
-
-Vizi.RiftControllerScript.prototype.update = function()
-{
-	if (this._enabled && this.riftControls) {
-		this.riftControls.update();
-	}
-	
-	if (this._headlightOn)
-	{
-		this.cameraDir.set(0, 0, -1);
-		this.cameraDir.transformDirection(this.camera.object.matrixWorld);
-		
-		this.headlight.direction.copy(this.cameraDir);
-	}	
-}
-
-Vizi.RiftControllerScript.prototype.setEnabled = function(enabled)
-{
-	this._enabled = enabled;
-}
-
-Vizi.RiftControllerScript.prototype.setCamera = function(camera) {
-	this._camera = camera;
-	this.riftControls = this.createControls(camera);
-}
-
-Vizi.RiftControllerScript.prototype.createControls = function(camera)
-{
-	var controls = new THREE.VRControls(camera.object, function(err) {
-			if (err) {
-				console.log("Error creating VR controller: ", err);
-			}
-		});
-
-	// N.B.: this only works because the callback up there is synchronous...
-	return controls;
-}
-
-
-/**
- * @fileoverview Interpolator for key frame animation
- * @author Tony Parisi
- */
-goog.provide('Vizi.Interpolator');
-goog.require('Vizi.EventDispatcher');
-
-//Interpolator class
-//Construction/initialization
-Vizi.Interpolator = function(param) 
-{
-	Vizi.EventDispatcher.call(param);
-	    		
-	param = param || {};
-	
-	this.keys = param.keys || [];
-	this.values = param.values || [];
-	this.target = param.target ? param.target : null;
-	this.running = false;
-}
-
-goog.inherits(Vizi.Interpolator, Vizi.EventDispatcher);
-	
-Vizi.Interpolator.prototype.realize = function()
-{
-	if (this.keys && this.values)
-	{
-		this.setValue(this.keys, this.values);
-	}	    		
-}
-
-Vizi.Interpolator.prototype.setValue = function(keys, values)
-{
-	this.keys = [];
-	this.values = [];
-	if (keys && keys.length && values && values.length)
-	{
-		this.copyKeys(keys, this.keys);
-		this.copyValues(values, this.values);
-	}
-}
-
-//Copying helper functions
-Vizi.Interpolator.prototype.copyKeys = function(from, to)
-{
-	var i = 0, len = from.length;
-	for (i = 0; i < len; i++)
-	{
-		to[i] = from[i];
-	}
-}
-
-Vizi.Interpolator.prototype.copyValues = function(from, to)
-{
-	var i = 0, len = from.length;
-	for (i = 0; i < len; i++)
-	{
-		var val = {};
-		this.copyValue(from[i], val);
-		to[i] = val;
-	}
-}
-
-Vizi.Interpolator.prototype.copyValue = function(from, to)
-{
-	for ( var property in from ) {
-		
-		if ( from[ property ] === null ) {		
-		continue;		
-		}
-
-		to[ property ] = from[ property ];
-	}
-}
-
-//Interpolation and tweening methods
-Vizi.Interpolator.prototype.interp = function(fract)
-{
-	var value;
-	var i, len = this.keys.length;
-	if (fract == this.keys[0])
-	{
-		value = this.values[0];
-	}
-	else if (fract >= this.keys[len - 1])
-	{
-		value = this.values[len - 1];
-	}
-
-	for (i = 0; i < len - 1; i++)
-	{
-		var key1 = this.keys[i];
-		var key2 = this.keys[i + 1];
-
-		if (fract >= key1 && fract <= key2)
-		{
-			var val1 = this.values[i];
-			var val2 = this.values[i + 1];
-			value = this.tween(val1, val2, (fract - key1) / (key2 - key1));
-		}
-	}
-	
-	if (this.target)
-	{
-		this.copyValue(value, this.target);
-	}
-	else
-	{
-		this.publish("value", value);
-	}
-}
-
-Vizi.Interpolator.prototype.tween = function(from, to, fract)
-{
-	var value = {};
-	for ( var property in from ) {
-		
-		if ( from[ property ] === null ) {		
-		continue;		
-		}
-
-		var range = to[property] - from[property];
-		var delta = range * fract;
-		value[ property ] = from[ property ] + delta;
-	}
-	
-	return value;
-}
-
-goog.require('Vizi.Prefabs');
-
-Vizi.Prefabs.PointerLockController = function(param)
-{
-	param = param || {};
-	
-	var controller = new Vizi.Object(param);
-	var controllerScript = new Vizi.PointerLockControllerScript(param);
-	controller.addComponent(controllerScript);
-
-	var intensity = param.headlight ? 1 : 0;
-	
-	var headlight = new Vizi.DirectionalLight({ intensity : intensity });
-	controller.addComponent(headlight);
-	
-	return controller;
-}
-
-goog.provide('Vizi.PointerLockControllerScript');
-goog.require('Vizi.Script');
-
-Vizi.PointerLockControllerScript = function(param)
-{
-	Vizi.Script.call(this, param);
-
-	this._enabled = (param.enabled !== undefined) ? param.enabled : true;
-	this._move = (param.move !== undefined) ? param.move : true;
-	this._look = (param.look !== undefined) ? param.look : true;
-	this._turn = (param.turn !== undefined) ? param.turn : true;
-	this._tilt = (param.tilt !== undefined) ? param.tilt : true;
-	this._mouseLook = (param.mouseLook !== undefined) ? param.mouseLook : false;
-	
-	this.collisionDistance = 10;
-	this.moveSpeed = 13;
-	this.turnSpeed = 5;
-	this.tiltSpeed = 5;
-	this.lookSpeed = 1;
-	
-	this.savedCameraPos = new THREE.Vector3;	
-	this.movementVector = new THREE.Vector3;
-	
-    Object.defineProperties(this, {
-    	camera: {
-			get : function() {
-				return this._camera;
-			},
-			set: function(camera) {
-				this.setCamera(camera);
-			}
-		},
-    	enabled : {
-    		get: function() {
-    			return this._enabled;
-    		},
-    		set: function(v) {
-    			this.setEnabled(v);
-    		}
-    	},
-    	move : {
-    		get: function() {
-    			return this._move;
-    		},
-    		set: function(v) {
-    			this.setMove(v);
-    		}
-    	},
-    	look : {
-    		get: function() {
-    			return this._look;
-    		},
-    		set: function(v) {
-    			this.setLook(v);
-    		}
-    	},
-    	mouseLook : {
-    		get: function() {
-    			return this._mouseLook;
-    		},
-    		set: function(v) {
-    			this.setMouseLook(v);
-    		}
-    	},
-        headlightOn: {
-	        get: function() {
-	            return this._headlightOn;
-	        },
-	        set:function(v)
-	        {
-	        	this.setHeadlightOn(v);
-	        }
-    	},
-    });
-}
-
-goog.inherits(Vizi.PointerLockControllerScript, Vizi.Script);
-
-Vizi.PointerLockControllerScript.prototype.realize = function()
-{
-	this.headlight = this._object.getComponent(Vizi.DirectionalLight);
-	this.headlight.intensity = this._headlightOn ? 1 : 0;
-}
-
-Vizi.PointerLockControllerScript.prototype.createControls = function(camera)
-{
-	var controls = new Vizi.PointerLockControls(camera.object, Vizi.Graphics.instance.container);
-	controls.mouseLook = this._mouseLook;
-	controls.movementSpeed = this._move ? this.moveSpeed : 0;
-	controls.lookSpeed = this._look ? this.lookSpeed  : 0;
-	controls.turnSpeed = this._turn ? this.turnSpeed : 0;
-	controls.tiltSpeed = this._tilt ? this.tiltSpeed : 0;
-
-	this.clock = new THREE.Clock();
-	return controls;
-}
-
-Vizi.PointerLockControllerScript.prototype.update = function()
-{
-	this.saveCamera();
-	this.controls.update(this.clock.getDelta());
-	var collide = this.testCollision();
-	if (collide && collide.object) {
-		this.restoreCamera();
-		this.dispatchEvent("collide", collide);
-	}
-	
-	if (this.testTerrain()) {
-		this.restoreCamera();
-	}
-	
-	if (this._headlightOn)
-	{
-		this.headlight.direction.copy(this._camera.position).negate();
-	}	
-}
-
-Vizi.PointerLockControllerScript.prototype.setEnabled = function(enabled)
-{
-	this._enabled = enabled;
-	this.controls.enabled = enabled;
-}
-
-Vizi.PointerLockControllerScript.prototype.setMove = function(move)
-{
-	this._move = move;
-	this.controls.movementSpeed = move ? this.moveSpeed : 0;
-}
-
-Vizi.PointerLockControllerScript.prototype.setLook = function(look)
-{
-	this._look = look;
-	this.controls.lookSpeed = look ? 1.0 : 0;
-}
-
-Vizi.PointerLockControllerScript.prototype.setMouseLook = function(mouseLook)
-{
-	this._mouseLook = mouseLook;
-	this.controls.mouseLook = mouseLook;
-}
-
-Vizi.PointerLockControllerScript.prototype.setCamera = function(camera) {
-	this._camera = camera;
-	this.controls = this.createControls(camera);
-	this.controls.movementSpeed = this.moveSpeed;
-	this.controls.lookSpeed = this._look ?  0.1 : 0;
-
-}
-
-Vizi.PointerLockControllerScript.prototype.saveCamera = function() {
-	this.savedCameraPos.copy(this._camera.position);
-}
-
-Vizi.PointerLockControllerScript.prototype.restoreCamera = function() {
-	this._camera.position.copy(this.savedCameraPos);
-}
-
-Vizi.PointerLockControllerScript.prototype.testCollision = function() {
-	
-	this.movementVector.copy(this._camera.position).sub(this.savedCameraPos);
-	if (this.movementVector.length()) {
-		
-        var collide = Vizi.Graphics.instance.objectFromRay(null, 
-        		this.savedCameraPos,
-        		this.movementVector, 1, 2);
-
-        if (collide && collide.object) {
-        	var dist = this.savedCameraPos.distanceTo(collide.hitPointWorld);
-        }
-        
-        return collide;
-	}
-	
-	return null;
-}
-
-Vizi.PointerLockControllerScript.prototype.testTerrain = function() {
-	return false;
-}
-
-Vizi.PointerLockControllerScript.prototype.setHeadlightOn = function(on)
-{
-	this._headlightOn = on;
-	if (this.headlight) {
-		this.headlight.intensity = on ? 1 : 0;
-	}
-}
-
-goog.provide('Vizi.PerspectiveCamera');
-goog.require('Vizi.Camera');
-
-Vizi.PerspectiveCamera = function(param) {
-	param = param || {};
-	
-	if (param.object) {
-		this.object = param.object;
-	}
-	else {		
-		var fov = param.fov || 45;
-		var near = param.near || Vizi.Camera.DEFAULT_NEAR;
-		var far = param.far || Vizi.Camera.DEFAULT_FAR;
-		var container = Vizi.Graphics.instance.container;
-		var aspect = param.aspect || (container.offsetWidth / container.offsetHeight);
-		this.updateProjection = false;
-		
-		this.object = new THREE.PerspectiveCamera( fov, aspect, near, far );
-	}
-	
-    // Create accessors for all properties... just pass-throughs to Three.js
-    Object.defineProperties(this, {
-        fov: {
-	        get: function() {
-	            return this.object.fov;
-	        },
-	        set: function(v) {
-	        	this.object.fov = v;
-	        	this.updateProjection = true;
-	        }
-		},    	
-        aspect: {
-	        get: function() {
-	            return this.object.aspect;
-	        },
-	        set: function(v) {
-	        	this.object.aspect = v;
-	        	this.updateProjection = true;
-	        }
-    	},    	
-        near: {
-	        get: function() {
-	            return this.object.near;
-	        },
-	        set: function(v) {
-	        	this.object.near = v;
-	        	this.updateProjection = true;
-	        }
-    	},    	
-        far: {
-	        get: function() {
-	            return this.object.far;
-	        },
-	        set: function(v) {
-	        	this.object.far = v;
-	        	this.updateProjection = true;
-	        }
-    	},    	
-
-    });
-
-	Vizi.Camera.call(this, param);
-	
-    
-}
-
-goog.inherits(Vizi.PerspectiveCamera, Vizi.Camera);
-
-Vizi.PerspectiveCamera.prototype.realize = function()  {
-	Vizi.Camera.prototype.realize.call(this);	
-}
-
-Vizi.PerspectiveCamera.prototype.update = function()  {
-	if (this.updateProjection)
-	{
-		this.object.updateProjectionMatrix();
-		this.updateProjection = false;
-	}
-}
-/**
- * @fileoverview Contains prefab assemblies for core Vizi package
- * @author Tony Parisi
- */
-goog.provide('Vizi.Helpers');
-
-Vizi.Helpers.BoundingBoxDecoration = function(param) {
-	param = param || {};
-	if (!param.object) {
-		Vizi.warn("Vizi.Helpers.BoundingBoxDecoration requires an object");
-		return null;
-	}
-	
-	var object = param.object;
-	var color = param.color !== undefined ? param.color : 0x888888;
-	
-	var bbox = Vizi.SceneUtils.computeBoundingBox(object);
-	
-	var width = bbox.max.x - bbox.min.x,
-		height = bbox.max.y - bbox.min.y,
-		depth = bbox.max.z - bbox.min.z;
-	
-	var mesh = new THREE.BoxHelper();
-	mesh.material.color.setHex(color);
-	mesh.scale.set(width / 2, height / 2, depth / 2);
-	
-	var decoration = new Vizi.Decoration({object:mesh});
-	
-	var center = bbox.max.clone().add(bbox.min).multiplyScalar(0.5);
-	decoration.position.add(center);
-	
-	return decoration;
-}
-
-Vizi.Helpers.VectorDecoration = function(param) {
-
-	param = param || {};
-	
-	var start = param.start || new THREE.Vector3;
-	var end = param.end || new THREE.Vector3(0, 1, 0);
-	var color = param.color !== undefined ? param.color : 0x888888;
-	
-	var linegeom = new THREE.Geometry();
-	linegeom.vertices.push(start, end); 
-
-	var mat = new THREE.LineBasicMaterial({color:color});
-
-	var mesh = new THREE.Line(linegeom, mat);
-	
-	var decoration = new Vizi.Decoration({object:mesh});
-	return decoration;
-}
-
-Vizi.Helpers.PlaneDecoration = function(param) {
-
-	param = param || {};
-	
-	if (!param.normal && !param.triangle) {
-		Vizi.warn("Vizi.Helpers.PlaneDecoration requires either a normal or three coplanar points");
-		return null;
-	}
-
-	var normal = param.normal;
-	if (!normal) {
-		// do this later
-		Vizi.warn("Vizi.Helpers.PlaneDecoration creating plane from coplanar points not implemented yet");
-		return null;
-	}
-	
-	var position = param.position || new THREE.Vector3;	
-	var size = param.size || 1;
-	var color = param.color !== undefined ? param.color : 0x888888;
-	
-	var u = new THREE.Vector3(0, normal.z, -normal.y).normalize().multiplyScalar(size);
-	var v = u.clone().cross(normal).normalize().multiplyScalar(size);
-	
-	var p1 = position.clone().sub(u).sub(v);
-	var p2 = position.clone().add(u).sub(v);
-	var p3 = position.clone().add(u).add(v);
-	var p4 = position.clone().sub(u).add(v);
-	
-	var planegeom = new THREE.Geometry();
-	planegeom.vertices.push(p1, p2, p3, p4); 
-	var planeface = new THREE.Face3( 0, 1, 2 );
-	planeface.normal.copy( normal );
-	planeface.vertexNormals.push( normal.clone(), normal.clone(), normal.clone(), normal.clone() );
-	planegeom.faces.push(planeface);
-	var planeface = new THREE.Face3( 0, 2, 3 );
-	planeface.normal.copy( normal );
-	planeface.vertexNormals.push( normal.clone(), normal.clone(), normal.clone(), normal.clone() );
-	planegeom.faces.push(planeface);
-	planegeom.computeFaceNormals();
-	planegeom.computeCentroids();
-
-	var mat = new THREE.MeshBasicMaterial({color:color, transparent: true, side:THREE.DoubleSide, opacity:0.1 });
-
-	var mesh = new THREE.Mesh(planegeom, mat);
-	
-	var decoration = new Vizi.Decoration({object:mesh});
-	return decoration;
-}
-
-/**
- * @fileoverview Vizi scene utilities
- * @author Tony Parisi
- */
-goog.provide('Vizi.SceneUtils');
-
-// Compute the bounding box of an object or hierarchy of objects
-Vizi.SceneUtils.computeBoundingBox = function(obj) {
-	
-	var computeBoundingBox = function(obj) {
-		if (obj instanceof THREE.Mesh && !obj.ignoreBounds) {
-			var geometry = obj.geometry;
-			if (geometry) {
-				if (!geometry.boundingBox) {
-					geometry.computeBoundingBox();
-				}
-				
-				var geometryBBox = geometry.boundingBox.clone();
-				obj.updateMatrix();
-				geometryBBox.applyMatrix4(obj.matrix);
-				return geometryBBox;
-			}
-			else {
-				return new THREE.Box3(new THREE.Vector3, new THREE.Vector3);
-			}
+		this.keyFrameAnimators[index].loop = loop;
+		if (reverse) {
+			this.keyFrameAnimators[index].direction = glam.KeyFrameAnimator.REVERSE_DIRECTION;
 		}
 		else {
-			var i, len = obj.children.length;
-			
-			var boundingBox = new THREE.Box3; // (new THREE.Vector3, new THREE.Vector3);
-			
-			for (i = 0; i < len; i++) {
-				var bbox = computeBoundingBox(obj.children[i]);
-				if ( bbox.min.x < boundingBox.min.x ) {
-
-					boundingBox.min.x = bbox.min.x;
-
-				}
-				
-				if ( bbox.max.x > boundingBox.max.x ) {
-
-					boundingBox.max.x = bbox.max.x;
-
-				}
-
-				if ( bbox.min.y < boundingBox.min.y ) {
-
-					boundingBox.min.y = bbox.min.y;
-
-				}
-				
-				if ( bbox.max.y > boundingBox.max.y ) {
-
-					boundingBox.max.y = bbox.max.y;
-
-				}
-
-				if ( bbox.min.z < boundingBox.min.z ) {
-
-					boundingBox.min.z = bbox.min.z;
-
-				}
-				
-				if ( bbox.max.z > boundingBox.max.z ) {
-
-					boundingBox.max.z = bbox.max.z;
-
-				}
-			}
-
-			if (isFinite(boundingBox.min.x)) {
-				obj.updateMatrix();
-				boundingBox.applyMatrix4(obj.matrix);
-			}
-			return boundingBox;
+			this.keyFrameAnimators[index].direction = glam.KeyFrameAnimator.FORWARD_DIRECTION;
 		}
-	}
-	
-	if (obj instanceof Vizi.Object) {
-		return computeBoundingBox(obj.transform.object);
-	}
-	else if (obj instanceof Vizi.Visual) {
-		return computeBoundingBox(obj.object);
-	}
-	else {
-		return new THREE.Box3(new THREE.Vector3, new THREE.Vector3);
+		
+		if (!loop)
+			this.keyFrameAnimators[index].stop();
+
+		this.keyFrameAnimators[index].start();
 	}
 }
 
+glam.Viewer.prototype.stopAnimation = function(index)
+{
+	if (this.keyFrameAnimators && this.keyFrameAnimators[index])
+	{
+		this.keyFrameAnimators[index].stop();
+	}
+}
 
+glam.Viewer.prototype.playAllAnimations = function(loop, reverse)
+{
+	if (loop === undefined)
+		loop = this.loopAnimations;
+	
+	if (this.keyFrameAnimators)
+	{
+		var i, len = this.keyFrameAnimators.length;
+		for (i = 0; i < len; i++)
+		{
+			this.keyFrameAnimators[i].stop();
+			
+			if (loop)
+				this.keyFrameAnimators[i].loop = true;
+
+			if (reverse) {
+				this.keyFrameAnimators[i].direction = glam.KeyFrameAnimator.REVERSE_DIRECTION;
+			}
+			else {
+				this.keyFrameAnimators[i].direction = glam.KeyFrameAnimator.FORWARD_DIRECTION;
+			}
+			
+			this.keyFrameAnimators[i].start();
+		}
+	}
+}
+
+glam.Viewer.prototype.stopAllAnimations = function()
+{
+	if (this.keyFrameAnimators)
+	{
+		var i, len = this.keyFrameAnimators.length;
+		for (i = 0; i < len; i++)
+		{
+			this.keyFrameAnimators[i].stop();
+		}
+	}
+}
+
+glam.Viewer.prototype.setLoopAnimations = function(on)
+{
+	this.loopAnimations = on;
+}
+
+glam.Viewer.prototype.setHeadlightOn = function(on)
+{
+	this.controllerScript.headlight.intensity = this.headlightIntensity ? this.headlightIntensity : 0;
+	this.headlightOn = on;
+}
+
+glam.Viewer.prototype.setHeadlightIntensity = function(intensity)
+{
+	this.controllerScript.headlight.intensity = intensity;
+}
+
+glam.Viewer.prototype.setGridOn = function(on)
+{
+	if (this.grid)
+	{
+		this.grid.visible = on;
+	}
+}
+
+glam.Viewer.prototype.setBoundingBoxesOn = function(on)
+{
+	this.showBoundingBoxes = on;
+	var that = this;
+	this.sceneRoot.map(glam.Decoration, function(o) {
+		if (!that.highlightedObject || (o != that.highlightDecoration)) {
+			o.visible = that.showBoundingBoxes;
+		}
+	});
+}
+
+glam.Viewer.prototype.setAmbientLightOn = function(on)
+{
+	this.ambientLight.intensity = on ? 1 : 0;
+	this.ambientLightOn = on;
+}
+
+glam.Viewer.prototype.setFlipY = function(flip) {
+	this.flipY = flip;
+	if (this.flipY) {
+		this.sceneRoot.transform.rotation.x = -Math.PI / 2;
+		this.fitToScene();
+	}
+	else {
+		this.sceneRoot.transform.rotation.x = 0;
+	}
+}
+
+glam.Viewer.prototype.initHighlight = function() {
+	if (this.highlightedObject) {
+		this.highlightedObject.removeComponent(this.highlightDecoration);
+	}
+	this.highlightedObject = null;
+}
+
+glam.Viewer.prototype.highlightObject = function(object) {
+
+	if (this.highlightedObject) {
+		this.highlightParent.removeComponent(this.highlightDecoration);
+	}
+
+	if (object) {
+		
+		this.highlightDecoration = glam.Helpers.BoundingBoxDecoration({
+			object : object,
+			color : 0xaaaa00
+		});
+		
+		if (object instanceof glam.Object) {
+			object._parent.addComponent(this.highlightDecoration);
+			this.highlightedObject = object;
+			this.highlightParent = object._parent;
+		}
+		else if (object instanceof glam.Visual) {
+			object._object.addComponent(this.highlightDecoration);
+			this.highlightedObject = object._object;
+			this.highlightParent = object._object;
+		}
+	}
+	else {
+		this.highlightedObject = null;
+		this.highlightParent = null;
+	}
+	
+}
+
+glam.Viewer.prototype.createGrid = function()
+{
+	if (this.gridRoot)
+	{
+		if (this.grid)
+			this.gridRoot.removeComponent(this.grid);
+		
+		if (this.gridPicker)
+			this.gridRoot.removeComponent(this.gridPicker);
+	}
+
+	// Create a line geometry for the grid pattern
+	var floor = -0.04, step = this.gridStepSize, size = this.gridSize;
+	var geometry = new THREE.Geometry();
+
+	for ( var i = 0; i <= size / step * 2; i ++ )
+	{
+		geometry.vertices.push( new THREE.Vector3( - size, floor, i * step - size ) );
+		geometry.vertices.push( new THREE.Vector3(   size, floor, i * step - size ) );
+	
+		geometry.vertices.push( new THREE.Vector3( i * step - size, floor, -size ) );
+		geometry.vertices.push( new THREE.Vector3( i * step - size, floor,  size ) );
+	}
+
+	var line_material = new THREE.LineBasicMaterial( { color: glam.Viewer.GRID_COLOR, 
+		opacity:glam.Viewer.GRID_OPACITY } );
+	
+	var gridObject = new THREE.Line( geometry, line_material, THREE.LinePieces );
+	gridObject.visible = this.showGrid;
+	this.grid = new glam.Visual({ object : gridObject });
+
+	this.gridRoot.addComponent(this.grid);
+	
+	this.gridPicker = new glam.Picker;
+	var that = this;
+	this.gridPicker.addEventListener("mouseup", function(e) {
+		that.highlightObject(null);
+	});
+	this.gridRoot.addComponent(this.gridPicker);
+}
+
+glam.Viewer.prototype.fitToScene = function()
+{
+	function log10(val) {
+		  return Math.log(val) / Math.LN10;
+		}
+
+	this.boundingBox = glam.SceneUtils.computeBoundingBox(this.sceneRoot);
+	
+	// For default camera setups-- small scenes (COLLADA, cm), or not clip big scenes
+	// heuristic, who knows ?
+	this.controllerScript.controls.userPanSpeed = 1;
+	if (this.boundingBox.max.z < 1) {
+		this.controllerScript.camera.near = 0.01;
+		this.controllerScript.controls.userPanSpeed = 0.01;
+	}
+	else if (this.boundingBox.max.z > 10000) {
+		this.controllerScript.camera.far = this.boundingBox.max.z * Math.sqrt(2) * 2;
+	}
+	else if (this.boundingBox.max.z > 1000) {
+		this.controllerScript.camera.far = 20000;
+	}
+	
+	var center = this.boundingBox.max.clone().add(this.boundingBox.min).multiplyScalar(0.5);
+	this.controllerScript.center = center;
+	if (this.scenes.length == 1) {
+		var campos = new THREE.Vector3(0, this.boundingBox.max.y, this.boundingBox.max.z * 2);
+		this.controllerScript.camera.position.copy(campos);
+		this.controllerScript.camera.position.z *= 2;
+		this.cameras[0].position.copy(this.controllerScript.camera.position);
+	}
+	
+	// Bounding box display
+	if (this.createBoundingBoxes) {
+		
+		var that = this;
+		this.sceneRoot.map(glam.Object, function(o) {
+			if (o._parent) {
+				
+				var decoration = glam.Helpers.BoundingBoxDecoration({
+					object : o,
+					color : 0x00ff00
+				});
+				
+				o._parent.addComponent(decoration);							
+				decoration.visible = that.showBoundingBoxes;
+			}
+		});
+	}
+
+	// Resize the grid
+	var extent = this.boundingBox.max.clone().sub(this.boundingBox.min);
+	
+	this.sceneRadius = extent.length();
+	
+	var scope = Math.pow(10, Math.ceil(log10(this.sceneRadius)));
+	
+	this.gridSize = scope;
+	this.gridStepSize = scope / 100;
+	this.createGrid();
+}
+
+glam.Viewer.prototype.calcSceneStats = function()
+{
+	this.meshCount = 0;
+	this.faceCount = 0;
+	
+	var that = this;
+	var visuals = this.sceneRoot.findNodes(glam.Visual);
+	var i, len = visuals.length;
+	for (i = 0; i < len; i++) {
+		var visual = visuals[i];
+		var geometry = visual.geometry;
+		var nFaces = geometry.faces ? geometry.faces.length : geometry.attributes.index.array.length / 3;
+		this.faceCount += nFaces;
+		this.meshCount++;		
+	}
+
+	this.sceneStats.meshCount = this.meshCount;
+	this.sceneStats.faceCount = this.faceCount;
+	this.sceneStats.boundingBox = this.boundingBox;
+	
+	this.dispatchEvent("scenestats", this.sceneStats);	
+}
+
+glam.Viewer.prototype.setController = function(type) {
+	if (!this.boundingBox)
+		this.boundingBox = glam.SceneUtils.computeBoundingBox(this.sceneRoot);
+
+	var center;
+	if (!isFinite(this.boundingBox.max.x)) {
+		center = new THREE.Vector3;
+	}
+	else {
+		center = this.boundingBox.max.clone().add(this.boundingBox.min).multiplyScalar(0.5);
+	}
+	switch (type) {
+		case "model" :
+			break;
+		case "FPS" :
+			center.y = 0;
+			break;
+	}
+	this.controllerScript.center = center;
+}
+
+glam.Viewer.DEFAULT_CAMERA_POSITION = new THREE.Vector3(0, 0, 10);
+glam.Viewer.DEFAULT_GRID_SIZE = 100;
+glam.Viewer.DEFAULT_GRID_STEP_SIZE = 1;
+glam.Viewer.GRID_COLOR = 0x202020;
+glam.Viewer.GRID_OPACITY = 0.2;
+glam.Viewer.DEFAULT_HEADLIGHT_INTENSITY = 1;
 /**
  * Copyright 2013 Google Inc. All Rights Reserved.
  *
@@ -54543,9 +56935,9 @@ Vizi.SceneUtils.computeBoundingBox = function(obj) {
  * @author benvanik
  */
 
-goog.provide('Vizi.OculusRiftControls');
+goog.provide('glam.OculusRiftControls');
 
-Vizi.OculusRiftControls = function ( camera ) {
+glam.OculusRiftControls = function ( camera ) {
 
 	var scope = this;
 
@@ -54729,2865 +57121,311 @@ Vizi.OculusRiftControls = function ( camera ) {
 	};
 
 };
-goog.provide("Vizi.System");
-
-Vizi.System = {
-	log : function() {
-		var args = ["[Vizi] "].concat([].slice.call(arguments));
-		console.log.apply(console, args);
-	},
-	warn : function() {
-		var args = ["[Vizi] "].concat([].slice.call(arguments));
-		console.warn.apply(console, args);
-	},
-	error : function() {
-		var args = ["[Vizi] "].concat([].slice.call(arguments));
-		console.error.apply(console, args);
-	}
-};/**
- * @fileoverview HighlightBehavior - simple angular rotation
- * 
- * @author Tony Parisi
- */
-
-goog.provide('Vizi.HighlightBehavior');
-goog.require('Vizi.Behavior');
-
-Vizi.HighlightBehavior = function(param) {
-	param = param || {};
-	this.highlightColor = (param.highlightColor !== undefined) ? param.highlightColor : 0xffffff;
-	this.savedColors = [];
-    Vizi.Behavior.call(this, param);
-}
-
-goog.inherits(Vizi.HighlightBehavior, Vizi.Behavior);
-
-Vizi.HighlightBehavior.prototype.start = function()
-{
-	Vizi.Behavior.prototype.start.call(this);
-	
-	if (this._realized && this._object.visuals) {
-		var visuals = this._object.visuals;
-		var i, len = visuals.length;
-		for (i = 0; i < len; i++) {
-			this.savedColors.push(visuals[i].material.color.getHex());
-			visuals[i].material.color.setHex(this.highlightColor);
-		}	
-	}
-}
-
-Vizi.HighlightBehavior.prototype.evaluate = function(t)
-{
-}
-
-Vizi.HighlightBehavior.prototype.stop = function()
-{
-	Vizi.Behavior.prototype.stop.call(this);
-
-	if (this._realized && this._object.visuals)
-	{
-		var visuals = this._object.visuals;
-		var i, len = visuals.length;
-		for (i = 0; i < len; i++) {
-			visuals[i].material.color.setHex(this.savedColors[i]);
-		}	
-	}
-
-}
-
-// Alias a few functions - syntactic sugar
-Vizi.HighlightBehavior.prototype.on = Vizi.HighlightBehavior.prototype.start;
-Vizi.HighlightBehavior.prototype.off = Vizi.HighlightBehavior.prototype.stop;
 /**
- * @fileoverview BounceBehavior - simple angular rotation
+ * @fileoverview Pick Manager - singleton to manage currently picked object(s)
  * 
  * @author Tony Parisi
  */
 
-goog.provide('Vizi.BounceBehavior');
-goog.require('Vizi.Behavior');
+goog.provide('glam.PickManager');
 
-Vizi.BounceBehavior = function(param) {
-	param = param || {};
-	this.duration = (param.duration !== undefined) ? param.duration : 1;
-	this.bounceVector = (param.bounceVector !== undefined) ? param.bounceVector : new THREE.Vector3(0, 1, 0);
-	this.tweenUp = null;
-	this.tweenDown = null;
-    Vizi.Behavior.call(this, param);
-}
-
-goog.inherits(Vizi.BounceBehavior, Vizi.Behavior);
-
-Vizi.BounceBehavior.prototype.start = function()
+glam.PickManager.handleMouseMove = function(event)
 {
-	if (this.running)
-		return;
-	
-	this.bouncePosition = new THREE.Vector3;
-	this.bounceEndPosition = this.bounceVector.clone();
-	this.prevBouncePosition = new THREE.Vector3;
-	this.bounceDelta = new THREE.Vector3;
-	this.tweenUp = new TWEEN.Tween(this.bouncePosition).to(this.bounceEndPosition, this.duration / 2 * 1000)
-	.easing(TWEEN.Easing.Quadratic.InOut)
-	.repeat(0)
-	.start();
-	
-	Vizi.Behavior.prototype.start.call(this);
-}
-
-Vizi.BounceBehavior.prototype.evaluate = function(t)
-{
-	this.bounceDelta.copy(this.bouncePosition).sub(this.prevBouncePosition);
-	this.prevBouncePosition.copy(this.bouncePosition);
-	
-	this._object.transform.position.add(this.bounceDelta);
-	
-	if (t >= (this.duration / 2))
-	{
-		if (this.tweenUp)
-		{
-			this.tweenUp.stop();
-			this.tweenUp = null;
-		}
-
-		if (!this.tweenDown)
-		{
-			this.bouncePosition = this._object.transform.position.clone();
-			this.bounceEndPosition = this.bouncePosition.clone().sub(this.bounceVector);
-			this.prevBouncePosition = this.bouncePosition.clone();
-			this.bounceDelta = new THREE.Vector3;
-			this.tweenDown = new TWEEN.Tween(this.bouncePosition).to(this.bounceEndPosition, this.duration / 2 * 1000)
-			.easing(TWEEN.Easing.Quadratic.InOut)
-			.repeat(0)
-			.start();
-		}
-	}
-	
-	if (t >= this.duration)
-	{
-		this.tweenDown.stop();
-		this.tweenDown = null;
-		this.stop();
-		
-		if (this.loop)
-			this.start();
-	}
-}/**
- * @fileoverview Camera Manager - singleton to manage cameras, active, resize etc.
- * 
- * @author Tony Parisi
- */
-
-goog.provide('Vizi.CameraManager');
-
-Vizi.CameraManager.addCamera = function(camera)
-{
-	Vizi.CameraManager.cameraList.push(camera);
-}
-
-Vizi.CameraManager.removeCamera = function(camera)
-{
-    var i = Vizi.CameraManager.cameraList.indexOf(camera);
-
-    if (i != -1)
+    if (glam.PickManager.clickedObject)
     {
-    	Vizi.CameraManager.cameraList.splice(i, 1);
+    	var pickers = glam.PickManager.clickedObject.pickers;
+    	var i, len = pickers.length;
+    	for (i = 0; i < len; i++) {
+    		if (pickers[i].enabled && pickers[i].onMouseMove) {
+    			pickers[i].onMouseMove(event);
+    		}
+    	}
     }
-}
+    else
+    {
+        var oldObj = glam.PickManager.overObject;
+        glam.PickManager.overObject = glam.PickManager.objectFromMouse(event);
 
-Vizi.CameraManager.setActiveCamera = function(camera)
-{
-	if (Vizi.CameraManager.activeCamera && Vizi.CameraManager.activeCamera != camera)
-		Vizi.CameraManager.activeCamera.active = false;
-	
-	Vizi.CameraManager.activeCamera = camera;
-	Vizi.Graphics.instance.setCamera(camera.object);
-}
+        if (glam.PickManager.overObject != oldObj)
+        {
+    		if (oldObj)
+    		{
+    			glam.Graphics.instance.setCursor(null);
 
+    			event.type = "mouseout";
+    	    	var pickers = oldObj.pickers;
+    	    	var i, len = pickers.length;
+    	    	for (i = 0; i < len; i++) {
+    	    		if (pickers[i].enabled && pickers[i].onMouseOut) {
+    	    			pickers[i].onMouseOut(event);
+    	    		}
+    	    	}
+    		}
 
-Vizi.CameraManager.handleWindowResize = function(width, height)
-{
-	var cameras = Vizi.CameraManager.cameraList;
-	
-	if (cameras.length == 0)
-		return false;
+            if (glam.PickManager.overObject)
+            {            	
+        		event.type = "mouseover";
+    	    	var pickers = glam.PickManager.overObject.pickers;
+    	    	var i, len = pickers.length;
+    	    	for (i = 0; i < len; i++) {
+    	    		
+    	    		if (pickers[i].enabled && pickers[i].overCursor) {
+    	        		glam.Graphics.instance.setCursor(pickers[i].overCursor);
+    	    		}
+    	    		
+    	        	if (pickers[i].enabled && pickers[i].onMouseOver) {
+    	        		pickers[i].onMouseOver(event);
+    	        	}
+    	    	}
 
-	var i, len = cameras.length;
-	for (i = 0; i < len; i++)
-	{
-		var camera = cameras[i];
-		camera.aspect = width / height;
-	}
-
-	return true;
-}
-
-
-Vizi.CameraManager.cameraList = [];
-Vizi.CameraManager.activeCamera = null;/**
- * @fileoverview Object collects a group of Components that define an object and its behaviors
- * 
- * @author Tony Parisi
- */
-
-
-goog.require('Vizi.Prefabs');
-
-Vizi.Prefabs.HUD = function(param) {
-
-	param = param || {};
-	
-	var hud = new Vizi.Object();
-
-	var hudScript = new Vizi.HUDScript(param);
-	hud.addComponent(hudScript);
-	
-	return hud;
-}
-
-goog.provide('Vizi.HUDScript');
-goog.require('Vizi.Script');
-
-Vizi.HUDScript = function(param) {
-	
-	Vizi.Script.call(this, param);
-
-	this.zDistance = (param.zDistance !== undefined) ? param.zDistance : Vizi.HUDScript.DEFAULT_Z_DISTANCE;
-	this.position = new THREE.Vector3(0, 0, -this.zDistance);
-	this.savedPosition = this.position.clone();
-	this.scale = new THREE.Vector3;
-	this.quaternion = new THREE.Quaternion;
-}
-
-goog.inherits(Vizi.HUDScript, Vizi.Script);
-
-Vizi.HUDScript.prototype.realize = function() {
-}
-
-Vizi.HUDScript.EPSILON = 0.001;
-
-Vizi.HUDScript.prototype.update = function() {
-	
-	var cam = Vizi.Graphics.instance.camera;
-	
-	cam.updateMatrixWorld();
-	
-	cam.matrixWorld.decompose(this.position, this.quaternion, this.scale);
-	
-	this._object.transform.quaternion.copy(this.quaternion);
-	this._object.transform.position.copy(this.position);
-	this._object.transform.translateZ(-this.zDistance);
-	
-	if (this.savedPosition.distanceTo(this.position) > Vizi.HUDScript.EPSILON) {
-		console.log("Position changed:", this.position)
-	}
-	
-	this.savedPosition.copy(this.position);
-}
-
-Vizi.HUDScript.DEFAULT_Z_DISTANCE = 1;
-
-/**
- * @fileoverview Loader - loads level files
- * 
- * @author Tony Parisi
- */
-
-goog.provide('Vizi.Loader');
-goog.require('Vizi.EventDispatcher');
-
-/**
- * @constructor
- * @extends {Vizi.PubSub}
- */
-Vizi.Loader = function()
-{
-    Vizi.EventDispatcher.call(this);	
-}
-
-goog.inherits(Vizi.Loader, Vizi.EventDispatcher);
+            }
+        }
         
-Vizi.Loader.prototype.loadModel = function(url, userData)
-{
-	var spliturl = url.split('.');
-	var len = spliturl.length;
-	var ext = '';
-	if (len)
-	{
-		ext = spliturl[len - 1];
-	}
-	
-	if (ext && ext.length)
-	{
-	}
-	else
-	{
-		return;
-	}
-	
-	var loaderClass;
-	
-	switch (ext.toUpperCase())
-	{
-		case 'JS' :
-			loaderClass = THREE.JSONLoader;
-			break;
-		default :
-			break;
-	}
-	
-	if (loaderClass)
-	{
-		var loader = new loaderClass;
-		var that = this;
-		
-		loader.load(url, function (geometry, materials) {
-			that.handleModelLoaded(url, userData, geometry, materials);
-		});		
-	}
-}
-
-Vizi.Loader.prototype.handleModelLoaded = function(url, userData, geometry, materials)
-{
-	// Create a new mesh with per-face materials
-	var material = new THREE.MeshFaceMaterial(materials);
-	var mesh = new THREE.Mesh( geometry, material  );
-	
-	var obj = new Vizi.Object;
-	var visual = new Vizi.Visual({object:mesh});
-	obj.addComponent(visual);
-
-	var result = { scene : obj, cameras: [], lights: [], keyFrameAnimators:[] , userData: userData };
-	
-	this.dispatchEvent("loaded", result);
-}
-
-Vizi.Loader.prototype.loadScene = function(url, userData)
-{
-	var spliturl = url.split('.');
-	var len = spliturl.length;
-	var ext = '';
-	if (len)
-	{
-		ext = spliturl[len - 1];
-	}
-	
-	if (ext && ext.length)
-	{
-	}
-	else
-	{
-		return;
-	}
-	
-	var loaderClass;
-	
-	switch (ext.toUpperCase())
-	{
-		case 'DAE' :
-			loaderClass = THREE.ColladaLoader;
-			break;
-		case 'JS' :
-			return this.loadModel(url, userData);
-			break;
-		case 'JSON' :
-			loaderClass = THREE.glTFLoader;
-			break;
-		default :
-			break;
-	}
-	
-	if (loaderClass)
-	{
-		var loader = new loaderClass;
-		var that = this;
-		
-		loader.load(url, 
-				function (data) {
-					that.handleSceneLoaded(url, data, userData);
-				},
-				function (data) {
-					that.handleSceneProgress(url, data);
-				}
-		);		
-	}
-}
-
-Vizi.Loader.prototype.traverseCallback = function(n, result)
-{
-	// Look for cameras
-	if (n instanceof THREE.Camera)
-	{
-		if (!result.cameras)
-			result.cameras = [];
-		
-		result.cameras.push(n);
-	}
-
-	// Look for lights
-	if (n instanceof THREE.Light)
-	{
-		if (!result.lights)
-			result.lights = [];
-		
-		result.lights.push(n);
-	}
-}
-
-Vizi.Loader.prototype.handleSceneLoaded = function(url, data, userData)
-{
-	var result = {};
-	var success = false;
-	
-	if (data.scene)
-	{
-		// console.log("In loaded callback for ", url);
-		
-		var convertedScene = this.convertScene(data.scene);
-		result.scene = convertedScene; // new Vizi.SceneVisual({scene:data.scene}); // 
-		result.cameras = convertedScene.findNodes(Vizi.Camera);
-		result.lights = convertedScene.findNodes(Vizi.Light);
-		result.url = url;
-		result.userData = userData;
-		success = true;
-	}
-	
-	if (data.animations)
-	{
-		result.keyFrameAnimators = [];
-		var i, len = data.animations.length;
-		for (i = 0; i < len; i++)
-		{
-			var animations = [];
-			animations.push(data.animations[i]);
-			result.keyFrameAnimators.push(new Vizi.KeyFrameAnimator({animations:animations}));
-		}
-	}
-	
-	/*
-	if (data.skins && data.skins.length)
-	{
-		// result.meshAnimator = new Vizi.MeshAnimator({skins:data.skins});
-	}
-	*/
-	
-	if (success)
-		this.dispatchEvent("loaded", result);
-}
-
-Vizi.Loader.prototype.handleSceneProgress = function(url, progress)
-{
-	this.dispatchEvent("progress", progress);
-}
-
-Vizi.Loader.prototype.convertScene = function(scene) {
-
-	function convert(n) {
-		if (n instanceof THREE.Mesh) {
-			// cheap fixes for picking and animation; need to investigate
-			// the general case longer-term for glTF loader
-			n.matrixAutoUpdate = true;
-			n.geometry.dynamic = true;
-			var v = new Vizi.Visual({object:n});
-			v.name = n.name;
-			return v;
-		}
-		else if (n instanceof THREE.Camera) {
-			if (n instanceof THREE.PerspectiveCamera) {
-				return new Vizi.PerspectiveCamera({object:n});
-			}
-		}
-		else if (n instanceof THREE.Light) {
-			if (n instanceof THREE.AmbientLight) {
-				return new Vizi.AmbientLight({object:n});
-			}
-			else if (n instanceof THREE.DirectionalLight) {
-				return new Vizi.DirectionalLight({object:n});
-			}
-			else if (n instanceof THREE.PointLight) {
-				return new Vizi.PointLight({object:n});
-			}
-			else if (n instanceof THREE.SpotLight) {
-				return new Vizi.SpotLight({object:n});
-			}
-		}
-		else if (n.children) {
-			var o = new Vizi.Object({autoCreateTransform:false});
-			o.addComponent(new Vizi.Transform({object:n}));
-			o.name = n.name;
-			n.matrixAutoUpdate = true;
-			var i, len = n.children.length;
-			for (i = 0; i < len; i++) {
-				var childNode  = n.children[i];
-				var c = convert(childNode);
-				if (c instanceof Vizi.Object) {
-					o.addChild(c);
-				}
-				else if (c instanceof Vizi.Component) {
-					o.addComponent(c);
-				}
-				else {
-					// N.B.: what???
-				}
-			}
-		}
-		
-		return o;
-	}
-
-	// Pump through updates once so converted scene can pick up all the values
-	scene.updateMatrixWorld();
-
-	return convert(scene);
-}
-goog.provide('Vizi.ParticleEmitter');
-goog.require('Vizi.Component');
-
-Vizi.ParticleEmitter = function(param) {
-	this.param = param || {};
-	
-	Vizi.Component.call(this, param);
-
-	var size = this.param.size || Vizi.ParticleEmitter.DEFAULT_SIZE;
-	var sizeEnd = this.param.sizeEnd || Vizi.ParticleEmitter.DEFAULT_SIZE_END;
-	var colorStart = this.param.colorStart || Vizi.ParticleEmitter.DEFAULT_COLOR_START;
-	var colorEnd = this.param.colorEnd || Vizi.ParticleEmitter.DEFAULT_COLOR_END;
-	var particlesPerSecond = this.param.particlesPerSecond || Vizi.ParticleEmitter.DEFAULT_PARTICLES_PER_SECOND;
-	var opacityStart = this.param.opacityStart || Vizi.ParticleEmitter.DEFAULT_OPACITY_START;
-	var opacityMiddle = this.param.opacityMiddle || Vizi.ParticleEmitter.DEFAULT_OPACITY_MIDDLE;
-	var opacityEnd = this.param.opacityEnd || Vizi.ParticleEmitter.DEFAULT_OPACITY_END;
-	var velocity = this.param.velocity || Vizi.ParticleEmitter.DEFAULT_VELOCITY;
-	var acceleration = this.param.acceleration || Vizi.ParticleEmitter.DEFAULT_ACCELERATION;
-	var positionSpread = this.param.positionSpread || Vizi.ParticleEmitter.DEFAULT_POSITION_SPREAD;
-	var accelerationSpread = this.param.accelerationSpread || Vizi.ParticleEmitter.DEFAULT_ACCELERATION_SPREAD;
-	var blending = this.param.blending || Vizi.ParticleEmitter.DEFAULT_BLENDING;
-
-	this._active = false;
-
-	this.object = new ShaderParticleEmitter({
-		size: size,
-        sizeEnd: sizeEnd,
-        colorStart: colorStart,
-        colorEnd: colorEnd,
-        particlesPerSecond: particlesPerSecond,
-        opacityStart: opacityStart,
-        opacityMiddle: opacityMiddle,
-        opacityEnd: opacityEnd,
-        velocity: velocity,
-        acceleration: acceleration,
-        positionSpread: positionSpread,
-        accelerationSpread: accelerationSpread,
-        blending: blending,
-      });
-	
-    Object.defineProperties(this, {
-        active: {
-	        get: function() {
-	            return this._active;
-	        },
-	        set: function(v) {
-	        	this.setActive(v);
-	        }
-    	},
-    });
-
-}
-
-goog.inherits(Vizi.ParticleEmitter, Vizi.Component);
-
-Vizi.ParticleEmitter.prototype.realize = function() {
-
-}
-
-Vizi.ParticleEmitter.prototype.update = function() {
-
-}
-
-Vizi.ParticleEmitter.prototype.setActive = function(active) {
-
-    this._active = active;
-    
-    if (this._active) {
-    	this.object.enable();
-    }
-    else {
-    	this.object.disable();
+        if (glam.PickManager.overObject) {
+	    	var pickers = glam.PickManager.overObject.pickers;
+	    	var i, len = pickers.length;
+	    	for (i = 0; i < len; i++) {
+	    		
+	    		if (pickers[i].enabled && pickers[i].moveWithoutCapture && pickers[i].onMouseMove) {
+	        		event.type = "mousemove";
+	    			pickers[i].onMouseMove(event);
+	    		}
+	    	}
+        }
     }
 }
 
-Vizi.ParticleEmitter.DEFAULT_SIZE = 1;
-Vizi.ParticleEmitter.DEFAULT_SIZE_END = 1;
-Vizi.ParticleEmitter.DEFAULT_COLOR_START = new THREE.Color;
-Vizi.ParticleEmitter.DEFAULT_COLOR_END = new THREE.Color;
-Vizi.ParticleEmitter.DEFAULT_PARTICLES_PER_SECOND = 10;
-Vizi.ParticleEmitter.DEFAULT_OPACITY_START = 0.1;
-Vizi.ParticleEmitter.DEFAULT_OPACITY_MIDDLE = 0.5;
-Vizi.ParticleEmitter.DEFAULT_OPACITY_END = 0.0;
-Vizi.ParticleEmitter.DEFAULT_VELOCITY = new THREE.Vector3(0, 10, 0);
-Vizi.ParticleEmitter.DEFAULT_ACCELERATION = new THREE.Vector3(0, 1, 0);
-Vizi.ParticleEmitter.DEFAULT_POSITION_SPREAD = new THREE.Vector3(0, 0, 0);
-Vizi.ParticleEmitter.DEFAULT_ACCELERATION_SPREAD = new THREE.Vector3(0, 1, 0);
-Vizi.ParticleEmitter.DEFAULT_BLENDING = THREE.NoBlending;
-
-
-/**
- *
- */
-goog.provide('Vizi.Gamepad');
-goog.require('Vizi.EventDispatcher');
-
-Vizi.Gamepad = function()
+glam.PickManager.handleMouseDown = function(event)
 {
-    Vizi.EventDispatcher.call(this);
-
-    // N.B.: freak out if somebody tries to make 2
-	// throw (...)
-
-    this.controllers = {
-    };
-    
-    this.values = {
-    };
-    
-	Vizi.Gamepad.instance = this;
-}       
-
-goog.inherits(Vizi.Gamepad, Vizi.EventDispatcher);
-
-Vizi.Gamepad.prototype.update = function() {
-
-	this.scanGamepads();
-
-	var buttonsChangedEvent = {
-			changedButtons: [],
-	};
-
-	var axesChangedEvent = {
-			changedAxes: [],
-	};
-	
-	for (var c in this.controllers) {
-	    var controller = this.controllers[c];
-	    this.testValues(controller, buttonsChangedEvent, axesChangedEvent);
-	    this.saveValues(controller);
-	}
-	
-	if (buttonsChangedEvent.changedButtons.length) {
-		this.dispatchEvent("buttonsChanged", buttonsChangedEvent);
-	}
-
-	if (axesChangedEvent.changedAxes.length) {
-		this.dispatchEvent("axesChanged", axesChangedEvent);
-	}
-}
-
-Vizi.Gamepad.prototype.testValues = function(gamepad, buttonsChangedEvent, axesChangedEvent) {
-	var values = this.values[gamepad.index];
-	if (values) {
-	    for (var i = 0; i < gamepad.buttons.length; i++) {
-	        
-	        var val = gamepad.buttons[i];
-	        var pressed = val == 1.0;
-	        
-	        if (typeof(val) == "object") {
-	          pressed = val.pressed;
-	          val = val.value;
-	        }
-
-	        if (pressed != values.buttons[i]) {
-//	        	console.log("Pressed: ", i);
-	        	buttonsChangedEvent.changedButtons.push({
-	        		gamepad : gamepad.index,
-	        		button : i,
-	        		pressed : pressed,
-	        	});
-	        }	        	
-	      }
-
-	    for (var i = 0; i < gamepad.axes.length; i++) {
-	        var val = gamepad.axes[i];
-	        if (val != values.axes[i]) {
-//	        	console.log("Axis: ", i, val);
-	        	axesChangedEvent.changedAxes.push({
-	        		gamepad : gamepad.index,
-	        		axis : i,
-	        		value : val,
-	        	});
-	        }
-	      }		
-	}
-}
-
-Vizi.Gamepad.prototype.saveValues = function(gamepad) {
-	var values = this.values[gamepad.index];
-	if (values) {
-	    for (var i = 0; i < gamepad.buttons.length; i++) {
-	        
-	        var val = gamepad.buttons[i];
-	        var pressed = val == 1.0;
-	        
-	        if (typeof(val) == "object") {
-	          pressed = val.pressed;
-	          val = val.value;
-	        }
-
-	        values.buttons[i] = pressed;
-	      }
-
-	    for (var i = 0; i < gamepad.axes.length; i++) {
-	        var val = gamepad.axes[i];
-	        values.axes[i] = val;
-	      }		
-	}
-}
-
-Vizi.Gamepad.prototype.addGamepad = function(gamepad) {
-	  this.controllers[gamepad.index] = gamepad;
-	  this.values[gamepad.index] = {
-			  buttons : [],
-			  axes : [],
-	  };
-	  
-	  this.saveValues(gamepad);
-	  console.log("Gamepad added! ", gamepad.id);
-}
-
-Vizi.Gamepad.prototype.scanGamepads = function() {
-  var gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : []);
-  for (var i = 0; i < gamepads.length; i++) {
-    if (gamepads[i]) {
-      if (!(gamepads[i].index in this.controllers)) {
-    	  this.addGamepad(gamepads[i]);
-      } else {
-    	  this.controllers[gamepads[i].index] = gamepads[i];
-      }
-    }
-  }
-}
-
-Vizi.Gamepad.instance = null;
-
-/* input codes
-*/
-Vizi.Gamepad.BUTTON_A = Vizi.Gamepad.BUTTON_CROSS 		= 0;
-Vizi.Gamepad.BUTTON_B = Vizi.Gamepad.BUTTON_CIRCLE 		= 1;
-Vizi.Gamepad.BUTTON_X = Vizi.Gamepad.BUTTON_SQUARE 		= 2;
-Vizi.Gamepad.BUTTON_Y = Vizi.Gamepad.BUTTON_TRIANGLE 	= 3;
-Vizi.Gamepad.SHOULDER_LEFT 								= 4;
-Vizi.Gamepad.SHOULDER_RIGHT 							= 5;
-Vizi.Gamepad.TRIGGER_LEFT 								= 6;
-Vizi.Gamepad.TRIGGER_RIGHT 								= 7;
-Vizi.Gamepad.SELECT = Vizi.Gamepad.BACK 				= 8;
-Vizi.Gamepad.START 										= 9;
-Vizi.Gamepad.STICK_LEFT 								= 10;
-Vizi.Gamepad.STICK_RIGHT 								= 11;
-Vizi.Gamepad.DPAD_UP	 								= 12;
-Vizi.Gamepad.DPAD_DOWN	 								= 13;
-Vizi.Gamepad.DPAD_LEFT	 								= 14;
-Vizi.Gamepad.DPAD_RIGHT	 								= 15;
-Vizi.Gamepad.HOME = Vizi.Gamepad.MENU					= 16;
-Vizi.Gamepad.AXIS_LEFT_H								= 0;
-Vizi.Gamepad.AXIS_LEFT_V								= 1;
-Vizi.Gamepad.AXIS_RIGHT_H								= 2;
-Vizi.Gamepad.AXIS_RIGHT_V								= 3;
-/**
- * @fileoverview Picker component - add one to get picking support on your object
- * 
- * @author Tony Parisi
- */
-
-goog.provide('Vizi.PlaneDragger');
-goog.require('Vizi.Picker');
-
-Vizi.PlaneDragger = function(param) {
-	
-	param = param || {};
-	
-    Vizi.Picker.call(this, param);
-    
-    this.normal = param.normal || new THREE.Vector3(0, 0, 1);
-    this.position = param.position || new THREE.Vector3;
-    this.color = 0x0000aa;
-}
-
-goog.inherits(Vizi.PlaneDragger, Vizi.Picker);
-
-Vizi.PlaneDragger.prototype.realize = function()
-{
-	Vizi.Picker.prototype.realize.call(this);
-
-    // And some helpers
-    this.dragObject = null;
-	this.dragOffset = new THREE.Vector3;
-	this.dragHitPoint = new THREE.Vector3;
-	this.dragStartPoint = new THREE.Vector3;
-	this.dragPlane = this.createDragPlane();
-	this.dragPlane.visible = Vizi.PlaneDragger.SHOW_DRAG_PLANE;
-	this.dragPlane.ignorePick = true;
-	this.dragPlane.ignoreBounds = true;
-	this._object._parent.transform.object.add(this.dragPlane);
-}
-
-Vizi.PlaneDragger.prototype.createDragPlane = function() {
-
-	var size = 2000;
-	var normal = this.normal;
-	var position = this.position;
-	
-	var u = new THREE.Vector3(0, normal.z, -normal.y).normalize().multiplyScalar(size);
-	if (!u.lengthSq())
-		u = new THREE.Vector3(-normal.z, normal.x, 0).normalize().multiplyScalar(size);
-
-	var v = u.clone().cross(normal).normalize().multiplyScalar(size);
-	
-	var p1 = position.clone().sub(u).sub(v);
-	var p2 = position.clone().add(u).sub(v);
-	var p3 = position.clone().add(u).add(v);
-	var p4 = position.clone().sub(u).add(v);
-	
-	var planegeom = new THREE.Geometry();
-	planegeom.vertices.push(p1, p2, p3, p4); 
-	var planeface = new THREE.Face3( 0, 2, 1 );
-	planeface.normal.copy( normal );
-	planeface.vertexNormals.push( normal.clone(), normal.clone(), normal.clone(), normal.clone() );
-	planegeom.faces.push(planeface);
-	var planeface = new THREE.Face3( 0, 3, 2 );
-	planeface.normal.copy( normal );
-	planeface.vertexNormals.push( normal.clone(), normal.clone(), normal.clone(), normal.clone() );
-	planegeom.faces.push(planeface);
-	planegeom.computeFaceNormals();
-
-	var mat = new THREE.MeshBasicMaterial({color:this.color, transparent: true, side:THREE.DoubleSide, opacity:0.1 });
-
-	var mesh = new THREE.Mesh(planegeom, mat);
-	
-	return mesh;
-}
-
-Vizi.PlaneDragger.prototype.update = function() {
-}
-
-Vizi.PlaneDragger.prototype.onMouseMove = function(event) {
-	Vizi.Picker.prototype.onMouseMove.call(this, event);
-	this.handleMouseMove(event);
-}
-
-Vizi.PlaneDragger.prototype.handleMouseMove = function(event) {
-	var intersection = Vizi.Graphics.instance.getObjectIntersection(event.elementX, event.elementY, this.dragPlane);
-	
-	if (intersection)
-	{
-		this.dragHitPoint.copy(intersection.point).sub(this.dragOffset);
-		this.dragHitPoint.add(this.dragStartPoint);
-		this.dispatchEvent("drag", {
-									type : "drag", 
-									object : this.dragObject, 
-									offset : this.dragHitPoint
-									}
-		);
-	}
-}
-
-Vizi.PlaneDragger.prototype.onMouseDown = function(event) {
-	Vizi.Picker.prototype.onMouseDown.call(this, event);
-	this.handleMouseDown(event);
-}
-
-Vizi.PlaneDragger.prototype.handleMouseDown = function(event) {
-	var intersection = Vizi.Graphics.instance.getObjectIntersection(event.elementX, event.elementY, this.dragPlane);
-	
-	if (intersection)
-	{
-		this.dragOffset.copy(intersection.point);
-		this.dragStartPoint.copy(event.object.position);
-		this.dragHitPoint.copy(intersection.point).sub(this.dragOffset);
-		this.dragHitPoint.add(this.dragStartPoint);
-		this.dragObject = event.object;
-		this.dispatchEvent("dragstart", {
-			type : "dragstart", 
-			object : this.dragObject, 
-			offset : this.dragHitPoint
-			}
-);
-	}
-}
-
-Vizi.PlaneDragger.prototype.onMouseUp = function(event) {
-	Vizi.Picker.prototype.onMouseUp.call(this, event);
-	this.handleMouseUp(event);
-}
-
-Vizi.PlaneDragger.prototype.handleMouseUp = function(event) {
-}
-
-
-Vizi.PlaneDragger.prototype.onTouchStart = function(event) {
-	Vizi.Picker.prototype.onTouchStart.call(this, event);
-
-	this.handleMouseDown(event);
-}
-
-Vizi.PlaneDragger.prototype.onTouchMove = function(event) {
-	Vizi.Picker.prototype.onTouchMove.call(this, event);
-
-	this.handleMouseMove(event);
-}
-
-Vizi.PlaneDragger.prototype.onTouchEnd = function(event) {
-	Vizi.Picker.prototype.onTouchEnd.call(this, event);
-
-	this.handleMouseUp(event);
-}
-
-Vizi.PlaneDragger.SHOW_DRAG_PLANE = false;
-Vizi.PlaneDragger.SHOW_DRAG_NORMAL = false;/**
- * @fileoverview ScaleBehavior - simple scale up/down over time
- * 
- * @author Tony Parisi
- */
-
-goog.provide('Vizi.ScaleBehavior');
-goog.require('Vizi.Behavior');
-
-Vizi.ScaleBehavior = function(param) {
-	param = param || {};
-	this.duration = (param.duration !== undefined) ? param.duration : 1;
-	this.startScale = (param.startScale !== undefined) ? param.startScale.clone() : 
-		new THREE.Vector3(1, 1, 1);
-	this.endScale = (param.endScale !== undefined) ? param.endScale.clone() : 
-		new THREE.Vector3(2, 2, 2);
-	this.tween = null;
-    Vizi.Behavior.call(this, param);
-}
-
-goog.inherits(Vizi.ScaleBehavior, Vizi.Behavior);
-
-Vizi.ScaleBehavior.prototype.start = function()
-{
-	if (this.running)
-		return;
-
-	this.scale = this.startScale.clone();
-	this.originalScale = this._object.transform.scale.clone();
-	this.tween = new TWEEN.Tween(this.scale).to(this.endScale, this.duration * 1000)
-	.easing(TWEEN.Easing.Quadratic.InOut)
-	.repeat(0)
-	.start();
-	
-	Vizi.Behavior.prototype.start.call(this);
-}
-
-Vizi.ScaleBehavior.prototype.evaluate = function(t)
-{
-	if (t >= this.duration)
-	{
-		this.stop();
-		if (this.loop) {
-			this.start();
-		}
-		else {
-			this.dispatchEvent("complete");
-		}
-	}
-	
-	var sx = this.originalScale.x * this.scale.x;
-	var sy = this.originalScale.y * this.scale.y;
-	var sz = this.originalScale.z * this.scale.z;
-	
-	this._object.transform.scale.set(sx, sy, sz);
-}
-
-
-Vizi.ScaleBehavior.prototype.stop = function()
-{
-	if (this.tween)
-		this.tween.stop();
-	
-	Vizi.Behavior.prototype.stop.call(this);
-}/**
- * @fileoverview Vizi Effects Composer - postprocessing effects composer, wraps Three.js
- * 
- * @author Tony Parisi
- */
-
-goog.provide('Vizi.Composer');
-
-/**
- * @constructor
- */
-
-Vizi.Composer = function(param)
-{
-	// Freak out if somebody tries to make 2
-    if (Vizi.Composer.instance)
+    glam.PickManager.clickedObject = glam.PickManager.objectFromMouse(event);
+    if (glam.PickManager.clickedObject)
     {
-        throw new Error('Composer singleton already exists')
+    	var pickers = glam.PickManager.clickedObject.pickers;
+    	var i, len = pickers.length;
+    	for (i = 0; i < len; i++) {
+    		if (pickers[i].enabled && pickers[i].onMouseDown) {
+    			pickers[i].onMouseDown(event);
+    		}
+    	}
+    }
+}
+
+glam.PickManager.handleMouseUp = function(event)
+{
+    if (glam.PickManager.clickedObject)
+    {
+    	var overobject = glam.PickManager.objectFromMouse(event);
+    	var pickers = glam.PickManager.clickedObject.pickers;
+    	var i, len = pickers.length;
+    	for (i = 0; i < len; i++) {
+    		if (pickers[i].enabled && pickers[i].onMouseUp) {
+    			pickers[i].onMouseUp(event);
+    			// Also deliver a click event if we're over the same object as when
+    			// the mouse was first pressed
+    			if (overobject == glam.PickManager.clickedObject) {
+    				event.type = "click";
+    				pickers[i].onMouseClick(event);
+    			}
+    		}
+    	}
     }
 
-	Vizi.Composer.instance = this;
-
-    // Create the effects composer
-    // For now, create default render pass to start it up
-	var graphics = Vizi.Graphics.instance;
-	graphics.renderer.autoClear = false;
-    this.composer = new THREE.EffectComposer( graphics.riftCam ? graphics.riftCam : graphics.renderer );
-    var bgPass = new THREE.RenderPass( graphics.backgroundLayer.scene, graphics.backgroundLayer.camera );
-    bgPass.clear = true;
-	this.composer.addPass( bgPass );
-	var fgPass = new THREE.RenderPass( graphics.scene, graphics.camera );
-	fgPass.clear = false;
-	this.composer.addPass(fgPass);
-	var copyPass = new THREE.ShaderPass( THREE.CopyShader );
-	copyPass.renderToScreen = true;
-	this.composer.addPass(copyPass);
+    glam.PickManager.clickedObject = null;
 }
 
-Vizi.Composer.prototype.render = function(deltat) {
-
-	// for now just pass it through
-	this.composer.render(deltat);	
-}
-
-Vizi.Composer.prototype.addEffect = function(effect) {
-
-	var index = this.composer.passes.length - 1;
-	this.composer.insertPass(effect.pass, index);	
-}
-
-Vizi.Composer.prototype.setCamera = function(camera) {
-	var renderpass = this.composer.passes[1];
-	renderpass.camera = camera;
-}
-
-Vizi.Composer.prototype.setSize = function(width, height) {
-	this.composer.setSize(width, height);
-}
-
-Vizi.Composer.instance = null;/**
- * @fileoverview Viewer class - Application Subclass for Model/Scene Viewer
- * @author Tony Parisi / http://www.tonyparisi.com
- */
-
-goog.provide('Vizi.Viewer');
-
-Vizi.Viewer = function(param)
+glam.PickManager.handleMouseClick = function(event)
 {
-	// Chain to superclass
-	Vizi.Application.call(this, param);
+	/* N.B.: bailing out here, not sure why, leave this commented out
+	return;
 	
-	// Set up stats info
-	this.lastFPSUpdateTime = 0;
-	
-	this.renderStats = { fps : 0 };
-	this.sceneStats = { meshCount : 0, faceCount : 0, boundingBox:new THREE.Box3 };
-	
-	// Tuck away prefs based on param
-	this.renderStatsUpdateInterval = (param.renderStatsUpdateInterval !== undefined) ? param.renderStatsUpdateInterval : 1000;
-	this.loopAnimations = (param.loopAnimations !== undefined) ? param.loopAnimations : false;
-	this.headlightOn = (param.headlight !== undefined) ? param.headlight : true;
-	this.headlightIntensity = param.headlightIntensity || Vizi.Viewer.DEFAULT_HEADLIGHT_INTENSITY;
-	this.riftController = (param.riftController !== undefined) ? param.riftController : false;
-	this.firstPerson = (param.firstPerson !== undefined) ? param.firstPerson : false;
-	this.showGrid = (param.showGrid !== undefined) ? param.showGrid : false;
-	this.createBoundingBoxes = (param.createBoundingBoxes !== undefined) ? param.createBoundingBoxes : false;
-	this.showBoundingBoxes = (param.showBoundingBoxes !== undefined) ? param.showBoundingBoxes : false;
-	this.allowPan = (param.allowPan !== undefined) ? param.allowPan : true;
-	this.allowZoom = (param.allowZoom !== undefined) ? param.allowZoom : true;
-	this.oneButton = (param.oneButton !== undefined) ? param.oneButton : false;
-	this.gridSize = param.gridSize || Vizi.Viewer.DEFAULT_GRID_SIZE;
-	this.gridStepSize = param.gridStepSize || Vizi.Viewer.DEFAULT_GRID_STEP_SIZE;
-	this.flipY = (param.flipY !== undefined) ? param.flipY : false;
-	this.highlightedObject = null;
-	this.highlightDecoration = null;
-	
-	// Set up backdrop objects for empty scene
-	this.initScene();
+    glam.PickManager.clickedObject = glam.PickManager.objectFromMouse(event);
+    
+    if (glam.PickManager.clickedObject)
+    {
+    	var pickers = glam.PickManager.clickedObject.pickers;
+    	var i, len = pickers.length;
+    	for (i = 0; i < len; i++) {
+    		if (pickers[i].enabled && pickers[i].onMouseClick) {
+    			pickers[i].onMouseClick(event);
+    		}
+    	}
+    }
 
-	// Set up shadows - maybe make this a pref
-	Vizi.Graphics.instance.enableShadows(true);
+    glam.PickManager.clickedObject = null;
+    */
 }
 
-goog.inherits(Vizi.Viewer, Vizi.Application);
-
-Vizi.Viewer.prototype.initScene = function()
+glam.PickManager.handleMouseDoubleClick = function(event)
 {
-	this.sceneRoot = new Vizi.Object;
-	this.addObject(this.sceneRoot);
-	if (this.flipY) {
-		this.sceneRoot.transform.rotation.x = -Math.PI / 2;
-	}
+    glam.PickManager.clickedObject = glam.PickManager.objectFromMouse(event);
+    
+    if (glam.PickManager.clickedObject)
+    {
+    	var pickers = glam.PickManager.clickedObject.pickers;
+    	var i, len = pickers.length;
+    	for (i = 0; i < len; i++) {
+    		if (pickers[i].enabled && pickers[i].onMouseDoubleClick) {
+    			pickers[i].onMouseDoubleClick(event);
+    		}
+    	}
+    }
 
-	this.gridRoot = new Vizi.Object;
-	this.addObject(this.gridRoot);
-	this.grid = null;	
-	this.gridPicker = null;	
-	this.createGrid();
-	
-	if (this.firstPerson) {
-		this.controller = Vizi.Prefabs.FirstPersonController({active:true, 
-			headlight:true,
-			turn: !this.riftController,
-			look: !this.riftController,
-			});
-		this.controllerScript = this.controller.getComponent(Vizi.FirstPersonControllerScript);
-	}
-	else {
-		this.controller = Vizi.Prefabs.ModelController({active:true, headlight:true, 
-			allowPan:this.allowPan, allowZoom:this.allowZoom, oneButton:this.oneButton});
-		this.controllerScript = this.controller.getComponent(Vizi.ModelControllerScript);
-	}
-	this.addObject(this.controller);
+    glam.PickManager.clickedObject = null;
+}
 
-	var viewpoint = new Vizi.Object;
-	this.defaultCamera = new Vizi.PerspectiveCamera({active:true, 
-		position : Vizi.Viewer.DEFAULT_CAMERA_POSITION});
-	viewpoint.addComponent(this.defaultCamera);
-	viewpoint.name = "[default]";
-	this.addObject(viewpoint);
+glam.PickManager.handleMouseScroll = function(event)
+{
+    if (glam.PickManager.overObject)
+    {
+    	var pickers = glam.PickManager.overObject.pickers;
+    	var i, len = pickers.length;
+    	for (i = 0; i < len; i++) {
+    		if (pickers[i].enabled && pickers[i].onMouseScroll) {
+    			pickers[i].onMouseScroll(event);
+    		}
+    	}
+    }
 
-	this.controllerScript.camera = this.defaultCamera;
-	
-	if (this.riftController) {
-		var controller = Vizi.Prefabs.RiftController({active:true, 
-			headlight:false,
-			mouseLook:false,
-			useVRJS : true,
-		});
-		var controllerScript = controller.getComponent(Vizi.RiftControllerScript);
-		controllerScript.camera = this.defaultCamera;
-		controllerScript.moveSpeed = 6;
+    glam.PickManager.clickedObject = null;
+}
+
+glam.PickManager.handleTouchStart = function(event)
+{
+	if (event.touches.length > 0) {
+		event.screenX = event.touches[0].screenX;
+		event.screenY = event.touches[0].screenY;
+		event.clientX = event.touches[0].clientX;
+		event.clientY = event.touches[0].clientY;
+		event.pageX = event.touches[0].pageX;
+		event.pageY = event.touches[0].pageY;
+		event.elementX = event.touches[0].elementX;
+		event.elementY = event.touches[0].elementY;
+	    glam.PickManager.clickedObject = glam.PickManager.objectFromMouse(event);
+	    if (glam.PickManager.clickedObject)
+	    {
+	    	var pickers = glam.PickManager.clickedObject.pickers;
+	    	var i, len = pickers.length;
+	    	for (i = 0; i < len; i++) {
+	    		if (pickers[i].enabled && pickers[i].onTouchStart) {
+	    			pickers[i].onTouchStart(event);
+	    		}
+	    	}
+	    }
+	}
+}
+
+glam.PickManager.handleTouchMove = function(event)
+{
+	if (event.touches.length > 0) {
+		event.screenX = event.touches[0].screenX;
+		event.screenY = event.touches[0].screenY;
+		event.clientX = event.touches[0].clientX;
+		event.clientY = event.touches[0].clientY;
+		event.pageX = event.touches[0].pageX;
+		event.pageY = event.touches[0].pageY;
+		event.elementX = event.touches[0].elementX;
+		event.elementY = event.touches[0].elementY;
+
+		if (glam.PickManager.clickedObject) {
+	    	var pickers = glam.PickManager.clickedObject.pickers;
+	    	var i, len = pickers.length;
+	    	for (i = 0; i < len; i++) {
+	    		if (pickers[i].enabled && pickers[i].onTouchMove) {
+	    			pickers[i].onTouchMove(event);
+	    		}
+	    	}
+	    }
+	}
+}
+
+glam.PickManager.handleTouchEnd = function(event)
+{
+	if (event.changedTouches.length > 0) {
+		event.screenX = event.changedTouches[0].screenX;
+		event.screenY = event.changedTouches[0].screenY;
+		event.clientX = event.changedTouches[0].clientX;
+		event.clientY = event.changedTouches[0].clientY;
+		event.pageX = event.changedTouches[0].pageX;
+		event.pageY = event.changedTouches[0].pageY;
+		event.elementX = event.changedTouches[0].elementX;
+		event.elementY = event.changedTouches[0].elementY;
+	    if (glam.PickManager.clickedObject)
+	    {
+	    	var pickers = glam.PickManager.clickedObject.pickers;
+	    	var i, len = pickers.length;
+	    	for (i = 0; i < len; i++) {
+	    		if (pickers[i].enabled && pickers[i].onTouchEnd) {
+	    			pickers[i].onTouchEnd(event);
+	    		}
+	    	}
+	    }
+	    
+	    glam.PickManager.clickedObject = null;
+	}	
+}
+
+glam.PickManager.objectFromMouse = function(event)
+{
+	var intersected = glam.Graphics.instance.objectFromMouse(event);
+	if (intersected.object)
+	{
+		event.face = intersected.face;
+		event.normal = intersected.normal;
+		event.point = intersected.point;
+		event.object = intersected.object;
 		
-		this.riftControllerScript = controllerScript;
-		this.addObject(controller);
-	}
-	
-	var ambientLightObject = new Vizi.Object;
-	this.ambientLight = new Vizi.AmbientLight({color:0xFFFFFF, intensity : this.ambientOn ? 1 : 0 });
-	this.addObject(ambientLightObject);
-	
-	this.scenes = [];
-	this.keyFrameAnimators = [];
-	this.keyFrameAnimatorNames = [];
-	this.cameras = [];
-	this.cameraNames = [];
-	this.lights = [];
-	this.lightNames = [];
-	this.lightIntensities = [];
-	this.lightColors = [];
-}
+    	if (intersected.object._object.pickers)
+    	{
+    		var pickers = intersected.object._object.pickers;
+    		var i, len = pickers.length;
+    		for (i = 0; i < len; i++) {
+    			if (pickers[i].enabled) { // just need one :-)
+    				return intersected.object._object;
+    			}
+    		}
+    	}
 
-Vizi.Viewer.prototype.runloop = function()
-{
-	var updateInterval = this.renderStatsUpdateInterval;
-	
-	Vizi.Application.prototype.runloop.call(this);
-	if (Vizi.Graphics.instance.frameRate)
-	{
-		var now = Date.now();
-		var deltat = now - this.lastFPSUpdateTime;
-		if (deltat > updateInterval)
-		{
-			this.renderStats.fps = Vizi.Graphics.instance.frameRate;
-			this.dispatchEvent("renderstats", this.renderStats);
-			this.lastFPSUpdateTime = now;
-		}
-	}
-}
-
-Vizi.Viewer.prototype.replaceScene = function(data)
-{
-	// hack for now - do this for real after computing scene bounds
-	
-	var i, len = this.sceneRoot._children.length;
-	var childrenToRemove = [];
-	for (i = 0; i < len; i++)
-	{
-		var child = this.sceneRoot._children[i];
-		childrenToRemove.push(child);
-	}
-	
-	for (i = 0; i < len; i++) {
-		this.sceneRoot.removeChild(childrenToRemove[i]);
-	}
-	
-	this.sceneRoot.removeComponent(this.sceneRoot.findNode(Vizi.Decoration));
-	
-	this.scenes = [data.scene];
-	this.sceneRoot.addChild(data.scene);
-	
-	var bbox = Vizi.SceneUtils.computeBoundingBox(data.scene);
-	
-	if (this.keyFrameAnimators)
-	{
-		var i, len = this.keyFrameAnimators.length;
-		for (i = 0; i < len; i++)
-		{
-			this.sceneRoot.removeComponent(this.keyFrameAnimators[i]);
-		}
-		
-		this.keyFrameAnimators = [];
-		this.keyFrameAnimatorNames = [];
-	}
-	
-	if (data.keyFrameAnimators)
-	{
-		var i, len = data.keyFrameAnimators.length;
-		for (i = 0; i < len; i++)
-		{
-			this.sceneRoot.addComponent(data.keyFrameAnimators[i]);
-			this.keyFrameAnimators.push(data.keyFrameAnimators[i]);
-			this.keyFrameAnimatorNames.push(data.keyFrameAnimators[i].animationData[0].name)
-		}		
-	}
-	
-	this.cameras = [];
-	this.cameraNames = [];
-	this.cameras.push(this.defaultCamera);
-	this.camera = this.defaultCamera;
-	this.cameraNames.push("[default]");
-
-	this.controllerScript.camera = this.defaultCamera;
-	this.controllerScript.camera.active = true;
-	
-	if (data.cameras)
-	{
-		var i, len = data.cameras.length;
-		for (i = 0; i < len; i++)
-		{
-			var camera = data.cameras[i];
-			camera.aspect = container.offsetWidth / container.offsetHeight;
-			
-			this.cameras.push(camera);
-			this.cameraNames.push(camera._object.name);
-		}		
-	}
-	
-	this.lights = [];
-	this.lightNames = [];
-	this.lightIntensities = [];
-	this.lightColors = [];
-	
-	if (data.lights)
-	{
-		var i, len = data.lights.length;
-		for (i = 0; i < len; i++)
-		{
-			var light = data.lights[i];
-			if (light instanceof THREE.SpotLight)
-			{
-				light.castShadow = true;
-				light.shadowCameraNear = 1;
-				light.shadowCameraFar = Vizi.Light.DEFAULT_RANGE;
-				light.shadowCameraFov = 90;
-
-				// light.shadowCameraVisible = true;
-
-				light.shadowBias = 0.0001;
-				light.shadowDarkness = 0.3;
-
-				light.shadowMapWidth = 2048;
-				light.shadowMapHeight = 2048;
-				
-				light.target.position.set(0, 0, 0);
-			}
-			
-			this.lights.push(data.lights[i]);
-			this.lightNames.push(data.lights[i]._object.name);
-			this.lightIntensities.push(data.lights[i].intensity);
-			this.lightColors.push(data.lights[i].color.clone());
-		}
-		
-		this.controllerScript.headlight.intensity = len ? 0 : this.headlightIntensity;
-		this.headlightOn = len <= 0;
+		return glam.PickManager.findObjectPicker(event, intersected.hitPointWorld, intersected.object.object);
 	}
 	else
 	{
-		this.controllerScript.headlight.intensity = this.headlightIntensity;
-		this.headlightOn = true;
-	}
-	
-	this.initHighlight();
-	this.fitToScene();
-	this.calcSceneStats();
-}
-
-Vizi.Viewer.prototype.addToScene = function(data)
-{	
-	this.sceneRoot.addChild(data.scene);
-	
-	if (!this.cameras.length)
-	{
-		this.cameras = [];
-		this.cameraNames = [];
-		this.cameras.push(this.defaultCamera);
-		this.camera = this.defaultCamera;
-		this.cameraNames.push("[default]");
-
-		this.controllerScript.camera = this.defaultCamera;
-		this.controllerScript.camera.active = true;
-	}
-	
-	if (data.keyFrameAnimators)
-	{
-		var i, len = data.keyFrameAnimators.length;
-		for (i = 0; i < len; i++)
-		{
-			this.sceneRoot.addComponent(data.keyFrameAnimators[i]);
-			this.keyFrameAnimators.push(data.keyFrameAnimators[i]);
-			this.keyFrameAnimatorNames.push(data.keyFrameAnimators[i].animationData[0].name)
-		}		
-	}
-	
-	if (data.cameras)
-	{
-		var i, len = data.cameras.length;
-		for (i = 0; i < len; i++)
-		{
-			var camera = data.cameras[i];
-			camera.aspect = container.offsetWidth / container.offsetHeight;
-			
-			this.cameras.push(camera);
-			this.cameraNames.push(camera._object.name);
-		}		
-	}
-	
-	if (data.lights)
-	{
-		var i, len = data.lights.length;
-		for (i = 0; i < len; i++)
-		{
-			var light = data.lights[i];
-			if (light instanceof THREE.SpotLight)
-			{
-				light.castShadow = true;
-				light.shadowCameraNear = 1;
-				light.shadowCameraFar = Vizi.Light.DEFAULT_RANGE;
-				light.shadowCameraFov = 90;
-
-				// light.shadowCameraVisible = true;
-
-				light.shadowBias = 0.0001;
-				light.shadowDarkness = 0.3;
-
-				light.shadowMapWidth = 2048;
-				light.shadowMapHeight = 2048;
-				
-				light.target.position.set(0, 0, 0);
-			}
-			
-			this.lights.push(data.lights[i]);
-			this.lightNames.push(data.lights[i]._object.name);
-			this.lightIntensities.push(data.lights[i].intensity);
-			this.lightColors.push(data.lights[i].color.clone());
-		}		
-	}
-	else if (!this.lights.length)
-	{
-		this.controllerScript.headlight.intensity = this.headlightIntensity;
-		this.headlightOn = true;
-	}
-	
-	this.scenes.push(data.scene);
-	this.initHighlight();
-	this.fitToScene();
-	this.calcSceneStats();
-}
-
-Vizi.Viewer.prototype.createDefaultCamera = function() {
-	
-	var cam = this.controllerScript.viewpoint.camera.object;
-	cam.updateMatrixWorld();
-	var position = new THREE.Vector3;
-	var quaternion = new THREE.Quaternion;
-	var scale = new THREE.Vector3;
-	cam.matrixWorld.decompose(position, quaternion, scale);
-	var rotation = new THREE.Euler().setFromQuaternion(quaternion);
-
-	var newCamera = new THREE.PerspectiveCamera(cam.fov, cam.aspect, cam.near, cam.far);
-	return new Vizi.PerspectiveCamera({object:newCamera});
-}
-
-Vizi.Viewer.prototype.copyCameraValues = function(oldCamera, newCamera)
-{
-	// for now, assume newCamera is in world space, this is too friggin hard
-	var cam = oldCamera.object;
-	cam.updateMatrixWorld();
-	var position = new THREE.Vector3;
-	var quaternion = new THREE.Quaternion;
-	var scale = new THREE.Vector3;
-	cam.matrixWorld.decompose(position, quaternion, scale);
-	var rotation = new THREE.Euler().setFromQuaternion(quaternion);
-	
-	newCamera.position.copy(position);
-	newCamera.rotation.copy(rotation);
-	
-	newCamera.fov = oldCamera.fov;
-	newCamera.aspect = oldCamera.aspect;
-	newCamera.near = oldCamera.near;
-	newCamera.far = oldCamera.far;	
-}
-
-Vizi.Viewer.prototype.useCamera = function(id) {
-
-	var index = id;
-	
-	if (typeof(id) == "string") {
-		var cameraNames = this.cameraNames;
-		if (this.cameraNames) {
-			index = this.cameraNames.indexOf(id);
-		}
-	}
-
-	if (index >= 0 && this.cameras && this.cameras[index]) {
-		this.cameras[index].active = true;
-		this.controllerScript.enabled = (index == 0);
-	}
-}
-
-Vizi.Viewer.prototype.addCamera = function(camera, id) {
-
-	this.cameras.push(camera);
-	this.cameraNames.push(id);
-
-}
-
-Vizi.Viewer.prototype.getCamera = function(id) {
-
-	var index = id;
-	
-	if (typeof(id) == "string") {
-		var cameraNames = this.cameraNames;
-		if (this.cameraNames) {
-			index = this.cameraNames.indexOf(id);
-		}
-	}
-
-	if (index >= 0 && this.cameras && this.cameras[index]) {
-		return this.cameras[index];
-	}
-	else {
 		return null;
 	}
 }
 
-Vizi.Viewer.prototype.toggleLight = function(index)
-{
-	if (this.lights && this.lights[index])
-	{
-		var light = this.lights[index];
-		if (light instanceof Vizi.AmbientLight)
-		{
-			var color = light.color;
-			if (color.r != 0 || color.g != 0 || color.b != 0)
-				color.setRGB(0, 0, 0);
-			else
-				color.copy(this.lightColors[index]);
-		}
-		else
-		{
-			var intensity = light.intensity;
-			if (intensity)
-				light.intensity = 0;
-			else
-				light.intensity = this.lightIntensities[index];
-				
-		}
-	}
-}
-
-Vizi.Viewer.prototype.playAnimation = function(index, loop, reverse)
-{
-	if (loop === undefined)
-		loop = this.loopAnimations;
-	
-	if (this.keyFrameAnimators && this.keyFrameAnimators[index])
-	{
-		this.keyFrameAnimators[index].loop = loop;
-		if (reverse) {
-			this.keyFrameAnimators[index].direction = Vizi.KeyFrameAnimator.REVERSE_DIRECTION;
-		}
-		else {
-			this.keyFrameAnimators[index].direction = Vizi.KeyFrameAnimator.FORWARD_DIRECTION;
-		}
+glam.PickManager.findObjectPicker = function(event, hitPointWorld, object) {
+	while (object) {
 		
-		if (!loop)
-			this.keyFrameAnimators[index].stop();
-
-		this.keyFrameAnimators[index].start();
-	}
-}
-
-Vizi.Viewer.prototype.stopAnimation = function(index)
-{
-	if (this.keyFrameAnimators && this.keyFrameAnimators[index])
-	{
-		this.keyFrameAnimators[index].stop();
-	}
-}
-
-Vizi.Viewer.prototype.playAllAnimations = function(loop, reverse)
-{
-	if (loop === undefined)
-		loop = this.loopAnimations;
-	
-	if (this.keyFrameAnimators)
-	{
-		var i, len = this.keyFrameAnimators.length;
-		for (i = 0; i < len; i++)
-		{
-			this.keyFrameAnimators[i].stop();
-			
-			if (loop)
-				this.keyFrameAnimators[i].loop = true;
-
-			if (reverse) {
-				this.keyFrameAnimators[i].direction = Vizi.KeyFrameAnimator.REVERSE_DIRECTION;
-			}
-			else {
-				this.keyFrameAnimators[i].direction = Vizi.KeyFrameAnimator.FORWARD_DIRECTION;
-			}
-			
-			this.keyFrameAnimators[i].start();
-		}
-	}
-}
-
-Vizi.Viewer.prototype.stopAllAnimations = function()
-{
-	if (this.keyFrameAnimators)
-	{
-		var i, len = this.keyFrameAnimators.length;
-		for (i = 0; i < len; i++)
-		{
-			this.keyFrameAnimators[i].stop();
-		}
-	}
-}
-
-Vizi.Viewer.prototype.setLoopAnimations = function(on)
-{
-	this.loopAnimations = on;
-}
-
-Vizi.Viewer.prototype.setHeadlightOn = function(on)
-{
-	this.controllerScript.headlight.intensity = this.headlightIntensity ? this.headlightIntensity : 0;
-	this.headlightOn = on;
-}
-
-Vizi.Viewer.prototype.setHeadlightIntensity = function(intensity)
-{
-	this.controllerScript.headlight.intensity = intensity;
-}
-
-Vizi.Viewer.prototype.setGridOn = function(on)
-{
-	if (this.grid)
-	{
-		this.grid.visible = on;
-	}
-}
-
-Vizi.Viewer.prototype.setBoundingBoxesOn = function(on)
-{
-	this.showBoundingBoxes = on;
-	var that = this;
-	this.sceneRoot.map(Vizi.Decoration, function(o) {
-		if (!that.highlightedObject || (o != that.highlightDecoration)) {
-			o.visible = that.showBoundingBoxes;
-		}
-	});
-}
-
-Vizi.Viewer.prototype.setAmbientLightOn = function(on)
-{
-	this.ambientLight.intensity = on ? 1 : 0;
-	this.ambientLightOn = on;
-}
-
-Vizi.Viewer.prototype.setFlipY = function(flip) {
-	this.flipY = flip;
-	if (this.flipY) {
-		this.sceneRoot.transform.rotation.x = -Math.PI / 2;
-		this.fitToScene();
-	}
-	else {
-		this.sceneRoot.transform.rotation.x = 0;
-	}
-}
-
-Vizi.Viewer.prototype.initHighlight = function() {
-	if (this.highlightedObject) {
-		this.highlightedObject.removeComponent(this.highlightDecoration);
-	}
-	this.highlightedObject = null;
-}
-
-Vizi.Viewer.prototype.highlightObject = function(object) {
-
-	if (this.highlightedObject) {
-		this.highlightParent.removeComponent(this.highlightDecoration);
-	}
-
-	if (object) {
-		
-		this.highlightDecoration = Vizi.Helpers.BoundingBoxDecoration({
-			object : object,
-			color : 0xaaaa00
-		});
-		
-		if (object instanceof Vizi.Object) {
-			object._parent.addComponent(this.highlightDecoration);
-			this.highlightedObject = object;
-			this.highlightParent = object._parent;
-		}
-		else if (object instanceof Vizi.Visual) {
-			object._object.addComponent(this.highlightDecoration);
-			this.highlightedObject = object._object;
-			this.highlightParent = object._object;
-		}
-	}
-	else {
-		this.highlightedObject = null;
-		this.highlightParent = null;
-	}
-	
-}
-
-Vizi.Viewer.prototype.createGrid = function()
-{
-	if (this.gridRoot)
-	{
-		if (this.grid)
-			this.gridRoot.removeComponent(this.grid);
-		
-		if (this.gridPicker)
-			this.gridRoot.removeComponent(this.gridPicker);
-	}
-
-	// Create a line geometry for the grid pattern
-	var floor = -0.04, step = this.gridStepSize, size = this.gridSize;
-	var geometry = new THREE.Geometry();
-
-	for ( var i = 0; i <= size / step * 2; i ++ )
-	{
-		geometry.vertices.push( new THREE.Vector3( - size, floor, i * step - size ) );
-		geometry.vertices.push( new THREE.Vector3(   size, floor, i * step - size ) );
-	
-		geometry.vertices.push( new THREE.Vector3( i * step - size, floor, -size ) );
-		geometry.vertices.push( new THREE.Vector3( i * step - size, floor,  size ) );
-	}
-
-	var line_material = new THREE.LineBasicMaterial( { color: Vizi.Viewer.GRID_COLOR, 
-		opacity:Vizi.Viewer.GRID_OPACITY } );
-	
-	var gridObject = new THREE.Line( geometry, line_material, THREE.LinePieces );
-	gridObject.visible = this.showGrid;
-	this.grid = new Vizi.Visual({ object : gridObject });
-
-	this.gridRoot.addComponent(this.grid);
-	
-	this.gridPicker = new Vizi.Picker;
-	var that = this;
-	this.gridPicker.addEventListener("mouseup", function(e) {
-		that.highlightObject(null);
-	});
-	this.gridRoot.addComponent(this.gridPicker);
-}
-
-Vizi.Viewer.prototype.fitToScene = function()
-{
-	function log10(val) {
-		  return Math.log(val) / Math.LN10;
+		if (object.data && object.data._object.pickers) {
+    		var pickers = object.data._object.pickers;
+    		var i, len = pickers.length;
+    		for (i = 0; i < len; i++) {
+    			if (pickers[i].enabled) { // just need one :-)
+    				// Get the model space units for our event
+    				var modelMat = new THREE.Matrix4;
+    				modelMat.getInverse(object.matrixWorld);
+    				event.point = hitPointWorld.clone();
+    				event.point.applyMatrix4(modelMat);
+    				return object.data._object;
+    			}
+    		}
 		}
 
-	this.boundingBox = Vizi.SceneUtils.computeBoundingBox(this.sceneRoot);
-	
-	// For default camera setups-- small scenes (COLLADA, cm), or not clip big scenes
-	// heuristic, who knows ?
-	this.controllerScript.controls.userPanSpeed = 1;
-	if (this.boundingBox.max.z < 1) {
-		this.controllerScript.camera.near = 0.01;
-		this.controllerScript.controls.userPanSpeed = 0.01;
-	}
-	else if (this.boundingBox.max.z > 10000) {
-		this.controllerScript.camera.far = this.boundingBox.max.z * Math.sqrt(2) * 2;
-	}
-	else if (this.boundingBox.max.z > 1000) {
-		this.controllerScript.camera.far = 20000;
+		object = object.parent;
 	}
 	
-	var center = this.boundingBox.max.clone().add(this.boundingBox.min).multiplyScalar(0.5);
-	this.controllerScript.center = center;
-	if (this.scenes.length == 1) {
-		var campos = new THREE.Vector3(0, this.boundingBox.max.y, this.boundingBox.max.z * 2);
-		this.controllerScript.camera.position.copy(campos);
-		this.controllerScript.camera.position.z *= 2;
-		this.cameras[0].position.copy(this.controllerScript.camera.position);
-	}
-	
-	// Bounding box display
-	if (this.createBoundingBoxes) {
-		
-		var that = this;
-		this.sceneRoot.map(Vizi.Object, function(o) {
-			if (o._parent) {
-				
-				var decoration = Vizi.Helpers.BoundingBoxDecoration({
-					object : o,
-					color : 0x00ff00
-				});
-				
-				o._parent.addComponent(decoration);							
-				decoration.visible = that.showBoundingBoxes;
-			}
-		});
-	}
-
-	// Resize the grid
-	var extent = this.boundingBox.max.clone().sub(this.boundingBox.min);
-	
-	this.sceneRadius = extent.length();
-	
-	var scope = Math.pow(10, Math.ceil(log10(this.sceneRadius)));
-	
-	this.gridSize = scope;
-	this.gridStepSize = scope / 100;
-	this.createGrid();
-}
-
-Vizi.Viewer.prototype.calcSceneStats = function()
-{
-	this.meshCount = 0;
-	this.faceCount = 0;
-	
-	var that = this;
-	var visuals = this.sceneRoot.findNodes(Vizi.Visual);
-	var i, len = visuals.length;
-	for (i = 0; i < len; i++) {
-		var visual = visuals[i];
-		var geometry = visual.geometry;
-		var nFaces = geometry.faces ? geometry.faces.length : geometry.attributes.index.array.length / 3;
-		this.faceCount += nFaces;
-		this.meshCount++;		
-	}
-
-	this.sceneStats.meshCount = this.meshCount;
-	this.sceneStats.faceCount = this.faceCount;
-	this.sceneStats.boundingBox = this.boundingBox;
-	
-	this.dispatchEvent("scenestats", this.sceneStats);	
-}
-
-Vizi.Viewer.prototype.setController = function(type) {
-	if (!this.boundingBox)
-		this.boundingBox = Vizi.SceneUtils.computeBoundingBox(this.sceneRoot);
-
-	var center;
-	if (!isFinite(this.boundingBox.max.x)) {
-		center = new THREE.Vector3;
-	}
-	else {
-		center = this.boundingBox.max.clone().add(this.boundingBox.min).multiplyScalar(0.5);
-	}
-	switch (type) {
-		case "model" :
-			break;
-		case "FPS" :
-			center.y = 0;
-			break;
-	}
-	this.controllerScript.center = center;
-}
-
-Vizi.Viewer.DEFAULT_CAMERA_POSITION = new THREE.Vector3(0, 0, 10);
-Vizi.Viewer.DEFAULT_GRID_SIZE = 100;
-Vizi.Viewer.DEFAULT_GRID_STEP_SIZE = 1;
-Vizi.Viewer.GRID_COLOR = 0x202020;
-Vizi.Viewer.GRID_OPACITY = 0.2;
-Vizi.Viewer.DEFAULT_HEADLIGHT_INTENSITY = 1;
-goog.provide('Vizi.ParticleSystemScript');
-goog.require('Vizi.Script');
-goog.require('Vizi.ParticleEmitter');
-
-Vizi.ParticleSystem = function(param) {
-
-	param = param || {};
-	
-	var obj = new Vizi.Object;
-
-	var texture = param.texture || null;
-	var maxAge = param.maxAge || Vizi.ParticleSystemScript.DEFAULT_MAX_AGE;
-
-	var visual = null;
-	if (param.geometry) {
-		
-		var color = (param.color !== undefined) ? param.color : Vizi.ParticleSystem.DEFAULT_COLOR;
-		var material = new THREE.PointCloudMaterial({color:color, size:param.size, map:param.map,
-			transparent: (param.map !== null), 
-		    depthWrite: false,
-			vertexColors: (param.geometry.colors.length > 0)});
-		var ps = new THREE.PointCloud(param.geometry, material);
-		ps.sortParticles = true;
-
-		if (param.map)
-			ps.sortParticles = true;
-		
-	    visual = new Vizi.Visual({object:ps});
-	}
-	else {
-		
-		var particleGroup = new ShaderParticleGroup({
-	        texture: texture,
-	        maxAge: maxAge,
-	      });
-		    
-	    visual = new Vizi.Visual({object:particleGroup.mesh});
-	}
-	
-    obj.addComponent(visual);
-    
-	param.particleGroup = particleGroup;
-	
-	var pScript = new Vizi.ParticleSystemScript(param);
-	obj.addComponent(pScript);
-	
-	return obj;
+	return null;
 }
 
 
-Vizi.ParticleSystemScript = function(param) {
-	Vizi.Script.call(this, param);
-
-	this.particleGroup = param.particleGroup;
-	
-	this._active = true;
-	
-    Object.defineProperties(this, {
-        active: {
-	        get: function() {
-	            return this._active;
-	        },
-	        set: function(v) {
-	        	this.setActive(v);
-	        }
-    	},
-    });
-
-}
-
-goog.inherits(Vizi.ParticleSystemScript, Vizi.Script);
-
-Vizi.ParticleSystemScript.prototype.realize = function()
-{
-    this.initEmitters();
-
-}
-
-Vizi.ParticleSystemScript.prototype.initEmitters = function() {
-	
-	var emitters = this._object.getComponents(Vizi.ParticleEmitter);
-	
-	var i = 0, len = emitters.length;
-	
-    for (i = 0; i < len; i++) {
-    	var emitter = emitters[i];
-    	this.particleGroup.addEmitter(emitter.object);
-    	emitter.active = this._active;
-    }
-    
-    this.emitters = emitters;
-}
-
-Vizi.ParticleSystemScript.prototype.setActive = function(active) {
-
-	var emitters = this.emitters;
-	if (!emitters)
-		return;
-	
-	var i = 0, len = emitters.length;
-	
-    for (i = 0; i < len; i++) {
-    	var emitter = emitters[i];
-    	emitter.active = active;
-    }
-
-    this._active = active;
-}
-
-Vizi.ParticleSystemScript.prototype.update = function() {
-	if (this.particleGroup) {
-		this.particleGroup.tick();
-	}
-}
-
-Vizi.ParticleSystem.DEFAULT_COLOR = 0xffffff;
-Vizi.ParticleSystemScript.DEFAULT_MAX_AGE = 1;
-
-goog.provide('Vizi.SpotLight');
-goog.require('Vizi.Light');
-
-Vizi.SpotLight = function(param)
-{
-	param = param || {};
-
-	this.scaledDir = new THREE.Vector3;
-	this.positionVec = new THREE.Vector3;
-	this.castShadows = ( param.castShadows !== undefined ) ? param.castShadows : Vizi.SpotLight.DEFAULT_CAST_SHADOWS;
-	
-	Vizi.Light.call(this, param);
-
-	if (param.object) {
-		this.object = param.object; 
-		this.direction = param.object.position.clone().normalize().negate();
-		this.targetPos = param.object.target.position.clone();
-		this.shadowDarkness = param.object.shadowDarkness;
-	}
-	else {
-		this.direction = param.direction || new THREE.Vector3(0, 0, -1);
-		this.targetPos = new THREE.Vector3;
-		this.shadowDarkness = ( param.shadowDarkness !== undefined ) ? param.shadowDarkness : Vizi.SpotLight.DEFAULT_SHADOW_DARKNESS;
-
-		var angle = ( param.angle !== undefined ) ? param.angle : Vizi.SpotLight.DEFAULT_ANGLE;
-		var distance = ( param.distance !== undefined ) ? param.distance : Vizi.SpotLight.DEFAULT_DISTANCE;
-		var exponent = ( param.exponent !== undefined ) ? param.exponent : Vizi.SpotLight.DEFAULT_EXPONENT;
-
-		this.object = new THREE.SpotLight(param.color, param.intensity, distance, angle, exponent);
-	}
-	
-    // Create accessors for all properties... just pass-throughs to Three.js
-    Object.defineProperties(this, {
-        angle: {
-	        get: function() {
-	            return this.object.angle;
-	        },
-	        set: function(v) {
-	        	this.object.angle = v;
-	        }
-		},    	
-        distance: {
-	        get: function() {
-	            return this.object.distance;
-	        },
-	        set: function(v) {
-	        	this.object.distance = v;
-	        }
-    	},    	
-        exponent: {
-	        get: function() {
-	            return this.object.exponent;
-	        },
-	        set: function(v) {
-	        	this.object.exponent = v;
-	        }
-    	},    	
-
-    });
-	
-}
-
-goog.inherits(Vizi.SpotLight, Vizi.Light);
-
-Vizi.SpotLight.prototype.realize = function() 
-{
-	Vizi.Light.prototype.realize.call(this);
-}
-
-Vizi.SpotLight.prototype.update = function() 
-{
-	// D'oh Three.js doesn't seem to transform light directions automatically
-	// Really bizarre semantics
-	if (this.object)
-	{
-		this.positionVec.set(0, 0, 0);
-		var worldmat = this.object.parent.matrixWorld;
-		this.positionVec.applyMatrix4(worldmat);
-		this.position.copy(this.positionVec);
-
-		this.scaledDir.copy(this.direction);
-		this.scaledDir.multiplyScalar(Vizi.Light.DEFAULT_RANGE);
-		this.targetPos.copy(this.position);
-		this.targetPos.add(this.scaledDir);	
-		// this.object.target.position.copy(this.targetPos);
-		
-		this.updateShadows();
-	}
-	
-	// Update the rest
-	Vizi.Light.prototype.update.call(this);
-}
-
-Vizi.SpotLight.prototype.updateShadows = function()
-{
-	if (this.castShadows)
-	{
-		this.object.castShadow = true;
-		this.object.shadowCameraNear = 1;
-		this.object.shadowCameraFar = Vizi.Light.DEFAULT_RANGE;
-		this.object.shadowCameraFov = 90;
-
-		// light.shadowCameraVisible = true;
-
-		this.object.shadowBias = 0.0001;
-		this.object.shadowDarkness = this.shadowDarkness;
-
-		this.object.shadowMapWidth = 1024;
-		this.object.shadowMapHeight = 1024;
-		
-		Vizi.Graphics.instance.enableShadows(true);
-	}	
-}
-
-Vizi.SpotLight.DEFAULT_DISTANCE = 0;
-Vizi.SpotLight.DEFAULT_ANGLE = Math.PI / 2;
-Vizi.SpotLight.DEFAULT_EXPONENT = 10;
-Vizi.SpotLight.DEFAULT_CAST_SHADOWS = false;
-Vizi.SpotLight.DEFAULT_SHADOW_DARKNESS = 0.3;
-/**
- * @fileoverview Effect - Vizi postprocessing effect, wraps Three.js
- * 
- * @author Tony Parisi
- */
-
-goog.provide('Vizi.Effect');
-goog.require('Vizi.EventDispatcher');
-
-/**
- * @constructor
- */
-
-Vizi.Effect = function(shader)
-{
-    Vizi.EventDispatcher.call(this);	
-    
-	this.isShaderEffect = false;
-
-    if (shader.render && typeof(shader.render) == "function") {
-    	this.pass = shader;
-    }
-    else {
-    	this.pass = new THREE.ShaderPass(shader);
-    	this.isShaderEffect = true;
-    }
-}
-
-goog.inherits(Vizi.Effect, Vizi.EventDispatcher);
-
-Vizi.Effect.prototype.update = function() {
-
-	// hook for later - maybe we do
-	// subclass with specific knowledge about shader uniforms
-}
-
-/**
- * @fileoverview Base class for visual decoration - like Vizi.Visual but not pickable.
- * @author Tony Parisi
- */
-goog.provide('Vizi.Decoration');
-goog.require('Vizi.Visual');
-
-/**
- * @constructor
- */
-Vizi.Decoration = function(param)
-{
-	param = param || {};
-	
-	Vizi.Visual.call(this, param);
-
-}
-
-goog.inherits(Vizi.Decoration, Vizi.Visual);
-
-Vizi.Decoration.prototype._componentCategory = "decorations";
-
-Vizi.Decoration.prototype.realize = function()
-{
-	Vizi.Visual.prototype.realize.call(this);
-	this.object.ignorePick = true;
-}/**
- * @fileoverview Picker component - add one to get picking support on your object
- * 
- * @author Tony Parisi
- */
-
-goog.provide('Vizi.ViewPicker');
-goog.require('Vizi.Component');
-
-Vizi.ViewPicker = function(param) {
-	param = param || {};
-	
-    Vizi.Component.call(this, param);
-
-    this.enabled = (param.enabled !== undefined) ? param.enabled : true;
-
-	this.position = new THREE.Vector3();
-	this.mouse = new THREE.Vector3(0,0, 1);
-	this.unprojectedMouse = new THREE.Vector3();
-
-	this.raycaster = new THREE.Raycaster();
-	this.projector = new THREE.Projector();
-
-	this.over = false;
-}
-
-goog.inherits(Vizi.ViewPicker, Vizi.Component);
-
-Vizi.ViewPicker.prototype._componentCategory = "pickers";
-
-Vizi.ViewPicker.prototype.realize = function() {
-	Vizi.Component.prototype.realize.call(this);
-}
-
-Vizi.ViewPicker.prototype.update = function() {
-
-	this.unprojectMouse();
-	var intersected = this.checkForIntersections(this.unprojectedMouse);
-
-	if (intersected != this.over) {
-		this.over = intersected;
-		if (this.over) {
-			this.onViewOver();
-		}
-		else {
-			this.onViewOut();
-		}
-	}
-}
-
-Vizi.ViewPicker.prototype.unprojectMouse = function() {
-
-	this.unprojectedMouse.copy(this.mouse);
-	this.projector.unprojectVector(this.unprojectedMouse, Vizi.Graphics.instance.camera);
-}
-
-Vizi.ViewPicker.prototype.checkForIntersections = function(position) {
-
-	var origin = position;
-	var direction = origin.clone()
-	var pos = new THREE.Vector3();
-	pos.applyMatrix4(Vizi.Graphics.instance.camera.matrixWorld);
-	direction.sub(pos);
-	direction.normalize();
-
-	this.raycaster.set(pos, direction);
-	this.raycaster.near = Vizi.Graphics.instance.camera.near;
-	this.raycaster.far = Vizi.Graphics.instance.camera.far;
-
-	var intersected = this.raycaster.intersectObjects(this._object.transform.object.children);
-
-	return (intersected.length > 0);
-}
-
-Vizi.ViewPicker.prototype.onViewOver = function() {
-    this.dispatchEvent("viewover", { type : "viewover" });
-}
-
-Vizi.ViewPicker.prototype.onViewOut = function() {
-    this.dispatchEvent("viewout", { type : "viewout" });
-}
-
-/**
- * @fileoverview Module Configuration
- * 
- * @author Tony Parisi
- */
-
-goog.provide('Vizi.Modules');
-goog.require('Vizi.Component');
-goog.require('Vizi.Object');
-goog.require('Vizi.Application');
-goog.require('Vizi.Service');
-goog.require('Vizi.Services');
-goog.require('Vizi.AnimationService');
-goog.require('Vizi.Interpolator');
-goog.require('Vizi.KeyFrameAnimator');
-goog.require('Vizi.Transition');
-goog.require('Vizi.TweenService');
-goog.require('Vizi.Behavior');
-goog.require('Vizi.BounceBehavior');
-goog.require('Vizi.FadeBehavior');
-goog.require('Vizi.HighlightBehavior');
-goog.require('Vizi.MoveBehavior');
-goog.require('Vizi.RotateBehavior');
-goog.require('Vizi.ScaleBehavior');
-goog.require('Vizi.Camera');
-goog.require('Vizi.CameraManager');
-goog.require('Vizi.PerspectiveCamera');
-goog.require('Vizi.FirstPersonControls');
-goog.require('Vizi.OrbitControls');
-goog.require('Vizi.FirstPersonControllerScript');
-goog.require('Vizi.PointerLockControllerScript');
-goog.require('Vizi.PointerLockControls');
-goog.require('Vizi.ModelControllerScript');
-goog.require('Vizi.DeviceOrientationControlsCB');
-goog.require('Vizi.DeviceOrientationControllerScript');
-goog.require('Vizi.OculusRiftControls');
-goog.require('Vizi.RiftControllerScript');
-goog.require('Vizi.EventDispatcher');
-goog.require('Vizi.EventService');
-goog.require('Vizi.Graphics');
-goog.require('Vizi.Helpers');
-goog.require('Vizi.Input');
-goog.require('Vizi.Keyboard');
-goog.require('Vizi.Mouse');
-goog.require('Vizi.Gamepad');
-goog.require('Vizi.Picker');
-goog.require('Vizi.PickManager');
-goog.require('Vizi.CylinderDragger');
-goog.require('Vizi.PlaneDragger');
-goog.require('Vizi.SurfaceDragger');
-goog.require('Vizi.ViewPicker');
-goog.require('Vizi.Light');
-goog.require('Vizi.AmbientLight');
-goog.require('Vizi.DirectionalLight');
-goog.require('Vizi.PointLight');
-goog.require('Vizi.SpotLight');
-goog.require('Vizi.Loader');
-goog.require('Vizi.HUDScript');
-goog.require('Vizi.SkyboxScript');
-goog.require('Vizi.SkysphereScript');
-goog.require('Vizi.Prefabs');
-goog.require('Vizi.Decoration');
-goog.require('Vizi.ParticleEmitter');
-goog.require('Vizi.ParticleSystemScript');
-goog.require('Vizi.Composer');
-goog.require('Vizi.Effect');
-goog.require('Vizi.SceneComponent');
-goog.require('Vizi.SceneUtils');
-goog.require('Vizi.SceneVisual');
-goog.require('Vizi.Transform');
-goog.require('Vizi.Visual');
-goog.require('Vizi.Script');
-goog.require('Vizi.System');
-goog.require('Vizi.Time');
-goog.require('Vizi.Timer');
-goog.require('Vizi.Viewer');
-
-/**
- * @constructor
- */
-Vizi.Modules = function()
-{
-}
-
-var CLOSURE_NO_DEPS = true;
-
-goog.provide('Vizi');
-
-Vizi.loadUrl = function(url, element, options) {
-	
-	options = options || {};
-	options.container = element;
-	var viewer = new Vizi.Viewer(options);
-	var loader = new Vizi.Loader;
-	loader.addEventListener("loaded", function(data) { onLoadComplete(data, loadStartTime); }); 
-	loader.addEventListener("progress", function(progress) { onLoadProgress(progress); }); 
-	var loadStartTime = Date.now();
-	loader.loadScene(url);
-	viewer.run();
-
-	function onLoadComplete(data, loadStartTime) {
-		var loadTime = (Date.now() - loadStartTime) / 1000;
-		Vizi.System.log("Vizi.loadUrl, scene loaded in ", loadTime, " seconds.");
-		viewer.replaceScene(data);
-		if (viewer.cameras.length > 1) {
-			viewer.useCamera(1);
-		}
-		
-		if (options.headlight) {
-			viewer.setHeadlightOn(true);
-		}
-	}
-
-	function onLoadProgress(progress) {
-		var percentProgress = progress.loaded / progress.total * 100;
-		Vizi.System.log("Vizi.loadUrl, ", percentProgress, " % loaded.");
-	}
-
-	return { viewer : viewer };
-}/**
- * @fileoverview glam namespace and globals
- * 
- * @author Tony Parisi
- */
-
-
-
-glam = {
-		
-};
-
-glam.ready = function() {
-	glam.DOM.ready();
-}
-
-
-glam.setFullScreen = function(enable) {
-	return Vizi.Graphics.instance.setFullScreen(enable);
-}/**
- * @fileoverview glam namespace and globals
- * 
- * @author Tony Parisi
- */
-
-
-
-glam.DOM = {
-
-		documents : {},
-		
-		documentIndex : 0,
-				
-		styles : {},
-
-		viewers : {},
-
-		animations : {},
-		
-};
-
-glam.DOM.isReady = false;
-glam.DOM.ready = function() {
-	if (glam.DOM.isReady)
-		return;
-	
-	glam.DOMParser.parseDocument();
-	glam.DOM.createViewers();
-	
-	glam.DOM.isReady = true;
-}
-
-glam.DOM.createViewers = function() {
-	for (docname in glam.DOM.documents) {
-		var doc = glam.DOM.documents[docname];
-		var viewer = new glam.DOMViewer(doc);
-		glam.DOM.viewers[docname] = viewer;
-		viewer.go();
-	}
-}
-
-
-glam.DOM.addStyle = function(selector, style)
-{
-	glam.DOM.styles[selector] = style;
-}
-
-glam.DOM.getStyle = function(selector)
-{
-	return glam.DOM.styles[selector];
-}
-
-glam.DOM.addAnimation = function(id, animation)
-{
-	glam.DOM.animations[id] = animation;
-}
-
-glam.DOM.getAnimation = function(id) {
-	return glam.DOM.animations[id];
-}
-
-
-$(document).ready(function(){
-
-	glam.DOM.ready();
-});
-
-
-/**
- * @fileoverview animation parser/implementation
- * 
- * @author Tony Parisi
- */
-
-glam.AnimationElement = {};
-
-glam.AnimationElement.DEFAULT_DURATION = "1s";
-glam.AnimationElement.DEFAULT_ITERATION_COUNT = "1";
-glam.AnimationElement.DEFAULT_TIMING_FUNCTION = "linear";
-glam.AnimationElement.DEFAULT_FRAME_TIME = "0%";
-glam.AnimationElement.DEFAULT_FRAME_PROPERTY = "transform";
-
-glam.AnimationElement.create = function(docelt) {
-
-	var id = docelt.id;
-	var duration = docelt.getAttribute('duration') || glam.AnimationElement.DEFAULT_DURATION;
-	var iterationCount = docelt.getAttribute('iteration-count') || glam.AnimationElement.DEFAULT_ITERATION_COUNT;
-	var timingFunction = docelt.getAttribute('timing-function') || glam.AnimationElement.DEFAULT_TIMING_FUNCTION;
-	
-	duration = glam.AnimationElement.parseTime(duration);
-	var easing = glam.AnimationElement.parseTimingFunction(timingFunction);
-	var loop = (iterationCount.toLowerCase() == "infinite") ? true : false;
-	
-	var i, 
-		children = docelt.childNodes, 
-		len = children.length,
-		frames = [];
-	
-	for (i = 0; i < len; i++) {
-		var childelt = children[i];
-		var tag = childelt.tagName;
-		if (tag)
-			tag = tag.toLowerCase();
-		
-		if (tag == "keyframe") {
-			var frame = glam.AnimationElement.parseFrame(childelt);
-			frames.push(frame);
-		}
-	}
-	
-	var anim = glam.AnimationElement.build(duration, loop, easing, frames);
-	
-	glam.DOM.addAnimation(id, anim);
-	glam.AnimationElement.callParseCallbacks(id, anim);
-}
-
-glam.AnimationElement.parseFrame = function(docelt) {
-
-	var time = docelt.getAttribute('time') || glam.AnimationElement.DEFAULT_FRAME_TIME;
-	var frametime = glam.AnimationElement.parseFrameTime(time);
-	var property = docelt.getAttribute('property') || glam.AnimationElement.DEFAULT_FRAME_PROPERTY;
-	var value = docelt.getAttribute('value') || "";
-	
-	if (property == "transform") {
-		var t = {};
-		glam.DOMTransform.parseTransform(value, t);
-
-		return {
-			time : frametime,
-			value : t,
-			type : "transform",
-		};
-	}
-	else if (property == "material") {
-
-		var s = glam.AnimationElement.parseMaterial(value);
-		var param = glam.DOMMaterial.parseStyle(s);
-
-		return {
-			time : frametime,
-			value : param,
-			type : "material",
-		};
-	}
-	
-}
-
-glam.AnimationElement.createFromStyle = function(docelt, style, obj) {
-	var animationSpec,
-		animationName,
-		duration,
-		timingFunction,
-		easing,
-		delayTime,
-		iterationCount,
-		loop;
-
-	animationName = style["animation-name"]
-	                          || style["-webkit-animation-name"]
-	 		                  || style["-moz-animation-name"];
-	
-	if (animationName) {
-		duration = style["animation-duration"]
-	            || style["-webkit-animation-duration"]
-	 		      || style["-moz-animation-duration"];
-
-		
-		timingFunction = style["animation-timing-function"]
-		                    || style["-webkit-animation-timing-function"]
-				 		      || style["-moz-animation-timing-function"];
-		
-		iterationCount = style["animation-iteration-count"]
-			                    || style["-webkit-animation-iteration-count"]
-					 		      || style["-moz-animation-iteration-count"];
-	}
-	else {
-		animationSpec = style["animation"]
-		                      || style["-webkit-animation"]
-		 		 		      || style["-moz-animation"];
-		
-		if (animationSpec) {
-			// name duration timing-function delay iteration-count direction
-			var split = animationSpec.split("\\s+");
-			animationName = split[0];
-			duration = split[1];
-			timingFunction = split[2];
-			delayTime = split[3];
-			iterationCount = split[4];
-			
-		}
-	}
-	
-    duration = duration || glam.AnimationElement.DEFAULT_DURATION;
-	duration = glam.AnimationElement.parseTime(duration);
-    timingFunction = timingFunction || glam.AnimationElement.DEFAULT_TIMING_FUNCTION;
-	easing = glam.AnimationElement.parseTimingFunction(timingFunction);
-    iterationCount = iterationCount || glam.AnimationElement.DEFAULT_ITERATION_COUNT;
-	loop = (iterationCount.toLowerCase() == "infinite") ? true : false;				
-	
-	if (animationName) {
-		var animation = glam.DOM.getStyle(animationName);
-		
-		var frames = [];
-		
-		for (var k in animation) {
-			var frametime;
-			if (k == 'from') {
-				frametime = 0; 
-			}
-			else if (k == 'to') {
-				frametime = 1;
-			}
-			else {
-				frametime = glam.AnimationElement.parseFrameTime(k);
-			}
-
-			var framevalue;
-			var framedata = animation[k];
-			for (prop in framedata) {
-				var value = framedata[prop];
-				var type;
-				if (prop == "transform" ||
-						prop == "-webkit-transform" ||
-						prop == "-moz-transform") {
-					
-					type = "transform";
-					framevalue = {};
-					glam.DOMTransform.parseTransform(value, framevalue);
-				}
-				else if (prop == "opacity" || prop == "color") {
-					type = "material";
-					framevalue = glam.DOMMaterial.parseStyle(framedata);
-				}
-				
-				var frame = {
-						time : frametime,
-						value : framevalue,
-						type : type,
-					};
-				frames.push(frame);
-			}			
-		}
-		
-		var anim = glam.AnimationElement.build(duration, loop, easing, frames);
-		glam.AnimationElement.addAnimationToObject(anim, obj);
-	}
-	
-}
-
-glam.AnimationElement.build = function(duration, loop, easing, frames) {
-
-	var poskeys = [];
-	var posvalues = [];
-	var rotkeys = [];
-	var rotvalues = [];
-	var sclkeys = [];
-	var sclvalues = [];
-	var opakeys = [];
-	var opavalues = [];
-	var colorkeys = [];
-	var colorvalues = [];
-	
-	var i, len = frames.length;
-	
-	for (i = 0; i < len; i++) {
-		var frame = frames[i];
-		var val = frame.value;
-		if (frame.type == "transform") {
-			if ("x" in val || "y" in val || "z" in val) {
-				poskeys.push(frame.time);
-				var value = {
-				};
-				if ("x" in val) {
-					value.x = val.x;
-				}
-				if ("y" in val) {
-					value.y = val.y;
-				}
-				if ("z" in val) {
-					value.z = val.z;
-				}
-				posvalues.push(value);
-			}
-			if ("rx" in val || "ry" in val || "rz" in val) {
-				rotkeys.push(frame.time);
-				var value = {
-				};
-				if ("rx" in val) {
-					value.x = val.rx;
-				}
-				if ("ry" in val) {
-					value.y = val.ry;
-				}
-				if ("rz" in val) {
-					value.z = val.rz;
-				}
-				rotvalues.push(value);
-			}
-			if ("sx" in val || "sy" in val || "sz" in val) {
-				sclkeys.push(frame.time);
-				var value = {
-				};
-				if ("sx" in val) {
-					value.x = val.sx;
-				}
-				if ("sy" in val) {
-					value.y = val.sy;
-				}
-				if ("sz" in val) {
-					value.z = val.sz;
-				}
-				sclvalues.push(value);
-			}
-		}
-		else if (frame.type == "material") {
-			if ("opacity" in val) {
-				opakeys.push(frame.time);
-				opavalues.push( { opacity : parseFloat(val.opacity) });
-			}
-			if ("color" in val) {
-				colorkeys.push(frame.time);
-				var rgbColor = new THREE.Color(val.color);
-				colorvalues.push( { r : rgbColor.r, g: rgbColor.g, b: rgbColor.b });
-			}
-		}
-	}
-	
-	var anim = {
-		duration : duration,
-		loop : loop,
-		easing : easing,
-		poskeys : poskeys,
-		posvalues : posvalues,
-		rotkeys : rotkeys,
-		rotvalues : rotvalues,
-		sclkeys : sclkeys,
-		sclvalues : sclvalues,
-		opakeys : opakeys,
-		opavalues : opavalues,
-		colorkeys : colorkeys,
-		colorvalues : colorvalues,
-	};
-
-	return anim;
-}
-
-glam.AnimationElement.parseTime = function(time) {
-	var index = time.indexOf("ms");
-	if (index != -1)
-		return parseFloat(time.split("ms")[0]);
-	
-	var index = time.indexOf("s");
-	if (index != -1)
-		return parseFloat(time.split("s")[0]) * 1000;
-	
-}
-
-glam.AnimationElement.parseFrameTime = function(time) {
-	var index = time.indexOf("%");
-	if (index != -1)
-		return parseFloat(time.split("%")[0]) / 100;
-	else
-		return parseFloat(time);
-}
-
-glam.AnimationElement.parseTimingFunction = function(timingFunction) {
-	timingFunction = timingFunction.toLowerCase();
-	switch (timingFunction) {
-	
-		case "linear" :
-			return TWEEN.Easing.Linear.None;
-			break;
-		
-		case "ease-in-out" :
-		default :
-			return TWEEN.Easing.Quadratic.InOut;
-			break;
-		
-	}
-}
-
-glam.AnimationElement.parseMaterial = function(value) {
-
-	var s = {};
-	
-	var values = value.split(";");
-	var i, len = values.length;
-	for (i = 0; i < len; i++) {
-		var val = values[i];
-		if (val) {
-			var valsplit = val.split(":");
-			var valname = valsplit[0];
-			var valval = valsplit[1];
-			
-			s[valname] = valval;
-		}
-	}
-	
-	return s;
-}
-
-glam.AnimationElement.parse = function(docelt, style, obj) {
-	var animationId = docelt.getAttribute('animation');
-	if (animationId) {
-		var animation = glam.DOM.getAnimation(animationId);
-		if (animation) {
-			glam.AnimationElement.addAnimationToObject(animation, obj);
-		}
-		else {
-			glam.AnimationElement.addParseCallback(animationId, function(animation) {
-				glam.AnimationElement.addAnimationToObject(animation, obj);				
-			});
-		}
-	}
-	else {
-		glam.AnimationElement.createFromStyle(docelt, style, obj);
-	}
-}
-
-glam.AnimationElement.addAnimationToObject = function(animation, obj) {
-		
-	var interps = [];
-	if (animation.poskeys.length) {
-		interps.push({
-			keys : animation.poskeys,
-			values : animation.posvalues,
-			target : obj.transform.position,
-		});
-	}
-	if (animation.rotkeys.length) {
-		interps.push({
-			keys : animation.rotkeys,
-			values : animation.rotvalues,
-			target : obj.transform.rotation,
-		});
-	}
-	if (animation.sclkeys.length) {
-		interps.push({
-			keys : animation.sclkeys,
-			values : animation.sclvalues,
-			target : obj.transform.scale,
-		});
-	}
-	if (animation.opakeys.length) {
-		interps.push({
-			keys : animation.opakeys,
-			values : animation.opavalues,
-			target : obj.visuals[0].material,
-		});
-	}
-	if (animation.colorkeys.length) {
-		interps.push({
-			keys : animation.colorkeys,
-			values : animation.colorvalues,
-			target : obj.visuals[0].material.color,
-		});
-	}
-	var loop = animation.iterationCount > 1;
-	
-	if (interps.length) {
-		var kf = new Vizi.KeyFrameAnimator({ interps: interps, 
-			duration : animation.duration, 
-			loop : animation.loop, 
-			easing: animation.easing
-		});
-		obj.addComponent(kf);
-		
-		kf.start();
-	}
-}
-
-glam.AnimationElement.parseCallbacks = {};
-
-glam.AnimationElement.addParseCallback = function(id, cb) {
-	var cbs = glam.AnimationElement.parseCallbacks[id];
-	if (!cbs) {
-		cbs = { callbacks : [] };
-		glam.AnimationElement.parseCallbacks[id] = cbs;
-	}
-
-	cbs.callbacks.push(cb);
-	
-}
-
-glam.AnimationElement.callParseCallbacks = function(id, anim) {
-	var cbs = glam.AnimationElement.parseCallbacks[id];
-	if (cbs) {
-		var callbacks = cbs.callbacks;
-		var i, len = callbacks.length;
-		for (i = 0; i < len; i++) {
-			var cb = callbacks[i];
-			cb(anim);
-		}
-	}
-}
-/**
- * @fileoverview 2D arc parser/implementation
- * 
- * @author Tony Parisi
- */
-
-glam.ArcElement = {};
-
-glam.ArcElement.DEFAULT_RADIUS = 2;
-glam.ArcElement.DEFAULT_RADIUS_SEGMENTS = 32;
-glam.ArcElement.DEFAULT_START_ANGLE = "0deg";
-glam.ArcElement.DEFAULT_END_ANGLE = "360deg";
-
-glam.ArcElement.create = function(docelt, style) {
-	return glam.VisualElement.create(docelt, style, glam.ArcElement);
-}
-
-glam.ArcElement.getAttributes = function(docelt, style, param) {
-
-	function parseRotation(r) {
-		return glam.DOMTransform.parseRotation(r);
-	}
-	
-	var radius = docelt.getAttribute('radius') || glam.ArcElement.DEFAULT_RADIUS;
-	var radiusSegments = docelt.getAttribute('radiusSegments') || glam.ArcElement.DEFAULT_RADIUS_SEGMENTS;
-
-	var startAngle = docelt.getAttribute('startAngle') || glam.ArcElement.DEFAULT_START_ANGLE;
-	var endAngle = docelt.getAttribute('endAngle') || glam.ArcElement.DEFAULT_END_ANGLE;
-	
-	if (style) {
-		if (style.radius)
-			radius = style.radius;
-		if (style.radiusSegments)
-			radiusSegments = style.radiusSegments;
-		if (style.startAngle)
-			startAngle = style.startAngle;
-		if (style.endAngle)
-			endAngle = style.endAngle;
-	}
-	
-	radius = parseFloat(radius);
-	radiusSegments = parseInt(radiusSegments);
-	startAngle = parseRotation(startAngle);
-	endAngle = parseRotation(endAngle);
-
-	param.radius = radius;
-	param.radiusSegments = radiusSegments;
-	param.startAngle = startAngle;
-	param.endAngle = endAngle;
-}
-
-glam.ArcElement.createVisual = function(docelt, material, param) {
-	
-	var visual = new Vizi.Visual(
-			{ geometry: new THREE.CircleGeometry(param.radius, param.radiusSegments, param.startAngle, param.endAngle),
-				material: material
-			});
-
-	return visual;
-}
-/**
+glam.PickManager.clickedObject = null;
+glam.PickManager.overObject  =  null;/**
  * @fileoverview background parser/implementation. supports skyboxes and skyspheres
  * 
  * @author Tony Parisi
  */
 
-glam.BackgroundElement = {};
+goog.provide('glam.BackgroundElement');
 
 glam.BackgroundElement.DEFAULT_BACKGROUND_TYPE = "box";
 
@@ -57603,19 +57441,19 @@ glam.BackgroundElement.create = function(docelt, style) {
 
 	var background;
 	if (type == "box") {
-		background = Vizi.Prefabs.Skybox();
-		var skyboxScript = background.getComponent(Vizi.SkyboxScript);
+		background = glam.Prefabs.Skybox();
+		var skyboxScript = background.getComponent(glam.SkyboxScript);
 		skyboxScript.texture = param.envMap;
 	}
 	else if (type == "sphere") {
-		background = Vizi.Prefabs.Skysphere();
-		skysphereScript = background.getComponent(Vizi.SkysphereScript);
+		background = glam.Prefabs.Skysphere();
+		skysphereScript = background.getComponent(glam.SkysphereScript);
 		skysphereScript.texture = param.envMap;
 	}
 
 	glam.BackgroundElement.addHandlers(docelt, style, background);
 	
-	Vizi.Application.instance.addObject(background);
+	glam.Application.instance.addObject(background);
 	
 	return null;
 }
@@ -57636,7 +57474,7 @@ glam.BackgroundElement.onSetAttribute = function(obj, docelt, attr, val) {
 	switch (attr) {
 		case "sphere-image" :
 		case "sphereImage" :
-			var skysphereScript = obj.getComponent(Vizi.SkysphereScript);
+			var skysphereScript = obj.getComponent(glam.SkysphereScript);
 			if (skysphereScript) {
 				var envMap = THREE.ImageUtils.loadTexture(val);
 				skysphereScript.texture = envMap;
@@ -57646,426 +57484,36 @@ glam.BackgroundElement.onSetAttribute = function(obj, docelt, attr, val) {
 			break;
 	}
 }
-/**
- * @fileoverview camera parser/implementation
- * 
- * @author Tony Parisi
- */
+goog.provide('glam.AmbientLight');
+goog.require('glam.Light');
 
-glam.CameraElement = {};
-
-glam.CameraElement.DEFAULT_FOV = 45;
-glam.CameraElement.DEFAULT_NEAR = 1;
-glam.CameraElement.DEFAULT_FAR = 10000;
-
-glam.CameraElement.create = function(docelt, style, app) {
+glam.AmbientLight = function(param)
+{
+	param = param || {};
 	
-	var fov = docelt.getAttribute('fov') || glam.CameraElement.DEFAULT_FOV;
-	var near = docelt.getAttribute('near') || glam.CameraElement.DEFAULT_NEAR;
-	var far = docelt.getAttribute('far') || glam.CameraElement.DEFAULT_FAR;
-	var aspect = docelt.getAttribute('aspect');
-	
-	if (style) {
-		if (style.fov)
-			fov = style.fov;
-		if (style.near)
-			near = style.near;
-		if (style.far)
-			far = style.far;
-		if (style.aspect)
-			aspect = style.aspect;
+	glam.Light.call(this, param);
+
+	if (param.object) {
+		this.object = param.object; 
 	}
-	
-	fov = parseFloat(fov);
-	near = parseFloat(near);
-	far = parseFloat(far);
-	
-	var param = {
-			fov : fov,
-			near : near,
-			far : far,
-	};
-
-	if (aspect) {
-		aspect = parseFloat(aspect);
-		param.aspect = aspect;
-	}
-	
-	var camera = new Vizi.Object;	
-	var cam = new Vizi.PerspectiveCamera(param);
-	camera.addComponent(cam);
-	
-	app.addCamera(cam, docelt.id);
-	
-	return camera;
-}
-/**
- * @fileoverview 2D circle parser/implementation
- * 
- * @author Tony Parisi
- */
-
-glam.CircleElement = {};
-
-glam.CircleElement.DEFAULT_RADIUS = 2;
-glam.CircleElement.DEFAULT_RADIUS_SEGMENTS = 32;
-
-glam.CircleElement.create = function(docelt, style) {
-	return glam.VisualElement.create(docelt, style, glam.CircleElement);
-}
-
-glam.CircleElement.getAttributes = function(docelt, style, param) {
-
-	var radius = docelt.getAttribute('radius') || glam.CircleElement.DEFAULT_RADIUS;
-	var radiusSegments = docelt.getAttribute('radiusSegments') || glam.CircleElement.DEFAULT_RADIUS_SEGMENTS;
-	
-	if (style) {
-		if (style.radius)
-			radius = style.radius;
-		if (style.radiusSegments)
-			radiusSegments = style.radiusSegments;
-	}
-
-	radius = parseFloat(radius);
-	radiusSegments = parseInt(radiusSegments);
-	
-	param.radius = radius;
-	param.radiusSegments = radiusSegments;
-}
-
-glam.CircleElement.createVisual = function(docelt, material, param) {
-	
-	var visual = new Vizi.Visual(
-			{ geometry: new THREE.CircleGeometry(param.radius, param.radiusSegments),
-				material: material
-			});
-	
-	return visual;
-}
-/**
- * @fileoverview class list - emulate DOM classList property for glam
- * 
- * @author Tony Parisi
- */
-
-glam.DOMClassList = function(docelt) {
-	this.docelt = docelt;
-	Array.call(this);
-}
-
-glam.DOMClassList.prototype = new Array;
-
-glam.DOMClassList.prototype.item = function(i) {
-	return this[i];
-}
-
-glam.DOMClassList.prototype.add = function(item) {
-	return this.push(item);
-}
-
-glam.DOMClassList.prototype.remove = function(item) {
-	var i = this.indexOf(item);
-	if (i != -1) {
-		this.splice(i, 1)
+	else {
+		this.object = new THREE.AmbientLight(param.color);
 	}
 }
 
-/**
- * @fileoverview cube primitive parser/implementation
- * 
- * @author Tony Parisi
- */
+goog.inherits(glam.AmbientLight, glam.Light);
 
-glam.BoxElement = {};
-
-glam.BoxElement.DEFAULT_WIDTH = 2;
-glam.BoxElement.DEFAULT_HEIGHT = 2;
-glam.BoxElement.DEFAULT_DEPTH = 2;
-
-glam.BoxElement.create = function(docelt, style) {
-	return glam.VisualElement.create(docelt, style, glam.BoxElement);
+glam.AmbientLight.prototype.realize = function() 
+{
+	glam.Light.prototype.realize.call(this);
 }
-
-glam.BoxElement.getAttributes = function(docelt, style, param) {
-
-	var width = docelt.getAttribute('width') || glam.BoxElement.DEFAULT_WIDTH;
-	var height = docelt.getAttribute('height') || glam.BoxElement.DEFAULT_HEIGHT;
-	var depth = docelt.getAttribute('depth') || glam.BoxElement.DEFAULT_DEPTH;
-	
-	if (style) {
-		if (style.width)
-			width = style.width
-		if (style.height)
-			height = style.height;
-		if (style.depth)
-			depth = style.depth;
-	}
-	
-	width = parseFloat(width);
-	height = parseFloat(height);
-	depth = parseFloat(depth);
-	
-	param.width = width;
-	param.height = height;
-	param.depth = depth;
-}
-
-glam.BoxElement.createVisual = function(docelt, material, param) {
-
-	var visual = new Vizi.Visual(
-			{ geometry: new THREE.BoxGeometry(param.width, param.height, param.depth),
-				material: material
-			});
-	
-	return visual;
-}
-/**
- * @fileoverview cone primitive parser/implementation
- * 
- * @author Tony Parisi
- */
-
-glam.ConeElement = {};
-
-glam.ConeElement.DEFAULT_RADIUS = 2;
-glam.ConeElement.DEFAULT_HEIGHT = 2;
-
-glam.ConeElement.create = function(docelt, style) {
-	return glam.VisualElement.create(docelt, style, glam.ConeElement);
-}
-
-glam.ConeElement.getAttributes = function(docelt, style, param) {
-
-	var radius = docelt.getAttribute('radius') || glam.ConeElement.DEFAULT_RADIUS;
-	var height = docelt.getAttribute('height') || glam.ConeElement.DEFAULT_HEIGHT;
-	
-	if (style) {
-		if (style.radius)
-			radius = style.radius;
-		if (style.height)
-			height = style.height;
-	}
-
-	radius = parseFloat(radius);
-	height = parseFloat(height);
-	
-	param.radius = radius;
-	param.height = height;
-}
-
-glam.ConeElement.createVisual = function(docelt, material, param) {
-	
-	var visual = new Vizi.Visual(
-			{ geometry: new THREE.CylinderGeometry(0, param.radius, param.height, 32),
-				material: material
-			});
-
-	return visual;
-}
-/**
- * @fileoverview controller parser/implementation. supports model, FPS and Rift
- * 
- * @author Tony Parisi
- */
-
-glam.ControllerElement = {};
-
-glam.ControllerElement.create = function(docelt, style, app) {
-	var on = true;
-	
-	var noheadlight = docelt.getAttribute("noheadlight");
-	if (noheadlight !== null) {
-		on = false;
-		app.controllerScript.headlightOn = false;
-	}
-	
-	var type = docelt.getAttribute("type");
-	if (type !== null) {
-		type = type.toLowerCase();
-		if (type == "fps") {
-			
-			var x = parseFloat(docelt.getAttribute('x')) || 0;
-			var y = parseFloat(docelt.getAttribute('y')) || 0;
-			var z = parseFloat(docelt.getAttribute('z')) || 0;
-			
-			var controller = Vizi.Prefabs.FirstPersonController({active:true, headlight:on});
-			var controllerScript = controller.getComponent(Vizi.FirstPersonControllerScript);
-			app.addObject(controller);
-
-			var object = new Vizi.Object;	
-			var camera = new Vizi.PerspectiveCamera();
-			object.addComponent(camera);
-			app.addObject(object);
-
-			controllerScript.camera = camera;
-			camera.active = true;
-			
-		}
-		else if (type == "rift") {
-			var controller = Vizi.Prefabs.RiftController({active:true, 
-				headlight:on,
-				mouseLook:false,
-				useVRJS : true,
-			});
-			var controllerScript = controller.getComponent(Vizi.RiftControllerScript);			
-			app.addObject(controller);
-
-			var object = new Vizi.Object;	
-			var camera = new Vizi.PerspectiveCamera();
-			object.addComponent(camera);
-			app.addObject(object);
-
-			controllerScript.camera = camera;
-			camera.active = true;
-			
-			if (app.controllerScript) {
-				app.controllerScript.enabled = false;
-			}
-			
-			// hack because existing FPS or model controller
-			// will clobber our values
-			app.controller = controller;
-			app.controllerScript = controllerScript;
-		}
-		else if (type == "deviceorientation") {
-			var controller = Vizi.Prefabs.DeviceOrientationController({active:true, 
-				headlight:on,
-				mouseLook:false,
-				useVRJS : true,
-			});
-			var controllerScript = controller.getComponent(Vizi.DeviceOrientationControllerScript);			
-			app.addObject(controller);
-
-			var object = new Vizi.Object;	
-			var camera = new Vizi.PerspectiveCamera();
-			object.addComponent(camera);
-			app.addObject(object);
-
-			controllerScript.camera = camera;
-			camera.active = true;
-			
-			if (app.controllerScript) {
-				app.controllerScript.enabled = false;
-			}
-			
-			// hack because existing FPS or model controller
-			// will clobber our values
-			app.controller = controller;
-			app.controllerScript = controllerScript;
-		}
-	}
-	
-	return null;
-}
-/**
- * @fileoverview cylinder parser/implementation
- * 
- * @author Tony Parisi
- */
-
-glam.CylinderElement = {};
-
-glam.CylinderElement.DEFAULT_RADIUS = 2;
-glam.CylinderElement.DEFAULT_HEIGHT = 2;
-
-glam.CylinderElement.create = function(docelt, style) {
-	return glam.VisualElement.create(docelt, style, glam.CylinderElement);
-}
-
-glam.CylinderElement.getAttributes = function(docelt, style, param) {
-
-	var radius = docelt.getAttribute('radius') || glam.CylinderElement.DEFAULT_RADIUS;
-	var height = docelt.getAttribute('height') || glam.CylinderElement.DEFAULT_HEIGHT;
-	
-	if (style) {
-		if (style.radius)
-			radius = style.radius;
-		if (style.height)
-			height = style.height;
-	}
-	
-	radius = parseFloat(radius);
-	height = parseFloat(height);
-	param.radius = radius;
-	param.height = height;
-}	
-
-glam.CylinderElement.createVisual = function(docelt, material, param) {
-
-	var visual = new Vizi.Visual(
-			{ geometry: new THREE.CylinderGeometry(param.radius, param.radius, param.height, 32),
-				material: material
-			});
-	
-	return visual;
-}
-/**
- * @fileoverview glam document class
- * 
- * @author Tony Parisi
- */
-
-glam.DOMDocument = {
-		
-	scenes : {},
-	
-	styles : [],
-
-	animations : {},
-	
-	addScene : function(script, scene)
-	{
-		glam.DOMDocument.scenes[script.id] = { parentElement : script.parentElement, scene : scene };
-	},
-
-	addStyle : function(declaration)
-	{
-		glam.DOMDocument.styles.push(declaration);
-	},
-	
-	addAnimation : function(id, animation)
-	{
-		glam.DOMDocument.animations[id] = animation;
-	},
-
-	parseDocument : function()
-	{
-		var dp = new DOMParser;
-
-		var i, len;
-		
-		var scripts = document.getElementsByTagName("script");
-		var len = scripts.length;
-		for (i = 0; i < len; i++)
-		{
-			if (scripts[i].type == "text/glam")
-			{
-				var scene = dp.parseFromString(scripts[i].textContent, "text/xml");
-				glam.DOMDocument.addScene(scripts[i], scene);
-			}
-		}
-		
-		var styles = document.head.getElementsByTagName("style");
-		var len = styles.length;
-		for (i = 0; i < len; i++)
-		{
-			{
-				$.parsecss(styles[i].childNodes[0].data,
-						function(css) {
-								glam.DOMDocument.addStyle(css);
-							}
-						);
-			}
-		}
-	},
-};
 /**
  * @fileoverview effect parser/implementation. supports built-in postprocessing effects
  * 
  * @author Tony Parisi
  */
 
-glam.EffectElement = {};
+goog.provide('glam.EffectElement');
 
 glam.EffectElement.DEFAULT_BLOOM_STRENGTH = 1;
 glam.EffectElement.DEFAULT_FILM_GRAYSCALE = 0;
@@ -58088,42 +57536,42 @@ glam.EffectElement.create = function(docelt, style, app) {
 			if (str != undefined) {
 				strength = parseFloat(str);
 			}
-			effect = new Vizi.Effect(new THREE.BloomPass(strength));
+			effect = new glam.Effect(new THREE.BloomPass(strength));
 			break;
 
 		case "FXAA" :
-			effect = new Vizi.Effect(THREE.FXAAShader);
-			var w = Vizi.Graphics.instance.renderer.domElement.offsetWidth;
-			var h = Vizi.Graphics.instance.renderer.domElement.offsetHeight;
+			effect = new glam.Effect(THREE.FXAAShader);
+			var w = glam.Graphics.instance.renderer.domElement.offsetWidth;
+			var h = glam.Graphics.instance.renderer.domElement.offsetHeight;
 			effect.pass.uniforms['resolution'].value.set(1 / w, 1 / h);
 			break;
 			
 		case "Film" :
-			effect = new Vizi.Effect( THREE.FilmShader );
+			effect = new glam.Effect( THREE.FilmShader );
 			effect.pass.uniforms['grayscale'].value = glam.EffectElement.DEFAULT_FILM_GRAYSCALE;
 			effect.pass.uniforms['sCount'].value = glam.EffectElement.DEFAULT_FILM_SCANLINECOUNT;
 			effect.pass.uniforms['nIntensity'].value = glam.EffectElement.DEFAULT_FILM_INTENSITY;
 			break;
 			
 		case "RGBShift" :
-			effect = new Vizi.Effect( THREE.RGBShiftShader );
+			effect = new glam.Effect( THREE.RGBShiftShader );
 			effect.pass.uniforms[ 'amount' ].value = glam.EffectElement.DEFAULT_RGBSHIFT_AMOUNT;
 			break;
 			
 		case "DotScreen" :
-			effect = new Vizi.Effect(THREE.DotScreenShader);
+			effect = new glam.Effect(THREE.DotScreenShader);
 			effect.pass.uniforms[ 'scale' ].value = glam.EffectElement.DEFAULT_DOTSCREEN_SCALE;
 			break;
 
 		case "DotScreenRGB" :
-			effect = new Vizi.Effect(THREE.DotScreenRGBShader);
+			effect = new glam.Effect(THREE.DotScreenRGBShader);
 			effect.pass.uniforms[ 'scale' ].value = glam.EffectElement.DEFAULT_DOTSCREEN_SCALE;
 			break;
 	}
 	
 	if (effect) {
 		glam.EffectElement.parseAttributes(docelt, effect, style);
-		Vizi.Graphics.instance.addEffect(effect);
+		glam.Graphics.instance.addEffect(effect);
 	}
 	
 	return null;
@@ -58177,1055 +57625,54 @@ glam.EffectElement.parseAttributes = function(docelt, effect, style) {
 }
 
 /**
- * @fileoverview grouping element parser/implementation
+ * @fileoverview cylinder parser/implementation
  * 
  * @author Tony Parisi
  */
 
-glam.GroupElement = {};
+goog.provide('glam.CylinderElement');
 
-glam.GroupElement.create = function(docelt, style) {
+glam.CylinderElement.DEFAULT_RADIUS = 2;
+glam.CylinderElement.DEFAULT_HEIGHT = 2;
 
-	// Create the group
-	var group = new Vizi.Object;
-	
-	return group;
-}
-/**
- * @fileoverview model import parser/implementation
- * 
- * @author Tony Parisi
- */
-
-glam.ImportElement = {};
-
-glam.ImportElement.create = function(docelt, style) {
-	var src = docelt.getAttribute('src');
-		
-	// Create the cube
-	var obj = new Vizi.Object;	
-
-	if (src) {
-		var loader = new Vizi.Loader;
-
-		var loadCallback = function(data) {
-			glam.ImportElement.onLoadComplete(obj, data, src);
-			loader.removeEventListener("loaded", loadCallback);
-		}	
-
-		loader.addEventListener("loaded", loadCallback);
-		loader.loadScene(src);
-	}
-
-	return obj;
+glam.CylinderElement.create = function(docelt, style) {
+	return glam.VisualElement.create(docelt, style, glam.CylinderElement);
 }
 
-glam.ImportElement.onLoadComplete = function(obj, data, url) {
+glam.CylinderElement.getAttributes = function(docelt, style, param) {
 
-	obj.addChild(data.scene);
-}
-/**
- * @fileoverview mouse input implementation
- * 
- * @author Tony Parisi
- */
-
-glam.DOMInput = {};
-
-glam.DOMInput.add = function(docelt, obj) {
-	
-	function addListener(picker, evt) {
-		picker.addEventListener(evt, function(event){
-			var domEvent = new CustomEvent(
-					evt, 
-					{
-						detail: {
-						},
-						bubbles: true,
-						cancelable: true
-					}
-				);
-			for (propName in event) {
-				domEvent[propName] = event[propName];
-			}
-			var res = docelt.dispatchEvent(domEvent);
-			
-		});
-	}
-	
-	var picker = new Vizi.Picker;
-	
-	var events = ["click", "mouseover", "mouseout", "mousedown", "mouseup", "mousemove"];
-	for (index in events) {
-		var evt = events[index];
-		addListener(picker, evt);
-	}
-		
-	obj.addComponent(picker);
-
-	var viewpicker = new Vizi.ViewPicker;
-	obj.addComponent(viewpicker);
-	addListener(viewpicker, "viewover")
-	addListener(viewpicker, "viewout");
-}
-/**
- * @fileoverview light parser/implementation. supports point, spot, directional, ambient
- * 
- * @author Tony Parisi
- */
-
-glam.LightElement = {};
-
-glam.LightElement.DEFAULT_TYPE = "directional";
-glam.LightElement.DEFAULT_COLOR = "#ffffff";
-glam.LightElement.DEFAULT_ANGLE = "90deg";
-glam.LightElement.DEFAULT_DISTANCE = 0;
-glam.LightElement.DEFAULT_EXPONENT = Vizi.SpotLight.DEFAULT_EXPONENT;
-
-glam.LightElement.create = function(docelt, style, app) {
-	
-	function parseAngle(t) {
-		return glam.DOMTransform.parseRotation(t);
-	}
-		
-	var type = docelt.getAttribute('type') || glam.LightElement.DEFAULT_TYPE;
-	var color = docelt.getAttribute('color') || glam.LightElement.DEFAULT_COLOR;
-	var angle = docelt.getAttribute('angle') || glam.LightElement.DEFAULT_ANGLE;
-	var distance = docelt.getAttribute('distance') || glam.LightElement.DEFAULT_DISTANCE;
-	var exponent = docelt.getAttribute('exponent') || glam.LightElement.DEFAULT_EXPONENT;
-	
-	var direction = new THREE.Vector3(0, 0, -1);
-	
-	var dx = parseFloat(docelt.getAttribute('dx')) || 0;
-	var dy = parseFloat(docelt.getAttribute('dy')) || 0;
-	var dz = parseFloat(docelt.getAttribute('dz')) || 0;
-	if (dx || dy || dz) {
-		direction.set(dx, dy, dz);
-	}
-	
-	direction.normalize();
+	var radius = docelt.getAttribute('radius') || glam.CylinderElement.DEFAULT_RADIUS;
+	var height = docelt.getAttribute('height') || glam.CylinderElement.DEFAULT_HEIGHT;
 	
 	if (style) {
-		if (style.type) {
-			type = style.type;
-		}
-		if (style.color) {
-			color = style.color;
-		}
-		if (style.angle) {
-			angle = style.angle;
-		}
-		if (style.distance) {
-			distance = style.distance;
-		}
-	}
-
-	color = new THREE.Color().setStyle(color).getHex(); 
-	angle = parseAngle(angle);
-	distance = parseFloat(distance);
-	exponent = parseFloat(exponent);
-	
-	var param = {
-			color : color,
-			angle : angle,
-			direction : direction,
-			distance : distance,
-			exponent : exponent,
-	};
-	
-	var obj = new Vizi.Object;
-
-	var light = null;
-	switch (type.toLowerCase()) {
-	
-		case 'directional' :
-			light = new Vizi.DirectionalLight(param);
-			break;
-		case 'point' :
-			light = new Vizi.PointLight(param);
-			break;
-		case 'spot' :
-			light = new Vizi.SpotLight(param);
-			break;
-		case 'ambient' :
-			light = new Vizi.AmbientLight(param);
-			break;
+		if (style.radius)
+			radius = style.radius;
+		if (style.height)
+			height = style.height;
 	}
 	
-	if (light) {
-		obj.addComponent(light);
-		return obj;
-	}
-	
-	return null;
-}
-/**
- * @fileoverview line primitive parser/implementation
- * 
- * @author Tony Parisi
- */
+	radius = parseFloat(radius);
+	height = parseFloat(height);
+	param.radius = radius;
+	param.height = height;
+}	
 
-glam.LineElement = {};
+glam.CylinderElement.createVisual = function(docelt, material, param) {
 
-glam.LineElement.create = function(docelt, style) {
-		
-	if (style) {
-	}
-	
-	var material = glam.DOMMaterial.create(style, null, "line");
-	
-	var geometry = new THREE.Geometry;
-	
-	glam.LineElement.parse(docelt, geometry, material);
-	
-	var line = new THREE.Line(geometry, material);
-	
-	var obj = new Vizi.Object;	
-	var visual = new Vizi.Visual(
-			{
-				object : line,
-			});
-	obj.addComponent(visual);
-
-	// Is this the API?
-	docelt.geometry = geometry;
-	docelt.material = material;
-	
-	return obj;
-}
-
-glam.LineElement.parse = function(docelt, geometry, material) {
-
-	var verts = docelt.getElementsByTagName('vertices');
-	if (verts) {
-		verts = verts[0];
-		glam.DOM.Types.parseVector3Array(verts, geometry.vertices);
-	}
-	
-	var vertexColors = [];
-	var colors = docelt.getElementsByTagName('colors');
-	if (colors) {
-		colors = colors[0];
-		if (colors) {
-			glam.DOM.Types.parseColor3Array(colors, vertexColors);
-	
-			var i, len = vertexColors.length;
-	
-			for (i = 0; i < len; i++) {			
-				var c = vertexColors[i];
-				geometry.colors.push(c.clone());
-			}
-	
-			material.vertexColors = THREE.VertexColors;
-		}
-	}
-
-
-}
-
-/**
- * @fileoverview material parser/implementation
- * 
- * @author Tony Parisi
- */
-
-glam.DOMMaterial = {};
-
-glam.DOMMaterial.create = function(style, createCB, objtype) {
-	var material = null;
-	
-	if (style) {
-		var param = glam.DOMMaterial.parseStyle(style);
-		if (style.shader) {
-			switch (style.shader.toLowerCase()) {
-				case "phong" :
-				case "blinn" :
-					material = new THREE.MeshPhongMaterial(param);
-					break;
-				case "lambert" :
-					material = new THREE.MeshLambertMaterial(param);
-					break;
-				case "line" :
-					material = new THREE.LineBasicMaterial(param);
-					break;
-				case "basic" :
-				default :
-					material = new THREE.MeshBasicMaterial(param);
-					break;
-			}
-		}
-		else if (style["vertex-shader"] && style["fragment-shader"] && style["shader-uniforms"]) {
-			material = glam.DOMMaterial.createShaderMaterial(style, param, createCB);
-		}
-		else if (objtype == "line") {
-			if (param.dashSize !== undefined  || param.gapSize !== undefined) {
-				material = new THREE.LineDashedMaterial(param);
-			}
-			else {
-				material = new THREE.LineBasicMaterial(param);
-			}
-		}
-		else {
-			material = new THREE.MeshBasicMaterial(param);
-		}
-	}
-	else {
-		material = new THREE.MeshBasicMaterial();
-	}
-	
-	return material;
-}
-
-glam.DOMMaterial.parseStyle = function(style) {
-	var image = "";
-	if (style.image) {
-		image = glam.DOMMaterial.parseUrl(style.image);
-	}
-
-	var normalMap = "";
-	if (style["normal-image"]) {
-		normalMap = glam.DOMMaterial.parseUrl(style["normal-image"]);
-	}
-
-	var bumpMap = "";
-	if (style["bump-image"]) {
-		bumpMap = glam.DOMMaterial.parseUrl(style["bump-image"]);
-	}
-
-	var specularMap = "";
-	if (style["specular-image"]) {
-		specularMap = glam.DOMMaterial.parseUrl(style["specular-image"]);
-	}
-
-	var reflectivity;
-	if (style.reflectivity)
-		reflectivity = parseFloat(style.reflectivity);
-	
-	var refractionRatio;
-	if (style.refractionRatio)
-		refractionRatio = parseFloat(style.refractionRatio);
-	
-	var envMap = glam.DOMMaterial.tryParseEnvMap(style);
-	
-	var color;
-	var diffuse;
-	var specular;
-	var ambient;
-	var css = "";
-
-	if (css = style["color"]) {
-		color = new THREE.Color().setStyle(css).getHex();
-	}
-	if (css = style["diffuse-color"]) {
-		diffuse = new THREE.Color().setStyle(css).getHex();
-	}
-	if (css = style["specular-color"]) {
-		specular = new THREE.Color().setStyle(css).getHex();
-	}
-	if (css = style["ambient-color"]) {
-		ambient = new THREE.Color().setStyle(css).getHex();
-	}
-	
-	var opacity;
-	if (style.opacity)
-		opacity = parseFloat(style.opacity);
-
-	var side = THREE.FrontSide;
-	if (style["backface-visibility"]) {
-		switch (style["backface-visibility"].toLowerCase()) {
-			case "visible" :
-				side = THREE.DoubleSide;
-				break;
-			case "hidden" :
-				side = THREE.FrontSide;
-				break;
-		}
-	}
-	
-	var wireframe;
-	if (style.hasOwnProperty("render-mode"))
-		wireframe = (style["render-mode"] == "wireframe");
-	
-	var linewidth;
-	if (style["line-width"]) {
-		linewidth = parseInt(style["line-width"]);
-	}
-	
-	var dashSize;
-	if (style["dash-size"]) {
-		dashSize = parseInt(style["dash-size"]);
-	}
-
-	var gapSize;
-	if (style["gap-size"]) {
-		gapSize = parseInt(style["gap-size"]);
-	}
-	
-	var param = {
-	};
-	
-	if (image)
-		param.map = THREE.ImageUtils.loadTexture(image);
-	if (envMap)
-		param.envMap = envMap;
-	if (normalMap)
-		param.normalMap = THREE.ImageUtils.loadTexture(normalMap);
-	if (bumpMap)
-		param.bumpMap = THREE.ImageUtils.loadTexture(bumpMap);
-	if (specularMap)
-		param.specularMap = THREE.ImageUtils.loadTexture(specularMap);
-	if (color !== undefined)
-		param.color = color;
-	if (diffuse !== undefined)
-		param.color = diffuse;
-	if (specular !== undefined)
-		param.specular = specular;
-	if (ambient !== undefined)
-		param.ambient = ambient;
-	if (opacity !== undefined) {
-		param.opacity = opacity;
-		param.transparent = opacity < 1;
-	}
-	if (wireframe !== undefined) {
-		param.wireframe = wireframe;
-	}
-	if (linewidth !== undefined) {
-		param.linewidth = linewidth;
-	}
-	if (dashSize !== undefined) {
-		param.dashSize = dashSize;
-	}
-	if (gapSize !== undefined) {
-		param.gapSize = gapSize;
-	}
-	if (reflectivity !== undefined)
-		param.reflectivity = reflectivity;
-	if (refractionRatio !== undefined)
-		param.refractionRatio = refractionRatio;
-
-	param.side = side;
-	
-	return param;
-}
-
-glam.DOMMaterial.parseUrl = function(image) {
-	var regExp = /\(([^)]+)\)/;
-	var matches = regExp.exec(image);
-	image = matches[1];
-	return image;
-}
-
-glam.DOMMaterial.tryParseEnvMap = function(style) {
-	var urls = [];
-	
-	if (style["cube-image-right"])
-		urls.push(glam.DOMMaterial.parseUrl(style["cube-image-right"]));
-	if (style["cube-image-left"])
-		urls.push(glam.DOMMaterial.parseUrl(style["cube-image-left"]));
-	if (style["cube-image-top"])
-		urls.push(glam.DOMMaterial.parseUrl(style["cube-image-top"]));
-	if (style["cube-image-bottom"])
-		urls.push(glam.DOMMaterial.parseUrl(style["cube-image-bottom"]));
-	if (style["cube-image-front"])
-		urls.push(glam.DOMMaterial.parseUrl(style["cube-image-front"]));
-	if (style["cube-image-back"])
-		urls.push(glam.DOMMaterial.parseUrl(style["cube-image-back"]));
-	
-	if (urls.length == 6) {
-		var cubeTexture = THREE.ImageUtils.loadTextureCube( urls );
-		return cubeTexture;
-	}
-	
-	if (style["sphere-image"])
-		return THREE.ImageUtils.loadTexture(glam.DOMMaterial.parseUrl(style["sphere-image"]), THREE.SphericalRefractionMapping);
-	
-	return null;
-}
-
-glam.DOMMaterial.createShaderMaterial = function(style, param, createCB) {
-	
-	function done() {
-		var material = new THREE.ShaderMaterial({
-			vertexShader : vstext,
-			fragmentShader : fstext,
-			uniforms: uniforms,
-		});
-		
-		glam.DOMMaterial.saveShaderMaterial(vsurl, fsurl, material);
-		glam.DOMMaterial.callShaderMaterialCallbacks(vsurl, fsurl);
-	}
-	
-	var vs = style["vertex-shader"];
-	var fs = style["fragment-shader"];
-	var uniforms = glam.DOMMaterial.parseUniforms(style["shader-uniforms"], param);
-
-	var vsurl = glam.DOMMaterial.parseUrl(vs);
-	var fsurl = glam.DOMMaterial.parseUrl(fs);
-
-	if (!vsurl || !fsurl) {
-		var vselt = document.getElementById(vs);
-		var vstext = vselt.textContent;
-		var fselt = document.getElementById(fs);
-		var fstext = fselt.textContent;
-		
-		if (vstext && fstext) {
-			return new THREE.ShaderMaterial({
-				vertexShader : vstext,
-				fragmentShader : fstext,
-				uniforms: uniforms,
-			});
-		}
-		else {
-			return null;
-		}
-	}	
-	
-	var material = glam.DOMMaterial.getShaderMaterial(vsurl, fsurl);
-	if (material)
-		return material;
-	
-	glam.DOMMaterial.addShaderMaterialCallback(vsurl, fsurl, createCB);
-	
-	if (glam.DOMMaterial.getShaderMaterialLoading(vsurl, fsurl))
-		return;
-	
-	glam.DOMMaterial.setShaderMaterialLoading(vsurl, fsurl);
-	
-	var vstext = "";
-	var fstext = "";
-	
-	$.ajax({
-	      type: 'GET',
-	      url: vsurl,
-	      dataType: "text",
-	      success: function(result) { vstext = result; if (fstext) done(); },
-	});	
-	
-	
-	$.ajax({
-	      type: 'GET',
-	      url: fsurl,
-	      dataType: "text",
-	      success: function(result) { fstext = result; if (vstext) done(); },
-	});	
-}
-
-glam.DOMMaterial.parseUniforms = function(uniformsText, param) {
-	
-	var uniforms = {
-	};
-	
-	var tokens = uniformsText.split(" ");
-
-	var i, len = tokens.length / 3;
-	for (i = 0; i < len; i++) {
-		var name = tokens[i * 3];
-		var type = tokens[i * 3 + 1];
-		var value = tokens[i * 3 + 2];
-		
-		if (type == "f")
-			value = parseFloat(value);
-		if (type == "c") {
-			var c = new THREE.Color();
-			c.setStyle(value);
-			value = c;
-		}
-		else if (type == "t") {
-			value = value.toLowerCase();
-			if (value == "cube") {
-				value = param.envMap;
-			}
-			else {
-				var image = glam.DOMMaterial.parseUrl(value);
-				value = THREE.ImageUtils.loadTexture(image);
-				value.wrapS = value.wrapT = THREE.Repeat;
-			}
-		}
-		
-		var uniform =  {
-			type : type,
-			value : value,
-		};
-		
-		uniforms[name] = uniform;
-	}
-		
-	return uniforms;
-}
-
-glam.DOMMaterial.shaderMaterials = {};
-
-glam.DOMMaterial.saveShaderMaterial = function(vsurl, fsurl, material) {
-	var key = vsurl + fsurl;
-	var entry = glam.DOMMaterial.shaderMaterials[key];
-	entry.material = material;
-	entry.loading = false;
-}
-
-glam.DOMMaterial.addShaderMaterialCallback = function(vsurl, fsurl, cb) {
-	var key = vsurl + fsurl;
-	
-	var entry = glam.DOMMaterial.shaderMaterials[key];
-	if (!entry) {
-		glam.DOMMaterial.shaderMaterials[key] = {
-			material : null,
-			loading : false,
-			callbacks : [],
-		};
-	}
-	
-	glam.DOMMaterial.shaderMaterials[key].callbacks.push(cb);
-}
-
-glam.DOMMaterial.callShaderMaterialCallbacks = function(vsurl, fsurl) {
-	var key = vsurl + fsurl;
-	
-	var entry = glam.DOMMaterial.shaderMaterials[key];
-	if (entry && entry.material) {
-		for (cb in entry.callbacks) {
-			entry.callbacks[cb](entry.material);
-		}
-	}
-}
-
-glam.DOMMaterial.getShaderMaterial = function(vsurl, fsurl) {
-	
-	var key = vsurl + fsurl;
-	var entry = glam.DOMMaterial.shaderMaterials[key];
-	if (entry) {
-		return entry.material;
-	}
-	else {
-		return null;
-	}
-}
-
-glam.DOMMaterial.setShaderMaterialLoading = function(vsurl, fsurl) {
-	
-	var key = vsurl + fsurl;
-	var entry = glam.DOMMaterial.shaderMaterials[key];
-	if (entry) {
-		entry.loading = true;
-	}
-}
-
-glam.DOMMaterial.getShaderMaterialLoading = function(vsurl, fsurl) {
-	
-	var key = vsurl + fsurl;
-	var entry = glam.DOMMaterial.shaderMaterials[key];
-	return (entry && entry.loading);
-}
-
-glam.DOMMaterial.addHandlers = function(docelt, style, obj) {
-
-	docelt.glam.setAttributeHandlers.push(function(attr, val) {
-		glam.DOMMaterial.onSetAttribute(obj, docelt, attr, val);
-	});
-	
-	style.setPropertyHandlers.push(function(attr, val) {
-		glam.DOMMaterial.onSetProperty(obj, docelt, attr, val);
-	});
-}
-
-glam.DOMMaterial.onSetAttribute = function(obj, docelt, attr, val) {
-
-	var material = obj.visuals[0].material;
-	switch (attr) {
-		case "color" :
-		case "diffuse-color" :
-		case "diffuseColor" :
-			material.color.setStyle(val);
-			break;
-	}
-}
-
-glam.DOMMaterial.onSetProperty = function(obj, docelt, attr, val) {
-
-	var material = obj.visuals[0].material;
-	switch (attr) {
-		case "color" :
-		case "diffuse-color" :
-		case "diffuseColor" :
-			material.color.setStyle(val);
-			break;
-	}
-}
-/**
- * @fileoverview mesh parser/implementation. currently only supports triangle sets
- * 
- * @author Tony Parisi
- */
-
-glam.MeshElement = {};
-glam.MeshElement.VERTEX_NORMALS = false;
-glam.MeshElement.VERTEX_COLORS = false;
-
-glam.MeshElement.create = function(docelt, style) {
-	
-	return glam.VisualElement.create(docelt, style, glam.MeshElement);
-}
-
-glam.MeshElement.getAttributes = function(docelt, style, param) {
-	
-	var vertexNormals = docelt.getAttribute('vertexNormals');
-	if (vertexNormals !== null) {
-		vertexNormals = true;
-	}
-	else {
-		vertexNormals = glam.MeshElement.VERTEX_NORMALS;
-	}
-	
-	var vertexColors = docelt.getAttribute('vertexColors');
-	if (vertexColors !== null) {
-		vertexColors = true;
-	}
-	else {
-		vertexColors = glam.MeshElement.VERTEX_COLORS;
-	}
-	
-	if (style) {
-		if (style.vertexNormals)
-			vertexNormals = style.vertexNormals;
-		if (style.vertexColors)
-			vertexColors = style.vertexColors;
-	}
-	
-	param.vertexNormals = vertexNormals;
-	param.vertexColors = vertexColors;
-}
-
-glam.MeshElement.createVisual = function(docelt, material, param) {
-
-	var geometry = new THREE.Geometry;
-	
-	glam.MeshElement.parse(docelt, geometry, material, param);
-	
-	var mesh = new THREE.Mesh(geometry, material);
-	var visual = new Vizi.Visual(
-			{
-				object : mesh,
+	var visual = new glam.Visual(
+			{ geometry: new THREE.CylinderGeometry(param.radius, param.radius, param.height, 32),
+				material: material
 			});
 	
 	return visual;
 }
-
-glam.MeshElement.parse = function(docelt, geometry, material, param) {
-
-	var verts = docelt.getElementsByTagName('vertices');
-	if (verts) {
-		verts = verts[0];
-		if (verts) {
-			glam.DOM.Types.parseVector3Array(verts, geometry.vertices);
-		}
-	}
-	
-	var uvs = docelt.getElementsByTagName('uvs');
-	if (uvs) {
-		uvs = uvs[0];
-		if (uvs) {
-			glam.DOM.Types.parseUVArray(uvs, geometry.faceVertexUvs[0]);
-		}
-	}
-
-	var faces = docelt.getElementsByTagName('faces');
-	if (faces) {
-		faces = faces[0];
-		if (faces) {
-			glam.DOM.Types.parseFaceArray(faces, geometry.faces);
-		}
-	}
-
-	var vertexNormals = [];
-	var normals = docelt.getElementsByTagName('normals');
-	if (normals) {
-		normals = normals[0];
-		if (normals) {
-			glam.DOM.Types.parseVector3Array(normals, vertexNormals);
-			
-			if (param.vertexNormals) {
-				
-				var i, len = geometry.faces.length;
-	
-				for (i = 0; i < len; i++) {
-					
-					var face = geometry.faces[i];
-					if (face) {
-						var norm = vertexNormals[face.a].normalize().clone();
-						face.vertexNormals[0] = norm;
-						var norm = vertexNormals[face.b].normalize().clone();
-						face.vertexNormals[1] = norm;
-						var norm = vertexNormals[face.c].normalize().clone();
-						face.vertexNormals[2] = norm;
-					}
-				}
-			}
-			else {
-				
-				var i, len = geometry.faces.length;
-	
-				for (i = 0; i < len; i++) {
-					
-					var face = geometry.faces[i];
-					if (face) {
-						var norm = vertexNormals[i].normalize();
-						face.normal.copy(norm);
-					}
-				}
-			}
-		}
-	}
-	
-	var vertexColors = [];
-	var colors = docelt.getElementsByTagName('colors');
-	if (colors) {
-		colors = colors[0];
-		if (colors) {
-			glam.DOM.Types.parseColor3Array(colors, vertexColors);
-	
-			if (param.vertexColors) {
-	
-				var i, len = geometry.faces.length;
-	
-				for (i = 0; i < len; i++) {
-					
-					var face = geometry.faces[i];
-					if (face) {
-						var c = vertexColors[face.a];
-						if (c) {
-							face.vertexColors[0] = c.clone();
-						}
-						var c = vertexColors[face.b];
-						if (c) {
-							face.vertexColors[1] = c.clone();
-						}
-						var c = vertexColors[face.c];
-						if (c) {
-							face.vertexColors[2] = c.clone();
-						}
-					}
-				}
-	
-				material.vertexColors = THREE.VertexColors;
-			}
-			else {
-				
-				var i, len = geometry.faces.length;
-	
-				for (i = 0; i < len; i++) {
-					
-					var face = geometry.faces[i];
-					if (face) {
-						var c = vertexColors[i];
-						if (c) {
-							face.color.copy(c);
-						}
-					}
-				}
-				
-				material.vertexColors = THREE.FaceColors; 
-			}
-		
-			geometry.colorsNeedUpdate = true;
-			geometry.buffersNeedUpdate = true;
-		}
-	}
-}
-
-/**
- * @fileoverview base node class
- * 
- * @author Tony Parisi
- */
-
-glam.DOMElement = {};
-
-
-glam.DOMElement.init = function(docelt) {
-
-	docelt.glam = {
-	};
-	
-	docelt.glam.setAttributeHandlers = [];
-	docelt.glam.onSetAttribute = function(attr, val) {
-		var i, len = docelt.glam.setAttributeHandlers.length;
-		for (i = 0; i < len; i++) {
-			var handler = docelt.glam.setAttributeHandlers[i];
-			if (handler) {
-				handler(attr, val);
-			}
-		}
-	}
-}
-
-glam.DOMElement.getStyle = function(docelt) {
-	
-	var glamClassList = new glam.DOMClassList(docelt);
-	docelt.glam.classList = glamClassList;
-	
-	var style = new glam.DOMStyle(docelt);
-	
-	if (docelt.id) {
-		var styl = glam.DOM.getStyle("#" + docelt.id);
-		style.addProperties(styl);
-	}
-	
-	var klass = docelt.getAttribute('class');
-	if (!klass)
-		klass = docelt['class'];
-	
-	if (klass) {
-		
-		var klasses = klass.split(" ");
-		for (klassname in klasses) {
-			var kls = klasses[klassname];
-			if (kls) {
-				var styl = glam.DOM.getStyle("." + kls);
-				style.addProperties(styl);
-				
-				glamClassList.add(kls);
-			}
-		}
-	}
-	
-	var styl = docelt.getAttribute("style");
-	if (styl) {
-		style.addPropertiesFromString(styl);
-	}
-	
-	docelt.glam.style = style;
-	
-	return style;
-}
-/**
- * @fileoverview parser base; see also viewer.js
- * 
- * @author Tony Parisi
- */
-
-glam.DOMParser = {
-		
-	addDocument : function(doc)
-	{
-		// create an observer instance
-		var mo = (window.WebKitMutationObserver !== undefined) ? window.WebKitMutationObserver : window.MutationObserver;
-		var observer = new mo(function(mutations) {
-		  mutations.forEach(function(mutation) {
-		    if (mutation.type == "childList") {
-		    	var i, len = mutation.addedNodes.length;
-		    	for (i = 0; i < len; i++) {
-		    		var node = mutation.addedNodes[i];
-		    		var viewer = glam.DOM.viewers[doc.id];
-			    	viewer.addNode(node);
-		    	}
-		    	var i, len = mutation.removedNodes.length;
-		    	for (i = 0; i < len; i++) {
-		    		var node = mutation.removedNodes[i];
-		    		var viewer = glam.DOM.viewers[doc.id];
-			    	viewer.removeNode(node);
-		    	}
-		    }
-		    else if (mutation.type == "attributes") {
-		    	var onSetAttribute = mutation.target.glam ? mutation.target.glam.onSetAttribute : null;
-		    	if (onSetAttribute) {
-		    		var attr = mutation.attributeName;
-		    		var val = mutation.target.getAttribute(attr);
-		    		onSetAttribute(attr, val);
-		    	}
-		    }
-		  });    
-		});
-		 
-		// configuration of the observer:
-		var config = { attributes: true, childList: true, characterData: true, subtree: true };
-		 
-		// pass in the target node, as well as the observer options
-		observer.observe(doc, config);		
-	},
-
-	addStyle : function(declaration)
-	{
-		for (selector in declaration) {
-			glam.DOM.addStyle(selector, declaration[selector]);
-		}
-	},
-	
-	getStyle : function(selector)
-	{
-		return glam.DOM.getStyle(selector);
-	},
-	
-	parseDocument : function()
-	{
-		var dp = new DOMParser;
-
-		var i, len;
-		
-		var docs = document.getElementsByTagName("glam");
-		var len = docs.length;
-		for (i = 0; i < len; i++)
-		{
-			var doc = docs[i];
-			if (!doc.id) {
-				doc.id = "#glamDocument" + glam.DOM.documentIndex++;
-			}
-			glam.DOMParser.addDocument(doc);
-			glam.DOM.documents[doc.id] = doc;
-			doc.style.display = 'none';
-			glam.DOMParser.addEventHandlers(doc);
-		}
-		
-		var styles = document.head.getElementsByTagName("style");
-		var len = styles.length;
-		for (i = 0; i < len; i++)
-		{
-			if (styles[i].childNodes.length) {
-				$.parsecss(styles[i].childNodes[0].data,
-						function(css) {
-								glam.DOMParser.addStyle(css);
-							}
-						);
-			}
-		}
-	},
-	
-	addEventHandlers : function(elt) {
-
-		// Trap all mouse events to keep page from going bonkers
-		elt.addEventListener("mouseover", function(event) {
-			event.preventDefault();
-			event.stopPropagation();
-		});
-		elt.addEventListener("mouseout", function(event) {
-			event.preventDefault();
-			event.stopPropagation();
-		});
-		elt.addEventListener("mousedown", function(event) {
-			event.preventDefault();
-			event.stopPropagation();
-		});
-		elt.addEventListener("mouseup", function(event) {
-			event.preventDefault();
-			event.stopPropagation();
-		});
-		elt.addEventListener("mousemove", function(event) {
-			event.preventDefault();
-			event.stopPropagation();
-		});
-		elt.addEventListener("click", function(event) {
-			event.preventDefault();
-			event.stopPropagation();
-		});
-		
-	},
-};
-
 /**
  * @fileoverview particle system parser/implementation
  * 
  * @author Tony Parisi
  */
 
-glam.ParticlesElement = {};
+goog.provide('glam.ParticlesElement');
 
 glam.ParticlesElement.create = function(docelt, style) {
 
@@ -59247,18 +57694,18 @@ glam.ParticlesElement.create = function(docelt, style) {
 	param.geometry = elts.geometry;
 
 	// Create the particle system
-	var ps = Vizi.ParticleSystem(param);
+	var ps = glam.ParticleSystem(param);
 
 	// Got emitters in there? Add them
 	glam.ParticlesElement.addEmitters(elts.emitters, ps);
 
 	// Bind the properties
-	var visual = ps.getComponent(Vizi.Visual);
+	var visual = ps.getComponent(glam.Visual);
 	docelt.geometry = visual.geometry;
 	docelt.material = visual.material;
 	
 	// Start it
-	var pscript = ps.getComponent(Vizi.ParticleSystemScript);	
+	var pscript = ps.getComponent(glam.ParticleSystemScript);	
 	pscript.active = true;
 	return ps;
 }
@@ -59292,7 +57739,7 @@ glam.ParticlesElement.parse = function(docelt) {
 			if (emitter) {
 				glam.ParticlesElement.parseEmitter(emitter, param);
 
-				var pe = new Vizi.ParticleEmitter(param);
+				var pe = new glam.ParticleEmitter(param);
 				result.emitters.push(pe);
 			}
 		}
@@ -59304,7 +57751,7 @@ glam.ParticlesElement.parse = function(docelt) {
 		verts = verts[0];
 		if (verts) {
 			var geometry = new THREE.Geometry;
-			glam.DOM.Types.parseVector3Array(verts, geometry.vertices);
+			glam.DOMTypes.parseVector3Array(verts, geometry.vertices);
 			result.geometry = geometry;
 		}
 	}
@@ -59349,22 +57796,22 @@ glam.ParticlesElement.parseEmitter = function(emitter, param) {
 
 	var vel = emitter.getAttribute('velocity');
 	if (vel) {
-		glam.DOM.Types.parseVector3(vel, velocity);
+		glam.DOMTypes.parseVector3(vel, velocity);
 	}
 	
 	var accel = emitter.getAttribute('acceleration');
 	if (accel) {
-		glam.DOM.Types.parseVector3(accel, acceleration);
+		glam.DOMTypes.parseVector3(accel, acceleration);
 	}
 	
 	var posSpread = emitter.getAttribute('positionSpread');
 	if (posSpread) {
-		glam.DOM.Types.parseVector3(posSpread, positionSpread);
+		glam.DOMTypes.parseVector3(posSpread, positionSpread);
 	}
 
 	var accelSpread = emitter.getAttribute('accelerationSpread');
 	if (accelSpread) {
-		glam.DOM.Types.parseVector3(accelSpread, accelerationSpread);
+		glam.DOMTypes.parseVector3(accelSpread, accelerationSpread);
 	}
 
 	var blending = THREE.NoBlending;
@@ -59421,122 +57868,1799 @@ glam.ParticlesElement.addEmitters = function(emitters, ps) {
 glam.ParticlesElement.DEFAULT_MAX_AGE = 1;
 
 /**
- * @fileoverview 2D rectangle parser/implementation
+ * @fileoverview RotateBehavior - simple angular rotation
  * 
  * @author Tony Parisi
  */
 
-glam.RectElement = {};
+goog.provide('glam.RotateBehavior');
+goog.require('glam.Behavior');
 
-glam.RectElement.DEFAULT_WIDTH = 2;
-glam.RectElement.DEFAULT_HEIGHT = 2;
-glam.RectElement.DEFAULT_WIDTH_SEGMENTS = 1;
-glam.RectElement.DEFAULT_HEIGHT_SEGMENTS = 1;
-
-glam.RectElement.create = function(docelt, style) {
-	return glam.VisualElement.create(docelt, style, glam.RectElement);
+glam.RotateBehavior = function(param) {
+	param = param || {};
+	this.duration = (param.duration !== undefined) ? param.duration : 1;
+	this.velocity = (param.velocity !== undefined) ? param.velocity : (Math.PI / 2 / this.duration);
+	this.startAngle = 0;
+	this.angle = 0;
+    glam.Behavior.call(this, param);
 }
 
-glam.RectElement.getAttributes = function(docelt, style, param) {
+goog.inherits(glam.RotateBehavior, glam.Behavior);
 
-	var width = docelt.getAttribute('width') || glam.RectElement.DEFAULT_WIDTH;
-	var height = docelt.getAttribute('height') || glam.RectElement.DEFAULT_HEIGHT;
-	var widthSegments = docelt.getAttribute('width') || glam.RectElement.DEFAULT_WIDTH_SEGMENTS;
-	var heightSegments = docelt.getAttribute('height') || glam.RectElement.DEFAULT_HEIGHT_SEGMENTS;
+glam.RotateBehavior.prototype.start = function()
+{
+	this.angle = 0;
+	this._object.transform.rotation.y = this._object.transform.rotation.y % (Math.PI * 2);
+	this.startAngle = this._object.transform.rotation.y;
 	
-	if (style) {
-		if (style.width)
-			width = style.width;
-		if (style.height)
-			height = style.height;
-		if (style.widthSegments)
-			widthSegments = style.widthSegments;
-		if (style.heightSegments)
-			heightSegments = style.heightSegments;
+	glam.Behavior.prototype.start.call(this);
+}
+
+glam.RotateBehavior.prototype.evaluate = function(t)
+{
+	var twopi = Math.PI * 2;
+	this.angle = this.velocity * t;
+	if (this.angle >= twopi)
+	{
+		if (this.once) 
+			this.angle = twopi;
+		else
+			this.angle = this.angle % twopi;
+	}
+		
+	this._object.transform.rotation.y = this.startAngle + this.angle;
+	
+	if (this.once && this.angle >= twopi)
+	{
+		this.stop();
+	}
+}/**
+ * @fileoverview Object collects a group of Components that define an object and its behaviors
+ * 
+ * @author Tony Parisi
+ */
+
+
+goog.require('glam.Prefabs');
+
+glam.Prefabs.Skysphere = function(param)
+{
+	param = param || {};
+	
+	var sphere = new glam.Object({layer:glam.Graphics.instance.backgroundLayer});
+
+	var material = new THREE.MeshBasicMaterial( {
+		color:0xffffff,
+//		side: THREE.BackSide
+
+	} );
+
+	var geometry = new THREE.SphereGeometry( 500, 32, 32 );
+	geometry.applyMatrix( new THREE.Matrix4().makeScale( -1, 1, 1 ) );
+	var visual = new glam.Visual(
+			{ geometry: geometry,
+				material: material,
+			});
+	sphere.addComponent(visual);
+	
+	var script = new glam.SkysphereScript(param);
+	sphere.addComponent(script);
+	
+	sphere.realize();
+
+	return sphere;
+}
+
+goog.provide('glam.SkysphereScript');
+goog.require('glam.Script');
+
+glam.SkysphereScript = function(param)
+{
+	glam.Script.call(this, param);
+
+	this.maincampos = new THREE.Vector3; 
+	this.maincamrot = new THREE.Quaternion; 
+	this.maincamscale = new THREE.Vector3; 
+	
+    Object.defineProperties(this, {
+    	texture: {
+			get : function() {
+				return this.material.map;
+			},
+			set: function(texture) {
+				this.material.map = texture;
+			}
+		},
+    });
+}
+
+goog.inherits(glam.SkysphereScript, glam.Script);
+
+glam.SkysphereScript.prototype.realize = function()
+{
+	var visual = this._object.getComponent(glam.Visual);
+	this.material = visual.material;
+
+	this.camera = glam.Graphics.instance.backgroundLayer.camera;
+	this.camera.far = 20000;
+	this.camera.position.set(0, 0, 0);
+}
+
+glam.SkysphereScript.prototype.update = function()
+{
+	var maincam = glam.Graphics.instance.camera;
+	maincam.updateMatrixWorld();
+	maincam.matrixWorld.decompose(this.maincampos, this.maincamrot, this.maincamscale);
+	this.camera.quaternion.copy(this.maincamrot);
+}
+
+goog.provide("glam.System");
+
+glam.System = {
+	log : function() {
+		var args = ["[glam] "].concat([].slice.call(arguments));
+		console.log.apply(console, args);
+	},
+	warn : function() {
+		var args = ["[glam] "].concat([].slice.call(arguments));
+		console.warn.apply(console, args);
+	},
+	error : function() {
+		var args = ["[glam] "].concat([].slice.call(arguments));
+		console.error.apply(console, args);
+	}
+};goog.provide('glam.PointLight');
+goog.require('glam.Light');
+
+glam.PointLight = function(param)
+{
+	param = param || {};
+	
+	glam.Light.call(this, param);
+	
+	this.positionVec = new THREE.Vector3;
+	
+	if (param.object) {
+		this.object = param.object; 
+	}
+	else {
+		var distance = ( param.distance !== undefined ) ? param.distance : glam.PointLight.DEFAULT_DISTANCE;
+		this.object = new THREE.PointLight(param.color, param.intensity, distance);
 	}
 	
-	width = parseFloat(width);
-	height = parseFloat(height);
-	widthSegments = parseInt(widthSegments);
-	heightSegments = parseInt(heightSegments);
+    // Create accessors for all properties... just pass-throughs to Three.js
+    Object.defineProperties(this, {
+        distance: {
+	        get: function() {
+	            return this.object.distance;
+	        },
+	        set: function(v) {
+	        	this.object.distance = v;
+	        }
+    	},    	
 
-	param.width = width;
-	param.height = height;
-	param.widthSegments = widthSegments;
-	param.heightSegments = heightSegments;
+    });
+
 }
 
-glam.RectElement.createVisual = function(docelt, material, param) {
+goog.inherits(glam.PointLight, glam.Light);
 
-	var visual = new Vizi.Visual(
-			{ geometry: new THREE.PlaneGeometry(param.width, param.height, param.widthSegments, param.heightSegments),
-				material: material
-			});
-
-	return visual;
+glam.PointLight.prototype.realize = function() 
+{
+	glam.Light.prototype.realize.call(this);
 }
+
+glam.PointLight.prototype.update = function() 
+{
+	if (this.object)
+	{
+		this.positionVec.set(0, 0, 0);
+		var worldmat = this.object.parent.matrixWorld;
+		this.positionVec.applyMatrix4(worldmat);
+		this.position.copy(this.positionVec);
+	}
+	
+	// Update the rest
+	glam.Light.prototype.update.call(this);
+}
+
+glam.PointLight.DEFAULT_DISTANCE = 0;
 /**
- * @fileoverview renderer parser/implementation
+ * @fileoverview Effect - GLAM postprocessing effect, wraps Three.js
  * 
  * @author Tony Parisi
  */
 
-glam.DOMRenderer = {
+goog.provide('glam.Effect');
+goog.require('glam.EventDispatcher');
+
+/**
+ * @constructor
+ */
+
+glam.Effect = function(shader)
+{
+    glam.EventDispatcher.call(this);	
+    
+	this.isShaderEffect = false;
+
+    if (shader.render && typeof(shader.render) == "function") {
+    	this.pass = shader;
+    }
+    else {
+    	this.pass = new THREE.ShaderPass(shader);
+    	this.isShaderEffect = true;
+    }
+}
+
+goog.inherits(glam.Effect, glam.EventDispatcher);
+
+glam.Effect.prototype.update = function() {
+
+	// hook for later - maybe we do
+	// subclass with specific knowledge about shader uniforms
+}
+
+/**
+ * @fileoverview Picker component - add one to get picking support on your object
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.PlaneDragger');
+goog.require('glam.Picker');
+
+glam.PlaneDragger = function(param) {
+	
+	param = param || {};
+	
+    glam.Picker.call(this, param);
+    
+    this.normal = param.normal || new THREE.Vector3(0, 0, 1);
+    this.position = param.position || new THREE.Vector3;
+    this.color = 0x0000aa;
+}
+
+goog.inherits(glam.PlaneDragger, glam.Picker);
+
+glam.PlaneDragger.prototype.realize = function()
+{
+	glam.Picker.prototype.realize.call(this);
+
+    // And some helpers
+    this.dragObject = null;
+	this.dragOffset = new THREE.Vector3;
+	this.dragHitPoint = new THREE.Vector3;
+	this.dragStartPoint = new THREE.Vector3;
+	this.dragPlane = this.createDragPlane();
+	this.dragPlane.visible = glam.PlaneDragger.SHOW_DRAG_PLANE;
+	this.dragPlane.ignorePick = true;
+	this.dragPlane.ignoreBounds = true;
+	this._object._parent.transform.object.add(this.dragPlane);
+}
+
+glam.PlaneDragger.prototype.createDragPlane = function() {
+
+	var size = 2000;
+	var normal = this.normal;
+	var position = this.position;
+	
+	var u = new THREE.Vector3(0, normal.z, -normal.y).normalize().multiplyScalar(size);
+	if (!u.lengthSq())
+		u = new THREE.Vector3(-normal.z, normal.x, 0).normalize().multiplyScalar(size);
+
+	var v = u.clone().cross(normal).normalize().multiplyScalar(size);
+	
+	var p1 = position.clone().sub(u).sub(v);
+	var p2 = position.clone().add(u).sub(v);
+	var p3 = position.clone().add(u).add(v);
+	var p4 = position.clone().sub(u).add(v);
+	
+	var planegeom = new THREE.Geometry();
+	planegeom.vertices.push(p1, p2, p3, p4); 
+	var planeface = new THREE.Face3( 0, 2, 1 );
+	planeface.normal.copy( normal );
+	planeface.vertexNormals.push( normal.clone(), normal.clone(), normal.clone(), normal.clone() );
+	planegeom.faces.push(planeface);
+	var planeface = new THREE.Face3( 0, 3, 2 );
+	planeface.normal.copy( normal );
+	planeface.vertexNormals.push( normal.clone(), normal.clone(), normal.clone(), normal.clone() );
+	planegeom.faces.push(planeface);
+	planegeom.computeFaceNormals();
+
+	var mat = new THREE.MeshBasicMaterial({color:this.color, transparent: true, side:THREE.DoubleSide, opacity:0.1 });
+
+	var mesh = new THREE.Mesh(planegeom, mat);
+	
+	return mesh;
+}
+
+glam.PlaneDragger.prototype.update = function() {
+}
+
+glam.PlaneDragger.prototype.onMouseMove = function(event) {
+	glam.Picker.prototype.onMouseMove.call(this, event);
+	this.handleMouseMove(event);
+}
+
+glam.PlaneDragger.prototype.handleMouseMove = function(event) {
+	var intersection = glam.Graphics.instance.getObjectIntersection(event.elementX, event.elementY, this.dragPlane);
+	
+	if (intersection)
+	{
+		this.dragHitPoint.copy(intersection.point).sub(this.dragOffset);
+		this.dragHitPoint.add(this.dragStartPoint);
+		this.dispatchEvent("drag", {
+									type : "drag", 
+									object : this.dragObject, 
+									offset : this.dragHitPoint
+									}
+		);
+	}
+}
+
+glam.PlaneDragger.prototype.onMouseDown = function(event) {
+	glam.Picker.prototype.onMouseDown.call(this, event);
+	this.handleMouseDown(event);
+}
+
+glam.PlaneDragger.prototype.handleMouseDown = function(event) {
+	var intersection = glam.Graphics.instance.getObjectIntersection(event.elementX, event.elementY, this.dragPlane);
+	
+	if (intersection)
+	{
+		this.dragOffset.copy(intersection.point);
+		this.dragStartPoint.copy(event.object.position);
+		this.dragHitPoint.copy(intersection.point).sub(this.dragOffset);
+		this.dragHitPoint.add(this.dragStartPoint);
+		this.dragObject = event.object;
+		this.dispatchEvent("dragstart", {
+			type : "dragstart", 
+			object : this.dragObject, 
+			offset : this.dragHitPoint
+			}
+);
+	}
+}
+
+glam.PlaneDragger.prototype.onMouseUp = function(event) {
+	glam.Picker.prototype.onMouseUp.call(this, event);
+	this.handleMouseUp(event);
+}
+
+glam.PlaneDragger.prototype.handleMouseUp = function(event) {
+}
+
+
+glam.PlaneDragger.prototype.onTouchStart = function(event) {
+	glam.Picker.prototype.onTouchStart.call(this, event);
+
+	this.handleMouseDown(event);
+}
+
+glam.PlaneDragger.prototype.onTouchMove = function(event) {
+	glam.Picker.prototype.onTouchMove.call(this, event);
+
+	this.handleMouseMove(event);
+}
+
+glam.PlaneDragger.prototype.onTouchEnd = function(event) {
+	glam.Picker.prototype.onTouchEnd.call(this, event);
+
+	this.handleMouseUp(event);
+}
+
+glam.PlaneDragger.SHOW_DRAG_PLANE = false;
+glam.PlaneDragger.SHOW_DRAG_NORMAL = false;/**
+ * @fileoverview A visual containing a model in Collada format
+ * @author Tony Parisi
+ */
+goog.provide('glam.SceneVisual');
+goog.require('glam.Visual');
+
+glam.SceneVisual = function(param) 
+{
+	param = param || {};
+	
+    glam.Visual.call(this, param);
+
+    this.object = param.scene;
+}
+
+goog.inherits(glam.SceneVisual, glam.Visual);
+
+glam.SceneVisual.prototype.realize = function()
+{
+	glam.Visual.prototype.realize.call(this);
+	
+    this.addToScene();
+}
+/**
+ * @fileoverview Contains prefab assemblies for core GLAM package
+ * @author Tony Parisi
+ */
+goog.provide('glam.Helpers');
+
+glam.Helpers.BoundingBoxDecoration = function(param) {
+	param = param || {};
+	if (!param.object) {
+		glam.warn("glam.Helpers.BoundingBoxDecoration requires an object");
+		return null;
+	}
+	
+	var object = param.object;
+	var color = param.color !== undefined ? param.color : 0x888888;
+	
+	var bbox = glam.SceneUtils.computeBoundingBox(object);
+	
+	var width = bbox.max.x - bbox.min.x,
+		height = bbox.max.y - bbox.min.y,
+		depth = bbox.max.z - bbox.min.z;
+	
+	var mesh = new THREE.BoxHelper();
+	mesh.material.color.setHex(color);
+	mesh.scale.set(width / 2, height / 2, depth / 2);
+	
+	var decoration = new glam.Decoration({object:mesh});
+	
+	var center = bbox.max.clone().add(bbox.min).multiplyScalar(0.5);
+	decoration.position.add(center);
+	
+	return decoration;
+}
+
+glam.Helpers.VectorDecoration = function(param) {
+
+	param = param || {};
+	
+	var start = param.start || new THREE.Vector3;
+	var end = param.end || new THREE.Vector3(0, 1, 0);
+	var color = param.color !== undefined ? param.color : 0x888888;
+	
+	var linegeom = new THREE.Geometry();
+	linegeom.vertices.push(start, end); 
+
+	var mat = new THREE.LineBasicMaterial({color:color});
+
+	var mesh = new THREE.Line(linegeom, mat);
+	
+	var decoration = new glam.Decoration({object:mesh});
+	return decoration;
+}
+
+glam.Helpers.PlaneDecoration = function(param) {
+
+	param = param || {};
+	
+	if (!param.normal && !param.triangle) {
+		glam.warn("glam.Helpers.PlaneDecoration requires either a normal or three coplanar points");
+		return null;
+	}
+
+	var normal = param.normal;
+	if (!normal) {
+		// do this later
+		glam.warn("glam.Helpers.PlaneDecoration creating plane from coplanar points not implemented yet");
+		return null;
+	}
+	
+	var position = param.position || new THREE.Vector3;	
+	var size = param.size || 1;
+	var color = param.color !== undefined ? param.color : 0x888888;
+	
+	var u = new THREE.Vector3(0, normal.z, -normal.y).normalize().multiplyScalar(size);
+	var v = u.clone().cross(normal).normalize().multiplyScalar(size);
+	
+	var p1 = position.clone().sub(u).sub(v);
+	var p2 = position.clone().add(u).sub(v);
+	var p3 = position.clone().add(u).add(v);
+	var p4 = position.clone().sub(u).add(v);
+	
+	var planegeom = new THREE.Geometry();
+	planegeom.vertices.push(p1, p2, p3, p4); 
+	var planeface = new THREE.Face3( 0, 1, 2 );
+	planeface.normal.copy( normal );
+	planeface.vertexNormals.push( normal.clone(), normal.clone(), normal.clone(), normal.clone() );
+	planegeom.faces.push(planeface);
+	var planeface = new THREE.Face3( 0, 2, 3 );
+	planeface.normal.copy( normal );
+	planeface.vertexNormals.push( normal.clone(), normal.clone(), normal.clone(), normal.clone() );
+	planegeom.faces.push(planeface);
+	planegeom.computeFaceNormals();
+	planegeom.computeCentroids();
+
+	var mat = new THREE.MeshBasicMaterial({color:color, transparent: true, side:THREE.DoubleSide, opacity:0.1 });
+
+	var mesh = new THREE.Mesh(planegeom, mat);
+	
+	var decoration = new glam.Decoration({object:mesh});
+	return decoration;
+}
+
+/**
+ * @fileoverview GLAM scene utilities
+ * @author Tony Parisi
+ */
+goog.provide('glam.SceneUtils');
+
+// Compute the bounding box of an object or hierarchy of objects
+glam.SceneUtils.computeBoundingBox = function(obj) {
+	
+	var computeBoundingBox = function(obj) {
+		if (obj instanceof THREE.Mesh && !obj.ignoreBounds) {
+			var geometry = obj.geometry;
+			if (geometry) {
+				if (!geometry.boundingBox) {
+					geometry.computeBoundingBox();
+				}
+				
+				var geometryBBox = geometry.boundingBox.clone();
+				obj.updateMatrix();
+				geometryBBox.applyMatrix4(obj.matrix);
+				return geometryBBox;
+			}
+			else {
+				return new THREE.Box3(new THREE.Vector3, new THREE.Vector3);
+			}
+		}
+		else {
+			var i, len = obj.children.length;
+			
+			var boundingBox = new THREE.Box3; // (new THREE.Vector3, new THREE.Vector3);
+			
+			for (i = 0; i < len; i++) {
+				var bbox = computeBoundingBox(obj.children[i]);
+				if ( bbox.min.x < boundingBox.min.x ) {
+
+					boundingBox.min.x = bbox.min.x;
+
+				}
+				
+				if ( bbox.max.x > boundingBox.max.x ) {
+
+					boundingBox.max.x = bbox.max.x;
+
+				}
+
+				if ( bbox.min.y < boundingBox.min.y ) {
+
+					boundingBox.min.y = bbox.min.y;
+
+				}
+				
+				if ( bbox.max.y > boundingBox.max.y ) {
+
+					boundingBox.max.y = bbox.max.y;
+
+				}
+
+				if ( bbox.min.z < boundingBox.min.z ) {
+
+					boundingBox.min.z = bbox.min.z;
+
+				}
+				
+				if ( bbox.max.z > boundingBox.max.z ) {
+
+					boundingBox.max.z = bbox.max.z;
+
+				}
+			}
+
+			if (isFinite(boundingBox.min.x)) {
+				obj.updateMatrix();
+				boundingBox.applyMatrix4(obj.matrix);
+			}
+			return boundingBox;
+		}
+	}
+	
+	if (obj instanceof glam.Object) {
+		return computeBoundingBox(obj.transform.object);
+	}
+	else if (obj instanceof glam.Visual) {
+		return computeBoundingBox(obj.object);
+	}
+	else {
+		return new THREE.Box3(new THREE.Vector3, new THREE.Vector3);
+	}
+}
+
+
+/**
+ * @fileoverview Loader - loads level files
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.Loader');
+goog.require('glam.EventDispatcher');
+
+/**
+ * @constructor
+ * @extends {glam.PubSub}
+ */
+glam.Loader = function()
+{
+    glam.EventDispatcher.call(this);	
+}
+
+goog.inherits(glam.Loader, glam.EventDispatcher);
+        
+glam.Loader.prototype.loadModel = function(url, userData)
+{
+	var spliturl = url.split('.');
+	var len = spliturl.length;
+	var ext = '';
+	if (len)
+	{
+		ext = spliturl[len - 1];
+	}
+	
+	if (ext && ext.length)
+	{
+	}
+	else
+	{
+		return;
+	}
+	
+	var loaderClass;
+	
+	switch (ext.toUpperCase())
+	{
+		case 'JS' :
+			loaderClass = THREE.JSONLoader;
+			break;
+		default :
+			break;
+	}
+	
+	if (loaderClass)
+	{
+		var loader = new loaderClass;
+		var that = this;
+		
+		loader.load(url, function (geometry, materials) {
+			that.handleModelLoaded(url, userData, geometry, materials);
+		});		
+	}
+}
+
+glam.Loader.prototype.handleModelLoaded = function(url, userData, geometry, materials)
+{
+	// Create a new mesh with per-face materials
+	var material = new THREE.MeshFaceMaterial(materials);
+	var mesh = new THREE.Mesh( geometry, material  );
+	
+	var obj = new glam.Object;
+	var visual = new glam.Visual({object:mesh});
+	obj.addComponent(visual);
+
+	var result = { scene : obj, cameras: [], lights: [], keyFrameAnimators:[] , userData: userData };
+	
+	this.dispatchEvent("loaded", result);
+}
+
+glam.Loader.prototype.loadScene = function(url, userData)
+{
+	var spliturl = url.split('.');
+	var len = spliturl.length;
+	var ext = '';
+	if (len)
+	{
+		ext = spliturl[len - 1];
+	}
+	
+	if (ext && ext.length)
+	{
+	}
+	else
+	{
+		return;
+	}
+	
+	var loaderClass;
+	
+	switch (ext.toUpperCase())
+	{
+		case 'DAE' :
+			loaderClass = THREE.ColladaLoader;
+			break;
+		case 'JS' :
+			return this.loadModel(url, userData);
+			break;
+		case 'JSON' :
+			loaderClass = THREE.glTFLoader;
+			break;
+		default :
+			break;
+	}
+	
+	if (loaderClass)
+	{
+		var loader = new loaderClass;
+		var that = this;
+		
+		loader.load(url, 
+				function (data) {
+					that.handleSceneLoaded(url, data, userData);
+				},
+				function (data) {
+					that.handleSceneProgress(url, data);
+				}
+		);		
+	}
+}
+
+glam.Loader.prototype.traverseCallback = function(n, result)
+{
+	// Look for cameras
+	if (n instanceof THREE.Camera)
+	{
+		if (!result.cameras)
+			result.cameras = [];
+		
+		result.cameras.push(n);
+	}
+
+	// Look for lights
+	if (n instanceof THREE.Light)
+	{
+		if (!result.lights)
+			result.lights = [];
+		
+		result.lights.push(n);
+	}
+}
+
+glam.Loader.prototype.handleSceneLoaded = function(url, data, userData)
+{
+	var result = {};
+	var success = false;
+	
+	if (data.scene)
+	{
+		// console.log("In loaded callback for ", url);
+		
+		var convertedScene = this.convertScene(data.scene);
+		result.scene = convertedScene; // new glam.SceneVisual({scene:data.scene}); // 
+		result.cameras = convertedScene.findNodes(glam.Camera);
+		result.lights = convertedScene.findNodes(glam.Light);
+		result.url = url;
+		result.userData = userData;
+		success = true;
+	}
+	
+	if (data.animations)
+	{
+		result.keyFrameAnimators = [];
+		var i, len = data.animations.length;
+		for (i = 0; i < len; i++)
+		{
+			var animations = [];
+			animations.push(data.animations[i]);
+			result.keyFrameAnimators.push(new glam.KeyFrameAnimator({animations:animations}));
+		}
+	}
+	
+	/*
+	if (data.skins && data.skins.length)
+	{
+		// result.meshAnimator = new glam.MeshAnimator({skins:data.skins});
+	}
+	*/
+	
+	if (success)
+		this.dispatchEvent("loaded", result);
+}
+
+glam.Loader.prototype.handleSceneProgress = function(url, progress)
+{
+	this.dispatchEvent("progress", progress);
+}
+
+glam.Loader.prototype.convertScene = function(scene) {
+
+	function convert(n) {
+		if (n instanceof THREE.Mesh) {
+			// cheap fixes for picking and animation; need to investigate
+			// the general case longer-term for glTF loader
+			n.matrixAutoUpdate = true;
+			n.geometry.dynamic = true;
+			var v = new glam.Visual({object:n});
+			v.name = n.name;
+			return v;
+		}
+		else if (n instanceof THREE.Camera) {
+			if (n instanceof THREE.PerspectiveCamera) {
+				return new glam.PerspectiveCamera({object:n});
+			}
+		}
+		else if (n instanceof THREE.Light) {
+			if (n instanceof THREE.AmbientLight) {
+				return new glam.AmbientLight({object:n});
+			}
+			else if (n instanceof THREE.DirectionalLight) {
+				return new glam.DirectionalLight({object:n});
+			}
+			else if (n instanceof THREE.PointLight) {
+				return new glam.PointLight({object:n});
+			}
+			else if (n instanceof THREE.SpotLight) {
+				return new glam.SpotLight({object:n});
+			}
+		}
+		else if (n.children) {
+			var o = new glam.Object({autoCreateTransform:false});
+			o.addComponent(new glam.Transform({object:n}));
+			o.name = n.name;
+			n.matrixAutoUpdate = true;
+			var i, len = n.children.length;
+			for (i = 0; i < len; i++) {
+				var childNode  = n.children[i];
+				var c = convert(childNode);
+				if (c instanceof glam.Object) {
+					o.addChild(c);
+				}
+				else if (c instanceof glam.Component) {
+					o.addComponent(c);
+				}
+				else {
+					// N.B.: what???
+				}
+			}
+		}
+		
+		return o;
+	}
+
+	// Pump through updates once so converted scene can pick up all the values
+	scene.updateMatrixWorld();
+
+	return convert(scene);
+}
+
+goog.require('glam.Prefabs');
+
+glam.Prefabs.ModelController = function(param)
+{
+	param = param || {};
+	
+	var controller = new glam.Object(param);
+	var controllerScript = new glam.ModelControllerScript(param);
+	controller.addComponent(controllerScript);
+
+	var intensity = param.headlight ? 1 : 0;
+	
+	var headlight = new glam.DirectionalLight({ intensity : intensity });
+	controller.addComponent(headlight);
+	
+	return controller;
+}
+
+goog.provide('glam.ModelControllerScript');
+goog.require('glam.Script');
+
+glam.ModelControllerScript = function(param)
+{
+	glam.Script.call(this, param);
+
+	this.radius = param.radius || glam.ModelControllerScript.default_radius;
+	this.minRadius = param.minRadius || glam.ModelControllerScript.default_min_radius;
+	this.minAngle = (param.minAngle !== undefined) ? param.minAngle : 
+		glam.ModelControllerScript.default_min_angle;
+	this.maxAngle = (param.maxAngle !== undefined) ? param.maxAngle : 
+		glam.ModelControllerScript.default_max_angle;
+	this.minDistance = (param.minDistance !== undefined) ? param.minDistance : 
+		glam.ModelControllerScript.default_min_distance;
+	this.maxDistance = (param.maxDistance !== undefined) ? param.maxDistance : 
+		glam.ModelControllerScript.default_max_distance;
+	this.allowPan = (param.allowPan !== undefined) ? param.allowPan : true;
+	this.allowZoom = (param.allowZoom !== undefined) ? param.allowZoom : true;
+	this.allowRotate = (param.allowRotate !== undefined) ? param.allowRotate : true;
+	this.oneButton = (param.oneButton !== undefined) ? param.oneButton : true;
+	this._enabled = (param.enabled !== undefined) ? param.enabled : true;
+	this._headlightOn = param.headlight;
+	this.cameras = [];
+	this.controlsList = [];
+	
+    Object.defineProperties(this, {
+    	camera: {
+			get : function() {
+				return this._camera;
+			},
+			set: function(camera) {
+				this.setCamera(camera);
+			}
+		},
+    	center : {
+    		get: function() {
+    			return this.controls.center;
+    		},
+    		set: function(c) {
+    			this.controls.center.copy(c);
+    		}
+    	},
+    	enabled : {
+    		get: function() {
+    			return this._enabled;
+    		},
+    		set: function(v) {
+    			this.setEnabled(v);
+    		}
+    	},
+        headlightOn: {
+	        get: function() {
+	            return this._headlightOn;
+	        },
+	        set:function(v)
+	        {
+	        	this.setHeadlightOn(v);
+	        }
+    	},
+    });
+}
+
+goog.inherits(glam.ModelControllerScript, glam.Script);
+
+glam.ModelControllerScript.prototype.realize = function()
+{
+	this.headlight = this._object.getComponent(glam.DirectionalLight);
+	this.headlight.intensity = this._headlightOn ? 1 : 0;
+}
+
+glam.ModelControllerScript.prototype.createControls = function(camera)
+{
+	var controls = new glam.OrbitControls(camera.object, glam.Graphics.instance.container);
+	controls.userMinY = this.minY;
+	controls.userMinZoom = this.minZoom;
+	controls.userMaxZoom = this.maxZoom;
+	controls.minPolarAngle = this.minAngle;
+	controls.maxPolarAngle = this.maxAngle;	
+	controls.minDistance = this.minDistance;	
+	controls.maxDistance = this.maxDistance;	
+	controls.oneButton = this.oneButton;
+	controls.userPan = this.allowPan;
+	controls.userZoom = this.allowZoom;
+	controls.userRotate = this.allowRotate;
+	controls.enabled = this._enabled;
+	return controls;
+}
+
+glam.ModelControllerScript.prototype.update = function()
+{
+	this.controls.update();
+	if (this._headlightOn)
+	{
+		this.headlight.direction.copy(this._camera.position).negate();
+	}	
+}
+
+glam.ModelControllerScript.prototype.setCamera = function(camera) {
+	this._camera = camera;
+	this._camera.position.set(0, this.radius / 2, this.radius);
+	this.controls = this.createControls(camera);
+}
+
+glam.ModelControllerScript.prototype.setHeadlightOn = function(on)
+{
+	this._headlightOn = on;
+	if (this.headlight) {
+		this.headlight.intensity = on ? 1 : 0;
+	}
+}
+
+glam.ModelControllerScript.prototype.setEnabled = function(enabled)
+{
+	this._enabled = enabled;
+	this.controls.enabled = enabled;
+}
+
+glam.ModelControllerScript.default_radius = 10;
+glam.ModelControllerScript.default_min_radius = 1;
+glam.ModelControllerScript.default_min_angle = 0;
+glam.ModelControllerScript.default_max_angle = Math.PI;
+glam.ModelControllerScript.default_min_distance = 0;
+glam.ModelControllerScript.default_max_distance = Infinity;
+glam.ModelControllerScript.MAX_X_ROTATION = 0; // Math.PI / 12;
+glam.ModelControllerScript.MIN_X_ROTATION = -Math.PI / 2;
+glam.ModelControllerScript.MAX_Y_ROTATION = Math.PI * 2;
+glam.ModelControllerScript.MIN_Y_ROTATION = -Math.PI * 2;
+
+goog.require('glam.Prefabs');
+
+glam.Prefabs.DeviceOrientationController = function(param)
+{
+	param = param || {};
+	
+	var controller = new glam.Object(param);
+	var controllerScript = new glam.DeviceOrientationControllerScript(param);
+	controller.addComponent(controllerScript);
+
+	var intensity = param.headlight ? 1 : 0;
+	
+	var headlight = new glam.DirectionalLight({ intensity : intensity });
+	controller.addComponent(headlight);
+		
+	return controller;
+}
+
+goog.provide('glam.DeviceOrientationControllerScript');
+goog.require('glam.Script');
+
+glam.DeviceOrientationControllerScript = function(param)
+{
+	glam.Script.call(this, param);
+
+	this._enabled = (param.enabled !== undefined) ? param.enabled : true;
+	this._headlightOn = param.headlight;
+	this.roll = (param.roll !== undefined) ? param.roll : true;
+		
+    Object.defineProperties(this, {
+    	camera: {
+			get : function() {
+				return this._camera;
+			},
+			set: function(camera) {
+				this.setCamera(camera);
+			}
+		},
+    	enabled : {
+    		get: function() {
+    			return this._enabled;
+    		},
+    		set: function(v) {
+    			this.setEnabled(v);
+    		}
+    	},
+        headlightOn: {
+	        get: function() {
+	            return this._headlightOn;
+	        },
+	        set:function(v)
+	        {
+	        	this.setHeadlightOn(v);
+	        }
+    	},
+    });
+}
+
+goog.inherits(glam.DeviceOrientationControllerScript, glam.Script);
+
+glam.DeviceOrientationControllerScript.prototype.realize = function() {
+	this.headlight = this._object.getComponent(glam.DirectionalLight);
+	this.headlight.intensity = this._headlightOn ? 1 : 0;
+}
+
+glam.DeviceOrientationControllerScript.prototype.createControls = function(camera)
+{
+	var controls = new glam.DeviceOrientationControlsCB(camera.object);
+	
+	if (this._enabled)
+		controls.connect();
+	
+	controls.roll = this.roll;
+	return controls;
+}
+
+glam.DeviceOrientationControllerScript.prototype.update = function()
+{
+	if (this._enabled)
+		this.controls.update();
+
+	if (this._headlightOn)
+	{
+		this.headlight.direction.copy(this._camera.position).negate();
+	}	
+}
+
+glam.DeviceOrientationControllerScript.prototype.setEnabled = function(enabled)
+{
+	this._enabled = enabled;
+	if (this._enabled)
+		this.controls.connect();
+	else
+		this.controls.disconnect();
+}
+
+glam.DeviceOrientationControllerScript.prototype.setHeadlightOn = function(on)
+{
+	this._headlightOn = on;
+	if (this.headlight) {
+		this.headlight.intensity = on ? 1 : 0;
+	}
+}
+
+glam.DeviceOrientationControllerScript.prototype.setCamera = function(camera) {
+	this._camera = camera;
+	this.controls = this.createControls(camera);
+}
+/**
+ * @fileoverview controller parser/implementation. supports model, FPS and Rift
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.ControllerElement');
+
+glam.ControllerElement.create = function(docelt, style, app) {
+	var on = true;
+	
+	var noheadlight = docelt.getAttribute("noheadlight");
+	if (noheadlight !== null) {
+		on = false;
+		app.controllerScript.headlightOn = false;
+	}
+	
+	var type = docelt.getAttribute("type");
+	if (type !== null) {
+		type = type.toLowerCase();
+		if (type == "fps") {
+			
+			var x = parseFloat(docelt.getAttribute('x')) || 0;
+			var y = parseFloat(docelt.getAttribute('y')) || 0;
+			var z = parseFloat(docelt.getAttribute('z')) || 0;
+			
+			var controller = glam.Prefabs.FirstPersonController({active:true, headlight:on});
+			var controllerScript = controller.getComponent(glam.FirstPersonControllerScript);
+			app.addObject(controller);
+
+			var object = new glam.Object;	
+			var camera = new glam.PerspectiveCamera();
+			object.addComponent(camera);
+			app.addObject(object);
+
+			controllerScript.camera = camera;
+			camera.active = true;
+			
+		}
+		else if (type == "rift") {
+			var controller = glam.Prefabs.RiftController({active:true, 
+				headlight:on,
+				mouseLook:false,
+				useVRJS : true,
+			});
+			var controllerScript = controller.getComponent(glam.RiftControllerScript);			
+			app.addObject(controller);
+
+			var object = new glam.Object;	
+			var camera = new glam.PerspectiveCamera();
+			object.addComponent(camera);
+			app.addObject(object);
+
+			controllerScript.camera = camera;
+			camera.active = true;
+			
+			if (app.controllerScript) {
+				app.controllerScript.enabled = false;
+			}
+			
+			// hack because existing FPS or model controller
+			// will clobber our values
+			app.controller = controller;
+			app.controllerScript = controllerScript;
+		}
+		else if (type == "deviceorientation") {
+			var controller = glam.Prefabs.DeviceOrientationController({active:true, 
+				headlight:on,
+				mouseLook:false,
+				useVRJS : true,
+			});
+			var controllerScript = controller.getComponent(glam.DeviceOrientationControllerScript);			
+			app.addObject(controller);
+
+			var object = new glam.Object;	
+			var camera = new glam.PerspectiveCamera();
+			object.addComponent(camera);
+			app.addObject(object);
+
+			controllerScript.camera = camera;
+			camera.active = true;
+			
+			if (app.controllerScript) {
+				app.controllerScript.enabled = false;
+			}
+			
+			// hack because existing FPS or model controller
+			// will clobber our values
+			app.controller = controller;
+			app.controllerScript = controllerScript;
+		}
+	}
+	
+	return null;
+}
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ * @author paulirish / http://paulirish.com/
+ */
+
+/* Heavily adapted version of Three.js FirstPerson controls for GLAM
+ * 
+ */
+
+goog.provide('glam.FirstPersonControls');
+
+glam.FirstPersonControls = function ( object, domElement ) {
+
+	this.object = object;
+	this.target = new THREE.Vector3( 0, 0, 0 );
+
+	this.domElement = ( domElement !== undefined ) ? domElement : document;
+
+	this.movementSpeed = 1.0;
+	this.lookSpeed = 1.0;
+
+	this.turnSpeed = 5; // degs
+	this.tiltSpeed = 5;
+	this.turnAngle = 0;
+	this.tiltAngle = 0;
+	
+	this.mouseX = 0;
+	this.mouseY = 0;
+	this.lastMouseX = 0;
+	this.lastMouseY = 0;
+
+	this.touchScreenX = 0;
+	this.touchScreenY = 0;
+	this.lookTouchId = -1;
+	this.moveTouchId = -1;
+	
+	this.lat = 0;
+	this.lon = 0;
+	this.phi = 0;
+	this.theta = 0;
+
+	this.moveForward = false;
+	this.moveBackward = false;
+	this.moveLeft = false;
+	this.moveRight = false;
+
+	this.turnRight = false;
+	this.turnLeft = false;
+	this.tiltUp = false;
+	this.tiltDown = false;
+	
+	this.mouseDragOn = false;
+	this.mouseLook = false;
+
+	this.viewHalfX = 0;
+	this.viewHalfY = 0;
+
+	if ( this.domElement !== document ) {
+
+		this.domElement.setAttribute( 'tabindex', -1 );
+
+	}
+
+	this.handleResize = function () {
+
+		if ( this.domElement === document ) {
+
+			this.viewHalfX = window.innerWidth / 2;
+			this.viewHalfY = window.innerHeight / 2;
+
+		} else {
+
+			this.viewHalfX = this.domElement.offsetWidth / 2;
+			this.viewHalfY = this.domElement.offsetHeight / 2;
+
+		}
+
+	};
+
+	this.onMouseDown = function ( event ) {
+
+		if ( this.domElement === document ) {
+
+			this.mouseX = event.pageX - this.viewHalfX;
+			this.mouseY = event.pageY - this.viewHalfY;
+
+		} else {
+
+			this.mouseX = event.pageX - this.domElement.offsetLeft - this.viewHalfX;
+			this.mouseY = event.pageY - this.domElement.offsetTop - this.viewHalfY;
+
+		}
+				
+		this.lastMouseX = this.mouseX;
+		this.lastMouseY = this.mouseY;
+		this.mouseDragOn = true;
+
+	};
+
+	this.onMouseUp = function ( event ) {
+
+		this.mouseDragOn = false;
+
+	};
+
+	this.onMouseMove = function ( event ) {
+
+		if ( this.domElement === document ) {
+
+			this.mouseX = event.pageX - this.viewHalfX;
+			this.mouseY = event.pageY - this.viewHalfY;
+
+		} else {
+
+			this.mouseX = event.pageX - this.domElement.offsetLeft - this.viewHalfX;
+			this.mouseY = event.pageY - this.domElement.offsetTop - this.viewHalfY;
+
+		}
+
+	};
+
+	this.onTouchStart = function ( event ) {
+
+		event.preventDefault();
+		
+		if (event.touches.length > 0) {
+
+			if (this.lookTouchId == -1) {
+				this.lookTouchId = event.touches[0].identifier;
+			
+				// synthesize a left mouse button event
+				var mouseEvent = {
+					'type': 'mousedown',
+				    'view': event.view,
+				    'bubbles': event.bubbles,
+				    'cancelable': event.cancelable,
+				    'detail': event.detail,
+				    'screenX': event.touches[0].screenX,
+				    'screenY': event.touches[0].screenY,
+				    'clientX': event.touches[0].clientX,
+				    'clientY': event.touches[0].clientY,
+				    'pageX': event.touches[0].pageX,
+				    'pageY': event.touches[0].pageY,
+				    'button': 0,
+				    'preventDefault' : event.preventDefault
+					};
+				
+				this.onMouseDown(mouseEvent);
+			}
+			else {
+				// second touch does move
+				this.touchScreenX = event.touches[1].screenX; 
+				this.touchScreenY = event.touches[1].screenY;
+				this.moveTouchId = event.touches[1].identifier;
+			}
+			
+		}
+		
+	}
+
+	
+	this.onTouchMove = function ( event ) {
+
+		event.preventDefault();
+		
+		var lookTouch = null, moveTouch = null, 
+			len = event.changedTouches.length;
+		
+		for (var i = 0; i < len; i++) {
+			
+			if (event.changedTouches[i].identifier == this.lookTouchId)
+				lookTouch = event.changedTouches[i];
+			
+			if (event.changedTouches[i].identifier == this.moveTouchId)
+				moveTouch = event.changedTouches[i];
+				
+		}
+		
+		if (lookTouch) {
+			// synthesize a left mouse button event
+			var mouseEvent = {
+				'type': 'mousemove',
+			    'view': event.view,
+			    'bubbles': event.bubbles,
+			    'cancelable': event.cancelable,
+			    'detail': event.detail,
+			    'screenX': lookTouch.screenX,
+			    'screenY': lookTouch.screenY,
+			    'clientX': lookTouch.clientX,
+			    'clientY': lookTouch.clientY,
+			    'pageX': lookTouch.pageX,
+			    'pageY': lookTouch.pageY,
+			    'button': 0,
+			    'preventDefault' : event.preventDefault
+				};
+			
+			this.onMouseMove(mouseEvent);
+		}
+
+
+		if (moveTouch) {
+			// second touch does move
+			var deltaX = moveTouch.screenX - this.touchScreenX;
+			var deltaY = moveTouch.screenY - this.touchScreenY;
+			
+			this.touchScreenX = moveTouch.screenX; 
+			this.touchScreenY = moveTouch.screenY; 
+			
+			if (deltaX > 0) {
+				this.moveRight = true;
+			}
+			
+			if (deltaX < 0) {
+				this.moveLeft = true;
+			}
+
+			if (deltaY > 0) {
+				this.moveBackward = true;
+			}
+			
+			if (deltaY < 0) {
+				this.moveForward = true;
+			}
+
+			
+		}
+	
+	}
+
+	
+	this.onTouchEnd = function ( event ) {
+		
+		event.preventDefault();
+		
+		var lookTouch = null, moveTouch = null, 
+		len = event.changedTouches.length;
+	
+		for (var i = 0; i < len; i++) {
+			
+			if (event.changedTouches[i].identifier == this.lookTouchId)
+				lookTouch = event.changedTouches[i];
+			
+			if (event.changedTouches[i].identifier == this.moveTouchId)
+				moveTouch = event.changedTouches[i];
+				
+		}
+
+		if (lookTouch) {
+			// synthesize a left mouse button event
+			var mouseEvent = {
+				'type': 'mouseup',
+			    'view': event.view,
+			    'bubbles': event.bubbles,
+			    'cancelable': event.cancelable,
+			    'detail': event.detail,
+			    'screenX': lookTouch.screenX,
+			    'screenY': lookTouch.screenY,
+			    'clientX': lookTouch.clientX,
+			    'clientY': lookTouch.clientY,
+			    'pageX': lookTouch.pageX,
+			    'pageY': lookTouch.pageY,
+			    'button': 0,
+			    'preventDefault' : event.preventDefault
+			};
+			
+			this.onMouseUp(mouseEvent);
+			
+			this.lookTouchId = -1;
+		}
+		
+		if (moveTouch) {
+			// second touch does move
+			this.touchScreenX = moveTouch.screenX; 
+			this.touchScreenY = moveTouch.screenY; 
+			
+			this.moveRight = false;		
+			this.moveLeft = false;
+			this.moveBackward = false;
+			this.moveForward = false;
+			
+			this.moveTouchId = -1;
+		}
+		
+	}
+	
+	this.onGamepadButtonsChanged = function ( event ) {
+	}
+	
+	var MOVE_VTHRESHOLD = 0.2;
+	var MOVE_HTHRESHOLD = 0.5;
+	this.onGamepadAxesChanged = function ( event ) {
+
+		var axes = event.changedAxes;
+		var i, len = axes.length;
+		for (i = 0; i < len; i++) {
+			var axis = axes[i];
+			
+			if (axis.axis == glam.Gamepad.AXIS_LEFT_V) {
+				// +Y is down
+				if (axis.value < -MOVE_VTHRESHOLD) {
+					this.moveForward = true;
+					this.moveBackward = false;
+				}
+				else if (axis.value > MOVE_VTHRESHOLD) {
+					this.moveBackward = true;
+					this.moveForward = false;
+				}
+				else {
+					this.moveBackward = false;
+					this.moveForward = false;
+				}
+			}
+			else if (axis.axis == glam.Gamepad.AXIS_LEFT_H) {
+				// +X is to the right
+				if (axis.value > MOVE_HTHRESHOLD) {
+					this.moveRight = true;
+					this.moveLeft = false;
+				}
+				else if (axis.value < -MOVE_HTHRESHOLD) {
+					this.moveLeft = true;
+					this.moveRight = false;
+				}
+				else {
+					this.moveLeft = false;
+					this.moveRight = false;
+				}
+			}
+			else if (axis.axis == glam.Gamepad.AXIS_RIGHT_V) {
+				// +Y is down
+				if (axis.value < -MOVE_VTHRESHOLD) {
+					this.tiltUp = true;
+					this.tiltDown = false;
+				}
+				else if (axis.value > MOVE_VTHRESHOLD) {
+					this.tiltDown = true;
+					this.tiltUp = false;
+				}
+				else {
+					this.tiltDown = false;
+					this.tiltUp = false;
+				}
+			}
+			else if (axis.axis == glam.Gamepad.AXIS_RIGHT_H) {
+				if (axis.value > MOVE_HTHRESHOLD) {
+					this.turnLeft = true;
+					this.turnRight = false;
+				}
+				else if (axis.value < -MOVE_HTHRESHOLD) {
+					this.turnRight = true;
+					this.turnLeft = false;
+				}
+				else {
+					this.turnLeft = false;
+					this.turnRight = false;
+				}
+			}
+		
+		}
+	};
+	
+	this.onKeyDown = function ( event ) {
+
+		//event.preventDefault();
+
+		switch ( event.keyCode ) {
+
+			case 38: /*up*/
+			case 87: /*W*/ this.moveForward = true; break;
+
+			case 37: /*left*/
+			case 65: /*A*/ this.moveLeft = true; break;
+
+			case 40: /*down*/
+			case 83: /*S*/ this.moveBackward = true; break;
+
+			case 39: /*right*/
+			case 68: /*D*/ this.moveRight = true; break;
+
+			case 82: /*R*/ this.moveUp = true; break;
+			case 70: /*F*/ this.moveDown = true; break;
+
+		}
+
+	};
+
+	this.onKeyUp = function ( event ) {
+
+		switch( event.keyCode ) {
+
+			case 38: /*up*/
+			case 87: /*W*/ this.moveForward = false; break;
+
+			case 37: /*left*/
+			case 65: /*A*/ this.moveLeft = false; break;
+
+			case 40: /*down*/
+			case 83: /*S*/ this.moveBackward = false; break;
+
+			case 39: /*right*/
+			case 68: /*D*/ this.moveRight = false; break;
+
+			case 82: /*R*/ this.moveUp = false; break;
+			case 70: /*F*/ this.moveDown = false; break;
+
+		}
+
+	};
+
+	this.update = function( delta ) {
+
+		if ( this.enabled === false ) return;
+		
+		this.startY = this.object.position.y;
+		
+		var actualMoveSpeed = delta * this.movementSpeed;
+
+		if ( this.moveForward ) 
+			this.object.translateZ( - actualMoveSpeed );
+		if ( this.moveBackward ) 
+			this.object.translateZ( actualMoveSpeed );
+
+		if ( this.moveLeft ) 
+			this.object.translateX( - actualMoveSpeed );
+		if ( this.moveRight ) 
+			this.object.translateX( actualMoveSpeed );
+
+		this.object.position.y = this.startY;
+		
+		var actualLookSpeed = delta * this.lookSpeed;
+
+		var DRAG_DEAD_ZONE = 1;
+		
+		if ((this.mouseDragOn || this.mouseLook) && this.lookSpeed) {
+			
+			var deltax = this.lastMouseX - this.mouseX;
+			if (Math.abs(deltax) < DRAG_DEAD_ZONE)
+				dlon = 0;
+			var dlon = deltax / this.viewHalfX * 900;
+			this.lon += dlon * this.lookSpeed;
+
+			var deltay = this.lastMouseY - this.mouseY;
+			if (Math.abs(deltay) < DRAG_DEAD_ZONE)
+				dlat = 0;
+			var dlat = deltay / this.viewHalfY * 900;
+			this.lat += dlat * this.lookSpeed;
+			
+			this.theta = THREE.Math.degToRad( this.lon );
+
+			this.lat = Math.max( - 85, Math.min( 85, this.lat ) );
+			this.phi = THREE.Math.degToRad( this.lat );
+
+			var targetPosition = this.target,
+				position = this.object.position;
+	
+			targetPosition.x = position.x - Math.sin( this.theta );
+			targetPosition.y = position.y + Math.sin( this.phi );
+			targetPosition.z = position.z - Math.cos( this.theta );
+	
+			this.object.lookAt( targetPosition );
+			
+			this.lastMouseX = this.mouseX;
+			this.lastMouseY = this.mouseY;
+		}
+		
+		if (this.turnRight || this.turnLeft || this.tiltUp || this.tiltDown) {
+			
+			var dlon = 0;
+			if (this.turnRight)
+				dlon = 1;
+			else if (this.turnLeft)
+				dlon = -1;
+			this.lon += dlon * this.turnSpeed;
+			
+			var dlat = 0;
+			if (this.tiltUp)
+				dlat = 1;
+			else if (this.tiltDown)
+				dlat = -1;
+
+			this.lat += dlat * this.tiltSpeed;
+
+			this.theta = THREE.Math.degToRad( this.lon );
+
+			this.lat = Math.max( - 85, Math.min( 85, this.lat ) );
+			this.phi = THREE.Math.degToRad( this.lat );
+
+			var targetPosition = this.target,
+				position = this.object.position;
+	
+			if (this.turnSpeed) {
+				targetPosition.x = position.x - Math.sin( this.theta );
+			}
+			
+			if (this.tiltSpeed) {
+				targetPosition.y = position.y + Math.sin( this.phi );
+				targetPosition.z = position.z - Math.cos( this.theta );
+			}
+			
+			if (this.turnSpeed || this.tiltSpeed) {
+				this.object.lookAt( targetPosition );
+			}
+		}
+	};
+
+
+	this.domElement.addEventListener( 'contextmenu', function ( event ) { event.preventDefault(); }, false );
+
+	this.domElement.addEventListener( 'mousemove', bind( this, this.onMouseMove ), true );
+	this.domElement.addEventListener( 'mousedown', bind( this, this.onMouseDown ), false );
+	this.domElement.addEventListener( 'mouseup', bind( this, this.onMouseUp ), false );
+	this.domElement.addEventListener( 'touchstart', bind( this, this.onTouchStart), false );
+	this.domElement.addEventListener( 'touchmove', bind( this, this.onTouchMove), false );
+	this.domElement.addEventListener( 'touchend', bind( this, this.onTouchEnd), false );
+	this.domElement.addEventListener( 'keydown', bind( this, this.onKeyDown ), false );
+	this.domElement.addEventListener( 'keyup', bind( this, this.onKeyUp ), false );
+	this.domElement.addEventListener( 'resize', bind( this, this.handleResize ), false );
+	
+	var gamepad = glam.Gamepad.instance;
+	if (gamepad) {
+		gamepad.addEventListener( 'buttonsChanged', bind( this, this.onGamepadButtonsChanged ), false );
+		gamepad.addEventListener( 'axesChanged', bind( this, this.onGamepadAxesChanged ), false );
+	}
+	
+	function bind( scope, fn ) {
+
+		return function () {
+
+			fn.apply( scope, arguments );
+
+		};
+
+	};
+
+	this.handleResize();
+
 };
 /**
- * @fileoverview sphere primitive parser/implementation
+ * @fileoverview mouse input implementation
  * 
  * @author Tony Parisi
  */
 
-glam.SphereElement = {};
+goog.provide('glam.DOMInput');
 
-glam.SphereElement.DEFAULT_RADIUS = 2;
-glam.SphereElement.DEFAULT_WIDTH_SEGMENTS = 32;
-glam.SphereElement.DEFAULT_HEIGHT_SEGMENTS = 32;
+glam.DOMInput = {};
 
-glam.SphereElement.create = function(docelt, style) {
-	return glam.VisualElement.create(docelt, style, glam.SphereElement);
-}
-
-glam.SphereElement.getAttributes = function(docelt, style, param) {
+glam.DOMInput.add = function(docelt, obj) {
 	
-	var radius = docelt.getAttribute('radius') || glam.SphereElement.DEFAULT_RADIUS;
-	var widthSegments = docelt.getAttribute('width-segments') || glam.SphereElement.DEFAULT_WIDTH_SEGMENTS;
-	var heightSegments = docelt.getAttribute('height-segments') || glam.SphereElement.DEFAULT_HEIGHT_SEGMENTS;
-	
-	if (style) {
-		if (style.radius)
-			radius = style.radius;
-		if (style.widthSegments || style["width-segments"])
-			widthSegments = style.widthSegments || style["width-segments"];
-		if (style.heightSegments || style["height-segments"])
-			heightSegments = style.heightSegments || style["height-segments"];
+	function addListener(picker, evt) {
+		picker.addEventListener(evt, function(event){
+			var domEvent = new CustomEvent(
+					evt, 
+					{
+						detail: {
+						},
+						bubbles: true,
+						cancelable: true
+					}
+				);
+			for (var propName in event) {
+				domEvent[propName] = event[propName];
+			}
+			var res = docelt.dispatchEvent(domEvent);
+			
+		});
 	}
-
-	radius = parseFloat(radius);
-	widthSegments = parseInt(widthSegments);
-	heightSegments = parseInt(heightSegments);
 	
-	param.radius = radius;
-	param.widthSegments = widthSegments;
-	param.heightSegments = heightSegments;
-}
-
-glam.SphereElement.createVisual = function(docelt, material, param) {
-
-	var visual = new Vizi.Visual(
-			{ geometry: new THREE.SphereGeometry(param.radius, param.widthSegments, param.heightSegments),
-				material: material
-			});
+	var picker = new glam.Picker;
 	
-	return visual;
+	var events = ["click", "mouseover", "mouseout", "mousedown", "mouseup", "mousemove"];
+	for (var index in events) {
+		var evt = events[index];
+		addListener(picker, evt);
+	}
+		
+	obj.addComponent(picker);
+
+	var viewpicker = new glam.ViewPicker;
+	obj.addComponent(viewpicker);
+	addListener(viewpicker, "viewover")
+	addListener(viewpicker, "viewout");
 }
 /**
  * @fileoverview styles support - emulate built-in DOM style object
  * 
  * @author Tony Parisi
  */
+
+goog.provide('glam.DOMStyle');
 
 glam.DOMStyle = function(docelt) {
 
@@ -59551,7 +59675,7 @@ glam.DOMStyle = function(docelt) {
 glam.DOMStyle.prototype = new Object;
 
 glam.DOMStyle.prototype.addProperties = function(props) {
-	for (p in props) {
+	for (var p in props) {
 		this.addProperty(p, props[p]);
 	}
 }
@@ -59684,181 +59808,145 @@ glam.DOMStyle._standardProperties = {
 };
 
 /**
- * @fileoverview text primitive parser/implementation. only supports helvetiker and optimer fonts right now.
+ * @fileoverview Timer - component that generates time events
+ * 
+ * @author Tony Parisi
+ */
+goog.provide('glam.Timer');
+goog.require('glam.Component');
+
+glam.Timer = function(param)
+{
+    glam.Component.call(this);
+    param = param || {};
+    
+    this.currentTime = glam.Time.instance.currentTime;
+    this.running = false;
+    this.duration = param.duration ? param.duration : 0;
+    this.loop = (param.loop !== undefined) ? param.loop : false;
+    this.lastFraction = 0;
+}
+
+goog.inherits(glam.Timer, glam.Component);
+
+glam.Timer.prototype.update = function()
+{
+	if (!this.running)
+		return;
+	
+	var now = glam.Time.instance.currentTime;
+	var deltat = now - this.currentTime;
+	
+	if (deltat)
+	{
+	    this.dispatchEvent("time", now);		
+	}
+	
+	if (this.duration)
+	{
+		var mod = now % this.duration;
+		var fract = mod / this.duration;
+		
+		this.dispatchEvent("fraction", fract);
+		
+		if (fract < this.lastFraction)
+		{
+			this.dispatchEvent("cycleTime");
+			
+			if (!this.loop)
+			{
+				this.stop();
+			}
+		}
+		
+		this.lastFraction = fract;
+	}
+	
+	this.currentTime = now;
+	
+}
+
+glam.Timer.prototype.start = function()
+{
+	this.running = true;
+	this.currentTime = glam.Time.instance.currentTime;
+}
+
+glam.Timer.prototype.stop = function()
+{
+	this.running = false;
+}
+
+/**
+ * @fileoverview Object collects a group of Components that define an object and its behaviors
  * 
  * @author Tony Parisi
  */
 
-glam.TextElement = {};
 
-glam.TextElement.DEFAULT_FONT_SIZE = 1;
-glam.TextElement.DEFAULT_FONT_DEPTH = .2;
-glam.TextElement.DEFAULT_FONT_BEVEL = "none";
-glam.TextElement.DEFAULT_BEVEL_SIZE = .01;
-glam.TextElement.DEFAULT_BEVEL_THICKNESS = .02;
-glam.TextElement.DEFAULT_FONT_FAMILY = "helvetica";
-glam.TextElement.DEFAULT_FONT_WEIGHT = "normal";
-glam.TextElement.DEFAULT_FONT_STYLE = "normal";
+goog.require('glam.Prefabs');
 
-glam.TextElement.BEVEL_EPSILON = 0.0001;
+glam.Prefabs.HUD = function(param) {
 
-glam.TextElement.DEFAULT_VALUE = "",
+	param = param || {};
+	
+	var hud = new glam.Object();
 
-glam.TextElement.create = function(docelt, style) {
-	return glam.VisualElement.create(docelt, style, glam.TextElement);
+	var hudScript = new glam.HUDScript(param);
+	hud.addComponent(hudScript);
+	
+	return hud;
 }
 
-glam.TextElement.getAttributes = function(docelt, style, param) {
+goog.provide('glam.HUDScript');
+goog.require('glam.Script');
 
-	// Font stuff
-	// for now: helvetiker, optimer - typeface.js stuff
-	// could also do: gentilis, droid sans, droid serif but the files are big.
-	var fontFamily = docelt.getAttribute('fontFamily') || glam.TextElement.DEFAULT_FONT_FAMILY; // "optimer";
-	var fontWeight = docelt.getAttribute('fontWeight') || glam.TextElement.DEFAULT_FONT_WEIGHT; // "bold"; // normal bold
-	var fontStyle = docelt.getAttribute('fontStyle') || glam.TextElement.DEFAULT_FONT_STYLE; // "normal"; // normal italic
-
-	// Size, depth, bevel etc.
-	var fontSize = docelt.getAttribute('fontSize') || glam.TextElement.DEFAULT_FONT_SIZE;
-	var fontDepth = docelt.getAttribute('fontDepth') || glam.TextElement.DEFAULT_FONT_DEPTH;
-	var fontBevel = docelt.getAttribute('fontBevel') || glam.TextElement.DEFAULT_FONT_BEVEL;
-	var bevelSize = docelt.getAttribute('bevelSize') || glam.TextElement.DEFAULT_BEVEL_SIZE;
-	var bevelThickness = docelt.getAttribute('bevelThickness') || glam.TextElement.DEFAULT_BEVEL_THICKNESS;
+glam.HUDScript = function(param) {
 	
-	if (style) {
-		if (style["font-family"])
-			fontFamily = style["font-family"];
-		if (style["font-weight"])
-			fontWeight = style["font-weight"];
-		if (style["font-style"])
-			fontStyle = style["font-style"];
-		if (style["font-size"])
-			fontSize = style["font-size"];
-		if (style["font-depth"])
-			fontDepth = style["font-depth"];
-		if (style["font-bevel"])
-			fontBevel = style["font-bevel"];
-		if (style["bevel-size"])
-			bevelSize = style["bevel-size"];
-		if (style["bevel-thickness"])
-			bevelThickness = style["bevel-thickness"];
-	}
+	glam.Script.call(this, param);
 
-	// set up defaults, safeguards; convert to typeface.js names
-	fontFamily = fontFamily.toLowerCase();
-	switch (fontFamily) {
-		case "optima" :
-			fontFamily = "optimer"; 
-			break;
-		case "helvetica" :
-		default :
-			fontFamily = "helvetiker"; 
-			break;
-	}
-
-	// final safeguard, make sure font is there. if not, use helv
-	var face = THREE.FontUtils.faces[fontFamily];
-	if (!face) {
-		fontFamily = "helvetiker"; 
-	}
-	
-	fontWeight = fontWeight.toLowerCase();
-	if (fontWeight != "bold") {
-		fontWeight = "normal";
-	}
-
-	fontStyle = fontStyle.toLowerCase();
-	// N.B.: for now, just use normal, italic doesn't seem to work 
-	if (true) { // fontStyle != "italic") {
-		fontStyle = "normal";
-	}
-	
-	fontSize = parseFloat(fontSize);
-	fontDepth = parseFloat(fontDepth);
-	bevelSize = parseFloat(bevelSize);
-	bevelThickness = parseFloat(bevelThickness);
-	bevelEnabled = (fontBevel.toLowerCase() == "bevel") ? true : false;
-	if (!fontDepth) {
-		bevelEnabled = false;
-	}
-	// hack because no-bevel shading has bad normals along text edge
-	if (!bevelEnabled) {
-		bevelThickness = bevelSize = glam.TextElement.BEVEL_EPSILON;
-		bevelEnabled = true;
-	}
-
-	// The text value
-	var value = docelt.getAttribute('value') || glam.TextElement.DEFAULT_VALUE;
-
-	if (!value) {
-		value = docelt.textContent;
-	}
-	
-	param.value = value;
-	param.fontSize = fontSize;
-	param.fontDepth = fontDepth;
-	param.bevelSize = bevelSize;
-	param.bevelThickness = bevelThickness;
-	param.bevelEnabled = bevelEnabled;
-	param.fontFamily = fontFamily;
-	param.fontWeight = fontWeight;
-	param.fontStyle = fontStyle;
+	this.zDistance = (param.zDistance !== undefined) ? param.zDistance : glam.HUDScript.DEFAULT_Z_DISTANCE;
+	this.position = new THREE.Vector3(0, 0, -this.zDistance);
+	this.savedPosition = this.position.clone();
+	this.scale = new THREE.Vector3;
+	this.quaternion = new THREE.Quaternion;
 }
 
-glam.TextElement.createVisual = function(docelt, material, param) {
+goog.inherits(glam.HUDScript, glam.Script);
 
-	if (!param.value) {
-		return null;
+glam.HUDScript.prototype.realize = function() {
+}
+
+glam.HUDScript.EPSILON = 0.001;
+
+glam.HUDScript.prototype.update = function() {
+	
+	var cam = glam.Graphics.instance.camera;
+	
+	cam.updateMatrixWorld();
+	
+	cam.matrixWorld.decompose(this.position, this.quaternion, this.scale);
+	
+	this._object.transform.quaternion.copy(this.quaternion);
+	this._object.transform.position.copy(this.position);
+	this._object.transform.translateZ(-this.zDistance);
+	
+	if (this.savedPosition.distanceTo(this.position) > glam.HUDScript.EPSILON) {
+		console.log("Position changed:", this.position)
 	}
 	
-	var curveSegments = 4;
-
-	var textGeo = new THREE.TextGeometry( param.value, {
-
-		font: param.fontFamily,
-		weight: param.fontWeight,
-		style: param.fontStyle,
-
-		size: param.fontSize,
-		height: param.fontDepth,
-		curveSegments: curveSegments,
-
-		bevelThickness: param.bevelThickness,
-		bevelSize: param.bevelSize,
-		bevelEnabled: param.bevelEnabled,
-
-		material: 0,
-		extrudeMaterial: 1
-
-	});
-
-	textGeo.computeBoundingBox();
-	textGeo.computeVertexNormals();
-
-	var frontMaterial = material.clone();
-	frontMaterial.shading = THREE.FlatShading;
-	var extrudeMaterial = material.clone();
-	extrudeMaterial.shading = THREE.SmoothShading;
-	var textmat = new THREE.MeshFaceMaterial( [ frontMaterial,  // front
-	                                            extrudeMaterial // side
-	                                            ]);
-
-
-	var visual = new Vizi.Visual(
-			{ geometry: textGeo,
-				material: textmat
-			});
-
-	textGeo.center();
-	
-	return visual;
+	this.savedPosition.copy(this.position);
 }
+
+glam.HUDScript.DEFAULT_Z_DISTANCE = 1;
+
 /**
  * @fileoverview transform properties parser/implementation
  * 
  * @author Tony Parisi
  */
 
-glam.DOMTransform = {};
+goog.provide('glam.DOMTransform');
 
 glam.DOMTransform.parse = function(docelt, style, obj) {
 	
@@ -60036,421 +60124,343 @@ glam.DOMTransform.onSetAttribute = function(obj, docelt, attr, val) {
 	}
 }
 /**
- * @fileoverview transition parser/implementation - still WIP
+ * @fileoverview Picker component - add one to get picking support on your object
  * 
  * @author Tony Parisi
  */
 
-glam.TransitionElement = {};
+goog.provide('glam.CylinderDragger');
+goog.require('glam.Picker');
 
-glam.TransitionElement.DEFAULT_DURATION = glam.AnimationElement.DEFAULT_DURATION;
-glam.TransitionElement.DEFAULT_TIMING_FUNCTION =  glam.AnimationElement.DEFAULT_TIMING_FUNCTION;
-
-// transition:transform 2s, background-color 5s linear 2s;
-
-glam.TransitionElement.parse = function(docelt, style, obj) {
-
-	var transition = style.transition || "";
+glam.CylinderDragger = function(param) {
 	
-	var transitions = {
-	};
+	param = param || {};
 	
-	var comps = transition.split(",");
-	var i, len = comps.length;
-	for (i = 0; i < len; i++) {
-		var comp = comps[i];
-		if (comp) {
-			var params = comp.split(" ");
-			if (params[0] == "")
-				params.shift();
-			var propname = params[0];
-			var duration = params[1];
-			var timingFunction = params[2] || glam.TransitionElement.DEFAULT_TIMING_FUNCTION;
-			var delay = params[3] || "";
+    glam.Picker.call(this, param);
+    
+    this.normal = param.normal || new THREE.Vector3(0, 1, 0);
+    this.position = param.position || new THREE.Vector3;
+    this.color = 0xaa0000;
+}
+
+goog.inherits(glam.CylinderDragger, glam.Picker);
+
+glam.CylinderDragger.prototype.realize = function()
+{
+	glam.Picker.prototype.realize.call(this);
+
+    // And some helpers
+    this.dragObject = null;
+	this.dragOffset = new THREE.Euler;
+	this.currentOffset = new THREE.Euler;
+	this.dragHitPoint = new THREE.Vector3;
+	this.dragStartPoint = new THREE.Vector3;
+	this.dragPlane = this.createDragPlane();
+	this.dragPlane.visible = glam.CylinderDragger.SHOW_DRAG_PLANE;
+	this.dragPlane.ignorePick = true;
+	this.dragPlane.ignoreBounds = true;
+	this._object.transform.object.add(this.dragPlane);
+}
+
+glam.CylinderDragger.prototype.createDragPlane = function() {
+
+	var size = 2000;
+	var normal = this.normal;
+	var position = this.position;
+	
+	var u = new THREE.Vector3(0, normal.z, -normal.y).normalize().multiplyScalar(size);
+	if (!u.lengthSq())
+		u = new THREE.Vector3(-normal.z, normal.x, 0).normalize().multiplyScalar(size);
+
+	var v = u.clone().cross(normal).normalize().multiplyScalar(size);
+	
+	var p1 = position.clone().sub(u).sub(v);
+	var p2 = position.clone().add(u).sub(v);
+	var p3 = position.clone().add(u).add(v);
+	var p4 = position.clone().sub(u).add(v);
+	
+	var planegeom = new THREE.Geometry();
+	planegeom.vertices.push(p1, p2, p3, p4); 
+	var planeface = new THREE.Face3( 0, 2, 1 );
+	planeface.normal.copy( normal );
+	planeface.vertexNormals.push( normal.clone(), normal.clone(), normal.clone(), normal.clone() );
+	planegeom.faces.push(planeface);
+	var planeface = new THREE.Face3( 0, 3, 2 );
+	planeface.normal.copy( normal );
+	planeface.vertexNormals.push( normal.clone(), normal.clone(), normal.clone(), normal.clone() );
+	planegeom.faces.push(planeface);
+	planegeom.computeFaceNormals();
+
+	var mat = new THREE.MeshBasicMaterial({color:this.color, transparent: true, side:THREE.DoubleSide, opacity:0.1 });
+
+	var mesh = new THREE.Mesh(planegeom, mat);
+	
+	return mesh;
+}
+
+glam.CylinderDragger.prototype.update = function()
+{
+}
+
+glam.CylinderDragger.prototype.onMouseDown = function(event) {
+	glam.Picker.prototype.onMouseDown.call(this, event);
+	this.handleMouseDown(event);
+}
+
+glam.CylinderDragger.prototype.handleMouseDown = function(event) {
+	
+	if (this.dragPlane) {
+		
+		var intersection = glam.Graphics.instance.getObjectIntersection(event.elementX, event.elementY, this.dragPlane);
+		
+		if (intersection)
+		{			
+//			this.toModelSpace(intersection.point);
+			this.dragStartPoint.copy(intersection.point).normalize();
+//			this.dragOffset.copy(this._object.transform.rotation);
+			this.dragObject = event.object;
+		    this.dispatchEvent("dragstart", {
+		        type : "dragstart",
+		        offset : intersection.point
+		    });
+		    
+		}
+	    
+	}
+	
+	if (glam.CylinderDragger.SHOW_DRAG_NORMAL) {
+		
+		if (this.arrowDecoration)
+			this._object.removeComponent(this.arrowDecoration);
+		
+		var mesh = new THREE.ArrowHelper(this.normal, new THREE.Vector3, 500, 0x00ff00, 5, 5);
+		var visual = new glam.Decoration({object:mesh});
+		this._object.addComponent(visual);
+		this.arrowDecoration = visual;
+		
+	}
+}
+
+glam.CylinderDragger.prototype.onMouseMove = function(event) {
+	glam.Picker.prototype.onMouseMove.call(this, event);
+	this.handleMouseMove(event);
+}
+
+glam.CylinderDragger.prototype.handleMouseMove = function(event) {
+	
+	var intersection = glam.Graphics.instance.getObjectIntersection(event.elementX, event.elementY, this.dragPlane);
+	
+	if (intersection)
+	{
+//		this.toModelSpace(intersection.point);
+		var projectedPoint = intersection.point.clone().normalize();
+		var theta = Math.acos(projectedPoint.dot(this.dragStartPoint));
+		var cross = projectedPoint.clone().cross(this.dragStartPoint);
+		if (this.normal.dot(cross) > 0)
+			theta = -theta;
+		
+		this.currentOffset.set(this.dragOffset.x + this.normal.x * theta, 
+				this.dragOffset.y + this.normal.y * theta,
+				this.dragOffset.z + this.normal.z * theta);
 			
-			duration = glam.AnimationElement.parseTime(duration);
-			timingFunction = glam.AnimationElement.parseTimingFunction(timingFunction);
-			delay = glam.AnimationElement.parseTime(delay);
-			
-			transitions[propname] = {
-					duration : duration,
-					timingFunction : timingFunction,
-					delay : delay
-			};
-		}
+		this.dispatchEvent("drag", {
+				type : "drag", 
+				offset : this.currentOffset,
+			}
+		);
 	}
-	
 }
+
+glam.CylinderDragger.prototype.onMouseUp = function(event) {
+	glam.Picker.prototype.onMouseUp.call(this, event);
+	this.handleMouseUp(event);
+}
+
+glam.CylinderDragger.prototype.handleMouseUp = function(event) {
+	
+	if (this.arrowDecoration)
+		this._object.removeComponent(this.arrowDecoration);
+
+}
+
+glam.CylinderDragger.prototype.onTouchStart = function(event) {
+	glam.Picker.prototype.onTouchStart.call(this, event);
+
+	this.handleMouseDown(event);
+}
+
+glam.CylinderDragger.prototype.onTouchMove = function(event) {
+	glam.Picker.prototype.onTouchMove.call(this, event);
+
+	this.handleMouseMove(event);
+}
+
+glam.CylinderDragger.prototype.onTouchEnd = function(event) {
+	glam.Picker.prototype.onTouchEnd.call(this, event);
+
+	this.handleMouseUp(event);
+}
+
+glam.CylinderDragger.SHOW_DRAG_PLANE = false;
+glam.CylinderDragger.SHOW_DRAG_NORMAL = false;
 /**
- * @fileoverview built-in types and utilities to support glam parser
+ * @fileoverview Module Configuration
  * 
  * @author Tony Parisi
  */
 
-glam.DOM.Types = {
-};
-
-// statics
-glam.DOM.Types.types = {
-		"box" :  { cls : glam.BoxElement, transform:true, animation:true, input:true, visual:true },
-		"cone" :  { cls : glam.ConeElement, transform:true, animation:true, input:true, visual:true },
-		"cylinder" :  { cls : glam.CylinderElement, transform:true, animation:true, input:true, visual:true },
-		"sphere" :  { cls : glam.SphereElement, transform:true, animation:true, input:true, visual:true },
-		"rect" :  { cls : glam.RectElement, transform:true, animation:true, input:true, visual:true },
-		"circle" :  { cls : glam.CircleElement, transform:true, animation:true, input:true, visual:true },
-		"arc" :  { cls : glam.ArcElement, transform:true, animation:true, input:true, visual:true },
-		"group" :  { cls : glam.GroupElement, transform:true, animation:true, input:true },
-		"animation" :  { cls : glam.AnimationElement },
-		"background" :  { cls : glam.BackgroundElement },
-		"import" :  { cls : glam.ImportElement, transform:true, animation:true },
-		"camera" :  { cls : glam.CameraElement, transform:true, animation:true },
-		"controller" :  { cls : glam.ControllerElement },
-		"text" :  { cls : glam.TextElement, transform:true, animation:true, input:true, visual:true },
-		"mesh" :  { cls : glam.MeshElement, transform:true, animation:true, input:true, visual:true },
-		"line" :  { cls : glam.LineElement, transform:true, animation:true, visual:true },
-		"light" :  { cls : glam.LightElement, transform:true, animation:true },
-		"particles" :  { cls : glam.ParticlesElement, transform:true, animation:true },
-		"effect" :  { cls : glam.EffectElement, },
-};
-
-
-glam.DOM.Types.parseVector3Array = function(element, vertices) {
-
-	var text = element.textContent;
-	var nums = text.split(" ");
-	
-	var i, len = nums.length;
-	if (len < 3)
-		return;
-	
-	for (i = 0; i < len; i += 3) {
-		
-		var x = parseFloat(nums[i]), 
-			y = parseFloat(nums[i + 1]), 
-			z = parseFloat(nums[i + 2]);
-		
-		var vec = new THREE.Vector3(x, y, z);
-		vertices.push(vec);
-	}
-}
-
-glam.DOM.Types.parseVector3 = function(text, vec) {
-
-	var nums = text.split(" ");
-	
-	var i, len = nums.length;
-	if (len < 3)
-		return;
-	
-	var x = parseFloat(nums[0]), 
-		y = parseFloat(nums[1]), 
-		z = parseFloat(nums[2]);
-	
-	vec.set(x, y, z);
-}
-
-glam.DOM.Types.parseVector2Array = function(element, uvs) {
-	var text = element.textContent;
-	var nums = text.split(" ");
-	
-	var i, len = nums.length;
-	if (len < 2)
-		return;
-	
-	for (i = 0; i < len; i += 2) {
-		
-		var x = parseFloat(nums[i]), 
-			y = parseFloat(nums[i + 1]);
-		
-		var vec = new THREE.Vector2(x, y);
-		uvs.push(vec);
-	}
-
-}
-
-glam.DOM.Types.parseColor3Array = function(element, colors) {
-	var text = element.textContent;
-	var nums = text.split(" ");
-	
-	var i, len = nums.length;
-	if (len < 3)
-		return;
-	
-	for (i = 0; i < len; i += 3) {
-		
-		var r = parseFloat(nums[i]), 
-			g = parseFloat(nums[i + 1]), 
-			b = parseFloat(nums[i + 2]);
-		
-		var c = new THREE.Color(r, g, b);
-		colors.push(c);
-	}
-
-}
-
-
-glam.DOM.Types.parseColor3 = function(text, c) {
-
-	var nums = text.split(" ");
-	
-	var i, len = nums.length;
-	if (len < 3)
-		return;
-	
-	var r = parseFloat(nums[0]), 
-		g = parseFloat(nums[1]), 
-		b = parseFloat(nums[2]);
-	
-	c.setRGB(r, g, b);
-}
-
-glam.DOM.Types.parseFaceArray = function(element, faces) {
-	
-	var text = element.textContent;
-	var nums = text.split(" ");
-	
-	var i, len = nums.length;
-	if (len < 1)
-		return;
-	
-	for (i = 0; i < len; i += 3) {
-		
-		var a = parseInt(nums[i]), 
-			b = parseInt(nums[i + 1]), 
-			c = parseInt(nums[i + 2]);
-		
-		var face = new THREE.Face3(a, b, c);
-		faces.push(face);
-	}
-
-}
-
-glam.DOM.Types.parseUVArray = function(element, uvs) {
-	var text = element.textContent;
-	var nums = text.split(" ");
-	
-	var i, len = nums.length;
-	if (len < 6)
-		return;
-	
-	for (i = 0; i < len; i += 6) {
-		
-		var faceUvs = [];
-		
-		for (var j = 0; j < 3; j++) {
-			var x = parseFloat(nums[i + j * 2]);
-			var y = parseFloat(nums[i + j * 2 + 1]);
-			var vec = new THREE.Vector2(x, y);
-			faceUvs.push(vec);
-		}
-		
-		uvs.push(faceUvs);
-	}
-
-}
-/**
- * @fileoverview viewer - creates WebGL (Three.js/Vizi scene) by traversing document
- * 
- * @author Tony Parisi
- */
-
-glam.DOMViewer = function(doc) {
-
-	this.document = doc;
-	this.documentParent = doc.parentElement;
-	this.riftRender = glam.DOM.riftRender || false;
-	this.cardboardRender = glam.DOM.cardboardRender || false;
-	this.displayStats = glam.DOM.displayStats || false;
-}
-
-glam.DOMViewer.prototype = new Object;
-
-glam.DOMViewer.prototype.initRenderer = function() {
-	var renderers = this.document.getElementsByTagName('renderer');
-	if (renderers) {
-		var renderer = renderers[0];
-		if (renderer) {
-			var type = renderer.getAttribute("type").toLowerCase();
-			if (type == "rift") {
-				this.riftRender = true;
-			}
-			else if (type == "cardboard") {
-				this.cardboardRender = true;
-			}
-		}
-	}
-	this.app = new Vizi.Viewer({ container : this.documentParent, 
-		headlight: false, 
-		riftRender:this.riftRender, 
-		cardboard:this.cardboardRender,
-		displayStats:this.displayStats });
-}
-
-glam.DOMViewer.prototype.initDefaultScene = function() {
-	
-	this.scene = new Vizi.Object;
-	this.app.sceneRoot.addChild(this.scene);
-	this.app.defaultCamera.position.set(0, 0, 5);
-}
-
-glam.DOMViewer.prototype.traverseScene = function() {
-	var scenes = this.document.getElementsByTagName('scene');
-	if (scenes) {
-		var scene = scenes[0];
-		this.traverse(scene, this.scene);
-	}
-	else {
-		console.warn("Document error! glam requires one 'scene' element");
-		return;
-	}
-}
-
-glam.DOMViewer.prototype.traverse = function(docelt, sceneobj) {
-
-	var tag = docelt.tagName;
-
-	var i, len, children = docelt.childNodes, len = children.length;
-	for (i = 0; i < len; i++) {
-		var childelt = children[i];
-		var tag = childelt.tagName;
-		if (tag)
-			tag = tag.toLowerCase();
-
-		var fn = null;
-		var type = tag ? glam.DOM.Types.types[tag] : null;
-		if (type && type.cls && (fn = type.cls.create) && typeof(fn) == "function") {
-			// console.log("    * found it in table!");
-			glam.DOMElement.init(childelt);
-			var style = glam.DOMElement.getStyle(childelt);
-			var obj = fn.call(this, childelt, style, this.app);
-			if (obj) {
-				childelt.glam.object = obj;
-				this.addFeatures(childelt, style, obj, type);
-				sceneobj.addChild(obj);
-				this.traverse(childelt, obj);
-			}
-		}
-	}
-	
-}
-
-glam.DOMViewer.prototype.addNode = function(docelt) {
-
-	var tag = docelt.tagName;
-	if (tag)
-		tag = tag.toLowerCase();
-	var fn = null;
-	var type = tag ? glam.DOM.Types.types[tag] : null;
-	if (type && type.cls && (fn = type.cls.create) && typeof(fn) == "function") {
-
-		glam.DOMElement.init(docelt);
-		var style = glam.DOMElement.getStyle(docelt);
-		var obj = fn.call(this, docelt, style, this.app);
-		
-		if (obj) {
-			docelt.glam.object = obj;
-			this.addFeatures(docelt, style, obj, type);
-			this.scene.addChild(obj);
-			this.traverse(docelt, obj);
-		}
-	}
-}
-
-glam.DOMViewer.prototype.removeNode = function(docelt) {
-
-	var obj = docelt.glam.object;
-	if (obj) {
-		obj._parent.removeChild(obj);
-	}
-}
-
-glam.DOMViewer.prototype.addFeatures = function(docelt, style, obj, type) {
-
-	if (type.transform) {
-		glam.DOMTransform.parse(docelt, style, obj);
-	}
-	
-	if (type.animation) {
-		glam.AnimationElement.parse(docelt, style, obj);
-		glam.TransitionElement.parse(docelt, style, obj);
-	}
-
-	if (type.input) {
-		glam.DOMInput.add(docelt, obj);
-	}
-	
-	if (type.visual) {
-		glam.VisualElement.addProperties(docelt, obj);
-		glam.DOMMaterial.addHandlers(docelt, style, obj);
-	}
-}
-
-glam.DOMViewer.prototype.go = function() {
-	// Run it
-	this.initRenderer();
-	this.initDefaultScene();
-	this.traverseScene();
-	this.prepareViewsAndControllers();
-	this.app.run();
-}
-
-glam.DOMViewer.prototype.prepareViewsAndControllers = function() {
-	
-	var cameras = this.app.cameras;
-	if (cameras && cameras.length) {
-		var cam = cameras[0];
-		var controller = Vizi.Application.instance.controllerScript;
-		controller.camera = cam;
-		controller.enabled = true;
-		cam.active = true;
-	}
-}
+goog.provide('glam.Modules');
+goog.require('glam.Component');
+goog.require('glam.Object');
+goog.require('glam.Application');
+goog.require('glam.Service');
+goog.require('glam.Services');
+goog.require('glam.AnimationService');
+goog.require('glam.Interpolator');
+goog.require('glam.KeyFrameAnimator');
+goog.require('glam.Transition');
+goog.require('glam.TweenService');
+goog.require('glam.Behavior');
+goog.require('glam.BounceBehavior');
+goog.require('glam.FadeBehavior');
+goog.require('glam.HighlightBehavior');
+goog.require('glam.MoveBehavior');
+goog.require('glam.RotateBehavior');
+goog.require('glam.ScaleBehavior');
+goog.require('glam.Camera');
+goog.require('glam.CameraManager');
+goog.require('glam.PerspectiveCamera');
+goog.require('glam.FirstPersonControls');
+goog.require('glam.OrbitControls');
+goog.require('glam.FirstPersonControllerScript');
+goog.require('glam.PointerLockControllerScript');
+goog.require('glam.PointerLockControls');
+goog.require('glam.ModelControllerScript');
+goog.require('glam.DeviceOrientationControlsCB');
+goog.require('glam.DeviceOrientationControllerScript');
+goog.require('glam.OculusRiftControls');
+goog.require('glam.RiftControllerScript');
+goog.require('glam.EventDispatcher');
+goog.require('glam.EventService');
+goog.require('glam.Graphics');
+goog.require('glam.Helpers');
+goog.require('glam.Input');
+goog.require('glam.Keyboard');
+goog.require('glam.Mouse');
+goog.require('glam.Gamepad');
+goog.require('glam.Picker');
+goog.require('glam.PickManager');
+goog.require('glam.CylinderDragger');
+goog.require('glam.PlaneDragger');
+goog.require('glam.SurfaceDragger');
+goog.require('glam.ViewPicker');
+goog.require('glam.Light');
+goog.require('glam.AmbientLight');
+goog.require('glam.DirectionalLight');
+goog.require('glam.PointLight');
+goog.require('glam.SpotLight');
+goog.require('glam.Loader');
+goog.require('glam.HUDScript');
+goog.require('glam.SkyboxScript');
+goog.require('glam.SkysphereScript');
+goog.require('glam.Prefabs');
+goog.require('glam.Decoration');
+goog.require('glam.ParticleEmitter');
+goog.require('glam.ParticleSystemScript');
+goog.require('glam.Composer');
+goog.require('glam.Effect');
+goog.require('glam.SceneComponent');
+goog.require('glam.SceneUtils');
+goog.require('glam.SceneVisual');
+goog.require('glam.Transform');
+goog.require('glam.Visual');
+goog.require('glam.Script');
+goog.require('glam.System');
+goog.require('glam.Time');
+goog.require('glam.Timer');
+goog.require('glam.Viewer');
+goog.require('glam.DOM');
+goog.require('glam.AnimationElement');
+goog.require('glam.ArcElement');
+goog.require('glam.BackgroundElement');
+goog.require('glam.BoxElement');
+goog.require('glam.CameraElement');
+goog.require('glam.CircleElement');
+goog.require('glam.DOMClassList');
+goog.require('glam.ConeElement');
+goog.require('glam.ControllerElement');
+goog.require('glam.CylinderElement');
+goog.require('glam.DOMDocument');
+goog.require('glam.EffectElement');
+goog.require('glam.GroupElement');
+goog.require('glam.DOMInput');
+goog.require('glam.LightElement');
+goog.require('glam.LineElement');
+goog.require('glam.DOMMaterial');
+goog.require('glam.MeshElement');
+goog.require('glam.DOMElement');
+goog.require('glam.DOMParser');
+goog.require('glam.ParticlesElement');
+goog.require('glam.RectElement');
+goog.require('glam.DOMRenderer');
+goog.require('glam.SphereElement');
+goog.require('glam.DOMStyle');
+goog.require('glam.TextElement');
+goog.require('glam.DOMTransform');
+goog.require('glam.TransitionElement');
+goog.require('glam.DOMTypes');
+goog.require('glam.DOMViewer');
+goog.require('glam.VisualElement');
 
 /**
- * @fileoverview visual base type - used by all thing seen on screen
- * 
- * @author Tony Parisi
+ * @constructor
  */
-
-glam.VisualElement = {};
-
-glam.VisualElement.create = function(docelt, style, cls) {
-
-	var param = {
-	};
-	
-	cls.getAttributes(docelt, style, param);
-	
-	var obj = new Vizi.Object;	
-	
-	var material = glam.DOMMaterial.create(style, function(material) {
-		glam.VisualElement.createVisual(obj, cls, docelt, material, param);
-	});
-	
-	if (material) {
-		glam.VisualElement.createVisual(obj, cls, docelt, material, param);
-	}
-	
-	return obj;
+glam.Modules = function()
+{
 }
 
-glam.VisualElement.createVisual = function(obj, cls, docelt, material, param) {
-	var visual = cls.createVisual(docelt, material, param);	
-	if (visual) {
-		obj.addComponent(visual);
-		glam.VisualElement.addProperties(docelt, obj);
-	}
-}
+var CLOSURE_NO_DEPS = true;
 
-glam.VisualElement.addProperties = function(docelt, obj) {
+goog.provide('glam');
 
-	var visuals = obj.getComponents(Vizi.Visual);
-	var visual = visuals[0];
+glam.loadUrl = function(url, element, options) {
 	
-	if (visual) {
-		// Is this the API?	
-		docelt.geometry = visual.geometry;
-		docelt.material = visual.material;
+	options = options || {};
+	options.container = element;
+	var viewer = new glam.Viewer(options);
+	var loader = new glam.Loader;
+	loader.addEventListener("loaded", function(data) { onLoadComplete(data, loadStartTime); }); 
+	loader.addEventListener("progress", function(progress) { onLoadProgress(progress); }); 
+	var loadStartTime = Date.now();
+	loader.loadScene(url);
+	viewer.run();
+
+	function onLoadComplete(data, loadStartTime) {
+		var loadTime = (Date.now() - loadStartTime) / 1000;
+		glam.System.log("glam.loadUrl, scene loaded in ", loadTime, " seconds.");
+		viewer.replaceScene(data);
+		if (viewer.cameras.length > 1) {
+			viewer.useCamera(1);
+		}
+		
+		if (options.headlight) {
+			viewer.setHeadlightOn(true);
+		}
 	}
+
+	function onLoadProgress(progress) {
+		var percentProgress = progress.loaded / progress.total * 100;
+		glam.System.log("glam.loadUrl, ", percentProgress, " % loaded.");
+	}
+
+	return { viewer : viewer };
 }
-if (_typeface_js && _typeface_js.loadFace) _typeface_js.loadFace({"glyphs":{"ο":{"x_min":0,"x_max":764,"ha":863,"o":"m 380 -25 q 105 87 211 -25 q 0 372 0 200 q 104 660 0 545 q 380 775 209 775 q 658 659 552 775 q 764 372 764 544 q 658 87 764 200 q 380 -25 552 -25 m 379 142 q 515 216 466 142 q 557 373 557 280 q 515 530 557 465 q 379 607 466 607 q 245 530 294 607 q 204 373 204 465 q 245 218 204 283 q 379 142 294 142 "},"S":{"x_min":0,"x_max":826,"ha":915,"o":"m 826 306 q 701 55 826 148 q 423 -29 587 -29 q 138 60 255 -29 q 0 318 13 154 l 208 318 q 288 192 216 238 q 437 152 352 152 q 559 181 506 152 q 623 282 623 217 q 466 411 623 372 q 176 487 197 478 q 18 719 18 557 q 136 958 18 869 q 399 1040 244 1040 q 670 956 561 1040 q 791 713 791 864 l 591 713 q 526 826 583 786 q 393 866 469 866 q 277 838 326 866 q 218 742 218 804 q 374 617 218 655 q 667 542 646 552 q 826 306 826 471 "},"¦":{"x_min":0,"x_max":143,"ha":240,"o":"m 143 462 l 0 462 l 0 984 l 143 984 l 143 462 m 143 -242 l 0 -242 l 0 280 l 143 280 l 143 -242 "},"/":{"x_min":196.109375,"x_max":632.5625,"ha":828,"o":"m 632 1040 l 289 -128 l 196 -128 l 538 1040 l 632 1040 "},"Τ":{"x_min":-0.609375,"x_max":808,"ha":878,"o":"m 808 831 l 508 831 l 508 0 l 298 0 l 298 831 l 0 831 l 0 1013 l 808 1013 l 808 831 "},"y":{"x_min":0,"x_max":738.890625,"ha":828,"o":"m 738 749 l 444 -107 q 361 -238 413 -199 q 213 -277 308 -277 q 156 -275 176 -277 q 120 -271 131 -271 l 120 -110 q 147 -113 134 -111 q 179 -116 161 -116 q 247 -91 226 -116 q 269 -17 269 -67 q 206 173 269 -4 q 84 515 162 301 q 0 749 41 632 l 218 749 l 376 207 l 529 749 l 738 749 "},"Π":{"x_min":0,"x_max":809,"ha":922,"o":"m 809 0 l 598 0 l 598 836 l 208 836 l 208 0 l 0 0 l 0 1012 l 809 1012 l 809 0 "},"ΐ":{"x_min":-162,"x_max":364,"ha":364,"o":"m 364 810 l 235 810 l 235 952 l 364 952 l 364 810 m 301 1064 l 86 810 l -12 810 l 123 1064 l 301 1064 m -33 810 l -162 810 l -162 952 l -33 952 l -33 810 m 200 0 l 0 0 l 0 748 l 200 748 l 200 0 "},"g":{"x_min":0,"x_max":724,"ha":839,"o":"m 724 48 q 637 -223 724 -142 q 357 -304 551 -304 q 140 -253 226 -304 q 23 -72 36 -192 l 243 -72 q 290 -127 255 -110 q 368 -144 324 -144 q 504 -82 470 -144 q 530 71 530 -38 l 530 105 q 441 25 496 51 q 319 0 386 0 q 79 115 166 0 q 0 377 0 219 q 77 647 0 534 q 317 775 166 775 q 534 656 456 775 l 534 748 l 724 748 l 724 48 m 368 167 q 492 237 447 167 q 530 382 530 297 q 490 529 530 466 q 364 603 444 603 q 240 532 284 603 q 201 386 201 471 q 240 239 201 300 q 368 167 286 167 "},"²":{"x_min":0,"x_max":463,"ha":560,"o":"m 463 791 q 365 627 463 706 q 151 483 258 555 l 455 483 l 455 382 l 0 382 q 84 565 0 488 q 244 672 97 576 q 331 784 331 727 q 299 850 331 824 q 228 876 268 876 q 159 848 187 876 q 132 762 132 820 l 10 762 q 78 924 10 866 q 228 976 137 976 q 392 925 322 976 q 463 791 463 874 "},"–":{"x_min":0,"x_max":704.171875,"ha":801,"o":"m 704 297 l 0 297 l 0 450 l 704 450 l 704 297 "},"Κ":{"x_min":0,"x_max":899.671875,"ha":969,"o":"m 899 0 l 646 0 l 316 462 l 208 355 l 208 0 l 0 0 l 0 1013 l 208 1013 l 208 596 l 603 1013 l 863 1013 l 460 603 l 899 0 "},"ƒ":{"x_min":-46,"x_max":440,"ha":525,"o":"m 440 609 l 316 609 l 149 -277 l -46 -277 l 121 609 l 14 609 l 14 749 l 121 749 q 159 949 121 894 q 344 1019 208 1019 l 440 1015 l 440 855 l 377 855 q 326 841 338 855 q 314 797 314 827 q 314 773 314 786 q 314 749 314 761 l 440 749 l 440 609 "},"e":{"x_min":0,"x_max":708,"ha":808,"o":"m 708 321 l 207 321 q 254 186 207 236 q 362 141 298 141 q 501 227 453 141 l 700 227 q 566 36 662 104 q 362 -26 477 -26 q 112 72 213 -26 q 0 369 0 182 q 95 683 0 573 q 358 793 191 793 q 619 677 531 793 q 708 321 708 561 m 501 453 q 460 571 501 531 q 353 612 420 612 q 247 570 287 612 q 207 453 207 529 l 501 453 "},"ό":{"x_min":0,"x_max":764,"ha":863,"o":"m 380 -25 q 105 87 211 -25 q 0 372 0 200 q 104 660 0 545 q 380 775 209 775 q 658 659 552 775 q 764 372 764 544 q 658 87 764 200 q 380 -25 552 -25 m 379 142 q 515 216 466 142 q 557 373 557 280 q 515 530 557 465 q 379 607 466 607 q 245 530 294 607 q 204 373 204 465 q 245 218 204 283 q 379 142 294 142 m 593 1039 l 391 823 l 293 823 l 415 1039 l 593 1039 "},"J":{"x_min":0,"x_max":649,"ha":760,"o":"m 649 294 q 573 48 649 125 q 327 -29 497 -29 q 61 82 136 -29 q 0 375 0 173 l 200 375 l 199 309 q 219 194 199 230 q 321 145 249 145 q 418 193 390 145 q 441 307 441 232 l 441 1013 l 649 1013 l 649 294 "},"»":{"x_min":-0.234375,"x_max":526,"ha":624,"o":"m 526 286 l 297 87 l 296 250 l 437 373 l 297 495 l 297 660 l 526 461 l 526 286 m 229 286 l 0 87 l 0 250 l 140 373 l 0 495 l 0 660 l 229 461 l 229 286 "},"©":{"x_min":3,"x_max":1007,"ha":1104,"o":"m 507 -6 q 129 153 269 -6 q 3 506 3 298 q 127 857 3 713 q 502 1017 266 1017 q 880 855 740 1017 q 1007 502 1007 711 q 882 152 1007 295 q 507 -6 743 -6 m 502 934 q 184 800 302 934 q 79 505 79 680 q 184 210 79 331 q 501 76 302 76 q 819 210 701 76 q 925 507 925 331 q 820 800 925 682 q 502 934 704 934 m 758 410 q 676 255 748 313 q 506 197 605 197 q 298 291 374 197 q 229 499 229 377 q 297 713 229 624 q 494 811 372 811 q 666 760 593 811 q 752 616 739 710 l 621 616 q 587 688 621 658 q 509 719 554 719 q 404 658 441 719 q 368 511 368 598 q 403 362 368 427 q 498 298 438 298 q 624 410 606 298 l 758 410 "},"ώ":{"x_min":0,"x_max":945,"ha":1051,"o":"m 566 528 l 372 528 l 372 323 q 372 298 372 311 q 373 271 372 285 q 360 183 373 211 q 292 142 342 142 q 219 222 243 142 q 203 365 203 279 q 241 565 203 461 q 334 748 273 650 l 130 748 q 36 552 68 650 q 0 337 0 444 q 69 96 0 204 q 276 -29 149 -29 q 390 0 337 -29 q 470 78 444 28 q 551 0 495 30 q 668 -29 608 -29 q 874 96 793 -29 q 945 337 945 205 q 910 547 945 444 q 814 748 876 650 l 610 748 q 703 565 671 650 q 742 365 742 462 q 718 189 742 237 q 651 142 694 142 q 577 190 597 142 q 565 289 565 221 l 565 323 l 566 528 m 718 1039 l 516 823 l 417 823 l 540 1039 l 718 1039 "},"^":{"x_min":197.21875,"x_max":630.5625,"ha":828,"o":"m 630 836 l 536 836 l 413 987 l 294 836 l 197 836 l 331 1090 l 493 1090 l 630 836 "},"«":{"x_min":0,"x_max":526.546875,"ha":624,"o":"m 526 87 l 297 286 l 297 461 l 526 660 l 526 495 l 385 373 l 526 250 l 526 87 m 229 87 l 0 286 l 0 461 l 229 660 l 229 495 l 88 373 l 229 250 l 229 87 "},"D":{"x_min":0,"x_max":864,"ha":968,"o":"m 400 1013 q 736 874 608 1013 q 864 523 864 735 q 717 146 864 293 q 340 0 570 0 l 0 0 l 0 1013 l 400 1013 m 398 837 l 206 837 l 206 182 l 372 182 q 584 276 507 182 q 657 504 657 365 q 594 727 657 632 q 398 837 522 837 "},"∙":{"x_min":0,"x_max":207,"ha":304,"o":"m 207 528 l 0 528 l 0 735 l 207 735 l 207 528 "},"ÿ":{"x_min":0,"x_max":47,"ha":125,"o":"m 47 3 q 37 -7 47 -7 q 28 0 30 -7 q 39 -4 32 -4 q 45 3 45 -1 l 37 0 q 28 9 28 0 q 39 19 28 19 l 47 16 l 47 19 l 47 3 m 37 1 q 44 8 44 1 q 37 16 44 16 q 30 8 30 16 q 37 1 30 1 m 26 1 l 23 22 l 14 0 l 3 22 l 3 3 l 0 25 l 13 1 l 22 25 l 26 1 "},"w":{"x_min":0,"x_max":1056.953125,"ha":1150,"o":"m 1056 749 l 848 0 l 647 0 l 527 536 l 412 0 l 211 0 l 0 749 l 202 749 l 325 226 l 429 748 l 633 748 l 740 229 l 864 749 l 1056 749 "},"$":{"x_min":0,"x_max":704,"ha":800,"o":"m 682 693 l 495 693 q 468 782 491 749 q 391 831 441 824 l 391 579 q 633 462 562 534 q 704 259 704 389 q 616 57 704 136 q 391 -22 528 -22 l 391 -156 l 308 -156 l 308 -22 q 76 69 152 -7 q 0 300 0 147 l 183 300 q 215 191 190 230 q 308 128 245 143 l 308 414 q 84 505 157 432 q 12 700 12 578 q 89 902 12 824 q 308 981 166 981 l 308 1069 l 391 1069 l 391 981 q 595 905 521 981 q 682 693 670 829 m 308 599 l 308 831 q 228 796 256 831 q 200 712 200 762 q 225 642 200 668 q 308 599 251 617 m 391 128 q 476 174 449 140 q 504 258 504 207 q 391 388 504 354 l 391 128 "},"\\":{"x_min":-0.03125,"x_max":434.765625,"ha":532,"o":"m 434 -128 l 341 -128 l 0 1039 l 91 1040 l 434 -128 "},"µ":{"x_min":0,"x_max":647,"ha":754,"o":"m 647 0 l 478 0 l 478 68 q 412 9 448 30 q 330 -11 375 -11 q 261 3 296 -11 q 199 43 226 18 l 199 -277 l 0 -277 l 0 749 l 199 749 l 199 358 q 216 221 199 267 q 322 151 244 151 q 435 240 410 151 q 448 401 448 283 l 448 749 l 647 749 l 647 0 "},"Ι":{"x_min":42,"x_max":250,"ha":413,"o":"m 250 0 l 42 0 l 42 1013 l 250 1013 l 250 0 "},"Ύ":{"x_min":0,"x_max":1211.15625,"ha":1289,"o":"m 1211 1012 l 907 376 l 907 0 l 697 0 l 697 376 l 374 1012 l 583 1012 l 802 576 l 1001 1012 l 1211 1012 m 313 1035 l 98 780 l 0 780 l 136 1035 l 313 1035 "},"’":{"x_min":0,"x_max":192,"ha":289,"o":"m 192 834 q 137 692 192 751 q 0 626 83 634 l 0 697 q 101 831 101 723 l 0 831 l 0 1013 l 192 1013 l 192 834 "},"Ν":{"x_min":0,"x_max":833,"ha":946,"o":"m 833 0 l 617 0 l 206 696 l 206 0 l 0 0 l 0 1013 l 216 1013 l 629 315 l 629 1013 l 833 1013 l 833 0 "},"-":{"x_min":27.78125,"x_max":413.890625,"ha":525,"o":"m 413 279 l 27 279 l 27 468 l 413 468 l 413 279 "},"Q":{"x_min":0,"x_max":995.59375,"ha":1096,"o":"m 995 49 l 885 -70 l 762 42 q 641 -12 709 4 q 497 -29 572 -29 q 135 123 271 -29 q 0 504 0 276 q 131 881 0 731 q 497 1040 270 1040 q 859 883 719 1040 q 994 506 994 731 q 966 321 994 413 q 884 152 938 229 l 995 49 m 730 299 q 767 395 755 344 q 779 504 779 446 q 713 743 779 644 q 505 857 638 857 q 284 745 366 857 q 210 501 210 644 q 279 265 210 361 q 492 157 357 157 q 615 181 557 157 l 508 287 l 620 405 l 730 299 "},"ς":{"x_min":0,"x_max":731.78125,"ha":768,"o":"m 731 448 l 547 448 q 485 571 531 533 q 369 610 440 610 q 245 537 292 610 q 204 394 204 473 q 322 186 204 238 q 540 133 430 159 q 659 -15 659 98 q 643 -141 659 -80 q 595 -278 627 -202 l 423 -278 q 458 -186 448 -215 q 474 -88 474 -133 q 352 0 474 -27 q 123 80 181 38 q 0 382 0 170 q 98 660 0 549 q 367 777 202 777 q 622 683 513 777 q 731 448 731 589 "},"M":{"x_min":0,"x_max":1019,"ha":1135,"o":"m 1019 0 l 823 0 l 823 819 l 618 0 l 402 0 l 194 818 l 194 0 l 0 0 l 0 1013 l 309 1012 l 510 241 l 707 1013 l 1019 1013 l 1019 0 "},"Ψ":{"x_min":0,"x_max":995,"ha":1085,"o":"m 995 698 q 924 340 995 437 q 590 200 841 227 l 590 0 l 404 0 l 404 200 q 70 340 152 227 q 0 698 0 437 l 0 1013 l 188 1013 l 188 694 q 212 472 188 525 q 404 383 254 383 l 404 1013 l 590 1013 l 590 383 q 781 472 740 383 q 807 694 807 525 l 807 1013 l 995 1013 l 995 698 "},"C":{"x_min":0,"x_max":970.828125,"ha":1043,"o":"m 970 345 q 802 70 933 169 q 490 -29 672 -29 q 130 130 268 -29 q 0 506 0 281 q 134 885 0 737 q 502 1040 275 1040 q 802 939 668 1040 q 965 679 936 838 l 745 679 q 649 809 716 761 q 495 857 582 857 q 283 747 361 857 q 214 508 214 648 q 282 267 214 367 q 493 154 359 154 q 651 204 584 154 q 752 345 718 255 l 970 345 "},"!":{"x_min":0,"x_max":204,"ha":307,"o":"m 204 739 q 182 515 204 686 q 152 282 167 398 l 52 282 q 13 589 27 473 q 0 739 0 704 l 0 1013 l 204 1013 l 204 739 m 204 0 l 0 0 l 0 203 l 204 203 l 204 0 "},"{":{"x_min":0,"x_max":501.390625,"ha":599,"o":"m 501 -285 q 229 -209 301 -285 q 176 -35 176 -155 q 182 47 176 -8 q 189 126 189 103 q 156 245 189 209 q 0 294 112 294 l 0 438 q 154 485 111 438 q 189 603 189 522 q 186 666 189 636 q 176 783 176 772 q 231 945 176 894 q 501 1015 306 1015 l 501 872 q 370 833 408 872 q 340 737 340 801 q 342 677 340 705 q 353 569 353 579 q 326 451 353 496 q 207 366 291 393 q 327 289 294 346 q 353 164 353 246 q 348 79 353 132 q 344 17 344 26 q 372 -95 344 -58 q 501 -141 408 -141 l 501 -285 "},"X":{"x_min":0,"x_max":894.453125,"ha":999,"o":"m 894 0 l 654 0 l 445 351 l 238 0 l 0 0 l 316 516 l 0 1013 l 238 1013 l 445 659 l 652 1013 l 894 1013 l 577 519 l 894 0 "},"#":{"x_min":0,"x_max":1019.453125,"ha":1117,"o":"m 1019 722 l 969 582 l 776 581 l 717 417 l 919 417 l 868 279 l 668 278 l 566 -6 l 413 -5 l 516 279 l 348 279 l 247 -6 l 94 -6 l 196 278 l 0 279 l 49 417 l 245 417 l 304 581 l 98 582 l 150 722 l 354 721 l 455 1006 l 606 1006 l 507 721 l 673 722 l 776 1006 l 927 1006 l 826 721 l 1019 722 m 627 581 l 454 581 l 394 417 l 567 417 l 627 581 "},"ι":{"x_min":42,"x_max":242,"ha":389,"o":"m 242 0 l 42 0 l 42 749 l 242 749 l 242 0 "},"Ά":{"x_min":0,"x_max":995.828125,"ha":1072,"o":"m 313 1035 l 98 780 l 0 780 l 136 1035 l 313 1035 m 995 0 l 776 0 l 708 208 l 315 208 l 247 0 l 29 0 l 390 1012 l 629 1012 l 995 0 m 652 376 l 509 809 l 369 376 l 652 376 "},")":{"x_min":0,"x_max":389,"ha":486,"o":"m 389 357 q 319 14 389 187 q 145 -293 259 -134 l 0 -293 q 139 22 90 -142 q 189 358 189 187 q 139 689 189 525 q 0 1013 90 853 l 145 1013 q 319 703 258 857 q 389 357 389 528 "},"ε":{"x_min":16.671875,"x_max":652.78125,"ha":742,"o":"m 652 259 q 565 49 652 123 q 340 -25 479 -25 q 102 39 188 -25 q 16 197 16 104 q 45 299 16 249 q 134 390 75 348 q 58 456 86 419 q 25 552 25 502 q 120 717 25 653 q 322 776 208 776 q 537 710 456 776 q 625 508 625 639 l 445 508 q 415 585 445 563 q 327 608 386 608 q 254 590 293 608 q 215 544 215 573 q 252 469 215 490 q 336 453 280 453 q 369 455 347 453 q 400 456 391 456 l 400 308 l 329 308 q 247 291 280 308 q 204 223 204 269 q 255 154 204 172 q 345 143 286 143 q 426 174 398 143 q 454 259 454 206 l 652 259 "},"Δ":{"x_min":0,"x_max":981.953125,"ha":1057,"o":"m 981 0 l 0 0 l 386 1013 l 594 1013 l 981 0 m 715 175 l 490 765 l 266 175 l 715 175 "},"}":{"x_min":0,"x_max":500,"ha":597,"o":"m 500 294 q 348 246 390 294 q 315 128 315 209 q 320 42 315 101 q 326 -48 326 -17 q 270 -214 326 -161 q 0 -285 196 -285 l 0 -141 q 126 -97 90 -141 q 154 8 154 -64 q 150 91 154 37 q 146 157 146 145 q 172 281 146 235 q 294 366 206 339 q 173 451 208 390 q 146 576 146 500 q 150 655 146 603 q 154 731 154 708 q 126 831 154 799 q 0 872 90 872 l 0 1015 q 270 944 196 1015 q 326 777 326 891 q 322 707 326 747 q 313 593 313 612 q 347 482 313 518 q 500 438 390 438 l 500 294 "},"‰":{"x_min":0,"x_max":1681,"ha":1775,"o":"m 861 484 q 1048 404 979 484 q 1111 228 1111 332 q 1048 51 1111 123 q 859 -29 979 -29 q 672 50 740 -29 q 610 227 610 122 q 672 403 610 331 q 861 484 741 484 m 861 120 q 939 151 911 120 q 967 226 967 183 q 942 299 967 270 q 861 333 912 333 q 783 301 811 333 q 756 226 756 269 q 783 151 756 182 q 861 120 810 120 m 904 984 l 316 -28 l 205 -29 l 793 983 l 904 984 m 250 984 q 436 904 366 984 q 499 730 499 832 q 436 552 499 626 q 248 472 366 472 q 62 552 132 472 q 0 728 0 624 q 62 903 0 831 q 250 984 132 984 m 249 835 q 169 801 198 835 q 140 725 140 768 q 167 652 140 683 q 247 621 195 621 q 327 654 298 621 q 357 730 357 687 q 329 803 357 772 q 249 835 301 835 m 1430 484 q 1618 404 1548 484 q 1681 228 1681 332 q 1618 51 1681 123 q 1429 -29 1548 -29 q 1241 50 1309 -29 q 1179 227 1179 122 q 1241 403 1179 331 q 1430 484 1311 484 m 1431 120 q 1509 151 1481 120 q 1537 226 1537 183 q 1511 299 1537 270 q 1431 333 1482 333 q 1352 301 1380 333 q 1325 226 1325 269 q 1352 151 1325 182 q 1431 120 1379 120 "},"a":{"x_min":0,"x_max":700,"ha":786,"o":"m 700 0 l 488 0 q 465 93 469 45 q 365 5 427 37 q 233 -26 303 -26 q 65 37 130 -26 q 0 205 0 101 q 120 409 0 355 q 343 452 168 431 q 465 522 465 468 q 424 588 465 565 q 337 611 384 611 q 250 581 285 611 q 215 503 215 552 l 26 503 q 113 707 26 633 q 328 775 194 775 q 538 723 444 775 q 657 554 657 659 l 657 137 q 666 73 657 101 q 700 33 675 45 l 700 0 m 465 297 l 465 367 q 299 322 358 340 q 193 217 193 287 q 223 150 193 174 q 298 127 254 127 q 417 175 370 127 q 465 297 465 224 "},"—":{"x_min":0,"x_max":941.671875,"ha":1039,"o":"m 941 297 l 0 297 l 0 450 l 941 450 l 941 297 "},"=":{"x_min":29.171875,"x_max":798.609375,"ha":828,"o":"m 798 502 l 29 502 l 29 635 l 798 635 l 798 502 m 798 204 l 29 204 l 29 339 l 798 339 l 798 204 "},"N":{"x_min":0,"x_max":833,"ha":949,"o":"m 833 0 l 617 0 l 206 695 l 206 0 l 0 0 l 0 1013 l 216 1013 l 629 315 l 629 1013 l 833 1013 l 833 0 "},"ρ":{"x_min":0,"x_max":722,"ha":810,"o":"m 364 -17 q 271 0 313 -17 q 194 48 230 16 l 194 -278 l 0 -278 l 0 370 q 87 656 0 548 q 358 775 183 775 q 626 655 524 775 q 722 372 722 541 q 621 95 722 208 q 364 -17 520 -17 m 360 607 q 237 529 280 607 q 201 377 201 463 q 234 229 201 292 q 355 147 277 147 q 467 210 419 147 q 515 374 515 273 q 471 537 515 468 q 360 607 428 607 "},"2":{"x_min":64,"x_max":764,"ha":828,"o":"m 764 685 q 675 452 764 541 q 484 325 637 415 q 307 168 357 250 l 754 168 l 754 0 l 64 0 q 193 301 64 175 q 433 480 202 311 q 564 673 564 576 q 519 780 564 737 q 416 824 475 824 q 318 780 358 824 q 262 633 270 730 l 80 633 q 184 903 80 807 q 415 988 276 988 q 654 907 552 988 q 764 685 764 819 "},"¯":{"x_min":0,"x_max":775,"ha":771,"o":"m 775 958 l 0 958 l 0 1111 l 775 1111 l 775 958 "},"Z":{"x_min":0,"x_max":804.171875,"ha":906,"o":"m 804 836 l 251 182 l 793 182 l 793 0 l 0 0 l 0 176 l 551 830 l 11 830 l 11 1013 l 804 1013 l 804 836 "},"u":{"x_min":0,"x_max":668,"ha":782,"o":"m 668 0 l 474 0 l 474 89 q 363 9 425 37 q 233 -19 301 -19 q 61 53 123 -19 q 0 239 0 126 l 0 749 l 199 749 l 199 296 q 225 193 199 233 q 316 146 257 146 q 424 193 380 146 q 469 304 469 240 l 469 749 l 668 749 l 668 0 "},"k":{"x_min":0,"x_max":688.890625,"ha":771,"o":"m 688 0 l 450 0 l 270 316 l 196 237 l 196 0 l 0 0 l 0 1013 l 196 1013 l 196 483 l 433 748 l 675 748 l 413 469 l 688 0 "},"Η":{"x_min":0,"x_max":837,"ha":950,"o":"m 837 0 l 627 0 l 627 450 l 210 450 l 210 0 l 0 0 l 0 1013 l 210 1013 l 210 635 l 627 635 l 627 1013 l 837 1013 l 837 0 "},"Α":{"x_min":0,"x_max":966.671875,"ha":1043,"o":"m 966 0 l 747 0 l 679 208 l 286 208 l 218 0 l 0 0 l 361 1013 l 600 1013 l 966 0 m 623 376 l 480 809 l 340 376 l 623 376 "},"s":{"x_min":0,"x_max":681,"ha":775,"o":"m 681 229 q 568 33 681 105 q 340 -29 471 -29 q 107 39 202 -29 q 0 245 0 114 l 201 245 q 252 155 201 189 q 358 128 295 128 q 436 144 401 128 q 482 205 482 166 q 363 284 482 255 q 143 348 181 329 q 25 533 25 408 q 129 716 25 647 q 340 778 220 778 q 554 710 465 778 q 658 522 643 643 l 463 522 q 419 596 458 570 q 327 622 380 622 q 255 606 290 622 q 221 556 221 590 q 339 473 221 506 q 561 404 528 420 q 681 229 681 344 "},"B":{"x_min":0,"x_max":835,"ha":938,"o":"m 674 547 q 791 450 747 518 q 835 304 835 383 q 718 75 835 158 q 461 0 612 0 l 0 0 l 0 1013 l 477 1013 q 697 951 609 1013 q 797 754 797 880 q 765 630 797 686 q 674 547 734 575 m 438 621 q 538 646 495 621 q 590 730 590 676 q 537 814 590 785 q 436 838 494 838 l 199 838 l 199 621 l 438 621 m 445 182 q 561 211 513 182 q 618 311 618 247 q 565 410 618 375 q 444 446 512 446 l 199 446 l 199 182 l 445 182 "},"…":{"x_min":0,"x_max":819,"ha":963,"o":"m 206 0 l 0 0 l 0 207 l 206 207 l 206 0 m 512 0 l 306 0 l 306 207 l 512 207 l 512 0 m 819 0 l 613 0 l 613 207 l 819 207 l 819 0 "},"?":{"x_min":1,"x_max":687,"ha":785,"o":"m 687 734 q 621 563 687 634 q 501 454 560 508 q 436 293 436 386 l 251 293 l 251 391 q 363 557 251 462 q 476 724 476 653 q 432 827 476 788 q 332 866 389 866 q 238 827 275 866 q 195 699 195 781 l 1 699 q 110 955 1 861 q 352 1040 210 1040 q 582 963 489 1040 q 687 734 687 878 m 446 0 l 243 0 l 243 203 l 446 203 l 446 0 "},"H":{"x_min":0,"x_max":838,"ha":953,"o":"m 838 0 l 628 0 l 628 450 l 210 450 l 210 0 l 0 0 l 0 1013 l 210 1013 l 210 635 l 628 635 l 628 1013 l 838 1013 l 838 0 "},"ν":{"x_min":0,"x_max":740.28125,"ha":828,"o":"m 740 749 l 473 0 l 266 0 l 0 749 l 222 749 l 373 211 l 529 749 l 740 749 "},"c":{"x_min":0,"x_max":751.390625,"ha":828,"o":"m 751 282 q 625 58 725 142 q 384 -26 526 -26 q 107 84 215 -26 q 0 366 0 195 q 98 651 0 536 q 370 774 204 774 q 616 700 518 774 q 751 486 715 626 l 536 486 q 477 570 516 538 q 380 607 434 607 q 248 533 298 607 q 204 378 204 466 q 242 219 204 285 q 377 139 290 139 q 483 179 438 139 q 543 282 527 220 l 751 282 "},"¶":{"x_min":0,"x_max":566.671875,"ha":678,"o":"m 21 892 l 52 892 l 98 761 l 145 892 l 176 892 l 178 741 l 157 741 l 157 867 l 108 741 l 88 741 l 40 871 l 40 741 l 21 741 l 21 892 m 308 854 l 308 731 q 252 691 308 691 q 227 691 240 691 q 207 696 213 695 l 207 712 l 253 706 q 288 733 288 706 l 288 763 q 244 741 279 741 q 193 797 193 741 q 261 860 193 860 q 287 860 273 860 q 308 854 302 855 m 288 842 l 263 843 q 213 796 213 843 q 248 756 213 756 q 288 796 288 756 l 288 842 m 566 988 l 502 988 l 502 -1 l 439 -1 l 439 988 l 317 988 l 317 -1 l 252 -1 l 252 602 q 81 653 155 602 q 0 805 0 711 q 101 989 0 918 q 309 1053 194 1053 l 566 1053 l 566 988 "},"β":{"x_min":0,"x_max":703,"ha":789,"o":"m 510 539 q 651 429 600 501 q 703 262 703 357 q 617 53 703 136 q 404 -29 532 -29 q 199 51 279 -29 l 199 -278 l 0 -278 l 0 627 q 77 911 0 812 q 343 1021 163 1021 q 551 957 464 1021 q 649 769 649 886 q 613 638 649 697 q 510 539 577 579 m 344 136 q 452 181 408 136 q 497 291 497 227 q 435 409 497 369 q 299 444 381 444 l 299 600 q 407 634 363 600 q 452 731 452 669 q 417 820 452 784 q 329 857 382 857 q 217 775 246 857 q 199 622 199 725 l 199 393 q 221 226 199 284 q 344 136 254 136 "},"Μ":{"x_min":0,"x_max":1019,"ha":1132,"o":"m 1019 0 l 823 0 l 823 818 l 617 0 l 402 0 l 194 818 l 194 0 l 0 0 l 0 1013 l 309 1013 l 509 241 l 708 1013 l 1019 1013 l 1019 0 "},"Ό":{"x_min":0.15625,"x_max":1174,"ha":1271,"o":"m 676 -29 q 312 127 451 -29 q 179 505 179 277 q 311 883 179 733 q 676 1040 449 1040 q 1040 883 901 1040 q 1174 505 1174 733 q 1041 127 1174 277 q 676 -29 903 -29 m 676 154 q 890 266 811 154 q 961 506 961 366 q 891 745 961 648 q 676 857 812 857 q 462 747 541 857 q 392 506 392 648 q 461 266 392 365 q 676 154 540 154 m 314 1034 l 98 779 l 0 779 l 136 1034 l 314 1034 "},"Ή":{"x_min":0,"x_max":1248,"ha":1361,"o":"m 1248 0 l 1038 0 l 1038 450 l 621 450 l 621 0 l 411 0 l 411 1012 l 621 1012 l 621 635 l 1038 635 l 1038 1012 l 1248 1012 l 1248 0 m 313 1035 l 98 780 l 0 780 l 136 1035 l 313 1035 "},"•":{"x_min":-27.78125,"x_max":691.671875,"ha":775,"o":"m 691 508 q 588 252 691 358 q 331 147 486 147 q 77 251 183 147 q -27 508 -27 355 q 75 761 -27 655 q 331 868 179 868 q 585 763 479 868 q 691 508 691 658 "},"¥":{"x_min":0,"x_max":836,"ha":931,"o":"m 195 625 l 0 1013 l 208 1013 l 427 576 l 626 1013 l 836 1013 l 650 625 l 777 625 l 777 472 l 578 472 l 538 389 l 777 389 l 777 236 l 532 236 l 532 0 l 322 0 l 322 236 l 79 236 l 79 389 l 315 389 l 273 472 l 79 472 l 79 625 l 195 625 "},"(":{"x_min":0,"x_max":388.890625,"ha":486,"o":"m 388 -293 l 243 -293 q 70 14 130 -134 q 0 357 0 189 q 69 703 0 526 q 243 1013 129 856 l 388 1013 q 248 695 297 860 q 200 358 200 530 q 248 24 200 187 q 388 -293 297 -138 "},"U":{"x_min":0,"x_max":813,"ha":926,"o":"m 813 362 q 697 79 813 187 q 405 -29 582 -29 q 114 78 229 -29 q 0 362 0 186 l 0 1013 l 210 1013 l 210 387 q 260 226 210 291 q 408 154 315 154 q 554 226 500 154 q 603 387 603 291 l 603 1013 l 813 1013 l 813 362 "},"γ":{"x_min":0.0625,"x_max":729.234375,"ha":815,"o":"m 729 749 l 457 37 l 457 -278 l 257 -278 l 257 37 q 218 155 243 95 q 170 275 194 215 l 0 749 l 207 749 l 363 284 l 522 749 l 729 749 "},"α":{"x_min":-1,"x_max":722,"ha":835,"o":"m 722 0 l 531 0 l 530 101 q 433 8 491 41 q 304 -25 375 -25 q 72 104 157 -25 q -1 372 -1 216 q 72 643 -1 530 q 308 775 158 775 q 433 744 375 775 q 528 656 491 713 l 528 749 l 722 749 l 722 0 m 361 601 q 233 527 277 601 q 196 375 196 464 q 232 224 196 288 q 358 144 277 144 q 487 217 441 144 q 528 370 528 281 q 489 523 528 457 q 361 601 443 601 "},"F":{"x_min":0,"x_max":706.953125,"ha":778,"o":"m 706 837 l 206 837 l 206 606 l 645 606 l 645 431 l 206 431 l 206 0 l 0 0 l 0 1013 l 706 1013 l 706 837 "},"­":{"x_min":0,"x_max":704.171875,"ha":801,"o":"m 704 297 l 0 297 l 0 450 l 704 450 l 704 297 "},":":{"x_min":0,"x_max":207,"ha":304,"o":"m 207 528 l 0 528 l 0 735 l 207 735 l 207 528 m 207 0 l 0 0 l 0 207 l 207 207 l 207 0 "},"Χ":{"x_min":0,"x_max":894.453125,"ha":978,"o":"m 894 0 l 654 0 l 445 351 l 238 0 l 0 0 l 316 516 l 0 1013 l 238 1013 l 445 660 l 652 1013 l 894 1013 l 577 519 l 894 0 "},"*":{"x_min":115,"x_max":713,"ha":828,"o":"m 713 740 l 518 688 l 651 525 l 531 438 l 412 612 l 290 439 l 173 523 l 308 688 l 115 741 l 159 880 l 342 816 l 343 1013 l 482 1013 l 481 816 l 664 880 l 713 740 "},"†":{"x_min":0,"x_max":809,"ha":894,"o":"m 509 804 l 809 804 l 809 621 l 509 621 l 509 0 l 299 0 l 299 621 l 0 621 l 0 804 l 299 804 l 299 1011 l 509 1011 l 509 804 "},"°":{"x_min":-1,"x_max":363,"ha":460,"o":"m 181 808 q 46 862 94 808 q -1 992 -1 917 q 44 1118 -1 1066 q 181 1175 96 1175 q 317 1118 265 1175 q 363 991 363 1066 q 315 862 363 917 q 181 808 267 808 m 181 908 q 240 933 218 908 q 263 992 263 958 q 242 1051 263 1027 q 181 1075 221 1075 q 120 1050 142 1075 q 99 991 99 1026 q 120 933 99 958 q 181 908 142 908 "},"V":{"x_min":0,"x_max":895.828125,"ha":997,"o":"m 895 1013 l 550 0 l 347 0 l 0 1013 l 231 1013 l 447 256 l 666 1013 l 895 1013 "},"Ξ":{"x_min":0,"x_max":751.390625,"ha":800,"o":"m 733 826 l 5 826 l 5 1012 l 733 1012 l 733 826 m 681 432 l 65 432 l 65 617 l 681 617 l 681 432 m 751 0 l 0 0 l 0 183 l 751 183 l 751 0 "}," ":{"x_min":0,"x_max":0,"ha":853},"Ϋ":{"x_min":-0.21875,"x_max":836.171875,"ha":914,"o":"m 610 1046 l 454 1046 l 454 1215 l 610 1215 l 610 1046 m 369 1046 l 212 1046 l 212 1215 l 369 1215 l 369 1046 m 836 1012 l 532 376 l 532 0 l 322 0 l 322 376 l 0 1012 l 208 1012 l 427 576 l 626 1012 l 836 1012 "},"0":{"x_min":51,"x_max":779,"ha":828,"o":"m 415 -26 q 142 129 242 -26 q 51 476 51 271 q 141 825 51 683 q 415 984 242 984 q 687 825 585 984 q 779 476 779 682 q 688 131 779 271 q 415 -26 587 -26 m 415 137 q 529 242 485 137 q 568 477 568 338 q 530 713 568 619 q 415 821 488 821 q 303 718 344 821 q 262 477 262 616 q 301 237 262 337 q 415 137 341 137 "},"”":{"x_min":0,"x_max":469,"ha":567,"o":"m 192 834 q 137 692 192 751 q 0 626 83 634 l 0 697 q 101 831 101 723 l 0 831 l 0 1013 l 192 1013 l 192 834 m 469 834 q 414 692 469 751 q 277 626 360 634 l 277 697 q 379 831 379 723 l 277 831 l 277 1013 l 469 1013 l 469 834 "},"@":{"x_min":0,"x_max":1276,"ha":1374,"o":"m 1115 -52 q 895 -170 1015 -130 q 647 -211 776 -211 q 158 -34 334 -211 q 0 360 0 123 q 179 810 0 621 q 698 1019 377 1019 q 1138 859 981 1019 q 1276 514 1276 720 q 1173 210 1276 335 q 884 75 1062 75 q 784 90 810 75 q 737 186 749 112 q 647 104 698 133 q 532 75 596 75 q 360 144 420 75 q 308 308 308 205 q 398 568 308 451 q 638 696 497 696 q 731 671 690 696 q 805 604 772 647 l 840 673 l 964 673 q 886 373 915 490 q 856 239 856 257 q 876 201 856 214 q 920 188 895 188 q 1084 284 1019 188 q 1150 511 1150 380 q 1051 779 1150 672 q 715 905 934 905 q 272 734 439 905 q 121 363 121 580 q 250 41 121 170 q 647 -103 394 -103 q 863 -67 751 -103 q 1061 26 975 -32 l 1115 -52 m 769 483 q 770 500 770 489 q 733 567 770 539 q 651 596 695 596 q 508 504 566 596 q 457 322 457 422 q 483 215 457 256 q 561 175 509 175 q 671 221 625 175 q 733 333 718 268 l 769 483 "},"Ί":{"x_min":0,"x_max":619,"ha":732,"o":"m 313 1035 l 98 780 l 0 780 l 136 1035 l 313 1035 m 619 0 l 411 0 l 411 1012 l 619 1012 l 619 0 "},"i":{"x_min":14,"x_max":214,"ha":326,"o":"m 214 830 l 14 830 l 14 1013 l 214 1013 l 214 830 m 214 0 l 14 0 l 14 748 l 214 748 l 214 0 "},"Β":{"x_min":0,"x_max":835,"ha":961,"o":"m 675 547 q 791 450 747 518 q 835 304 835 383 q 718 75 835 158 q 461 0 612 0 l 0 0 l 0 1013 l 477 1013 q 697 951 609 1013 q 797 754 797 880 q 766 630 797 686 q 675 547 734 575 m 439 621 q 539 646 496 621 q 590 730 590 676 q 537 814 590 785 q 436 838 494 838 l 199 838 l 199 621 l 439 621 m 445 182 q 561 211 513 182 q 618 311 618 247 q 565 410 618 375 q 444 446 512 446 l 199 446 l 199 182 l 445 182 "},"υ":{"x_min":0,"x_max":656,"ha":767,"o":"m 656 416 q 568 55 656 145 q 326 -25 490 -25 q 59 97 137 -25 q 0 369 0 191 l 0 749 l 200 749 l 200 369 q 216 222 200 268 q 326 142 245 142 q 440 247 411 142 q 456 422 456 304 l 456 749 l 656 749 l 656 416 "},"]":{"x_min":0,"x_max":349,"ha":446,"o":"m 349 -300 l 0 -300 l 0 -154 l 163 -154 l 163 866 l 0 866 l 0 1013 l 349 1013 l 349 -300 "},"m":{"x_min":0,"x_max":1065,"ha":1174,"o":"m 1065 0 l 866 0 l 866 483 q 836 564 866 532 q 759 596 807 596 q 663 555 700 596 q 627 454 627 514 l 627 0 l 433 0 l 433 481 q 403 563 433 531 q 323 596 374 596 q 231 554 265 596 q 197 453 197 513 l 197 0 l 0 0 l 0 748 l 189 748 l 189 665 q 279 745 226 715 q 392 775 333 775 q 509 744 455 775 q 606 659 563 713 q 695 744 640 713 q 814 775 749 775 q 992 702 920 775 q 1065 523 1065 630 l 1065 0 "},"χ":{"x_min":0,"x_max":759.71875,"ha":847,"o":"m 759 -299 l 548 -299 l 379 66 l 215 -299 l 0 -299 l 261 233 l 13 749 l 230 749 l 379 400 l 527 749 l 738 749 l 500 238 l 759 -299 "},"8":{"x_min":57,"x_max":770,"ha":828,"o":"m 625 516 q 733 416 697 477 q 770 284 770 355 q 675 69 770 161 q 415 -29 574 -29 q 145 65 244 -29 q 57 273 57 150 q 93 413 57 350 q 204 516 130 477 q 112 609 142 556 q 83 718 83 662 q 177 905 83 824 q 414 986 272 986 q 650 904 555 986 q 745 715 745 822 q 716 608 745 658 q 625 516 688 558 m 414 590 q 516 624 479 590 q 553 706 553 659 q 516 791 553 755 q 414 828 480 828 q 311 792 348 828 q 275 706 275 757 q 310 624 275 658 q 414 590 345 590 m 413 135 q 527 179 487 135 q 564 279 564 218 q 525 386 564 341 q 411 436 482 436 q 298 387 341 436 q 261 282 261 344 q 300 178 261 222 q 413 135 340 135 "},"ί":{"x_min":42,"x_max":371.171875,"ha":389,"o":"m 242 0 l 42 0 l 42 748 l 242 748 l 242 0 m 371 1039 l 169 823 l 71 823 l 193 1039 l 371 1039 "},"Ζ":{"x_min":0,"x_max":804.171875,"ha":886,"o":"m 804 835 l 251 182 l 793 182 l 793 0 l 0 0 l 0 176 l 551 829 l 11 829 l 11 1012 l 804 1012 l 804 835 "},"R":{"x_min":0,"x_max":836.109375,"ha":947,"o":"m 836 0 l 608 0 q 588 53 596 20 q 581 144 581 86 q 581 179 581 162 q 581 215 581 197 q 553 345 581 306 q 428 393 518 393 l 208 393 l 208 0 l 0 0 l 0 1013 l 491 1013 q 720 944 630 1013 q 819 734 819 869 q 778 584 819 654 q 664 485 738 513 q 757 415 727 463 q 794 231 794 358 l 794 170 q 800 84 794 116 q 836 31 806 51 l 836 0 m 462 838 l 208 838 l 208 572 l 452 572 q 562 604 517 572 q 612 704 612 640 q 568 801 612 765 q 462 838 525 838 "},"o":{"x_min":0,"x_max":764,"ha":871,"o":"m 380 -26 q 105 86 211 -26 q 0 371 0 199 q 104 660 0 545 q 380 775 209 775 q 658 659 552 775 q 764 371 764 544 q 658 86 764 199 q 380 -26 552 -26 m 379 141 q 515 216 466 141 q 557 373 557 280 q 515 530 557 465 q 379 607 466 607 q 245 530 294 607 q 204 373 204 465 q 245 217 204 282 q 379 141 294 141 "},"5":{"x_min":59,"x_max":767,"ha":828,"o":"m 767 319 q 644 59 767 158 q 382 -29 533 -29 q 158 43 247 -29 q 59 264 59 123 l 252 264 q 295 165 252 201 q 400 129 339 129 q 512 172 466 129 q 564 308 564 220 q 514 437 564 387 q 398 488 464 488 q 329 472 361 488 q 271 420 297 456 l 93 428 l 157 958 l 722 958 l 722 790 l 295 790 l 271 593 q 348 635 306 621 q 431 649 389 649 q 663 551 560 649 q 767 319 767 453 "},"7":{"x_min":65.28125,"x_max":762.5,"ha":828,"o":"m 762 808 q 521 435 604 626 q 409 0 438 244 l 205 0 q 313 422 227 234 q 548 789 387 583 l 65 789 l 65 958 l 762 958 l 762 808 "},"K":{"x_min":0,"x_max":900,"ha":996,"o":"m 900 0 l 647 0 l 316 462 l 208 355 l 208 0 l 0 0 l 0 1013 l 208 1013 l 208 595 l 604 1013 l 863 1013 l 461 603 l 900 0 "},",":{"x_min":0,"x_max":206,"ha":303,"o":"m 206 5 q 150 -151 206 -88 q 0 -238 94 -213 l 0 -159 q 84 -100 56 -137 q 111 -2 111 -62 l 0 -2 l 0 205 l 206 205 l 206 5 "},"d":{"x_min":0,"x_max":722,"ha":836,"o":"m 722 0 l 530 0 l 530 101 q 303 -26 449 -26 q 72 103 155 -26 q 0 373 0 214 q 72 642 0 528 q 305 775 156 775 q 433 743 373 775 q 530 656 492 712 l 530 1013 l 722 1013 l 722 0 m 361 600 q 234 523 280 600 q 196 372 196 458 q 233 220 196 286 q 358 143 278 143 q 489 216 442 143 q 530 369 530 280 q 491 522 530 456 q 361 600 443 600 "},"¨":{"x_min":212,"x_max":609,"ha":933,"o":"m 609 1046 l 453 1046 l 453 1216 l 609 1216 l 609 1046 m 369 1046 l 212 1046 l 212 1216 l 369 1216 l 369 1046 "},"E":{"x_min":0,"x_max":761.109375,"ha":824,"o":"m 761 0 l 0 0 l 0 1013 l 734 1013 l 734 837 l 206 837 l 206 621 l 690 621 l 690 446 l 206 446 l 206 186 l 761 186 l 761 0 "},"Y":{"x_min":0,"x_max":836,"ha":931,"o":"m 836 1013 l 532 376 l 532 0 l 322 0 l 322 376 l 0 1013 l 208 1013 l 427 576 l 626 1013 l 836 1013 "},"\"":{"x_min":0,"x_max":357,"ha":454,"o":"m 357 604 l 225 604 l 225 988 l 357 988 l 357 604 m 132 604 l 0 604 l 0 988 l 132 988 l 132 604 "},"‹":{"x_min":35.984375,"x_max":791.671875,"ha":828,"o":"m 791 17 l 36 352 l 35 487 l 791 823 l 791 672 l 229 421 l 791 168 l 791 17 "},"„":{"x_min":0,"x_max":483,"ha":588,"o":"m 206 5 q 150 -151 206 -88 q 0 -238 94 -213 l 0 -159 q 84 -100 56 -137 q 111 -2 111 -62 l 0 -2 l 0 205 l 206 205 l 206 5 m 483 5 q 427 -151 483 -88 q 277 -238 371 -213 l 277 -159 q 361 -100 334 -137 q 388 -2 388 -62 l 277 -2 l 277 205 l 483 205 l 483 5 "},"δ":{"x_min":6,"x_max":732,"ha":835,"o":"m 732 352 q 630 76 732 177 q 354 -25 529 -25 q 101 74 197 -25 q 6 333 6 174 q 89 581 6 480 q 323 690 178 690 q 66 864 201 787 l 66 1013 l 669 1013 l 669 856 l 348 856 q 532 729 461 789 q 673 566 625 651 q 732 352 732 465 m 419 551 q 259 496 321 551 q 198 344 198 441 q 238 208 198 267 q 357 140 283 140 q 484 203 437 140 q 526 344 526 260 q 499 466 526 410 q 419 551 473 521 "},"έ":{"x_min":16.671875,"x_max":652.78125,"ha":742,"o":"m 652 259 q 565 49 652 123 q 340 -25 479 -25 q 102 39 188 -25 q 16 197 16 104 q 45 299 16 250 q 134 390 75 348 q 58 456 86 419 q 25 552 25 502 q 120 717 25 653 q 322 776 208 776 q 537 710 456 776 q 625 508 625 639 l 445 508 q 415 585 445 563 q 327 608 386 608 q 254 590 293 608 q 215 544 215 573 q 252 469 215 490 q 336 453 280 453 q 369 455 347 453 q 400 456 391 456 l 400 308 l 329 308 q 247 291 280 308 q 204 223 204 269 q 255 154 204 172 q 345 143 286 143 q 426 174 398 143 q 454 259 454 206 l 652 259 m 579 1039 l 377 823 l 279 823 l 401 1039 l 579 1039 "},"ω":{"x_min":0,"x_max":945,"ha":1051,"o":"m 565 323 l 565 289 q 577 190 565 221 q 651 142 597 142 q 718 189 694 142 q 742 365 742 237 q 703 565 742 462 q 610 749 671 650 l 814 749 q 910 547 876 650 q 945 337 945 444 q 874 96 945 205 q 668 -29 793 -29 q 551 0 608 -29 q 470 78 495 30 q 390 0 444 28 q 276 -29 337 -29 q 69 96 149 -29 q 0 337 0 204 q 36 553 0 444 q 130 749 68 650 l 334 749 q 241 565 273 650 q 203 365 203 461 q 219 222 203 279 q 292 142 243 142 q 360 183 342 142 q 373 271 373 211 q 372 298 372 285 q 372 323 372 311 l 372 528 l 566 528 l 565 323 "},"´":{"x_min":0,"x_max":132,"ha":299,"o":"m 132 604 l 0 604 l 0 988 l 132 988 l 132 604 "},"±":{"x_min":29,"x_max":798,"ha":828,"o":"m 798 480 l 484 480 l 484 254 l 344 254 l 344 480 l 29 480 l 29 615 l 344 615 l 344 842 l 484 842 l 484 615 l 798 615 l 798 480 m 798 0 l 29 0 l 29 136 l 798 136 l 798 0 "},"|":{"x_min":0,"x_max":143,"ha":240,"o":"m 143 462 l 0 462 l 0 984 l 143 984 l 143 462 m 143 -242 l 0 -242 l 0 280 l 143 280 l 143 -242 "},"ϋ":{"x_min":0,"x_max":656,"ha":767,"o":"m 535 810 l 406 810 l 406 952 l 535 952 l 535 810 m 271 810 l 142 810 l 142 952 l 271 952 l 271 810 m 656 417 q 568 55 656 146 q 326 -25 490 -25 q 59 97 137 -25 q 0 369 0 192 l 0 748 l 200 748 l 200 369 q 216 222 200 268 q 326 142 245 142 q 440 247 411 142 q 456 422 456 304 l 456 748 l 656 748 l 656 417 "},"§":{"x_min":0,"x_max":633,"ha":731,"o":"m 633 469 q 601 356 633 406 q 512 274 569 305 q 570 197 548 242 q 593 105 593 152 q 501 -76 593 -5 q 301 -142 416 -142 q 122 -82 193 -142 q 43 108 43 -15 l 212 108 q 251 27 220 53 q 321 1 283 1 q 389 23 360 1 q 419 83 419 46 q 310 194 419 139 q 108 297 111 295 q 0 476 0 372 q 33 584 0 537 q 120 659 62 626 q 72 720 91 686 q 53 790 53 755 q 133 978 53 908 q 312 1042 207 1042 q 483 984 412 1042 q 574 807 562 921 l 409 807 q 379 875 409 851 q 307 900 349 900 q 244 881 270 900 q 218 829 218 862 q 324 731 218 781 q 524 636 506 647 q 633 469 633 565 m 419 334 q 473 411 473 372 q 451 459 473 436 q 390 502 430 481 l 209 595 q 167 557 182 577 q 153 520 153 537 q 187 461 153 491 q 263 413 212 440 l 419 334 "},"b":{"x_min":0,"x_max":722,"ha":822,"o":"m 416 -26 q 289 6 346 -26 q 192 101 232 39 l 192 0 l 0 0 l 0 1013 l 192 1013 l 192 656 q 286 743 226 712 q 415 775 346 775 q 649 644 564 775 q 722 374 722 533 q 649 106 722 218 q 416 -26 565 -26 m 361 600 q 232 524 279 600 q 192 371 192 459 q 229 221 192 284 q 357 145 275 145 q 487 221 441 145 q 526 374 526 285 q 488 523 526 460 q 361 600 442 600 "},"q":{"x_min":0,"x_max":722,"ha":833,"o":"m 722 -298 l 530 -298 l 530 97 q 306 -25 449 -25 q 73 104 159 -25 q 0 372 0 216 q 72 643 0 529 q 305 775 156 775 q 430 742 371 775 q 530 654 488 709 l 530 750 l 722 750 l 722 -298 m 360 601 q 234 527 278 601 q 197 378 197 466 q 233 225 197 291 q 357 144 277 144 q 488 217 441 144 q 530 370 530 282 q 491 523 530 459 q 360 601 443 601 "},"Ω":{"x_min":-0.03125,"x_max":1008.53125,"ha":1108,"o":"m 1008 0 l 589 0 l 589 199 q 717 368 670 265 q 764 580 764 471 q 698 778 764 706 q 504 855 629 855 q 311 773 380 855 q 243 563 243 691 q 289 360 243 458 q 419 199 336 262 l 419 0 l 0 0 l 0 176 l 202 176 q 77 355 123 251 q 32 569 32 459 q 165 908 32 776 q 505 1040 298 1040 q 844 912 711 1040 q 977 578 977 785 q 931 362 977 467 q 805 176 886 256 l 1008 176 l 1008 0 "},"ύ":{"x_min":0,"x_max":656,"ha":767,"o":"m 656 417 q 568 55 656 146 q 326 -25 490 -25 q 59 97 137 -25 q 0 369 0 192 l 0 748 l 200 748 l 201 369 q 218 222 201 269 q 326 142 245 142 q 440 247 411 142 q 456 422 456 304 l 456 748 l 656 748 l 656 417 m 579 1039 l 378 823 l 279 823 l 401 1039 l 579 1039 "},"z":{"x_min":0,"x_max":663.890625,"ha":753,"o":"m 663 0 l 0 0 l 0 154 l 411 591 l 25 591 l 25 749 l 650 749 l 650 584 l 245 165 l 663 165 l 663 0 "},"™":{"x_min":0,"x_max":951,"ha":1063,"o":"m 405 921 l 255 921 l 255 506 l 149 506 l 149 921 l 0 921 l 0 1013 l 405 1013 l 405 921 m 951 506 l 852 506 l 852 916 l 750 506 l 643 506 l 539 915 l 539 506 l 442 506 l 442 1013 l 595 1012 l 695 625 l 794 1013 l 951 1013 l 951 506 "},"ή":{"x_min":0,"x_max":669,"ha":779,"o":"m 669 -278 l 469 -278 l 469 390 q 448 526 469 473 q 348 606 417 606 q 244 553 288 606 q 201 441 201 501 l 201 0 l 0 0 l 0 749 l 201 749 l 201 665 q 301 744 244 715 q 423 774 359 774 q 606 685 538 774 q 669 484 669 603 l 669 -278 m 495 1039 l 293 823 l 195 823 l 317 1039 l 495 1039 "},"Θ":{"x_min":0,"x_max":993,"ha":1092,"o":"m 497 -29 q 133 127 272 -29 q 0 505 0 277 q 133 883 0 733 q 497 1040 272 1040 q 861 883 722 1040 q 993 505 993 733 q 861 127 993 277 q 497 -29 722 -29 m 497 154 q 711 266 631 154 q 782 506 782 367 q 712 746 782 648 q 497 858 634 858 q 281 746 361 858 q 211 506 211 648 q 280 266 211 365 q 497 154 359 154 m 676 430 l 316 430 l 316 593 l 676 593 l 676 430 "},"®":{"x_min":3,"x_max":1007,"ha":1104,"o":"m 507 -6 q 129 153 269 -6 q 3 506 3 298 q 127 857 3 713 q 502 1017 266 1017 q 880 855 740 1017 q 1007 502 1007 711 q 882 152 1007 295 q 507 -6 743 -6 m 502 934 q 184 800 302 934 q 79 505 79 680 q 184 210 79 331 q 501 76 302 76 q 819 210 701 76 q 925 507 925 331 q 820 800 925 682 q 502 934 704 934 m 782 190 l 639 190 q 627 225 632 202 q 623 285 623 248 l 623 326 q 603 411 623 384 q 527 439 584 439 l 388 439 l 388 190 l 257 190 l 257 829 l 566 829 q 709 787 654 829 q 772 654 772 740 q 746 559 772 604 q 675 497 720 514 q 735 451 714 483 q 756 341 756 419 l 756 299 q 760 244 756 265 q 782 212 764 223 l 782 190 m 546 718 l 388 718 l 388 552 l 541 552 q 612 572 584 552 q 641 635 641 593 q 614 695 641 672 q 546 718 587 718 "},"~":{"x_min":0,"x_max":851,"ha":949,"o":"m 851 968 q 795 750 851 831 q 599 656 730 656 q 406 744 506 656 q 259 832 305 832 q 162 775 193 832 q 139 656 139 730 l 0 656 q 58 871 0 787 q 251 968 124 968 q 442 879 341 968 q 596 791 544 791 q 691 849 663 791 q 712 968 712 892 l 851 968 "},"Ε":{"x_min":0,"x_max":761.546875,"ha":824,"o":"m 761 0 l 0 0 l 0 1012 l 735 1012 l 735 836 l 206 836 l 206 621 l 690 621 l 690 446 l 206 446 l 206 186 l 761 186 l 761 0 "},"³":{"x_min":0,"x_max":467,"ha":564,"o":"m 467 555 q 393 413 467 466 q 229 365 325 365 q 70 413 134 365 q 0 565 0 467 l 123 565 q 163 484 131 512 q 229 461 190 461 q 299 486 269 461 q 329 553 329 512 q 281 627 329 607 q 187 641 248 641 l 187 722 q 268 737 237 722 q 312 804 312 758 q 285 859 312 837 q 224 882 259 882 q 165 858 189 882 q 135 783 140 834 l 12 783 q 86 930 20 878 q 230 976 145 976 q 379 931 314 976 q 444 813 444 887 q 423 744 444 773 q 365 695 402 716 q 439 640 412 676 q 467 555 467 605 "},"[":{"x_min":0,"x_max":347.21875,"ha":444,"o":"m 347 -300 l 0 -300 l 0 1013 l 347 1013 l 347 866 l 188 866 l 188 -154 l 347 -154 l 347 -300 "},"L":{"x_min":0,"x_max":704.171875,"ha":763,"o":"m 704 0 l 0 0 l 0 1013 l 208 1013 l 208 186 l 704 186 l 704 0 "},"σ":{"x_min":0,"x_max":851.3125,"ha":940,"o":"m 851 594 l 712 594 q 761 369 761 485 q 658 83 761 191 q 379 -25 555 -25 q 104 87 208 -25 q 0 372 0 200 q 103 659 0 544 q 378 775 207 775 q 464 762 407 775 q 549 750 521 750 l 851 750 l 851 594 m 379 142 q 515 216 466 142 q 557 373 557 280 q 515 530 557 465 q 379 608 465 608 q 244 530 293 608 q 203 373 203 465 q 244 218 203 283 q 379 142 293 142 "},"ζ":{"x_min":0,"x_max":622,"ha":701,"o":"m 622 -32 q 604 -158 622 -98 q 551 -278 587 -218 l 373 -278 q 426 -180 406 -229 q 446 -80 446 -131 q 421 -22 446 -37 q 354 -8 397 -8 q 316 -9 341 -8 q 280 -11 291 -11 q 75 69 150 -11 q 0 283 0 150 q 87 596 0 437 q 291 856 162 730 l 47 856 l 47 1013 l 592 1013 l 592 904 q 317 660 422 800 q 197 318 197 497 q 306 141 197 169 q 510 123 408 131 q 622 -32 622 102 "},"θ":{"x_min":0,"x_max":714,"ha":817,"o":"m 357 1022 q 633 833 534 1022 q 714 486 714 679 q 634 148 714 288 q 354 -25 536 -25 q 79 147 175 -25 q 0 481 0 288 q 79 831 0 679 q 357 1022 177 1022 m 510 590 q 475 763 510 687 q 351 862 430 862 q 233 763 272 862 q 204 590 204 689 l 510 590 m 510 440 l 204 440 q 233 251 204 337 q 355 131 274 131 q 478 248 434 131 q 510 440 510 337 "},"Ο":{"x_min":0,"x_max":995,"ha":1092,"o":"m 497 -29 q 133 127 272 -29 q 0 505 0 277 q 132 883 0 733 q 497 1040 270 1040 q 861 883 722 1040 q 995 505 995 733 q 862 127 995 277 q 497 -29 724 -29 m 497 154 q 711 266 632 154 q 781 506 781 365 q 711 745 781 647 q 497 857 632 857 q 283 747 361 857 q 213 506 213 647 q 282 266 213 365 q 497 154 361 154 "},"Γ":{"x_min":0,"x_max":703.84375,"ha":742,"o":"m 703 836 l 208 836 l 208 0 l 0 0 l 0 1012 l 703 1012 l 703 836 "}," ":{"x_min":0,"x_max":0,"ha":375},"%":{"x_min":0,"x_max":1111,"ha":1213,"o":"m 861 484 q 1048 404 979 484 q 1111 228 1111 332 q 1048 51 1111 123 q 859 -29 979 -29 q 672 50 740 -29 q 610 227 610 122 q 672 403 610 331 q 861 484 741 484 m 861 120 q 939 151 911 120 q 967 226 967 183 q 942 299 967 270 q 861 333 912 333 q 783 301 811 333 q 756 226 756 269 q 783 151 756 182 q 861 120 810 120 m 904 984 l 316 -28 l 205 -29 l 793 983 l 904 984 m 250 984 q 436 904 366 984 q 499 730 499 832 q 436 552 499 626 q 248 472 366 472 q 62 552 132 472 q 0 728 0 624 q 62 903 0 831 q 250 984 132 984 m 249 835 q 169 801 198 835 q 140 725 140 768 q 167 652 140 683 q 247 621 195 621 q 327 654 298 621 q 357 730 357 687 q 329 803 357 772 q 249 835 301 835 "},"P":{"x_min":0,"x_max":771,"ha":838,"o":"m 208 361 l 208 0 l 0 0 l 0 1013 l 450 1013 q 682 919 593 1013 q 771 682 771 826 q 687 452 771 544 q 466 361 604 361 l 208 361 m 421 837 l 208 837 l 208 544 l 410 544 q 525 579 480 544 q 571 683 571 615 q 527 792 571 747 q 421 837 484 837 "},"Έ":{"x_min":0,"x_max":1172.546875,"ha":1235,"o":"m 1172 0 l 411 0 l 411 1012 l 1146 1012 l 1146 836 l 617 836 l 617 621 l 1101 621 l 1101 446 l 617 446 l 617 186 l 1172 186 l 1172 0 m 313 1035 l 98 780 l 0 780 l 136 1035 l 313 1035 "},"Ώ":{"x_min":0.4375,"x_max":1189.546875,"ha":1289,"o":"m 1189 0 l 770 0 l 770 199 q 897 369 849 263 q 945 580 945 474 q 879 778 945 706 q 685 855 810 855 q 492 773 561 855 q 424 563 424 691 q 470 360 424 458 q 600 199 517 262 l 600 0 l 180 0 l 180 176 l 383 176 q 258 355 304 251 q 213 569 213 459 q 346 908 213 776 q 686 1040 479 1040 q 1025 912 892 1040 q 1158 578 1158 785 q 1112 362 1158 467 q 986 176 1067 256 l 1189 176 l 1189 0 m 314 1092 l 99 837 l 0 837 l 136 1092 l 314 1092 "},"_":{"x_min":61.109375,"x_max":766.671875,"ha":828,"o":"m 766 -333 l 61 -333 l 61 -190 l 766 -190 l 766 -333 "},"Ϊ":{"x_min":-56,"x_max":342,"ha":503,"o":"m 342 1046 l 186 1046 l 186 1215 l 342 1215 l 342 1046 m 101 1046 l -56 1046 l -56 1215 l 101 1215 l 101 1046 m 249 0 l 41 0 l 41 1012 l 249 1012 l 249 0 "},"+":{"x_min":43,"x_max":784,"ha":828,"o":"m 784 353 l 483 353 l 483 0 l 343 0 l 343 353 l 43 353 l 43 489 l 343 489 l 343 840 l 483 840 l 483 489 l 784 489 l 784 353 "},"½":{"x_min":0,"x_max":1090,"ha":1188,"o":"m 1090 380 q 992 230 1090 301 q 779 101 886 165 q 822 94 784 95 q 924 93 859 93 l 951 93 l 973 93 l 992 93 l 1009 93 q 1046 93 1027 93 q 1085 93 1066 93 l 1085 0 l 650 0 l 654 38 q 815 233 665 137 q 965 376 965 330 q 936 436 965 412 q 869 461 908 461 q 806 435 831 461 q 774 354 780 409 l 659 354 q 724 505 659 451 q 870 554 783 554 q 1024 506 958 554 q 1090 380 1090 459 m 868 998 l 268 -28 l 154 -27 l 757 999 l 868 998 m 272 422 l 147 422 l 147 799 l 0 799 l 0 875 q 126 900 91 875 q 170 973 162 926 l 272 973 l 272 422 "},"Ρ":{"x_min":0,"x_max":771,"ha":838,"o":"m 208 361 l 208 0 l 0 0 l 0 1012 l 450 1012 q 682 919 593 1012 q 771 681 771 826 q 687 452 771 544 q 466 361 604 361 l 208 361 m 422 836 l 209 836 l 209 544 l 410 544 q 525 579 480 544 q 571 683 571 614 q 527 791 571 747 q 422 836 484 836 "},"'":{"x_min":0,"x_max":192,"ha":289,"o":"m 192 834 q 137 692 192 751 q 0 626 82 632 l 0 697 q 101 830 101 726 l 0 830 l 0 1013 l 192 1013 l 192 834 "},"ª":{"x_min":0,"x_max":350,"ha":393,"o":"m 350 625 l 245 625 q 237 648 241 636 q 233 672 233 661 q 117 611 192 611 q 33 643 66 611 q 0 727 0 675 q 116 846 0 828 q 233 886 233 864 q 211 919 233 907 q 168 931 190 931 q 108 877 108 931 l 14 877 q 56 977 14 942 q 165 1013 98 1013 q 270 987 224 1013 q 329 903 329 955 l 329 694 q 332 661 329 675 q 350 641 336 648 l 350 625 m 233 774 l 233 809 q 151 786 180 796 q 97 733 97 768 q 111 700 97 712 q 149 689 126 689 q 210 713 187 689 q 233 774 233 737 "},"΅":{"x_min":57,"x_max":584,"ha":753,"o":"m 584 810 l 455 810 l 455 952 l 584 952 l 584 810 m 521 1064 l 305 810 l 207 810 l 343 1064 l 521 1064 m 186 810 l 57 810 l 57 952 l 186 952 l 186 810 "},"T":{"x_min":0,"x_max":809,"ha":894,"o":"m 809 831 l 509 831 l 509 0 l 299 0 l 299 831 l 0 831 l 0 1013 l 809 1013 l 809 831 "},"Φ":{"x_min":0,"x_max":949,"ha":1032,"o":"m 566 0 l 385 0 l 385 121 q 111 230 222 121 q 0 508 0 340 q 112 775 0 669 q 385 892 219 875 l 385 1013 l 566 1013 l 566 892 q 836 776 732 875 q 949 507 949 671 q 838 231 949 341 q 566 121 728 121 l 566 0 m 566 285 q 701 352 650 285 q 753 508 753 419 q 703 658 753 597 q 566 729 653 720 l 566 285 m 385 285 l 385 729 q 245 661 297 717 q 193 516 193 604 q 246 356 193 427 q 385 285 300 285 "},"j":{"x_min":-45.828125,"x_max":242,"ha":361,"o":"m 242 830 l 42 830 l 42 1013 l 242 1013 l 242 830 m 242 -119 q 180 -267 242 -221 q 20 -308 127 -308 l -45 -308 l -45 -140 l -24 -140 q 25 -130 8 -140 q 42 -88 42 -120 l 42 748 l 242 748 l 242 -119 "},"Σ":{"x_min":0,"x_max":772.21875,"ha":849,"o":"m 772 0 l 0 0 l 0 140 l 368 526 l 18 862 l 18 1012 l 740 1012 l 740 836 l 315 836 l 619 523 l 298 175 l 772 175 l 772 0 "},"1":{"x_min":197.609375,"x_max":628,"ha":828,"o":"m 628 0 l 434 0 l 434 674 l 197 674 l 197 810 q 373 837 318 810 q 468 984 450 876 l 628 984 l 628 0 "},"›":{"x_min":36.109375,"x_max":792,"ha":828,"o":"m 792 352 l 36 17 l 36 168 l 594 420 l 36 672 l 36 823 l 792 487 l 792 352 "},"<":{"x_min":35.984375,"x_max":791.671875,"ha":828,"o":"m 791 17 l 36 352 l 35 487 l 791 823 l 791 672 l 229 421 l 791 168 l 791 17 "},"£":{"x_min":0,"x_max":716.546875,"ha":814,"o":"m 716 38 q 603 -9 658 5 q 502 -24 548 -24 q 398 -10 451 -24 q 239 25 266 25 q 161 12 200 25 q 77 -29 122 0 l 0 113 q 110 211 81 174 q 151 315 151 259 q 117 440 151 365 l 0 440 l 0 515 l 73 515 q 35 610 52 560 q 15 710 15 671 q 119 910 15 831 q 349 984 216 984 q 570 910 480 984 q 693 668 674 826 l 501 668 q 455 791 501 746 q 353 830 414 830 q 256 795 298 830 q 215 705 215 760 q 249 583 215 655 q 283 515 266 548 l 479 515 l 479 440 l 309 440 q 316 394 313 413 q 319 355 319 374 q 287 241 319 291 q 188 135 263 205 q 262 160 225 152 q 332 168 298 168 q 455 151 368 168 q 523 143 500 143 q 588 152 558 143 q 654 189 617 162 l 716 38 "},"t":{"x_min":0,"x_max":412,"ha":511,"o":"m 412 -6 q 349 -8 391 -6 q 287 -11 307 -11 q 137 38 177 -11 q 97 203 97 87 l 97 609 l 0 609 l 0 749 l 97 749 l 97 951 l 297 951 l 297 749 l 412 749 l 412 609 l 297 609 l 297 191 q 315 152 297 162 q 366 143 334 143 q 389 143 378 143 q 412 143 400 143 l 412 -6 "},"¬":{"x_min":0,"x_max":704,"ha":801,"o":"m 704 93 l 551 93 l 551 297 l 0 297 l 0 450 l 704 450 l 704 93 "},"λ":{"x_min":0,"x_max":701.390625,"ha":775,"o":"m 701 0 l 491 0 l 345 444 l 195 0 l 0 0 l 238 697 l 131 1013 l 334 1013 l 701 0 "},"W":{"x_min":0,"x_max":1291.671875,"ha":1399,"o":"m 1291 1013 l 1002 0 l 802 0 l 645 777 l 490 0 l 288 0 l 0 1013 l 215 1013 l 388 298 l 534 1012 l 757 1013 l 904 299 l 1076 1013 l 1291 1013 "},">":{"x_min":36.109375,"x_max":792,"ha":828,"o":"m 792 352 l 36 17 l 36 168 l 594 420 l 36 672 l 36 823 l 792 487 l 792 352 "},"v":{"x_min":0,"x_max":740.28125,"ha":828,"o":"m 740 749 l 473 0 l 266 0 l 0 749 l 222 749 l 373 211 l 529 749 l 740 749 "},"τ":{"x_min":0.28125,"x_max":618.734375,"ha":699,"o":"m 618 593 l 409 593 l 409 0 l 210 0 l 210 593 l 0 593 l 0 749 l 618 749 l 618 593 "},"ξ":{"x_min":0,"x_max":640,"ha":715,"o":"m 640 -14 q 619 -157 640 -84 q 563 -299 599 -230 l 399 -299 q 442 -194 433 -223 q 468 -85 468 -126 q 440 -25 468 -41 q 368 -10 412 -10 q 333 -11 355 -10 q 302 -13 311 -13 q 91 60 179 -13 q 0 259 0 138 q 56 426 0 354 q 201 530 109 493 q 106 594 144 553 q 65 699 65 642 q 94 787 65 747 q 169 856 123 828 l 22 856 l 22 1013 l 597 1013 l 597 856 l 497 857 q 345 840 398 857 q 257 736 257 812 q 366 614 257 642 q 552 602 416 602 l 552 446 l 513 446 q 313 425 379 446 q 199 284 199 389 q 312 162 199 184 q 524 136 418 148 q 640 -14 640 105 "},"&":{"x_min":-1,"x_max":910.109375,"ha":1007,"o":"m 910 -1 l 676 -1 l 607 83 q 291 -47 439 -47 q 50 100 135 -47 q -1 273 -1 190 q 51 431 -1 357 q 218 568 104 505 q 151 661 169 629 q 120 769 120 717 q 201 951 120 885 q 382 1013 276 1013 q 555 957 485 1013 q 635 789 635 894 q 584 644 635 709 q 468 539 548 597 l 615 359 q 664 527 654 440 l 844 527 q 725 223 824 359 l 910 -1 m 461 787 q 436 848 461 826 q 381 870 412 870 q 325 849 349 870 q 301 792 301 829 q 324 719 301 757 q 372 660 335 703 q 430 714 405 680 q 461 787 461 753 m 500 214 l 318 441 q 198 286 198 363 q 225 204 198 248 q 347 135 268 135 q 425 153 388 135 q 500 214 462 172 "},"Λ":{"x_min":0,"x_max":894.453125,"ha":974,"o":"m 894 0 l 666 0 l 447 757 l 225 0 l 0 0 l 344 1013 l 547 1013 l 894 0 "},"I":{"x_min":41,"x_max":249,"ha":365,"o":"m 249 0 l 41 0 l 41 1013 l 249 1013 l 249 0 "},"G":{"x_min":0,"x_max":971,"ha":1057,"o":"m 971 -1 l 829 -1 l 805 118 q 479 -29 670 -29 q 126 133 261 -29 q 0 509 0 286 q 130 884 0 737 q 493 1040 268 1040 q 790 948 659 1040 q 961 698 920 857 l 736 698 q 643 813 709 769 q 500 857 578 857 q 285 746 364 857 q 213 504 213 644 q 285 263 213 361 q 505 154 365 154 q 667 217 598 154 q 761 374 736 280 l 548 374 l 548 548 l 971 548 l 971 -1 "},"ΰ":{"x_min":0,"x_max":655,"ha":767,"o":"m 583 810 l 454 810 l 454 952 l 583 952 l 583 810 m 186 810 l 57 809 l 57 952 l 186 952 l 186 810 m 516 1039 l 315 823 l 216 823 l 338 1039 l 516 1039 m 655 417 q 567 55 655 146 q 326 -25 489 -25 q 59 97 137 -25 q 0 369 0 192 l 0 748 l 200 748 l 201 369 q 218 222 201 269 q 326 142 245 142 q 439 247 410 142 q 455 422 455 304 l 455 748 l 655 748 l 655 417 "},"`":{"x_min":0,"x_max":190,"ha":288,"o":"m 190 654 l 0 654 l 0 830 q 55 970 0 909 q 190 1040 110 1031 l 190 969 q 111 922 134 952 q 88 836 88 892 l 190 836 l 190 654 "},"·":{"x_min":0,"x_max":207,"ha":304,"o":"m 207 528 l 0 528 l 0 735 l 207 735 l 207 528 "},"Υ":{"x_min":-0.21875,"x_max":836.171875,"ha":914,"o":"m 836 1013 l 532 376 l 532 0 l 322 0 l 322 376 l 0 1013 l 208 1013 l 427 576 l 626 1013 l 836 1013 "},"r":{"x_min":0,"x_max":431.9375,"ha":513,"o":"m 431 564 q 269 536 320 564 q 200 395 200 498 l 200 0 l 0 0 l 0 748 l 183 748 l 183 618 q 285 731 224 694 q 431 768 345 768 l 431 564 "},"x":{"x_min":0,"x_max":738.890625,"ha":826,"o":"m 738 0 l 504 0 l 366 238 l 230 0 l 0 0 l 252 382 l 11 749 l 238 749 l 372 522 l 502 749 l 725 749 l 488 384 l 738 0 "},"μ":{"x_min":0,"x_max":647,"ha":754,"o":"m 647 0 l 477 0 l 477 68 q 411 9 448 30 q 330 -11 374 -11 q 261 3 295 -11 q 199 43 226 18 l 199 -278 l 0 -278 l 0 749 l 199 749 l 199 358 q 216 222 199 268 q 322 152 244 152 q 435 240 410 152 q 448 401 448 283 l 448 749 l 647 749 l 647 0 "},"h":{"x_min":0,"x_max":669,"ha":782,"o":"m 669 0 l 469 0 l 469 390 q 449 526 469 472 q 353 607 420 607 q 248 554 295 607 q 201 441 201 501 l 201 0 l 0 0 l 0 1013 l 201 1013 l 201 665 q 303 743 245 715 q 425 772 362 772 q 609 684 542 772 q 669 484 669 605 l 669 0 "},".":{"x_min":0,"x_max":206,"ha":303,"o":"m 206 0 l 0 0 l 0 207 l 206 207 l 206 0 "},"φ":{"x_min":-1,"x_max":921,"ha":990,"o":"m 542 -278 l 367 -278 l 367 -22 q 99 92 200 -22 q -1 376 -1 206 q 72 627 -1 520 q 288 769 151 742 l 288 581 q 222 495 243 550 q 202 378 202 439 q 240 228 202 291 q 367 145 285 157 l 367 776 l 515 776 q 807 667 694 776 q 921 379 921 558 q 815 93 921 209 q 542 -22 709 -22 l 542 -278 m 542 145 q 672 225 625 145 q 713 381 713 291 q 671 536 713 470 q 542 611 624 611 l 542 145 "},";":{"x_min":0,"x_max":208,"ha":306,"o":"m 208 528 l 0 528 l 0 735 l 208 735 l 208 528 m 208 6 q 152 -151 208 -89 q 0 -238 96 -212 l 0 -158 q 87 -100 61 -136 q 113 0 113 -65 l 0 0 l 0 207 l 208 207 l 208 6 "},"f":{"x_min":0,"x_max":424,"ha":525,"o":"m 424 609 l 300 609 l 300 0 l 107 0 l 107 609 l 0 609 l 0 749 l 107 749 q 145 949 107 894 q 328 1019 193 1019 l 424 1015 l 424 855 l 362 855 q 312 841 324 855 q 300 797 300 827 q 300 773 300 786 q 300 749 300 761 l 424 749 l 424 609 "},"“":{"x_min":0,"x_max":468,"ha":567,"o":"m 190 631 l 0 631 l 0 807 q 55 947 0 885 q 190 1017 110 1010 l 190 947 q 88 813 88 921 l 190 813 l 190 631 m 468 631 l 278 631 l 278 807 q 333 947 278 885 q 468 1017 388 1010 l 468 947 q 366 813 366 921 l 468 813 l 468 631 "},"A":{"x_min":0,"x_max":966.671875,"ha":1069,"o":"m 966 0 l 747 0 l 679 208 l 286 208 l 218 0 l 0 0 l 361 1013 l 600 1013 l 966 0 m 623 376 l 480 810 l 340 376 l 623 376 "},"6":{"x_min":57,"x_max":771,"ha":828,"o":"m 744 734 l 544 734 q 500 802 533 776 q 425 828 466 828 q 315 769 359 828 q 264 571 264 701 q 451 638 343 638 q 691 537 602 638 q 771 315 771 449 q 683 79 771 176 q 420 -29 586 -29 q 134 123 227 -29 q 57 455 57 250 q 184 865 57 721 q 452 988 293 988 q 657 916 570 988 q 744 734 744 845 m 426 128 q 538 178 498 128 q 578 300 578 229 q 538 422 578 372 q 415 479 493 479 q 303 430 342 479 q 264 313 264 381 q 308 184 264 240 q 426 128 352 128 "},"‘":{"x_min":0,"x_max":190,"ha":289,"o":"m 190 631 l 0 631 l 0 807 q 55 947 0 885 q 190 1017 110 1010 l 190 947 q 88 813 88 921 l 190 813 l 190 631 "},"ϊ":{"x_min":-55,"x_max":337,"ha":389,"o":"m 337 810 l 208 810 l 208 952 l 337 952 l 337 810 m 74 810 l -55 810 l -55 952 l 74 952 l 74 810 m 242 0 l 42 0 l 42 748 l 242 748 l 242 0 "},"π":{"x_min":0.5,"x_max":838.890625,"ha":938,"o":"m 838 593 l 750 593 l 750 0 l 549 0 l 549 593 l 287 593 l 287 0 l 88 0 l 88 593 l 0 593 l 0 749 l 838 749 l 838 593 "},"ά":{"x_min":-1,"x_max":722,"ha":835,"o":"m 722 0 l 531 0 l 530 101 q 433 8 491 41 q 304 -25 375 -25 q 72 104 157 -25 q -1 372 -1 216 q 72 643 -1 530 q 308 775 158 775 q 433 744 375 775 q 528 656 491 713 l 528 749 l 722 749 l 722 0 m 361 601 q 233 527 277 601 q 196 375 196 464 q 232 224 196 288 q 358 144 277 144 q 487 217 441 144 q 528 370 528 281 q 489 523 528 457 q 361 601 443 601 m 579 1039 l 377 823 l 279 823 l 401 1039 l 579 1039 "},"O":{"x_min":0,"x_max":994,"ha":1094,"o":"m 497 -29 q 133 127 272 -29 q 0 505 0 277 q 131 883 0 733 q 497 1040 270 1040 q 860 883 721 1040 q 994 505 994 733 q 862 127 994 277 q 497 -29 723 -29 m 497 154 q 710 266 631 154 q 780 506 780 365 q 710 745 780 647 q 497 857 631 857 q 283 747 361 857 q 213 506 213 647 q 282 266 213 365 q 497 154 361 154 "},"n":{"x_min":0,"x_max":669,"ha":782,"o":"m 669 0 l 469 0 l 469 452 q 442 553 469 513 q 352 601 412 601 q 245 553 290 601 q 200 441 200 505 l 200 0 l 0 0 l 0 748 l 194 748 l 194 659 q 289 744 230 713 q 416 775 349 775 q 600 700 531 775 q 669 509 669 626 l 669 0 "},"3":{"x_min":61,"x_max":767,"ha":828,"o":"m 767 290 q 653 51 767 143 q 402 -32 548 -32 q 168 48 262 -32 q 61 300 61 140 l 250 300 q 298 173 250 219 q 405 132 343 132 q 514 169 471 132 q 563 282 563 211 q 491 405 563 369 q 343 432 439 432 l 343 568 q 472 592 425 568 q 534 701 534 626 q 493 793 534 758 q 398 829 453 829 q 306 789 344 829 q 268 669 268 749 l 80 669 q 182 909 80 823 q 410 986 274 986 q 633 916 540 986 q 735 719 735 840 q 703 608 735 656 q 615 522 672 561 q 727 427 687 486 q 767 290 767 369 "},"9":{"x_min":58,"x_max":769,"ha":828,"o":"m 769 492 q 646 90 769 232 q 384 -33 539 -33 q 187 35 271 -33 q 83 224 98 107 l 282 224 q 323 154 286 182 q 404 127 359 127 q 513 182 471 127 q 563 384 563 248 q 475 335 532 355 q 372 315 418 315 q 137 416 224 315 q 58 642 58 507 q 144 877 58 781 q 407 984 239 984 q 694 827 602 984 q 769 492 769 699 m 416 476 q 525 521 488 476 q 563 632 563 566 q 521 764 563 709 q 403 826 474 826 q 297 773 337 826 q 258 649 258 720 q 295 530 258 577 q 416 476 339 476 "},"l":{"x_min":41,"x_max":240,"ha":363,"o":"m 240 0 l 41 0 l 41 1013 l 240 1013 l 240 0 "},"¤":{"x_min":40.265625,"x_max":727.203125,"ha":825,"o":"m 727 792 l 594 659 q 620 552 620 609 q 598 459 620 504 l 725 331 l 620 224 l 491 352 q 382 331 443 331 q 273 352 322 331 l 144 224 l 40 330 l 167 459 q 147 552 147 501 q 172 658 147 608 l 40 794 l 147 898 l 283 759 q 383 776 330 776 q 482 759 434 776 l 620 898 l 727 792 m 383 644 q 308 617 334 644 q 283 551 283 590 q 309 489 283 517 q 381 462 335 462 q 456 488 430 462 q 482 554 482 515 q 455 616 482 588 q 383 644 429 644 "},"κ":{"x_min":0,"x_max":691.84375,"ha":779,"o":"m 691 0 l 479 0 l 284 343 l 196 252 l 196 0 l 0 0 l 0 749 l 196 749 l 196 490 l 440 749 l 677 749 l 416 479 l 691 0 "},"4":{"x_min":53,"x_max":775.21875,"ha":828,"o":"m 775 213 l 660 213 l 660 0 l 470 0 l 470 213 l 53 213 l 53 384 l 416 958 l 660 958 l 660 370 l 775 370 l 775 213 m 474 364 l 474 786 l 204 363 l 474 364 "},"p":{"x_min":0,"x_max":722,"ha":824,"o":"m 415 -26 q 287 4 346 -26 q 192 92 228 34 l 192 -298 l 0 -298 l 0 750 l 192 750 l 192 647 q 289 740 230 706 q 416 775 347 775 q 649 645 566 775 q 722 375 722 534 q 649 106 722 218 q 415 -26 564 -26 m 363 603 q 232 529 278 603 q 192 375 192 465 q 230 222 192 286 q 360 146 276 146 q 487 221 441 146 q 526 371 526 285 q 488 523 526 458 q 363 603 443 603 "},"‡":{"x_min":0,"x_max":809,"ha":894,"o":"m 299 621 l 0 621 l 0 804 l 299 804 l 299 1011 l 509 1011 l 509 804 l 809 804 l 809 621 l 509 621 l 509 387 l 809 387 l 809 205 l 509 205 l 509 0 l 299 0 l 299 205 l 0 205 l 0 387 l 299 387 l 299 621 "},"ψ":{"x_min":0,"x_max":875,"ha":979,"o":"m 522 142 q 657 274 620 163 q 671 352 671 316 l 671 748 l 875 748 l 875 402 q 806 134 875 240 q 525 -22 719 -1 l 525 -278 l 349 -278 l 349 -22 q 65 135 152 -1 q 0 402 0 238 l 0 748 l 204 748 l 204 352 q 231 240 204 295 q 353 142 272 159 l 353 922 l 524 922 l 522 142 "},"η":{"x_min":0,"x_max":669,"ha":779,"o":"m 669 -278 l 469 -278 l 469 390 q 448 526 469 473 q 348 606 417 606 q 244 553 288 606 q 201 441 201 501 l 201 0 l 0 0 l 0 749 l 201 749 l 201 665 q 301 744 244 715 q 423 774 359 774 q 606 685 538 774 q 669 484 669 603 l 669 -278 "}},"cssFontWeight":"bold","ascender":1216,"underlinePosition":-100,"cssFontStyle":"normal","boundingBox":{"yMin":-333,"xMin":-162,"yMax":1216,"xMax":1681},"resolution":1000,"original_font_information":{"postscript_name":"Helvetiker-Bold","version_string":"Version 1.00 2004 initial release","vendor_url":"http://www.magenta.gr","full_font_name":"Helvetiker Bold","font_family_name":"Helvetiker","copyright":"Copyright (c) Magenta ltd, 2004.","description":"","trademark":"","designer":"","designer_url":"","unique_font_identifier":"Magenta ltd:Helvetiker Bold:22-10-104","license_url":"http://www.ellak.gr/fonts/MgOpen/license.html","license_description":"Copyright (c) 2004 by MAGENTA Ltd. All Rights Reserved.\r\n\r\nPermission is hereby granted, free of charge, to any person obtaining a copy of the fonts accompanying this license (\"Fonts\") and associated documentation files (the \"Font Software\"), to reproduce and distribute the Font Software, including without limitation the rights to use, copy, merge, publish, distribute, and/or sell copies of the Font Software, and to permit persons to whom the Font Software is furnished to do so, subject to the following conditions: \r\n\r\nThe above copyright and this permission notice shall be included in all copies of one or more of the Font Software typefaces.\r\n\r\nThe Font Software may be modified, altered, or added to, and in particular the designs of glyphs or characters in the Fonts may be modified and additional glyphs or characters may be added to the Fonts, only if the fonts are renamed to names not containing the word \"MgOpen\", or if the modifications are accepted for inclusion in the Font Software itself by the each appointed Administrator.\r\n\r\nThis License becomes null and void to the extent applicable to Fonts or Font Software that has been modified and is distributed under the \"MgOpen\" name.\r\n\r\nThe Font Software may be sold as part of a larger software package but no copy of one or more of the Font Software typefaces may be sold by itself. \r\n\r\nTHE FONT SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL MAGENTA OR PERSONS OR BODIES IN CHARGE OF ADMINISTRATION AND MAINTENANCE OF THE FONT SOFTWARE BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM OTHER DEALINGS IN THE FONT SOFTWARE.","manufacturer_name":"Magenta ltd","font_sub_family_name":"Bold"},"descender":-334,"familyName":"Helvetiker","lineHeight":1549,"underlineThickness":50});if (_typeface_js && _typeface_js.loadFace) _typeface_js.loadFace({"glyphs":{"ο":{"x_min":0,"x_max":712,"ha":815,"o":"m 356 -25 q 96 88 192 -25 q 0 368 0 201 q 92 642 0 533 q 356 761 192 761 q 617 644 517 761 q 712 368 712 533 q 619 91 712 201 q 356 -25 520 -25 m 356 85 q 527 175 465 85 q 583 369 583 255 q 528 562 583 484 q 356 651 466 651 q 189 560 250 651 q 135 369 135 481 q 187 177 135 257 q 356 85 250 85 "},"S":{"x_min":0,"x_max":788,"ha":890,"o":"m 788 291 q 662 54 788 144 q 397 -26 550 -26 q 116 68 226 -26 q 0 337 0 168 l 131 337 q 200 152 131 220 q 384 85 269 85 q 557 129 479 85 q 650 270 650 183 q 490 429 650 379 q 194 513 341 470 q 33 739 33 584 q 142 964 33 881 q 388 1041 242 1041 q 644 957 543 1041 q 756 716 756 867 l 625 716 q 561 874 625 816 q 395 933 497 933 q 243 891 309 933 q 164 759 164 841 q 325 609 164 656 q 625 526 475 568 q 788 291 788 454 "},"¦":{"x_min":343,"x_max":449,"ha":792,"o":"m 449 462 l 343 462 l 343 986 l 449 986 l 449 462 m 449 -242 l 343 -242 l 343 280 l 449 280 l 449 -242 "},"/":{"x_min":183.25,"x_max":608.328125,"ha":792,"o":"m 608 1041 l 266 -129 l 183 -129 l 520 1041 l 608 1041 "},"Τ":{"x_min":-0.4375,"x_max":777.453125,"ha":839,"o":"m 777 893 l 458 893 l 458 0 l 319 0 l 319 892 l 0 892 l 0 1013 l 777 1013 l 777 893 "},"y":{"x_min":0,"x_max":684.78125,"ha":771,"o":"m 684 738 l 388 -83 q 311 -216 356 -167 q 173 -279 252 -279 q 97 -266 133 -279 l 97 -149 q 132 -155 109 -151 q 168 -160 155 -160 q 240 -114 213 -160 q 274 -26 248 -98 l 0 738 l 137 737 l 341 139 l 548 737 l 684 738 "},"Π":{"x_min":0,"x_max":803,"ha":917,"o":"m 803 0 l 667 0 l 667 886 l 140 886 l 140 0 l 0 0 l 0 1012 l 803 1012 l 803 0 "},"ΐ":{"x_min":-111,"x_max":339,"ha":361,"o":"m 339 800 l 229 800 l 229 925 l 339 925 l 339 800 m -1 800 l -111 800 l -111 925 l -1 925 l -1 800 m 284 3 q 233 -10 258 -5 q 182 -15 207 -15 q 85 26 119 -15 q 42 200 42 79 l 42 737 l 167 737 l 168 215 q 172 141 168 157 q 226 101 183 101 q 248 103 239 101 q 284 112 257 104 l 284 3 m 302 1040 l 113 819 l 30 819 l 165 1040 l 302 1040 "},"g":{"x_min":0,"x_max":686,"ha":838,"o":"m 686 34 q 586 -213 686 -121 q 331 -306 487 -306 q 131 -252 216 -306 q 31 -84 31 -190 l 155 -84 q 228 -174 166 -138 q 345 -207 284 -207 q 514 -109 454 -207 q 564 89 564 -27 q 461 6 521 36 q 335 -23 401 -23 q 88 100 184 -23 q 0 370 0 215 q 87 634 0 522 q 330 758 183 758 q 457 728 398 758 q 564 644 515 699 l 564 737 l 686 737 l 686 34 m 582 367 q 529 560 582 481 q 358 652 468 652 q 189 561 250 652 q 135 369 135 482 q 189 176 135 255 q 361 85 251 85 q 529 176 468 85 q 582 367 582 255 "},"²":{"x_min":0,"x_max":442,"ha":539,"o":"m 442 383 l 0 383 q 91 566 0 492 q 260 668 176 617 q 354 798 354 727 q 315 875 354 845 q 227 905 277 905 q 136 869 173 905 q 99 761 99 833 l 14 761 q 82 922 14 864 q 232 974 141 974 q 379 926 316 974 q 442 797 442 878 q 351 635 442 704 q 183 539 321 611 q 92 455 92 491 l 442 455 l 442 383 "},"–":{"x_min":0,"x_max":705.5625,"ha":803,"o":"m 705 334 l 0 334 l 0 410 l 705 410 l 705 334 "},"Κ":{"x_min":0,"x_max":819.5625,"ha":893,"o":"m 819 0 l 650 0 l 294 509 l 139 356 l 139 0 l 0 0 l 0 1013 l 139 1013 l 139 526 l 626 1013 l 809 1013 l 395 600 l 819 0 "},"ƒ":{"x_min":-46.265625,"x_max":392,"ha":513,"o":"m 392 651 l 259 651 l 79 -279 l -46 -278 l 134 651 l 14 651 l 14 751 l 135 751 q 151 948 135 900 q 304 1041 185 1041 q 334 1040 319 1041 q 392 1034 348 1039 l 392 922 q 337 931 360 931 q 271 883 287 931 q 260 793 260 853 l 260 751 l 392 751 l 392 651 "},"e":{"x_min":0,"x_max":714,"ha":813,"o":"m 714 326 l 140 326 q 200 157 140 227 q 359 87 260 87 q 488 130 431 87 q 561 245 545 174 l 697 245 q 577 48 670 123 q 358 -26 484 -26 q 97 85 195 -26 q 0 363 0 197 q 94 642 0 529 q 358 765 195 765 q 626 627 529 765 q 714 326 714 503 m 576 429 q 507 583 564 522 q 355 650 445 650 q 206 583 266 650 q 140 429 152 522 l 576 429 "},"ό":{"x_min":0,"x_max":712,"ha":815,"o":"m 356 -25 q 94 91 194 -25 q 0 368 0 202 q 92 642 0 533 q 356 761 192 761 q 617 644 517 761 q 712 368 712 533 q 619 91 712 201 q 356 -25 520 -25 m 356 85 q 527 175 465 85 q 583 369 583 255 q 528 562 583 484 q 356 651 466 651 q 189 560 250 651 q 135 369 135 481 q 187 177 135 257 q 356 85 250 85 m 576 1040 l 387 819 l 303 819 l 438 1040 l 576 1040 "},"J":{"x_min":0,"x_max":588,"ha":699,"o":"m 588 279 q 287 -26 588 -26 q 58 73 126 -26 q 0 327 0 158 l 133 327 q 160 172 133 227 q 288 96 198 96 q 426 171 391 96 q 449 336 449 219 l 449 1013 l 588 1013 l 588 279 "},"»":{"x_min":-1,"x_max":503,"ha":601,"o":"m 503 302 l 280 136 l 281 256 l 429 373 l 281 486 l 280 608 l 503 440 l 503 302 m 221 302 l 0 136 l 0 255 l 145 372 l 0 486 l -1 608 l 221 440 l 221 302 "},"©":{"x_min":-3,"x_max":1008,"ha":1106,"o":"m 502 -7 q 123 151 263 -7 q -3 501 -3 294 q 123 851 -3 706 q 502 1011 263 1011 q 881 851 739 1011 q 1008 501 1008 708 q 883 151 1008 292 q 502 -7 744 -7 m 502 60 q 830 197 709 60 q 940 501 940 322 q 831 805 940 681 q 502 944 709 944 q 174 805 296 944 q 65 501 65 680 q 173 197 65 320 q 502 60 294 60 m 741 394 q 661 246 731 302 q 496 190 591 190 q 294 285 369 190 q 228 497 228 370 q 295 714 228 625 q 499 813 370 813 q 656 762 588 813 q 733 625 724 711 l 634 625 q 589 704 629 673 q 498 735 550 735 q 377 666 421 735 q 334 504 334 597 q 374 340 334 408 q 490 272 415 272 q 589 304 549 272 q 638 394 628 337 l 741 394 "},"ώ":{"x_min":0,"x_max":922,"ha":1030,"o":"m 687 1040 l 498 819 l 415 819 l 549 1040 l 687 1040 m 922 339 q 856 97 922 203 q 650 -26 780 -26 q 538 9 587 -26 q 461 103 489 44 q 387 12 436 46 q 277 -22 339 -22 q 69 97 147 -22 q 0 338 0 202 q 45 551 0 444 q 161 737 84 643 l 302 737 q 175 552 219 647 q 124 336 124 446 q 155 179 124 248 q 275 88 197 88 q 375 163 341 88 q 400 294 400 219 l 400 572 l 524 572 l 524 294 q 561 135 524 192 q 643 88 591 88 q 762 182 719 88 q 797 341 797 257 q 745 555 797 450 q 619 737 705 637 l 760 737 q 874 551 835 640 q 922 339 922 444 "},"^":{"x_min":193.0625,"x_max":598.609375,"ha":792,"o":"m 598 772 l 515 772 l 395 931 l 277 772 l 193 772 l 326 1013 l 462 1013 l 598 772 "},"«":{"x_min":0,"x_max":507.203125,"ha":604,"o":"m 506 136 l 284 302 l 284 440 l 506 608 l 507 485 l 360 371 l 506 255 l 506 136 m 222 136 l 0 302 l 0 440 l 222 608 l 221 486 l 73 373 l 222 256 l 222 136 "},"D":{"x_min":0,"x_max":828,"ha":935,"o":"m 389 1013 q 714 867 593 1013 q 828 521 828 729 q 712 161 828 309 q 382 0 587 0 l 0 0 l 0 1013 l 389 1013 m 376 124 q 607 247 523 124 q 681 510 681 355 q 607 771 681 662 q 376 896 522 896 l 139 896 l 139 124 l 376 124 "},"∙":{"x_min":0,"x_max":142,"ha":239,"o":"m 142 585 l 0 585 l 0 738 l 142 738 l 142 585 "},"ÿ":{"x_min":0,"x_max":47,"ha":125,"o":"m 47 3 q 37 -7 47 -7 q 28 0 30 -7 q 39 -4 32 -4 q 45 3 45 -1 l 37 0 q 28 9 28 0 q 39 19 28 19 l 47 16 l 47 19 l 47 3 m 37 1 q 44 8 44 1 q 37 16 44 16 q 30 8 30 16 q 37 1 30 1 m 26 1 l 23 22 l 14 0 l 3 22 l 3 3 l 0 25 l 13 1 l 22 25 l 26 1 "},"w":{"x_min":0,"x_max":1009.71875,"ha":1100,"o":"m 1009 738 l 783 0 l 658 0 l 501 567 l 345 0 l 222 0 l 0 738 l 130 738 l 284 174 l 432 737 l 576 738 l 721 173 l 881 737 l 1009 738 "},"$":{"x_min":0,"x_max":700,"ha":793,"o":"m 664 717 l 542 717 q 490 825 531 785 q 381 872 450 865 l 381 551 q 620 446 540 522 q 700 241 700 370 q 618 45 700 116 q 381 -25 536 -25 l 381 -152 l 307 -152 l 307 -25 q 81 62 162 -25 q 0 297 0 149 l 124 297 q 169 146 124 204 q 307 81 215 89 l 307 441 q 80 536 148 469 q 13 725 13 603 q 96 910 13 839 q 307 982 180 982 l 307 1077 l 381 1077 l 381 982 q 574 917 494 982 q 664 717 664 845 m 307 565 l 307 872 q 187 831 233 872 q 142 724 142 791 q 180 618 142 656 q 307 565 218 580 m 381 76 q 562 237 562 96 q 517 361 562 313 q 381 423 472 409 l 381 76 "},"\\":{"x_min":-0.015625,"x_max":425.0625,"ha":522,"o":"m 425 -129 l 337 -129 l 0 1041 l 83 1041 l 425 -129 "},"µ":{"x_min":0,"x_max":697.21875,"ha":747,"o":"m 697 -4 q 629 -14 658 -14 q 498 97 513 -14 q 422 9 470 41 q 313 -23 374 -23 q 207 4 258 -23 q 119 81 156 32 l 119 -278 l 0 -278 l 0 738 l 124 738 l 124 343 q 165 173 124 246 q 308 83 216 83 q 452 178 402 83 q 493 359 493 255 l 493 738 l 617 738 l 617 214 q 623 136 617 160 q 673 92 637 92 q 697 96 684 92 l 697 -4 "},"Ι":{"x_min":42,"x_max":181,"ha":297,"o":"m 181 0 l 42 0 l 42 1013 l 181 1013 l 181 0 "},"Ύ":{"x_min":0,"x_max":1144.5,"ha":1214,"o":"m 1144 1012 l 807 416 l 807 0 l 667 0 l 667 416 l 325 1012 l 465 1012 l 736 533 l 1004 1012 l 1144 1012 m 277 1040 l 83 799 l 0 799 l 140 1040 l 277 1040 "},"’":{"x_min":0,"x_max":139,"ha":236,"o":"m 139 851 q 102 737 139 784 q 0 669 65 690 l 0 734 q 59 787 42 741 q 72 873 72 821 l 0 873 l 0 1013 l 139 1013 l 139 851 "},"Ν":{"x_min":0,"x_max":801,"ha":915,"o":"m 801 0 l 651 0 l 131 822 l 131 0 l 0 0 l 0 1013 l 151 1013 l 670 191 l 670 1013 l 801 1013 l 801 0 "},"-":{"x_min":8.71875,"x_max":350.390625,"ha":478,"o":"m 350 317 l 8 317 l 8 428 l 350 428 l 350 317 "},"Q":{"x_min":0,"x_max":968,"ha":1072,"o":"m 954 5 l 887 -79 l 744 35 q 622 -11 687 2 q 483 -26 556 -26 q 127 130 262 -26 q 0 504 0 279 q 127 880 0 728 q 484 1041 262 1041 q 841 884 708 1041 q 968 507 968 735 q 933 293 968 398 q 832 104 899 188 l 954 5 m 723 191 q 802 330 777 248 q 828 499 828 412 q 744 790 828 673 q 483 922 650 922 q 228 791 322 922 q 142 505 142 673 q 227 221 142 337 q 487 91 323 91 q 632 123 566 91 l 520 215 l 587 301 l 723 191 "},"ς":{"x_min":1,"x_max":676.28125,"ha":740,"o":"m 676 460 l 551 460 q 498 595 542 546 q 365 651 448 651 q 199 578 263 651 q 136 401 136 505 q 266 178 136 241 q 508 106 387 142 q 640 -50 640 62 q 625 -158 640 -105 q 583 -278 611 -211 l 465 -278 q 498 -182 490 -211 q 515 -80 515 -126 q 381 12 515 -15 q 134 91 197 51 q 1 388 1 179 q 100 651 1 542 q 354 761 199 761 q 587 680 498 761 q 676 460 676 599 "},"M":{"x_min":0,"x_max":954,"ha":1067,"o":"m 954 0 l 819 0 l 819 869 l 537 0 l 405 0 l 128 866 l 128 0 l 0 0 l 0 1013 l 200 1013 l 472 160 l 757 1013 l 954 1013 l 954 0 "},"Ψ":{"x_min":0,"x_max":1006,"ha":1094,"o":"m 1006 678 q 914 319 1006 429 q 571 200 814 200 l 571 0 l 433 0 l 433 200 q 92 319 194 200 q 0 678 0 429 l 0 1013 l 139 1013 l 139 679 q 191 417 139 492 q 433 326 255 326 l 433 1013 l 571 1013 l 571 326 l 580 326 q 813 423 747 326 q 868 679 868 502 l 868 1013 l 1006 1013 l 1006 678 "},"C":{"x_min":0,"x_max":886,"ha":944,"o":"m 886 379 q 760 87 886 201 q 455 -26 634 -26 q 112 136 236 -26 q 0 509 0 283 q 118 882 0 737 q 469 1041 245 1041 q 748 955 630 1041 q 879 708 879 859 l 745 708 q 649 862 724 805 q 473 920 573 920 q 219 791 312 920 q 136 509 136 675 q 217 229 136 344 q 470 99 311 99 q 672 179 591 99 q 753 379 753 259 l 886 379 "},"!":{"x_min":0,"x_max":138,"ha":236,"o":"m 138 684 q 116 409 138 629 q 105 244 105 299 l 33 244 q 16 465 33 313 q 0 684 0 616 l 0 1013 l 138 1013 l 138 684 m 138 0 l 0 0 l 0 151 l 138 151 l 138 0 "},"{":{"x_min":0,"x_max":480.5625,"ha":578,"o":"m 480 -286 q 237 -213 303 -286 q 187 -45 187 -159 q 194 48 187 -15 q 201 141 201 112 q 164 264 201 225 q 0 314 118 314 l 0 417 q 164 471 119 417 q 201 605 201 514 q 199 665 201 644 q 193 772 193 769 q 241 941 193 887 q 480 1015 308 1015 l 480 915 q 336 866 375 915 q 306 742 306 828 q 310 662 306 717 q 314 577 314 606 q 288 452 314 500 q 176 365 256 391 q 289 275 257 337 q 314 143 314 226 q 313 84 314 107 q 310 -11 310 -5 q 339 -131 310 -94 q 480 -182 377 -182 l 480 -286 "},"X":{"x_min":-0.015625,"x_max":854.15625,"ha":940,"o":"m 854 0 l 683 0 l 423 409 l 166 0 l 0 0 l 347 519 l 18 1013 l 186 1013 l 428 637 l 675 1013 l 836 1013 l 504 520 l 854 0 "},"#":{"x_min":0,"x_max":963.890625,"ha":1061,"o":"m 963 690 l 927 590 l 719 590 l 655 410 l 876 410 l 840 310 l 618 310 l 508 -3 l 393 -2 l 506 309 l 329 310 l 215 -2 l 102 -3 l 212 310 l 0 310 l 36 410 l 248 409 l 312 590 l 86 590 l 120 690 l 347 690 l 459 1006 l 573 1006 l 462 690 l 640 690 l 751 1006 l 865 1006 l 754 690 l 963 690 m 606 590 l 425 590 l 362 410 l 543 410 l 606 590 "},"ι":{"x_min":42,"x_max":284,"ha":361,"o":"m 284 3 q 233 -10 258 -5 q 182 -15 207 -15 q 85 26 119 -15 q 42 200 42 79 l 42 738 l 167 738 l 168 215 q 172 141 168 157 q 226 101 183 101 q 248 103 239 101 q 284 112 257 104 l 284 3 "},"Ά":{"x_min":0,"x_max":906.953125,"ha":982,"o":"m 283 1040 l 88 799 l 5 799 l 145 1040 l 283 1040 m 906 0 l 756 0 l 650 303 l 251 303 l 143 0 l 0 0 l 376 1012 l 529 1012 l 906 0 m 609 421 l 452 866 l 293 421 l 609 421 "},")":{"x_min":0,"x_max":318,"ha":415,"o":"m 318 365 q 257 25 318 191 q 87 -290 197 -141 l 0 -290 q 140 21 93 -128 q 193 360 193 189 q 141 704 193 537 q 0 1024 97 850 l 87 1024 q 257 706 197 871 q 318 365 318 542 "},"ε":{"x_min":0,"x_max":634.71875,"ha":714,"o":"m 634 234 q 527 38 634 110 q 300 -25 433 -25 q 98 29 183 -25 q 0 204 0 93 q 37 314 0 265 q 128 390 67 353 q 56 460 82 419 q 26 555 26 505 q 114 712 26 654 q 295 763 191 763 q 499 700 416 763 q 589 515 589 631 l 478 515 q 419 618 464 580 q 307 657 374 657 q 207 630 253 657 q 151 547 151 598 q 238 445 151 469 q 389 434 280 434 l 389 331 l 349 331 q 206 315 255 331 q 125 210 125 287 q 183 107 125 145 q 302 76 233 76 q 436 117 379 76 q 509 234 493 159 l 634 234 "},"Δ":{"x_min":0,"x_max":952.78125,"ha":1028,"o":"m 952 0 l 0 0 l 400 1013 l 551 1013 l 952 0 m 762 124 l 476 867 l 187 124 l 762 124 "},"}":{"x_min":0,"x_max":481,"ha":578,"o":"m 481 314 q 318 262 364 314 q 282 136 282 222 q 284 65 282 97 q 293 -58 293 -48 q 241 -217 293 -166 q 0 -286 174 -286 l 0 -182 q 143 -130 105 -182 q 171 -2 171 -93 q 168 81 171 22 q 165 144 165 140 q 188 275 165 229 q 306 365 220 339 q 191 455 224 391 q 165 588 165 505 q 168 681 165 624 q 171 742 171 737 q 141 865 171 827 q 0 915 102 915 l 0 1015 q 243 942 176 1015 q 293 773 293 888 q 287 675 293 741 q 282 590 282 608 q 318 466 282 505 q 481 417 364 417 l 481 314 "},"‰":{"x_min":-3,"x_max":1672,"ha":1821,"o":"m 846 0 q 664 76 732 0 q 603 244 603 145 q 662 412 603 344 q 846 489 729 489 q 1027 412 959 489 q 1089 244 1089 343 q 1029 76 1089 144 q 846 0 962 0 m 845 103 q 945 143 910 103 q 981 243 981 184 q 947 340 981 301 q 845 385 910 385 q 745 342 782 385 q 709 243 709 300 q 742 147 709 186 q 845 103 781 103 m 888 986 l 284 -25 l 199 -25 l 803 986 l 888 986 m 241 468 q 58 545 126 468 q -3 715 -3 615 q 56 881 -3 813 q 238 958 124 958 q 421 881 353 958 q 483 712 483 813 q 423 544 483 612 q 241 468 356 468 m 241 855 q 137 811 175 855 q 100 710 100 768 q 136 612 100 653 q 240 572 172 572 q 344 614 306 572 q 382 713 382 656 q 347 810 382 771 q 241 855 308 855 m 1428 0 q 1246 76 1314 0 q 1185 244 1185 145 q 1244 412 1185 344 q 1428 489 1311 489 q 1610 412 1542 489 q 1672 244 1672 343 q 1612 76 1672 144 q 1428 0 1545 0 m 1427 103 q 1528 143 1492 103 q 1564 243 1564 184 q 1530 340 1564 301 q 1427 385 1492 385 q 1327 342 1364 385 q 1291 243 1291 300 q 1324 147 1291 186 q 1427 103 1363 103 "},"a":{"x_min":0,"x_max":698.609375,"ha":794,"o":"m 698 0 q 661 -12 679 -7 q 615 -17 643 -17 q 536 12 564 -17 q 500 96 508 41 q 384 6 456 37 q 236 -25 312 -25 q 65 31 130 -25 q 0 194 0 88 q 118 390 0 334 q 328 435 180 420 q 488 483 476 451 q 495 523 495 504 q 442 619 495 584 q 325 654 389 654 q 209 617 257 654 q 152 513 161 580 l 33 513 q 123 705 33 633 q 332 772 207 772 q 528 712 448 772 q 617 531 617 645 l 617 163 q 624 108 617 126 q 664 90 632 90 l 698 94 l 698 0 m 491 262 l 491 372 q 272 329 350 347 q 128 201 128 294 q 166 113 128 144 q 264 83 205 83 q 414 130 346 83 q 491 262 491 183 "},"—":{"x_min":0,"x_max":941.671875,"ha":1039,"o":"m 941 334 l 0 334 l 0 410 l 941 410 l 941 334 "},"=":{"x_min":8.71875,"x_max":780.953125,"ha":792,"o":"m 780 510 l 8 510 l 8 606 l 780 606 l 780 510 m 780 235 l 8 235 l 8 332 l 780 332 l 780 235 "},"N":{"x_min":0,"x_max":801,"ha":914,"o":"m 801 0 l 651 0 l 131 823 l 131 0 l 0 0 l 0 1013 l 151 1013 l 670 193 l 670 1013 l 801 1013 l 801 0 "},"ρ":{"x_min":0,"x_max":712,"ha":797,"o":"m 712 369 q 620 94 712 207 q 362 -26 521 -26 q 230 2 292 -26 q 119 83 167 30 l 119 -278 l 0 -278 l 0 362 q 91 643 0 531 q 355 764 190 764 q 617 647 517 764 q 712 369 712 536 m 583 366 q 530 559 583 480 q 359 651 469 651 q 190 562 252 651 q 135 370 135 483 q 189 176 135 257 q 359 85 250 85 q 528 175 466 85 q 583 366 583 254 "},"2":{"x_min":59,"x_max":731,"ha":792,"o":"m 731 0 l 59 0 q 197 314 59 188 q 457 487 199 315 q 598 691 598 580 q 543 819 598 772 q 411 867 488 867 q 272 811 328 867 q 209 630 209 747 l 81 630 q 182 901 81 805 q 408 986 271 986 q 629 909 536 986 q 731 694 731 826 q 613 449 731 541 q 378 316 495 383 q 201 122 235 234 l 731 122 l 731 0 "},"¯":{"x_min":0,"x_max":941.671875,"ha":938,"o":"m 941 1033 l 0 1033 l 0 1109 l 941 1109 l 941 1033 "},"Z":{"x_min":0,"x_max":779,"ha":849,"o":"m 779 0 l 0 0 l 0 113 l 621 896 l 40 896 l 40 1013 l 779 1013 l 778 887 l 171 124 l 779 124 l 779 0 "},"u":{"x_min":0,"x_max":617,"ha":729,"o":"m 617 0 l 499 0 l 499 110 q 391 10 460 45 q 246 -25 322 -25 q 61 58 127 -25 q 0 258 0 136 l 0 738 l 125 738 l 125 284 q 156 148 125 202 q 273 82 197 82 q 433 165 369 82 q 493 340 493 243 l 493 738 l 617 738 l 617 0 "},"k":{"x_min":0,"x_max":612.484375,"ha":697,"o":"m 612 738 l 338 465 l 608 0 l 469 0 l 251 382 l 121 251 l 121 0 l 0 0 l 0 1013 l 121 1013 l 121 402 l 456 738 l 612 738 "},"Η":{"x_min":0,"x_max":803,"ha":917,"o":"m 803 0 l 667 0 l 667 475 l 140 475 l 140 0 l 0 0 l 0 1013 l 140 1013 l 140 599 l 667 599 l 667 1013 l 803 1013 l 803 0 "},"Α":{"x_min":0,"x_max":906.953125,"ha":985,"o":"m 906 0 l 756 0 l 650 303 l 251 303 l 143 0 l 0 0 l 376 1013 l 529 1013 l 906 0 m 609 421 l 452 866 l 293 421 l 609 421 "},"s":{"x_min":0,"x_max":604,"ha":697,"o":"m 604 217 q 501 36 604 104 q 292 -23 411 -23 q 86 43 166 -23 q 0 238 0 114 l 121 237 q 175 122 121 164 q 300 85 223 85 q 415 112 363 85 q 479 207 479 147 q 361 309 479 276 q 140 372 141 370 q 21 544 21 426 q 111 708 21 647 q 298 761 190 761 q 492 705 413 761 q 583 531 583 643 l 462 531 q 412 625 462 594 q 298 657 363 657 q 199 636 242 657 q 143 558 143 608 q 262 454 143 486 q 484 394 479 397 q 604 217 604 341 "},"B":{"x_min":0,"x_max":778,"ha":876,"o":"m 580 546 q 724 469 670 535 q 778 311 778 403 q 673 83 778 171 q 432 0 575 0 l 0 0 l 0 1013 l 411 1013 q 629 957 541 1013 q 732 768 732 892 q 691 633 732 693 q 580 546 650 572 m 393 899 l 139 899 l 139 588 l 379 588 q 521 624 462 588 q 592 744 592 667 q 531 859 592 819 q 393 899 471 899 m 419 124 q 566 169 504 124 q 635 303 635 219 q 559 436 635 389 q 402 477 494 477 l 139 477 l 139 124 l 419 124 "},"…":{"x_min":0,"x_max":614,"ha":708,"o":"m 142 0 l 0 0 l 0 151 l 142 151 l 142 0 m 378 0 l 236 0 l 236 151 l 378 151 l 378 0 m 614 0 l 472 0 l 472 151 l 614 151 l 614 0 "},"?":{"x_min":0,"x_max":607,"ha":704,"o":"m 607 777 q 543 599 607 674 q 422 474 482 537 q 357 272 357 391 l 236 272 q 297 487 236 395 q 411 619 298 490 q 474 762 474 691 q 422 885 474 838 q 301 933 371 933 q 179 880 228 933 q 124 706 124 819 l 0 706 q 94 963 0 872 q 302 1044 177 1044 q 511 973 423 1044 q 607 777 607 895 m 370 0 l 230 0 l 230 151 l 370 151 l 370 0 "},"H":{"x_min":0,"x_max":803,"ha":915,"o":"m 803 0 l 667 0 l 667 475 l 140 475 l 140 0 l 0 0 l 0 1013 l 140 1013 l 140 599 l 667 599 l 667 1013 l 803 1013 l 803 0 "},"ν":{"x_min":0,"x_max":675,"ha":761,"o":"m 675 738 l 404 0 l 272 0 l 0 738 l 133 738 l 340 147 l 541 738 l 675 738 "},"c":{"x_min":1,"x_max":701.390625,"ha":775,"o":"m 701 264 q 584 53 681 133 q 353 -26 487 -26 q 91 91 188 -26 q 1 370 1 201 q 92 645 1 537 q 353 761 190 761 q 572 688 479 761 q 690 493 666 615 l 556 493 q 487 606 545 562 q 356 650 428 650 q 186 563 246 650 q 134 372 134 487 q 188 179 134 258 q 359 88 250 88 q 492 136 437 88 q 566 264 548 185 l 701 264 "},"¶":{"x_min":0,"x_max":566.671875,"ha":678,"o":"m 21 892 l 52 892 l 98 761 l 145 892 l 176 892 l 178 741 l 157 741 l 157 867 l 108 741 l 88 741 l 40 871 l 40 741 l 21 741 l 21 892 m 308 854 l 308 731 q 252 691 308 691 q 227 691 240 691 q 207 696 213 695 l 207 712 l 253 706 q 288 733 288 706 l 288 763 q 244 741 279 741 q 193 797 193 741 q 261 860 193 860 q 287 860 273 860 q 308 854 302 855 m 288 842 l 263 843 q 213 796 213 843 q 248 756 213 756 q 288 796 288 756 l 288 842 m 566 988 l 502 988 l 502 -1 l 439 -1 l 439 988 l 317 988 l 317 -1 l 252 -1 l 252 602 q 81 653 155 602 q 0 805 0 711 q 101 989 0 918 q 309 1053 194 1053 l 566 1053 l 566 988 "},"β":{"x_min":0,"x_max":660,"ha":745,"o":"m 471 550 q 610 450 561 522 q 660 280 660 378 q 578 64 660 151 q 367 -22 497 -22 q 239 5 299 -22 q 126 82 178 32 l 126 -278 l 0 -278 l 0 593 q 54 903 0 801 q 318 1042 127 1042 q 519 964 436 1042 q 603 771 603 887 q 567 644 603 701 q 471 550 532 586 m 337 79 q 476 138 418 79 q 535 279 535 198 q 427 437 535 386 q 226 477 344 477 l 226 583 q 398 620 329 583 q 486 762 486 668 q 435 884 486 833 q 312 935 384 935 q 169 861 219 935 q 126 698 126 797 l 126 362 q 170 169 126 242 q 337 79 224 79 "},"Μ":{"x_min":0,"x_max":954,"ha":1068,"o":"m 954 0 l 819 0 l 819 868 l 537 0 l 405 0 l 128 865 l 128 0 l 0 0 l 0 1013 l 199 1013 l 472 158 l 758 1013 l 954 1013 l 954 0 "},"Ό":{"x_min":0.109375,"x_max":1120,"ha":1217,"o":"m 1120 505 q 994 132 1120 282 q 642 -29 861 -29 q 290 130 422 -29 q 167 505 167 280 q 294 883 167 730 q 650 1046 430 1046 q 999 882 868 1046 q 1120 505 1120 730 m 977 504 q 896 784 977 669 q 644 915 804 915 q 391 785 484 915 q 307 504 307 669 q 391 224 307 339 q 644 95 486 95 q 894 224 803 95 q 977 504 977 339 m 277 1040 l 83 799 l 0 799 l 140 1040 l 277 1040 "},"Ή":{"x_min":0,"x_max":1158,"ha":1275,"o":"m 1158 0 l 1022 0 l 1022 475 l 496 475 l 496 0 l 356 0 l 356 1012 l 496 1012 l 496 599 l 1022 599 l 1022 1012 l 1158 1012 l 1158 0 m 277 1040 l 83 799 l 0 799 l 140 1040 l 277 1040 "},"•":{"x_min":0,"x_max":663.890625,"ha":775,"o":"m 663 529 q 566 293 663 391 q 331 196 469 196 q 97 294 194 196 q 0 529 0 393 q 96 763 0 665 q 331 861 193 861 q 566 763 469 861 q 663 529 663 665 "},"¥":{"x_min":0.1875,"x_max":819.546875,"ha":886,"o":"m 563 561 l 697 561 l 696 487 l 520 487 l 482 416 l 482 380 l 697 380 l 695 308 l 482 308 l 482 0 l 342 0 l 342 308 l 125 308 l 125 380 l 342 380 l 342 417 l 303 487 l 125 487 l 125 561 l 258 561 l 0 1013 l 140 1013 l 411 533 l 679 1013 l 819 1013 l 563 561 "},"(":{"x_min":0,"x_max":318.0625,"ha":415,"o":"m 318 -290 l 230 -290 q 61 23 122 -142 q 0 365 0 190 q 62 712 0 540 q 230 1024 119 869 l 318 1024 q 175 705 219 853 q 125 360 125 542 q 176 22 125 187 q 318 -290 223 -127 "},"U":{"x_min":0,"x_max":796,"ha":904,"o":"m 796 393 q 681 93 796 212 q 386 -25 566 -25 q 101 95 208 -25 q 0 393 0 211 l 0 1013 l 138 1013 l 138 391 q 204 191 138 270 q 394 107 276 107 q 586 191 512 107 q 656 391 656 270 l 656 1013 l 796 1013 l 796 393 "},"γ":{"x_min":0.5,"x_max":744.953125,"ha":822,"o":"m 744 737 l 463 54 l 463 -278 l 338 -278 l 338 54 l 154 495 q 104 597 124 569 q 13 651 67 651 l 0 651 l 0 751 l 39 753 q 168 711 121 753 q 242 594 207 676 l 403 208 l 617 737 l 744 737 "},"α":{"x_min":0,"x_max":765.5625,"ha":809,"o":"m 765 -4 q 698 -14 726 -14 q 564 97 586 -14 q 466 7 525 40 q 337 -26 407 -26 q 88 98 186 -26 q 0 369 0 212 q 88 637 0 525 q 337 760 184 760 q 465 728 407 760 q 563 637 524 696 l 563 739 l 685 739 l 685 222 q 693 141 685 168 q 748 94 708 94 q 765 96 760 94 l 765 -4 m 584 371 q 531 562 584 485 q 360 653 470 653 q 192 566 254 653 q 135 379 135 489 q 186 181 135 261 q 358 84 247 84 q 528 176 465 84 q 584 371 584 260 "},"F":{"x_min":0,"x_max":683.328125,"ha":717,"o":"m 683 888 l 140 888 l 140 583 l 613 583 l 613 458 l 140 458 l 140 0 l 0 0 l 0 1013 l 683 1013 l 683 888 "},"­":{"x_min":0,"x_max":705.5625,"ha":803,"o":"m 705 334 l 0 334 l 0 410 l 705 410 l 705 334 "},":":{"x_min":0,"x_max":142,"ha":239,"o":"m 142 585 l 0 585 l 0 738 l 142 738 l 142 585 m 142 0 l 0 0 l 0 151 l 142 151 l 142 0 "},"Χ":{"x_min":0,"x_max":854.171875,"ha":935,"o":"m 854 0 l 683 0 l 423 409 l 166 0 l 0 0 l 347 519 l 18 1013 l 186 1013 l 427 637 l 675 1013 l 836 1013 l 504 521 l 854 0 "},"*":{"x_min":116,"x_max":674,"ha":792,"o":"m 674 768 l 475 713 l 610 544 l 517 477 l 394 652 l 272 478 l 178 544 l 314 713 l 116 766 l 153 876 l 341 812 l 342 1013 l 446 1013 l 446 811 l 635 874 l 674 768 "},"†":{"x_min":0,"x_max":777,"ha":835,"o":"m 458 804 l 777 804 l 777 683 l 458 683 l 458 0 l 319 0 l 319 681 l 0 683 l 0 804 l 319 804 l 319 1015 l 458 1013 l 458 804 "},"°":{"x_min":0,"x_max":347,"ha":444,"o":"m 173 802 q 43 856 91 802 q 0 977 0 905 q 45 1101 0 1049 q 173 1153 90 1153 q 303 1098 255 1153 q 347 977 347 1049 q 303 856 347 905 q 173 802 256 802 m 173 884 q 238 910 214 884 q 262 973 262 937 q 239 1038 262 1012 q 173 1064 217 1064 q 108 1037 132 1064 q 85 973 85 1010 q 108 910 85 937 q 173 884 132 884 "},"V":{"x_min":0,"x_max":862.71875,"ha":940,"o":"m 862 1013 l 505 0 l 361 0 l 0 1013 l 143 1013 l 434 165 l 718 1012 l 862 1013 "},"Ξ":{"x_min":0,"x_max":734.71875,"ha":763,"o":"m 723 889 l 9 889 l 9 1013 l 723 1013 l 723 889 m 673 463 l 61 463 l 61 589 l 673 589 l 673 463 m 734 0 l 0 0 l 0 124 l 734 124 l 734 0 "}," ":{"x_min":0,"x_max":0,"ha":853},"Ϋ":{"x_min":0.328125,"x_max":819.515625,"ha":889,"o":"m 588 1046 l 460 1046 l 460 1189 l 588 1189 l 588 1046 m 360 1046 l 232 1046 l 232 1189 l 360 1189 l 360 1046 m 819 1012 l 482 416 l 482 0 l 342 0 l 342 416 l 0 1012 l 140 1012 l 411 533 l 679 1012 l 819 1012 "},"0":{"x_min":73,"x_max":715,"ha":792,"o":"m 394 -29 q 153 129 242 -29 q 73 479 73 272 q 152 829 73 687 q 394 989 241 989 q 634 829 545 989 q 715 479 715 684 q 635 129 715 270 q 394 -29 546 -29 m 394 89 q 546 211 489 89 q 598 479 598 322 q 548 748 598 640 q 394 871 491 871 q 241 748 298 871 q 190 479 190 637 q 239 211 190 319 q 394 89 296 89 "},"”":{"x_min":0,"x_max":347,"ha":454,"o":"m 139 851 q 102 737 139 784 q 0 669 65 690 l 0 734 q 59 787 42 741 q 72 873 72 821 l 0 873 l 0 1013 l 139 1013 l 139 851 m 347 851 q 310 737 347 784 q 208 669 273 690 l 208 734 q 267 787 250 741 q 280 873 280 821 l 208 873 l 208 1013 l 347 1013 l 347 851 "},"@":{"x_min":0,"x_max":1260,"ha":1357,"o":"m 1098 -45 q 877 -160 1001 -117 q 633 -203 752 -203 q 155 -29 327 -203 q 0 360 0 127 q 176 802 0 616 q 687 1008 372 1008 q 1123 854 969 1008 q 1260 517 1260 718 q 1155 216 1260 341 q 868 82 1044 82 q 772 106 801 82 q 737 202 737 135 q 647 113 700 144 q 527 82 594 82 q 367 147 420 82 q 314 312 314 212 q 401 565 314 452 q 639 690 498 690 q 810 588 760 690 l 849 668 l 938 668 q 877 441 900 532 q 833 226 833 268 q 853 182 833 198 q 902 167 873 167 q 1088 272 1012 167 q 1159 512 1159 372 q 1051 793 1159 681 q 687 925 925 925 q 248 747 415 925 q 97 361 97 586 q 226 26 97 159 q 627 -122 370 -122 q 856 -87 737 -122 q 1061 8 976 -53 l 1098 -45 m 786 488 q 738 580 777 545 q 643 615 700 615 q 483 517 548 615 q 425 322 425 430 q 457 203 425 250 q 552 156 490 156 q 722 273 665 156 q 786 488 738 309 "},"Ί":{"x_min":0,"x_max":499,"ha":613,"o":"m 277 1040 l 83 799 l 0 799 l 140 1040 l 277 1040 m 499 0 l 360 0 l 360 1012 l 499 1012 l 499 0 "},"i":{"x_min":14,"x_max":136,"ha":275,"o":"m 136 873 l 14 873 l 14 1013 l 136 1013 l 136 873 m 136 0 l 14 0 l 14 737 l 136 737 l 136 0 "},"Β":{"x_min":0,"x_max":778,"ha":877,"o":"m 580 545 q 724 468 671 534 q 778 310 778 402 q 673 83 778 170 q 432 0 575 0 l 0 0 l 0 1013 l 411 1013 q 629 957 541 1013 q 732 768 732 891 q 691 632 732 692 q 580 545 650 571 m 393 899 l 139 899 l 139 587 l 379 587 q 521 623 462 587 q 592 744 592 666 q 531 859 592 819 q 393 899 471 899 m 419 124 q 566 169 504 124 q 635 302 635 219 q 559 435 635 388 q 402 476 494 476 l 139 476 l 139 124 l 419 124 "},"υ":{"x_min":0,"x_max":617,"ha":725,"o":"m 617 352 q 540 94 617 199 q 308 -24 455 -24 q 76 94 161 -24 q 0 352 0 199 l 0 739 l 126 739 l 126 355 q 169 185 126 257 q 312 98 220 98 q 451 185 402 98 q 492 355 492 257 l 492 739 l 617 739 l 617 352 "},"]":{"x_min":0,"x_max":275,"ha":372,"o":"m 275 -281 l 0 -281 l 0 -187 l 151 -187 l 151 920 l 0 920 l 0 1013 l 275 1013 l 275 -281 "},"m":{"x_min":0,"x_max":1019,"ha":1128,"o":"m 1019 0 l 897 0 l 897 454 q 860 591 897 536 q 739 660 816 660 q 613 586 659 660 q 573 436 573 522 l 573 0 l 447 0 l 447 455 q 412 591 447 535 q 294 657 372 657 q 165 586 213 657 q 122 437 122 521 l 122 0 l 0 0 l 0 738 l 117 738 l 117 640 q 202 730 150 697 q 316 763 254 763 q 437 730 381 763 q 525 642 494 697 q 621 731 559 700 q 753 763 682 763 q 943 694 867 763 q 1019 512 1019 625 l 1019 0 "},"χ":{"x_min":8.328125,"x_max":780.5625,"ha":815,"o":"m 780 -278 q 715 -294 747 -294 q 616 -257 663 -294 q 548 -175 576 -227 l 379 133 l 143 -277 l 9 -277 l 313 254 l 163 522 q 127 586 131 580 q 36 640 91 640 q 8 637 27 640 l 8 752 l 52 757 q 162 719 113 757 q 236 627 200 690 l 383 372 l 594 737 l 726 737 l 448 250 l 625 -69 q 670 -153 647 -110 q 743 -188 695 -188 q 780 -184 759 -188 l 780 -278 "},"8":{"x_min":55,"x_max":736,"ha":792,"o":"m 571 527 q 694 424 652 491 q 736 280 736 358 q 648 71 736 158 q 395 -26 551 -26 q 142 69 238 -26 q 55 279 55 157 q 96 425 55 359 q 220 527 138 491 q 120 615 153 562 q 88 726 88 668 q 171 904 88 827 q 395 986 261 986 q 618 905 529 986 q 702 727 702 830 q 670 616 702 667 q 571 527 638 565 m 394 565 q 519 610 475 565 q 563 717 563 655 q 521 823 563 781 q 392 872 474 872 q 265 824 312 872 q 224 720 224 783 q 265 613 224 656 q 394 565 312 565 m 395 91 q 545 150 488 91 q 597 280 597 204 q 546 408 597 355 q 395 465 492 465 q 244 408 299 465 q 194 280 194 356 q 244 150 194 203 q 395 91 299 91 "},"ί":{"x_min":42,"x_max":326.71875,"ha":361,"o":"m 284 3 q 233 -10 258 -5 q 182 -15 207 -15 q 85 26 119 -15 q 42 200 42 79 l 42 737 l 167 737 l 168 215 q 172 141 168 157 q 226 101 183 101 q 248 102 239 101 q 284 112 257 104 l 284 3 m 326 1040 l 137 819 l 54 819 l 189 1040 l 326 1040 "},"Ζ":{"x_min":0,"x_max":779.171875,"ha":850,"o":"m 779 0 l 0 0 l 0 113 l 620 896 l 40 896 l 40 1013 l 779 1013 l 779 887 l 170 124 l 779 124 l 779 0 "},"R":{"x_min":0,"x_max":781.953125,"ha":907,"o":"m 781 0 l 623 0 q 587 242 590 52 q 407 433 585 433 l 138 433 l 138 0 l 0 0 l 0 1013 l 396 1013 q 636 946 539 1013 q 749 731 749 868 q 711 597 749 659 q 608 502 674 534 q 718 370 696 474 q 729 207 722 352 q 781 26 736 62 l 781 0 m 373 551 q 533 594 465 551 q 614 731 614 645 q 532 859 614 815 q 373 896 465 896 l 138 896 l 138 551 l 373 551 "},"o":{"x_min":0,"x_max":713,"ha":821,"o":"m 357 -25 q 94 91 194 -25 q 0 368 0 202 q 93 642 0 533 q 357 761 193 761 q 618 644 518 761 q 713 368 713 533 q 619 91 713 201 q 357 -25 521 -25 m 357 85 q 528 175 465 85 q 584 369 584 255 q 529 562 584 484 q 357 651 467 651 q 189 560 250 651 q 135 369 135 481 q 187 177 135 257 q 357 85 250 85 "},"5":{"x_min":54.171875,"x_max":738,"ha":792,"o":"m 738 314 q 626 60 738 153 q 382 -23 526 -23 q 155 47 248 -23 q 54 256 54 125 l 183 256 q 259 132 204 174 q 382 91 314 91 q 533 149 471 91 q 602 314 602 213 q 538 469 602 411 q 386 528 475 528 q 284 506 332 528 q 197 439 237 484 l 81 439 l 159 958 l 684 958 l 684 840 l 254 840 l 214 579 q 306 627 258 612 q 407 643 354 643 q 636 552 540 643 q 738 314 738 457 "},"7":{"x_min":58.71875,"x_max":730.953125,"ha":792,"o":"m 730 839 q 469 448 560 641 q 335 0 378 255 l 192 0 q 328 441 235 252 q 593 830 421 630 l 58 830 l 58 958 l 730 958 l 730 839 "},"K":{"x_min":0,"x_max":819.46875,"ha":906,"o":"m 819 0 l 649 0 l 294 509 l 139 355 l 139 0 l 0 0 l 0 1013 l 139 1013 l 139 526 l 626 1013 l 809 1013 l 395 600 l 819 0 "},",":{"x_min":0,"x_max":142,"ha":239,"o":"m 142 -12 q 105 -132 142 -82 q 0 -205 68 -182 l 0 -138 q 57 -82 40 -124 q 70 0 70 -51 l 0 0 l 0 151 l 142 151 l 142 -12 "},"d":{"x_min":0,"x_max":683,"ha":796,"o":"m 683 0 l 564 0 l 564 93 q 456 6 516 38 q 327 -25 395 -25 q 87 100 181 -25 q 0 365 0 215 q 90 639 0 525 q 343 763 187 763 q 564 647 486 763 l 564 1013 l 683 1013 l 683 0 m 582 373 q 529 562 582 484 q 361 653 468 653 q 190 561 253 653 q 135 365 135 479 q 189 175 135 254 q 358 85 251 85 q 529 178 468 85 q 582 373 582 258 "},"¨":{"x_min":-109,"x_max":247,"ha":232,"o":"m 247 1046 l 119 1046 l 119 1189 l 247 1189 l 247 1046 m 19 1046 l -109 1046 l -109 1189 l 19 1189 l 19 1046 "},"E":{"x_min":0,"x_max":736.109375,"ha":789,"o":"m 736 0 l 0 0 l 0 1013 l 725 1013 l 725 889 l 139 889 l 139 585 l 677 585 l 677 467 l 139 467 l 139 125 l 736 125 l 736 0 "},"Y":{"x_min":0,"x_max":820,"ha":886,"o":"m 820 1013 l 482 416 l 482 0 l 342 0 l 342 416 l 0 1013 l 140 1013 l 411 534 l 679 1012 l 820 1013 "},"\"":{"x_min":0,"x_max":299,"ha":396,"o":"m 299 606 l 203 606 l 203 988 l 299 988 l 299 606 m 96 606 l 0 606 l 0 988 l 96 988 l 96 606 "},"‹":{"x_min":17.984375,"x_max":773.609375,"ha":792,"o":"m 773 40 l 18 376 l 17 465 l 773 799 l 773 692 l 159 420 l 773 149 l 773 40 "},"„":{"x_min":0,"x_max":364,"ha":467,"o":"m 141 -12 q 104 -132 141 -82 q 0 -205 67 -182 l 0 -138 q 56 -82 40 -124 q 69 0 69 -51 l 0 0 l 0 151 l 141 151 l 141 -12 m 364 -12 q 327 -132 364 -82 q 222 -205 290 -182 l 222 -138 q 279 -82 262 -124 q 292 0 292 -51 l 222 0 l 222 151 l 364 151 l 364 -12 "},"δ":{"x_min":1,"x_max":710,"ha":810,"o":"m 710 360 q 616 87 710 196 q 356 -28 518 -28 q 99 82 197 -28 q 1 356 1 192 q 100 606 1 509 q 355 703 199 703 q 180 829 288 754 q 70 903 124 866 l 70 1012 l 643 1012 l 643 901 l 258 901 q 462 763 422 794 q 636 592 577 677 q 710 360 710 485 m 584 365 q 552 501 584 447 q 451 602 521 555 q 372 611 411 611 q 197 541 258 611 q 136 355 136 472 q 190 171 136 245 q 358 85 252 85 q 528 173 465 85 q 584 365 584 252 "},"έ":{"x_min":0,"x_max":634.71875,"ha":714,"o":"m 634 234 q 527 38 634 110 q 300 -25 433 -25 q 98 29 183 -25 q 0 204 0 93 q 37 313 0 265 q 128 390 67 352 q 56 459 82 419 q 26 555 26 505 q 114 712 26 654 q 295 763 191 763 q 499 700 416 763 q 589 515 589 631 l 478 515 q 419 618 464 580 q 307 657 374 657 q 207 630 253 657 q 151 547 151 598 q 238 445 151 469 q 389 434 280 434 l 389 331 l 349 331 q 206 315 255 331 q 125 210 125 287 q 183 107 125 145 q 302 76 233 76 q 436 117 379 76 q 509 234 493 159 l 634 234 m 520 1040 l 331 819 l 248 819 l 383 1040 l 520 1040 "},"ω":{"x_min":0,"x_max":922,"ha":1031,"o":"m 922 339 q 856 97 922 203 q 650 -26 780 -26 q 538 9 587 -26 q 461 103 489 44 q 387 12 436 46 q 277 -22 339 -22 q 69 97 147 -22 q 0 339 0 203 q 45 551 0 444 q 161 738 84 643 l 302 738 q 175 553 219 647 q 124 336 124 446 q 155 179 124 249 q 275 88 197 88 q 375 163 341 88 q 400 294 400 219 l 400 572 l 524 572 l 524 294 q 561 135 524 192 q 643 88 591 88 q 762 182 719 88 q 797 342 797 257 q 745 556 797 450 q 619 738 705 638 l 760 738 q 874 551 835 640 q 922 339 922 444 "},"´":{"x_min":0,"x_max":96,"ha":251,"o":"m 96 606 l 0 606 l 0 988 l 96 988 l 96 606 "},"±":{"x_min":11,"x_max":781,"ha":792,"o":"m 781 490 l 446 490 l 446 255 l 349 255 l 349 490 l 11 490 l 11 586 l 349 586 l 349 819 l 446 819 l 446 586 l 781 586 l 781 490 m 781 21 l 11 21 l 11 115 l 781 115 l 781 21 "},"|":{"x_min":343,"x_max":449,"ha":792,"o":"m 449 462 l 343 462 l 343 986 l 449 986 l 449 462 m 449 -242 l 343 -242 l 343 280 l 449 280 l 449 -242 "},"ϋ":{"x_min":0,"x_max":617,"ha":725,"o":"m 482 800 l 372 800 l 372 925 l 482 925 l 482 800 m 239 800 l 129 800 l 129 925 l 239 925 l 239 800 m 617 352 q 540 93 617 199 q 308 -24 455 -24 q 76 93 161 -24 q 0 352 0 199 l 0 738 l 126 738 l 126 354 q 169 185 126 257 q 312 98 220 98 q 451 185 402 98 q 492 354 492 257 l 492 738 l 617 738 l 617 352 "},"§":{"x_min":0,"x_max":593,"ha":690,"o":"m 593 425 q 554 312 593 369 q 467 233 516 254 q 537 83 537 172 q 459 -74 537 -12 q 288 -133 387 -133 q 115 -69 184 -133 q 47 96 47 -6 l 166 96 q 199 7 166 40 q 288 -26 232 -26 q 371 -5 332 -26 q 420 60 420 21 q 311 201 420 139 q 108 309 210 255 q 0 490 0 383 q 33 602 0 551 q 124 687 66 654 q 75 743 93 712 q 58 812 58 773 q 133 984 58 920 q 300 1043 201 1043 q 458 987 394 1043 q 529 814 529 925 l 411 814 q 370 908 404 877 q 289 939 336 939 q 213 911 246 939 q 180 841 180 883 q 286 720 180 779 q 484 612 480 615 q 593 425 593 534 m 467 409 q 355 544 467 473 q 196 630 228 612 q 146 587 162 609 q 124 525 124 558 q 239 387 124 462 q 398 298 369 315 q 448 345 429 316 q 467 409 467 375 "},"b":{"x_min":0,"x_max":685,"ha":783,"o":"m 685 372 q 597 99 685 213 q 347 -25 501 -25 q 219 5 277 -25 q 121 93 161 36 l 121 0 l 0 0 l 0 1013 l 121 1013 l 121 634 q 214 723 157 692 q 341 754 272 754 q 591 637 493 754 q 685 372 685 526 m 554 356 q 499 550 554 470 q 328 644 437 644 q 162 556 223 644 q 108 369 108 478 q 160 176 108 256 q 330 83 221 83 q 498 169 435 83 q 554 356 554 245 "},"q":{"x_min":0,"x_max":683,"ha":876,"o":"m 683 -278 l 564 -278 l 564 97 q 474 8 533 39 q 345 -23 415 -23 q 91 93 188 -23 q 0 364 0 203 q 87 635 0 522 q 337 760 184 760 q 466 727 408 760 q 564 637 523 695 l 564 737 l 683 737 l 683 -278 m 582 375 q 527 564 582 488 q 358 652 466 652 q 190 565 253 652 q 135 377 135 488 q 189 179 135 261 q 361 84 251 84 q 530 179 469 84 q 582 375 582 260 "},"Ω":{"x_min":-0.171875,"x_max":969.5625,"ha":1068,"o":"m 969 0 l 555 0 l 555 123 q 744 308 675 194 q 814 558 814 423 q 726 812 814 709 q 484 922 633 922 q 244 820 334 922 q 154 567 154 719 q 223 316 154 433 q 412 123 292 199 l 412 0 l 0 0 l 0 124 l 217 124 q 68 327 122 210 q 15 572 15 444 q 144 911 15 781 q 484 1041 274 1041 q 822 909 691 1041 q 953 569 953 777 q 899 326 953 443 q 750 124 846 210 l 969 124 l 969 0 "},"ύ":{"x_min":0,"x_max":617,"ha":725,"o":"m 617 352 q 540 93 617 199 q 308 -24 455 -24 q 76 93 161 -24 q 0 352 0 199 l 0 738 l 126 738 l 126 354 q 169 185 126 257 q 312 98 220 98 q 451 185 402 98 q 492 354 492 257 l 492 738 l 617 738 l 617 352 m 535 1040 l 346 819 l 262 819 l 397 1040 l 535 1040 "},"z":{"x_min":-0.015625,"x_max":613.890625,"ha":697,"o":"m 613 0 l 0 0 l 0 100 l 433 630 l 20 630 l 20 738 l 594 738 l 593 636 l 163 110 l 613 110 l 613 0 "},"™":{"x_min":0,"x_max":894,"ha":1000,"o":"m 389 951 l 229 951 l 229 503 l 160 503 l 160 951 l 0 951 l 0 1011 l 389 1011 l 389 951 m 894 503 l 827 503 l 827 939 l 685 503 l 620 503 l 481 937 l 481 503 l 417 503 l 417 1011 l 517 1011 l 653 580 l 796 1010 l 894 1011 l 894 503 "},"ή":{"x_min":0.78125,"x_max":697,"ha":810,"o":"m 697 -278 l 572 -278 l 572 454 q 540 587 572 536 q 425 650 501 650 q 271 579 337 650 q 206 420 206 509 l 206 0 l 81 0 l 81 489 q 73 588 81 562 q 0 644 56 644 l 0 741 q 68 755 38 755 q 158 721 124 755 q 200 630 193 687 q 297 726 234 692 q 434 761 359 761 q 620 692 544 761 q 697 516 697 624 l 697 -278 m 479 1040 l 290 819 l 207 819 l 341 1040 l 479 1040 "},"Θ":{"x_min":0,"x_max":960,"ha":1056,"o":"m 960 507 q 833 129 960 280 q 476 -32 698 -32 q 123 129 255 -32 q 0 507 0 280 q 123 883 0 732 q 476 1045 255 1045 q 832 883 696 1045 q 960 507 960 732 m 817 500 q 733 789 817 669 q 476 924 639 924 q 223 792 317 924 q 142 507 142 675 q 222 222 142 339 q 476 89 315 89 q 730 218 636 89 q 817 500 817 334 m 716 449 l 243 449 l 243 571 l 716 571 l 716 449 "},"®":{"x_min":-3,"x_max":1008,"ha":1106,"o":"m 503 532 q 614 562 566 532 q 672 658 672 598 q 614 747 672 716 q 503 772 569 772 l 338 772 l 338 532 l 503 532 m 502 -7 q 123 151 263 -7 q -3 501 -3 294 q 123 851 -3 706 q 502 1011 263 1011 q 881 851 739 1011 q 1008 501 1008 708 q 883 151 1008 292 q 502 -7 744 -7 m 502 60 q 830 197 709 60 q 940 501 940 322 q 831 805 940 681 q 502 944 709 944 q 174 805 296 944 q 65 501 65 680 q 173 197 65 320 q 502 60 294 60 m 788 146 l 678 146 q 653 316 655 183 q 527 449 652 449 l 338 449 l 338 146 l 241 146 l 241 854 l 518 854 q 688 808 621 854 q 766 658 766 755 q 739 563 766 607 q 668 497 713 519 q 751 331 747 472 q 788 164 756 190 l 788 146 "},"~":{"x_min":0,"x_max":833,"ha":931,"o":"m 833 958 q 778 753 833 831 q 594 665 716 665 q 402 761 502 665 q 240 857 302 857 q 131 795 166 857 q 104 665 104 745 l 0 665 q 54 867 0 789 q 237 958 116 958 q 429 861 331 958 q 594 765 527 765 q 704 827 670 765 q 729 958 729 874 l 833 958 "},"Ε":{"x_min":0,"x_max":736.21875,"ha":778,"o":"m 736 0 l 0 0 l 0 1013 l 725 1013 l 725 889 l 139 889 l 139 585 l 677 585 l 677 467 l 139 467 l 139 125 l 736 125 l 736 0 "},"³":{"x_min":0,"x_max":450,"ha":547,"o":"m 450 552 q 379 413 450 464 q 220 366 313 366 q 69 414 130 366 q 0 567 0 470 l 85 567 q 126 470 85 504 q 225 437 168 437 q 320 467 280 437 q 360 552 360 498 q 318 632 360 608 q 213 657 276 657 q 195 657 203 657 q 176 657 181 657 l 176 722 q 279 733 249 722 q 334 815 334 752 q 300 881 334 856 q 220 907 267 907 q 133 875 169 907 q 97 781 97 844 l 15 781 q 78 926 15 875 q 220 972 135 972 q 364 930 303 972 q 426 817 426 888 q 344 697 426 733 q 421 642 392 681 q 450 552 450 603 "},"[":{"x_min":0,"x_max":273.609375,"ha":371,"o":"m 273 -281 l 0 -281 l 0 1013 l 273 1013 l 273 920 l 124 920 l 124 -187 l 273 -187 l 273 -281 "},"L":{"x_min":0,"x_max":645.828125,"ha":696,"o":"m 645 0 l 0 0 l 0 1013 l 140 1013 l 140 126 l 645 126 l 645 0 "},"σ":{"x_min":0,"x_max":803.390625,"ha":894,"o":"m 803 628 l 633 628 q 713 368 713 512 q 618 93 713 204 q 357 -25 518 -25 q 94 91 194 -25 q 0 368 0 201 q 94 644 0 533 q 356 761 194 761 q 481 750 398 761 q 608 739 564 739 l 803 739 l 803 628 m 360 85 q 529 180 467 85 q 584 374 584 262 q 527 566 584 490 q 352 651 463 651 q 187 559 247 651 q 135 368 135 478 q 189 175 135 254 q 360 85 251 85 "},"ζ":{"x_min":0,"x_max":573,"ha":642,"o":"m 573 -40 q 553 -162 573 -97 q 510 -278 543 -193 l 400 -278 q 441 -187 428 -219 q 462 -90 462 -132 q 378 -14 462 -14 q 108 45 197 -14 q 0 290 0 117 q 108 631 0 462 q 353 901 194 767 l 55 901 l 55 1012 l 561 1012 l 561 924 q 261 669 382 831 q 128 301 128 489 q 243 117 128 149 q 458 98 350 108 q 573 -40 573 80 "},"θ":{"x_min":0,"x_max":674,"ha":778,"o":"m 674 496 q 601 160 674 304 q 336 -26 508 -26 q 73 153 165 -26 q 0 485 0 296 q 72 840 0 683 q 343 1045 166 1045 q 605 844 516 1045 q 674 496 674 692 m 546 579 q 498 798 546 691 q 336 935 437 935 q 178 798 237 935 q 126 579 137 701 l 546 579 m 546 475 l 126 475 q 170 233 126 348 q 338 80 230 80 q 504 233 447 80 q 546 475 546 346 "},"Ο":{"x_min":0,"x_max":958,"ha":1054,"o":"m 485 1042 q 834 883 703 1042 q 958 511 958 735 q 834 136 958 287 q 481 -26 701 -26 q 126 130 261 -26 q 0 504 0 279 q 127 880 0 729 q 485 1042 263 1042 m 480 98 q 731 225 638 98 q 815 504 815 340 q 733 783 815 670 q 480 913 640 913 q 226 785 321 913 q 142 504 142 671 q 226 224 142 339 q 480 98 319 98 "},"Γ":{"x_min":0,"x_max":705.28125,"ha":749,"o":"m 705 886 l 140 886 l 140 0 l 0 0 l 0 1012 l 705 1012 l 705 886 "}," ":{"x_min":0,"x_max":0,"ha":375},"%":{"x_min":-3,"x_max":1089,"ha":1186,"o":"m 845 0 q 663 76 731 0 q 602 244 602 145 q 661 412 602 344 q 845 489 728 489 q 1027 412 959 489 q 1089 244 1089 343 q 1029 76 1089 144 q 845 0 962 0 m 844 103 q 945 143 909 103 q 981 243 981 184 q 947 340 981 301 q 844 385 909 385 q 744 342 781 385 q 708 243 708 300 q 741 147 708 186 q 844 103 780 103 m 888 986 l 284 -25 l 199 -25 l 803 986 l 888 986 m 241 468 q 58 545 126 468 q -3 715 -3 615 q 56 881 -3 813 q 238 958 124 958 q 421 881 353 958 q 483 712 483 813 q 423 544 483 612 q 241 468 356 468 m 241 855 q 137 811 175 855 q 100 710 100 768 q 136 612 100 653 q 240 572 172 572 q 344 614 306 572 q 382 713 382 656 q 347 810 382 771 q 241 855 308 855 "},"P":{"x_min":0,"x_max":726,"ha":806,"o":"m 424 1013 q 640 931 555 1013 q 726 719 726 850 q 637 506 726 587 q 413 426 548 426 l 140 426 l 140 0 l 0 0 l 0 1013 l 424 1013 m 379 889 l 140 889 l 140 548 l 372 548 q 522 589 459 548 q 593 720 593 637 q 528 845 593 801 q 379 889 463 889 "},"Έ":{"x_min":0,"x_max":1078.21875,"ha":1118,"o":"m 1078 0 l 342 0 l 342 1013 l 1067 1013 l 1067 889 l 481 889 l 481 585 l 1019 585 l 1019 467 l 481 467 l 481 125 l 1078 125 l 1078 0 m 277 1040 l 83 799 l 0 799 l 140 1040 l 277 1040 "},"Ώ":{"x_min":0.125,"x_max":1136.546875,"ha":1235,"o":"m 1136 0 l 722 0 l 722 123 q 911 309 842 194 q 981 558 981 423 q 893 813 981 710 q 651 923 800 923 q 411 821 501 923 q 321 568 321 720 q 390 316 321 433 q 579 123 459 200 l 579 0 l 166 0 l 166 124 l 384 124 q 235 327 289 210 q 182 572 182 444 q 311 912 182 782 q 651 1042 441 1042 q 989 910 858 1042 q 1120 569 1120 778 q 1066 326 1120 443 q 917 124 1013 210 l 1136 124 l 1136 0 m 277 1040 l 83 800 l 0 800 l 140 1041 l 277 1040 "},"_":{"x_min":0,"x_max":705.5625,"ha":803,"o":"m 705 -334 l 0 -334 l 0 -234 l 705 -234 l 705 -334 "},"Ϊ":{"x_min":-110,"x_max":246,"ha":275,"o":"m 246 1046 l 118 1046 l 118 1189 l 246 1189 l 246 1046 m 18 1046 l -110 1046 l -110 1189 l 18 1189 l 18 1046 m 136 0 l 0 0 l 0 1012 l 136 1012 l 136 0 "},"+":{"x_min":23,"x_max":768,"ha":792,"o":"m 768 372 l 444 372 l 444 0 l 347 0 l 347 372 l 23 372 l 23 468 l 347 468 l 347 840 l 444 840 l 444 468 l 768 468 l 768 372 "},"½":{"x_min":0,"x_max":1050,"ha":1149,"o":"m 1050 0 l 625 0 q 712 178 625 108 q 878 277 722 187 q 967 385 967 328 q 932 456 967 429 q 850 484 897 484 q 759 450 798 484 q 721 352 721 416 l 640 352 q 706 502 640 448 q 851 551 766 551 q 987 509 931 551 q 1050 385 1050 462 q 976 251 1050 301 q 829 179 902 215 q 717 68 740 133 l 1050 68 l 1050 0 m 834 985 l 215 -28 l 130 -28 l 750 984 l 834 985 m 224 422 l 142 422 l 142 811 l 0 811 l 0 867 q 104 889 62 867 q 164 973 157 916 l 224 973 l 224 422 "},"Ρ":{"x_min":0,"x_max":720,"ha":783,"o":"m 424 1013 q 637 933 554 1013 q 720 723 720 853 q 633 508 720 591 q 413 426 546 426 l 140 426 l 140 0 l 0 0 l 0 1013 l 424 1013 m 378 889 l 140 889 l 140 548 l 371 548 q 521 589 458 548 q 592 720 592 637 q 527 845 592 801 q 378 889 463 889 "},"'":{"x_min":0,"x_max":139,"ha":236,"o":"m 139 851 q 102 737 139 784 q 0 669 65 690 l 0 734 q 59 787 42 741 q 72 873 72 821 l 0 873 l 0 1013 l 139 1013 l 139 851 "},"ª":{"x_min":0,"x_max":350,"ha":397,"o":"m 350 625 q 307 616 328 616 q 266 631 281 616 q 247 673 251 645 q 190 628 225 644 q 116 613 156 613 q 32 641 64 613 q 0 722 0 669 q 72 826 0 800 q 247 866 159 846 l 247 887 q 220 934 247 916 q 162 953 194 953 q 104 934 129 953 q 76 882 80 915 l 16 882 q 60 976 16 941 q 166 1011 104 1011 q 266 979 224 1011 q 308 891 308 948 l 308 706 q 311 679 308 688 q 331 670 315 670 l 350 672 l 350 625 m 247 757 l 247 811 q 136 790 175 798 q 64 726 64 773 q 83 682 64 697 q 132 667 103 667 q 207 690 174 667 q 247 757 247 718 "},"΅":{"x_min":0,"x_max":450,"ha":553,"o":"m 450 800 l 340 800 l 340 925 l 450 925 l 450 800 m 406 1040 l 212 800 l 129 800 l 269 1040 l 406 1040 m 110 800 l 0 800 l 0 925 l 110 925 l 110 800 "},"T":{"x_min":0,"x_max":777,"ha":835,"o":"m 777 894 l 458 894 l 458 0 l 319 0 l 319 894 l 0 894 l 0 1013 l 777 1013 l 777 894 "},"Φ":{"x_min":0,"x_max":915,"ha":997,"o":"m 527 0 l 389 0 l 389 122 q 110 231 220 122 q 0 509 0 340 q 110 785 0 677 q 389 893 220 893 l 389 1013 l 527 1013 l 527 893 q 804 786 693 893 q 915 509 915 679 q 805 231 915 341 q 527 122 696 122 l 527 0 m 527 226 q 712 310 641 226 q 779 507 779 389 q 712 705 779 627 q 527 787 641 787 l 527 226 m 389 226 l 389 787 q 205 698 275 775 q 136 505 136 620 q 206 308 136 391 q 389 226 276 226 "},"⁋":{"x_min":0,"x_max":0,"ha":694},"j":{"x_min":-77.78125,"x_max":167,"ha":349,"o":"m 167 871 l 42 871 l 42 1013 l 167 1013 l 167 871 m 167 -80 q 121 -231 167 -184 q -26 -278 76 -278 l -77 -278 l -77 -164 l -41 -164 q 26 -143 11 -164 q 42 -65 42 -122 l 42 737 l 167 737 l 167 -80 "},"Σ":{"x_min":0,"x_max":756.953125,"ha":819,"o":"m 756 0 l 0 0 l 0 107 l 395 523 l 22 904 l 22 1013 l 745 1013 l 745 889 l 209 889 l 566 523 l 187 125 l 756 125 l 756 0 "},"1":{"x_min":215.671875,"x_max":574,"ha":792,"o":"m 574 0 l 442 0 l 442 697 l 215 697 l 215 796 q 386 833 330 796 q 475 986 447 875 l 574 986 l 574 0 "},"›":{"x_min":18.0625,"x_max":774,"ha":792,"o":"m 774 376 l 18 40 l 18 149 l 631 421 l 18 692 l 18 799 l 774 465 l 774 376 "},"<":{"x_min":17.984375,"x_max":773.609375,"ha":792,"o":"m 773 40 l 18 376 l 17 465 l 773 799 l 773 692 l 159 420 l 773 149 l 773 40 "},"£":{"x_min":0,"x_max":704.484375,"ha":801,"o":"m 704 41 q 623 -10 664 5 q 543 -26 583 -26 q 359 15 501 -26 q 243 36 288 36 q 158 23 197 36 q 73 -21 119 10 l 6 76 q 125 195 90 150 q 175 331 175 262 q 147 443 175 383 l 0 443 l 0 512 l 108 512 q 43 734 43 623 q 120 929 43 854 q 358 1010 204 1010 q 579 936 487 1010 q 678 729 678 857 l 678 684 l 552 684 q 504 838 552 780 q 362 896 457 896 q 216 852 263 896 q 176 747 176 815 q 199 627 176 697 q 248 512 217 574 l 468 512 l 468 443 l 279 443 q 297 356 297 398 q 230 194 297 279 q 153 107 211 170 q 227 133 190 125 q 293 142 264 142 q 410 119 339 142 q 516 96 482 96 q 579 105 550 96 q 648 142 608 115 l 704 41 "},"t":{"x_min":0,"x_max":367,"ha":458,"o":"m 367 0 q 312 -5 339 -2 q 262 -8 284 -8 q 145 28 183 -8 q 108 143 108 64 l 108 638 l 0 638 l 0 738 l 108 738 l 108 944 l 232 944 l 232 738 l 367 738 l 367 638 l 232 638 l 232 185 q 248 121 232 140 q 307 102 264 102 q 345 104 330 102 q 367 107 360 107 l 367 0 "},"¬":{"x_min":0,"x_max":706,"ha":803,"o":"m 706 411 l 706 158 l 630 158 l 630 335 l 0 335 l 0 411 l 706 411 "},"λ":{"x_min":0,"x_max":750,"ha":803,"o":"m 750 -7 q 679 -15 716 -15 q 538 59 591 -15 q 466 214 512 97 l 336 551 l 126 0 l 0 0 l 270 705 q 223 837 247 770 q 116 899 190 899 q 90 898 100 899 l 90 1004 q 152 1011 125 1011 q 298 938 244 1011 q 373 783 326 901 l 605 192 q 649 115 629 136 q 716 95 669 95 l 736 95 q 750 97 745 97 l 750 -7 "},"W":{"x_min":0,"x_max":1263.890625,"ha":1351,"o":"m 1263 1013 l 995 0 l 859 0 l 627 837 l 405 0 l 265 0 l 0 1013 l 136 1013 l 342 202 l 556 1013 l 701 1013 l 921 207 l 1133 1012 l 1263 1013 "},">":{"x_min":18.0625,"x_max":774,"ha":792,"o":"m 774 376 l 18 40 l 18 149 l 631 421 l 18 692 l 18 799 l 774 465 l 774 376 "},"v":{"x_min":0,"x_max":675.15625,"ha":761,"o":"m 675 738 l 404 0 l 272 0 l 0 738 l 133 737 l 340 147 l 541 737 l 675 738 "},"τ":{"x_min":0.28125,"x_max":644.5,"ha":703,"o":"m 644 628 l 382 628 l 382 179 q 388 120 382 137 q 436 91 401 91 q 474 94 447 91 q 504 97 501 97 l 504 0 q 454 -9 482 -5 q 401 -14 426 -14 q 278 67 308 -14 q 260 233 260 118 l 260 628 l 0 628 l 0 739 l 644 739 l 644 628 "},"ξ":{"x_min":0,"x_max":624.9375,"ha":699,"o":"m 624 -37 q 608 -153 624 -96 q 563 -278 593 -211 l 454 -278 q 491 -183 486 -200 q 511 -83 511 -126 q 484 -23 511 -44 q 370 1 452 1 q 323 0 354 1 q 283 -1 293 -1 q 84 76 169 -1 q 0 266 0 154 q 56 431 0 358 q 197 538 108 498 q 94 613 134 562 q 54 730 54 665 q 77 823 54 780 q 143 901 101 867 l 27 901 l 27 1012 l 576 1012 l 576 901 l 380 901 q 244 863 303 901 q 178 745 178 820 q 312 600 178 636 q 532 582 380 582 l 532 479 q 276 455 361 479 q 118 281 118 410 q 165 173 118 217 q 274 120 208 133 q 494 101 384 110 q 624 -37 624 76 "},"&":{"x_min":-3,"x_max":894.25,"ha":992,"o":"m 894 0 l 725 0 l 624 123 q 471 0 553 40 q 306 -41 390 -41 q 168 -7 231 -41 q 62 92 105 26 q 14 187 31 139 q -3 276 -3 235 q 55 433 -3 358 q 248 581 114 508 q 170 689 196 640 q 137 817 137 751 q 214 985 137 922 q 384 1041 284 1041 q 548 988 483 1041 q 622 824 622 928 q 563 666 622 739 q 431 556 516 608 l 621 326 q 649 407 639 361 q 663 493 653 426 l 781 493 q 703 229 781 352 l 894 0 m 504 818 q 468 908 504 877 q 384 940 433 940 q 293 907 331 940 q 255 818 255 875 q 289 714 255 767 q 363 628 313 678 q 477 729 446 682 q 504 818 504 771 m 556 209 l 314 499 q 179 395 223 449 q 135 283 135 341 q 146 222 135 253 q 183 158 158 192 q 333 80 241 80 q 556 209 448 80 "},"Λ":{"x_min":0,"x_max":862.5,"ha":942,"o":"m 862 0 l 719 0 l 426 847 l 143 0 l 0 0 l 356 1013 l 501 1013 l 862 0 "},"I":{"x_min":41,"x_max":180,"ha":293,"o":"m 180 0 l 41 0 l 41 1013 l 180 1013 l 180 0 "},"G":{"x_min":0,"x_max":921,"ha":1011,"o":"m 921 0 l 832 0 l 801 136 q 655 15 741 58 q 470 -28 568 -28 q 126 133 259 -28 q 0 499 0 284 q 125 881 0 731 q 486 1043 259 1043 q 763 957 647 1043 q 905 709 890 864 l 772 709 q 668 866 747 807 q 486 926 589 926 q 228 795 322 926 q 142 507 142 677 q 228 224 142 342 q 483 94 323 94 q 712 195 625 94 q 796 435 796 291 l 477 435 l 477 549 l 921 549 l 921 0 "},"ΰ":{"x_min":0,"x_max":617,"ha":725,"o":"m 524 800 l 414 800 l 414 925 l 524 925 l 524 800 m 183 800 l 73 800 l 73 925 l 183 925 l 183 800 m 617 352 q 540 93 617 199 q 308 -24 455 -24 q 76 93 161 -24 q 0 352 0 199 l 0 738 l 126 738 l 126 354 q 169 185 126 257 q 312 98 220 98 q 451 185 402 98 q 492 354 492 257 l 492 738 l 617 738 l 617 352 m 489 1040 l 300 819 l 216 819 l 351 1040 l 489 1040 "},"`":{"x_min":0,"x_max":138.890625,"ha":236,"o":"m 138 699 l 0 699 l 0 861 q 36 974 0 929 q 138 1041 72 1020 l 138 977 q 82 931 95 969 q 69 839 69 893 l 138 839 l 138 699 "},"·":{"x_min":0,"x_max":142,"ha":239,"o":"m 142 585 l 0 585 l 0 738 l 142 738 l 142 585 "},"Υ":{"x_min":0.328125,"x_max":819.515625,"ha":889,"o":"m 819 1013 l 482 416 l 482 0 l 342 0 l 342 416 l 0 1013 l 140 1013 l 411 533 l 679 1013 l 819 1013 "},"r":{"x_min":0,"x_max":355.5625,"ha":432,"o":"m 355 621 l 343 621 q 179 569 236 621 q 122 411 122 518 l 122 0 l 0 0 l 0 737 l 117 737 l 117 604 q 204 719 146 686 q 355 753 262 753 l 355 621 "},"x":{"x_min":0,"x_max":675,"ha":764,"o":"m 675 0 l 525 0 l 331 286 l 144 0 l 0 0 l 256 379 l 12 738 l 157 737 l 336 473 l 516 738 l 661 738 l 412 380 l 675 0 "},"μ":{"x_min":0,"x_max":696.609375,"ha":747,"o":"m 696 -4 q 628 -14 657 -14 q 498 97 513 -14 q 422 8 470 41 q 313 -24 374 -24 q 207 3 258 -24 q 120 80 157 31 l 120 -278 l 0 -278 l 0 738 l 124 738 l 124 343 q 165 172 124 246 q 308 82 216 82 q 451 177 402 82 q 492 358 492 254 l 492 738 l 616 738 l 616 214 q 623 136 616 160 q 673 92 636 92 q 696 95 684 92 l 696 -4 "},"h":{"x_min":0,"x_max":615,"ha":724,"o":"m 615 472 l 615 0 l 490 0 l 490 454 q 456 590 490 535 q 338 654 416 654 q 186 588 251 654 q 122 436 122 522 l 122 0 l 0 0 l 0 1013 l 122 1013 l 122 633 q 218 727 149 694 q 362 760 287 760 q 552 676 484 760 q 615 472 615 600 "},".":{"x_min":0,"x_max":142,"ha":239,"o":"m 142 0 l 0 0 l 0 151 l 142 151 l 142 0 "},"φ":{"x_min":-2,"x_max":878,"ha":974,"o":"m 496 -279 l 378 -279 l 378 -17 q 101 88 204 -17 q -2 367 -2 194 q 68 626 -2 510 q 283 758 151 758 l 283 646 q 167 537 209 626 q 133 373 133 462 q 192 177 133 254 q 378 93 259 93 l 378 758 q 445 764 426 763 q 476 765 464 765 q 765 659 653 765 q 878 377 878 553 q 771 96 878 209 q 496 -17 665 -17 l 496 -279 m 496 93 l 514 93 q 687 183 623 93 q 746 380 746 265 q 691 569 746 491 q 522 658 629 658 l 496 656 l 496 93 "},";":{"x_min":0,"x_max":142,"ha":239,"o":"m 142 585 l 0 585 l 0 738 l 142 738 l 142 585 m 142 -12 q 105 -132 142 -82 q 0 -206 68 -182 l 0 -138 q 58 -82 43 -123 q 68 0 68 -56 l 0 0 l 0 151 l 142 151 l 142 -12 "},"f":{"x_min":0,"x_max":378,"ha":472,"o":"m 378 638 l 246 638 l 246 0 l 121 0 l 121 638 l 0 638 l 0 738 l 121 738 q 137 935 121 887 q 290 1028 171 1028 q 320 1027 305 1028 q 378 1021 334 1026 l 378 908 q 323 918 346 918 q 257 870 273 918 q 246 780 246 840 l 246 738 l 378 738 l 378 638 "},"“":{"x_min":1,"x_max":348.21875,"ha":454,"o":"m 140 670 l 1 670 l 1 830 q 37 943 1 897 q 140 1011 74 990 l 140 947 q 82 900 97 940 q 68 810 68 861 l 140 810 l 140 670 m 348 670 l 209 670 l 209 830 q 245 943 209 897 q 348 1011 282 990 l 348 947 q 290 900 305 940 q 276 810 276 861 l 348 810 l 348 670 "},"A":{"x_min":0.03125,"x_max":906.953125,"ha":1008,"o":"m 906 0 l 756 0 l 648 303 l 251 303 l 142 0 l 0 0 l 376 1013 l 529 1013 l 906 0 m 610 421 l 452 867 l 293 421 l 610 421 "},"6":{"x_min":53,"x_max":739,"ha":792,"o":"m 739 312 q 633 62 739 162 q 400 -31 534 -31 q 162 78 257 -31 q 53 439 53 206 q 178 859 53 712 q 441 986 284 986 q 643 912 559 986 q 732 713 732 833 l 601 713 q 544 830 594 786 q 426 875 494 875 q 268 793 331 875 q 193 517 193 697 q 301 597 240 570 q 427 624 362 624 q 643 540 552 624 q 739 312 739 451 m 603 298 q 540 461 603 400 q 404 516 484 516 q 268 461 323 516 q 207 300 207 401 q 269 137 207 198 q 405 83 325 83 q 541 137 486 83 q 603 298 603 197 "},"‘":{"x_min":1,"x_max":139.890625,"ha":236,"o":"m 139 670 l 1 670 l 1 830 q 37 943 1 897 q 139 1011 74 990 l 139 947 q 82 900 97 940 q 68 810 68 861 l 139 810 l 139 670 "},"ϊ":{"x_min":-70,"x_max":283,"ha":361,"o":"m 283 800 l 173 800 l 173 925 l 283 925 l 283 800 m 40 800 l -70 800 l -70 925 l 40 925 l 40 800 m 283 3 q 232 -10 257 -5 q 181 -15 206 -15 q 84 26 118 -15 q 41 200 41 79 l 41 737 l 166 737 l 167 215 q 171 141 167 157 q 225 101 182 101 q 247 103 238 101 q 283 112 256 104 l 283 3 "},"π":{"x_min":-0.21875,"x_max":773.21875,"ha":857,"o":"m 773 -7 l 707 -11 q 575 40 607 -11 q 552 174 552 77 l 552 226 l 552 626 l 222 626 l 222 0 l 97 0 l 97 626 l 0 626 l 0 737 l 773 737 l 773 626 l 676 626 l 676 171 q 695 103 676 117 q 773 90 714 90 l 773 -7 "},"ά":{"x_min":0,"x_max":765.5625,"ha":809,"o":"m 765 -4 q 698 -14 726 -14 q 564 97 586 -14 q 466 7 525 40 q 337 -26 407 -26 q 88 98 186 -26 q 0 369 0 212 q 88 637 0 525 q 337 760 184 760 q 465 727 407 760 q 563 637 524 695 l 563 738 l 685 738 l 685 222 q 693 141 685 168 q 748 94 708 94 q 765 95 760 94 l 765 -4 m 584 371 q 531 562 584 485 q 360 653 470 653 q 192 566 254 653 q 135 379 135 489 q 186 181 135 261 q 358 84 247 84 q 528 176 465 84 q 584 371 584 260 m 604 1040 l 415 819 l 332 819 l 466 1040 l 604 1040 "},"O":{"x_min":0,"x_max":958,"ha":1057,"o":"m 485 1041 q 834 882 702 1041 q 958 512 958 734 q 834 136 958 287 q 481 -26 702 -26 q 126 130 261 -26 q 0 504 0 279 q 127 880 0 728 q 485 1041 263 1041 m 480 98 q 731 225 638 98 q 815 504 815 340 q 733 783 815 669 q 480 912 640 912 q 226 784 321 912 q 142 504 142 670 q 226 224 142 339 q 480 98 319 98 "},"n":{"x_min":0,"x_max":615,"ha":724,"o":"m 615 463 l 615 0 l 490 0 l 490 454 q 453 592 490 537 q 331 656 410 656 q 178 585 240 656 q 117 421 117 514 l 117 0 l 0 0 l 0 738 l 117 738 l 117 630 q 218 728 150 693 q 359 764 286 764 q 552 675 484 764 q 615 463 615 593 "},"3":{"x_min":54,"x_max":737,"ha":792,"o":"m 737 284 q 635 55 737 141 q 399 -25 541 -25 q 156 52 248 -25 q 54 308 54 140 l 185 308 q 245 147 185 202 q 395 96 302 96 q 539 140 484 96 q 602 280 602 190 q 510 429 602 390 q 324 454 451 454 l 324 565 q 487 584 441 565 q 565 719 565 617 q 515 835 565 791 q 395 879 466 879 q 255 824 307 879 q 203 661 203 769 l 78 661 q 166 909 78 822 q 387 992 250 992 q 603 921 513 992 q 701 723 701 844 q 669 607 701 656 q 578 524 637 558 q 696 434 655 499 q 737 284 737 369 "},"9":{"x_min":53,"x_max":739,"ha":792,"o":"m 739 524 q 619 94 739 241 q 362 -32 516 -32 q 150 47 242 -32 q 59 244 59 126 l 191 244 q 246 129 191 176 q 373 82 301 82 q 526 161 466 82 q 597 440 597 255 q 363 334 501 334 q 130 432 216 334 q 53 650 53 521 q 134 880 53 786 q 383 986 226 986 q 659 841 566 986 q 739 524 739 719 m 388 449 q 535 514 480 449 q 585 658 585 573 q 535 805 585 744 q 388 873 480 873 q 242 809 294 873 q 191 658 191 745 q 239 514 191 572 q 388 449 292 449 "},"l":{"x_min":41,"x_max":166,"ha":279,"o":"m 166 0 l 41 0 l 41 1013 l 166 1013 l 166 0 "},"¤":{"x_min":40.09375,"x_max":728.796875,"ha":825,"o":"m 728 304 l 649 224 l 512 363 q 383 331 458 331 q 256 363 310 331 l 119 224 l 40 304 l 177 441 q 150 553 150 493 q 184 673 150 621 l 40 818 l 119 898 l 267 749 q 321 766 291 759 q 384 773 351 773 q 447 766 417 773 q 501 749 477 759 l 649 898 l 728 818 l 585 675 q 612 618 604 648 q 621 553 621 587 q 591 441 621 491 l 728 304 m 384 682 q 280 643 318 682 q 243 551 243 604 q 279 461 243 499 q 383 423 316 423 q 487 461 449 423 q 525 553 525 500 q 490 641 525 605 q 384 682 451 682 "},"κ":{"x_min":0,"x_max":632.328125,"ha":679,"o":"m 632 0 l 482 0 l 225 384 l 124 288 l 124 0 l 0 0 l 0 738 l 124 738 l 124 446 l 433 738 l 596 738 l 312 466 l 632 0 "},"4":{"x_min":48,"x_max":742.453125,"ha":792,"o":"m 742 243 l 602 243 l 602 0 l 476 0 l 476 243 l 48 243 l 48 368 l 476 958 l 602 958 l 602 354 l 742 354 l 742 243 m 476 354 l 476 792 l 162 354 l 476 354 "},"p":{"x_min":0,"x_max":685,"ha":786,"o":"m 685 364 q 598 96 685 205 q 350 -23 504 -23 q 121 89 205 -23 l 121 -278 l 0 -278 l 0 738 l 121 738 l 121 633 q 220 726 159 691 q 351 761 280 761 q 598 636 504 761 q 685 364 685 522 m 557 371 q 501 560 557 481 q 330 651 437 651 q 162 559 223 651 q 108 366 108 479 q 162 177 108 254 q 333 87 224 87 q 502 178 441 87 q 557 371 557 258 "},"‡":{"x_min":0,"x_max":777,"ha":835,"o":"m 458 238 l 458 0 l 319 0 l 319 238 l 0 238 l 0 360 l 319 360 l 319 681 l 0 683 l 0 804 l 319 804 l 319 1015 l 458 1013 l 458 804 l 777 804 l 777 683 l 458 683 l 458 360 l 777 360 l 777 238 l 458 238 "},"ψ":{"x_min":0,"x_max":808,"ha":907,"o":"m 465 -278 l 341 -278 l 341 -15 q 87 102 180 -15 q 0 378 0 210 l 0 739 l 133 739 l 133 379 q 182 195 133 275 q 341 98 242 98 l 341 922 l 465 922 l 465 98 q 623 195 563 98 q 675 382 675 278 l 675 742 l 808 742 l 808 381 q 720 104 808 213 q 466 -13 627 -13 l 465 -278 "},"η":{"x_min":0.78125,"x_max":697,"ha":810,"o":"m 697 -278 l 572 -278 l 572 454 q 540 587 572 536 q 425 650 501 650 q 271 579 337 650 q 206 420 206 509 l 206 0 l 81 0 l 81 489 q 73 588 81 562 q 0 644 56 644 l 0 741 q 68 755 38 755 q 158 720 124 755 q 200 630 193 686 q 297 726 234 692 q 434 761 359 761 q 620 692 544 761 q 697 516 697 624 l 697 -278 "}},"cssFontWeight":"normal","ascender":1189,"underlinePosition":-100,"cssFontStyle":"normal","boundingBox":{"yMin":-334,"xMin":-111,"yMax":1189,"xMax":1672},"resolution":1000,"original_font_information":{"postscript_name":"Helvetiker-Regular","version_string":"Version 1.00 2004 initial release","vendor_url":"http://www.magenta.gr/","full_font_name":"Helvetiker","font_family_name":"Helvetiker","copyright":"Copyright (c) Μagenta ltd, 2004","description":"","trademark":"","designer":"","designer_url":"","unique_font_identifier":"Μagenta ltd:Helvetiker:22-10-104","license_url":"http://www.ellak.gr/fonts/MgOpen/license.html","license_description":"Copyright (c) 2004 by MAGENTA Ltd. All Rights Reserved.\r\n\r\nPermission is hereby granted, free of charge, to any person obtaining a copy of the fonts accompanying this license (\"Fonts\") and associated documentation files (the \"Font Software\"), to reproduce and distribute the Font Software, including without limitation the rights to use, copy, merge, publish, distribute, and/or sell copies of the Font Software, and to permit persons to whom the Font Software is furnished to do so, subject to the following conditions: \r\n\r\nThe above copyright and this permission notice shall be included in all copies of one or more of the Font Software typefaces.\r\n\r\nThe Font Software may be modified, altered, or added to, and in particular the designs of glyphs or characters in the Fonts may be modified and additional glyphs or characters may be added to the Fonts, only if the fonts are renamed to names not containing the word \"MgOpen\", or if the modifications are accepted for inclusion in the Font Software itself by the each appointed Administrator.\r\n\r\nThis License becomes null and void to the extent applicable to Fonts or Font Software that has been modified and is distributed under the \"MgOpen\" name.\r\n\r\nThe Font Software may be sold as part of a larger software package but no copy of one or more of the Font Software typefaces may be sold by itself. \r\n\r\nTHE FONT SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL MAGENTA OR PERSONS OR BODIES IN CHARGE OF ADMINISTRATION AND MAINTENANCE OF THE FONT SOFTWARE BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM OTHER DEALINGS IN THE FONT SOFTWARE.","manufacturer_name":"Μagenta ltd","font_sub_family_name":"Regular"},"descender":-334,"familyName":"Helvetiker","lineHeight":1522,"underlineThickness":50});
+
+glam.ready = function() {
+	glam.DOM.ready();
+}
+
+
+glam.setFullScreen = function(enable) {
+	return glam.Graphics.instance.setFullScreen(enable);
+}

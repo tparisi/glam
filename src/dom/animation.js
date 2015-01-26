@@ -4,7 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.AnimationElement = {};
+goog.provide('glam.AnimationElement');
 
 glam.AnimationElement.DEFAULT_DURATION = "1s";
 glam.AnimationElement.DEFAULT_ITERATION_COUNT = "1";
@@ -148,7 +148,7 @@ glam.AnimationElement.createFromStyle = function(docelt, style, obj) {
 
 			var framevalue;
 			var framedata = animation[k];
-			for (prop in framedata) {
+			for (var prop in framedata) {
 				var value = framedata[prop];
 				var type;
 				if (prop == "transform" ||
@@ -390,7 +390,7 @@ glam.AnimationElement.addAnimationToObject = function(animation, obj) {
 	var loop = animation.iterationCount > 1;
 	
 	if (interps.length) {
-		var kf = new Vizi.KeyFrameAnimator({ interps: interps, 
+		var kf = new glam.KeyFrameAnimator({ interps: interps, 
 			duration : animation.duration, 
 			loop : animation.loop, 
 			easing: animation.easing

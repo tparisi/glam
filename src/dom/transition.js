@@ -4,7 +4,8 @@
  * @author Tony Parisi
  */
 
-glam.TransitionElement = {};
+goog.provide('glam.TransitionElement');
+goog.require('glam.AnimationElement');
 
 glam.TransitionElement.DEFAULT_DURATION = glam.AnimationElement.DEFAULT_DURATION;
 glam.TransitionElement.DEFAULT_TIMING_FUNCTION =  glam.AnimationElement.DEFAULT_TIMING_FUNCTION;

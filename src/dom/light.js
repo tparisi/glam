@@ -4,13 +4,13 @@
  * @author Tony Parisi
  */
 
-glam.LightElement = {};
+goog.provide('glam.LightElement');
 
 glam.LightElement.DEFAULT_TYPE = "directional";
 glam.LightElement.DEFAULT_COLOR = "#ffffff";
 glam.LightElement.DEFAULT_ANGLE = "90deg";
 glam.LightElement.DEFAULT_DISTANCE = 0;
-glam.LightElement.DEFAULT_EXPONENT = Vizi.SpotLight.DEFAULT_EXPONENT;
+glam.LightElement.DEFAULT_EXPONENT = glam.SpotLight.DEFAULT_EXPONENT;
 
 glam.LightElement.create = function(docelt, style, app) {
 	
@@ -63,22 +63,22 @@ glam.LightElement.create = function(docelt, style, app) {
 			exponent : exponent,
 	};
 	
-	var obj = new Vizi.Object;
+	var obj = new glam.Object;
 
 	var light = null;
 	switch (type.toLowerCase()) {
 	
 		case 'directional' :
-			light = new Vizi.DirectionalLight(param);
+			light = new glam.DirectionalLight(param);
 			break;
 		case 'point' :
-			light = new Vizi.PointLight(param);
+			light = new glam.PointLight(param);
 			break;
 		case 'spot' :
-			light = new Vizi.SpotLight(param);
+			light = new glam.SpotLight(param);
 			break;
 		case 'ambient' :
-			light = new Vizi.AmbientLight(param);
+			light = new glam.AmbientLight(param);
 			break;
 	}
 	

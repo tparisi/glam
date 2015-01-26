@@ -4,6 +4,8 @@
  * @author Tony Parisi
  */
 
+goog.provide('glam.DOMStyle');
+
 glam.DOMStyle = function(docelt) {
 
 	this.docelt = docelt;
@@ -17,7 +19,7 @@ glam.DOMStyle = function(docelt) {
 glam.DOMStyle.prototype = new Object;
 
 glam.DOMStyle.prototype.addProperties = function(props) {
-	for (p in props) {
+	for (var p in props) {
 		this.addProperty(p, props[p]);
 	}
 }

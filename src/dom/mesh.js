@@ -4,7 +4,8 @@
  * @author Tony Parisi
  */
 
-glam.MeshElement = {};
+goog.provide('glam.MeshElement');
+
 glam.MeshElement.VERTEX_NORMALS = false;
 glam.MeshElement.VERTEX_COLORS = false;
 
@@ -49,7 +50,7 @@ glam.MeshElement.createVisual = function(docelt, material, param) {
 	glam.MeshElement.parse(docelt, geometry, material, param);
 	
 	var mesh = new THREE.Mesh(geometry, material);
-	var visual = new Vizi.Visual(
+	var visual = new glam.Visual(
 			{
 				object : mesh,
 			});
@@ -63,7 +64,7 @@ glam.MeshElement.parse = function(docelt, geometry, material, param) {
 	if (verts) {
 		verts = verts[0];
 		if (verts) {
-			glam.DOM.Types.parseVector3Array(verts, geometry.vertices);
+			glam.DOMTypes.parseVector3Array(verts, geometry.vertices);
 		}
 	}
 	
@@ -71,7 +72,7 @@ glam.MeshElement.parse = function(docelt, geometry, material, param) {
 	if (uvs) {
 		uvs = uvs[0];
 		if (uvs) {
-			glam.DOM.Types.parseUVArray(uvs, geometry.faceVertexUvs[0]);
+			glam.DOMTypes.parseUVArray(uvs, geometry.faceVertexUvs[0]);
 		}
 	}
 
@@ -79,7 +80,7 @@ glam.MeshElement.parse = function(docelt, geometry, material, param) {
 	if (faces) {
 		faces = faces[0];
 		if (faces) {
-			glam.DOM.Types.parseFaceArray(faces, geometry.faces);
+			glam.DOMTypes.parseFaceArray(faces, geometry.faces);
 		}
 	}
 
@@ -88,7 +89,7 @@ glam.MeshElement.parse = function(docelt, geometry, material, param) {
 	if (normals) {
 		normals = normals[0];
 		if (normals) {
-			glam.DOM.Types.parseVector3Array(normals, vertexNormals);
+			glam.DOMTypes.parseVector3Array(normals, vertexNormals);
 			
 			if (param.vertexNormals) {
 				
@@ -128,7 +129,7 @@ glam.MeshElement.parse = function(docelt, geometry, material, param) {
 	if (colors) {
 		colors = colors[0];
 		if (colors) {
-			glam.DOM.Types.parseColor3Array(colors, vertexColors);
+			glam.DOMTypes.parseColor3Array(colors, vertexColors);
 	
 			if (param.vertexColors) {
 	

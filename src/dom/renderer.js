@@ -4,5 +4,7 @@
  * @author Tony Parisi
  */
 
+goog.provide('glam.DOMRenderer');
+
 glam.DOMRenderer = {
 };

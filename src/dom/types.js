@@ -4,11 +4,13 @@
  * @author Tony Parisi
  */
 
-glam.DOM.Types = {
+goog.provide('glam.DOMTypes');
+
+glam.DOMTypes = {
 };
 
 // statics
-glam.DOM.Types.types = {
+glam.DOMTypes.types = {
 		"box" :  { cls : glam.BoxElement, transform:true, animation:true, input:true, visual:true },
 		"cone" :  { cls : glam.ConeElement, transform:true, animation:true, input:true, visual:true },
 		"cylinder" :  { cls : glam.CylinderElement, transform:true, animation:true, input:true, visual:true },
@@ -31,7 +33,7 @@ glam.DOM.Types.types = {
 };
 
 
-glam.DOM.Types.parseVector3Array = function(element, vertices) {
+glam.DOMTypes.parseVector3Array = function(element, vertices) {
 
 	var text = element.textContent;
 	var nums = text.split(" ");
@@ -51,7 +53,7 @@ glam.DOM.Types.parseVector3Array = function(element, vertices) {
 	}
 }
 
-glam.DOM.Types.parseVector3 = function(text, vec) {
+glam.DOMTypes.parseVector3 = function(text, vec) {
 
 	var nums = text.split(" ");
 	
@@ -66,7 +68,7 @@ glam.DOM.Types.parseVector3 = function(text, vec) {
 	vec.set(x, y, z);
 }
 
-glam.DOM.Types.parseVector2Array = function(element, uvs) {
+glam.DOMTypes.parseVector2Array = function(element, uvs) {
 	var text = element.textContent;
 	var nums = text.split(" ");
 	
@@ -85,7 +87,7 @@ glam.DOM.Types.parseVector2Array = function(element, uvs) {
 
 }
 
-glam.DOM.Types.parseColor3Array = function(element, colors) {
+glam.DOMTypes.parseColor3Array = function(element, colors) {
 	var text = element.textContent;
 	var nums = text.split(" ");
 	
@@ -106,7 +108,7 @@ glam.DOM.Types.parseColor3Array = function(element, colors) {
 }
 
 
-glam.DOM.Types.parseColor3 = function(text, c) {
+glam.DOMTypes.parseColor3 = function(text, c) {
 
 	var nums = text.split(" ");
 	
@@ -121,7 +123,7 @@ glam.DOM.Types.parseColor3 = function(text, c) {
 	c.setRGB(r, g, b);
 }
 
-glam.DOM.Types.parseFaceArray = function(element, faces) {
+glam.DOMTypes.parseFaceArray = function(element, faces) {
 	
 	var text = element.textContent;
 	var nums = text.split(" ");
@@ -142,7 +144,7 @@ glam.DOM.Types.parseFaceArray = function(element, faces) {
 
 }
 
-glam.DOM.Types.parseUVArray = function(element, uvs) {
+glam.DOMTypes.parseUVArray = function(element, uvs) {
 	var text = element.textContent;
 	var nums = text.split(" ");
 	

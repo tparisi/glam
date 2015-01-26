@@ -184,10 +184,10 @@ $(document).ready(function(){
 	scene = document.getElementsByTagName('scene')[0];
 	addBubbles();
 
-    var canvas = Vizi.Graphics.instance.renderer.domElement;
+    var canvas = glam.Graphics.instance.renderer.domElement;
     canvas.addEventListener("touchstart", function(event) {
     	if (!fullscreen) {
-			Vizi.Graphics.instance.setFullScreen(true);
+			glam.setFullScreen(true);
 			fullscreen = true;    		
     	}
     	else {

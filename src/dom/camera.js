@@ -4,7 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.CameraElement = {};
+goog.provide('glam.CameraElement');
 
 glam.CameraElement.DEFAULT_FOV = 45;
 glam.CameraElement.DEFAULT_NEAR = 1;
@@ -43,8 +43,8 @@ glam.CameraElement.create = function(docelt, style, app) {
 		param.aspect = aspect;
 	}
 	
-	var camera = new Vizi.Object;	
-	var cam = new Vizi.PerspectiveCamera(param);
+	var camera = new glam.Object;	
+	var cam = new glam.PerspectiveCamera(param);
 	camera.addComponent(cam);
 	
 	app.addCamera(cam, docelt.id);

@@ -4,16 +4,17 @@
  * @author Tony Parisi
  */
 
-glam.ImportElement = {};
+
+goog.provide('glam.ImportElement');
 
 glam.ImportElement.create = function(docelt, style) {
 	var src = docelt.getAttribute('src');
 		
 	// Create the cube
-	var obj = new Vizi.Object;	
+	var obj = new glam.Object;	
 
 	if (src) {
-		var loader = new Vizi.Loader;
+		var loader = new glam.Loader;
 
 		var loadCallback = function(data) {
 			glam.ImportElement.onLoadComplete(obj, data, src);

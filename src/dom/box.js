@@ -4,7 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.BoxElement = {};
+goog.provide('glam.BoxElement');
 
 glam.BoxElement.DEFAULT_WIDTH = 2;
 glam.BoxElement.DEFAULT_HEIGHT = 2;
@@ -40,7 +40,7 @@ glam.BoxElement.getAttributes = function(docelt, style, param) {
 
 glam.BoxElement.createVisual = function(docelt, material, param) {
 
-	var visual = new Vizi.Visual(
+	var visual = new glam.Visual(
 			{ geometry: new THREE.BoxGeometry(param.width, param.height, param.depth),
 				material: material
 			});

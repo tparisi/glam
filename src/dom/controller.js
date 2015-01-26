@@ -4,7 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.ControllerElement = {};
+goog.provide('glam.ControllerElement');
 
 glam.ControllerElement.create = function(docelt, style, app) {
 	var on = true;
@@ -24,12 +24,12 @@ glam.ControllerElement.create = function(docelt, style, app) {
 			var y = parseFloat(docelt.getAttribute('y')) || 0;
 			var z = parseFloat(docelt.getAttribute('z')) || 0;
 			
-			var controller = Vizi.Prefabs.FirstPersonController({active:true, headlight:on});
-			var controllerScript = controller.getComponent(Vizi.FirstPersonControllerScript);
+			var controller = glam.Prefabs.FirstPersonController({active:true, headlight:on});
+			var controllerScript = controller.getComponent(glam.FirstPersonControllerScript);
 			app.addObject(controller);
 
-			var object = new Vizi.Object;	
-			var camera = new Vizi.PerspectiveCamera();
+			var object = new glam.Object;	
+			var camera = new glam.PerspectiveCamera();
 			object.addComponent(camera);
 			app.addObject(object);
 
@@ -38,16 +38,16 @@ glam.ControllerElement.create = function(docelt, style, app) {
 			
 		}
 		else if (type == "rift") {
-			var controller = Vizi.Prefabs.RiftController({active:true, 
+			var controller = glam.Prefabs.RiftController({active:true, 
 				headlight:on,
 				mouseLook:false,
 				useVRJS : true,
 			});
-			var controllerScript = controller.getComponent(Vizi.RiftControllerScript);			
+			var controllerScript = controller.getComponent(glam.RiftControllerScript);			
 			app.addObject(controller);
 
-			var object = new Vizi.Object;	
-			var camera = new Vizi.PerspectiveCamera();
+			var object = new glam.Object;	
+			var camera = new glam.PerspectiveCamera();
 			object.addComponent(camera);
 			app.addObject(object);
 
@@ -64,16 +64,16 @@ glam.ControllerElement.create = function(docelt, style, app) {
 			app.controllerScript = controllerScript;
 		}
 		else if (type == "deviceorientation") {
-			var controller = Vizi.Prefabs.DeviceOrientationController({active:true, 
+			var controller = glam.Prefabs.DeviceOrientationController({active:true, 
 				headlight:on,
 				mouseLook:false,
 				useVRJS : true,
 			});
-			var controllerScript = controller.getComponent(Vizi.DeviceOrientationControllerScript);			
+			var controllerScript = controller.getComponent(glam.DeviceOrientationControllerScript);			
 			app.addObject(controller);
 
-			var object = new Vizi.Object;	
-			var camera = new Vizi.PerspectiveCamera();
+			var object = new glam.Object;	
+			var camera = new glam.PerspectiveCamera();
 			object.addComponent(camera);
 			app.addObject(object);
 

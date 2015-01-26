@@ -4,13 +4,10 @@
  * @author Tony Parisi
  */
 
-glam.LineElement = {};
+goog.provide('glam.LineElement');
 
 glam.LineElement.create = function(docelt, style) {
 		
-	if (style) {
-	}
-	
 	var material = glam.DOMMaterial.create(style, null, "line");
 	
 	var geometry = new THREE.Geometry;
@@ -19,8 +16,8 @@ glam.LineElement.create = function(docelt, style) {
 	
 	var line = new THREE.Line(geometry, material);
 	
-	var obj = new Vizi.Object;	
-	var visual = new Vizi.Visual(
+	var obj = new glam.Object;	
+	var visual = new glam.Visual(
 			{
 				object : line,
 			});
@@ -38,7 +35,7 @@ glam.LineElement.parse = function(docelt, geometry, material) {
 	var verts = docelt.getElementsByTagName('vertices');
 	if (verts) {
 		verts = verts[0];
-		glam.DOM.Types.parseVector3Array(verts, geometry.vertices);
+		glam.DOMTypes.parseVector3Array(verts, geometry.vertices);
 	}
 	
 	var vertexColors = [];
@@ -46,7 +43,7 @@ glam.LineElement.parse = function(docelt, geometry, material) {
 	if (colors) {
 		colors = colors[0];
 		if (colors) {
-			glam.DOM.Types.parseColor3Array(colors, vertexColors);
+			glam.DOMTypes.parseColor3Array(colors, vertexColors);
 	
 			var i, len = vertexColors.length;
 	

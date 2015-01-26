@@ -4,6 +4,8 @@
  * @author Tony Parisi
  */
 
+goog.provide('glam.DOMClassList');
+
 glam.DOMClassList = function(docelt) {
 	this.docelt = docelt;
 	Array.call(this);

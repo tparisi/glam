@@ -4,7 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.TextElement = {};
+goog.provide('glam.TextElement');
 
 glam.TextElement.DEFAULT_FONT_SIZE = 1;
 glam.TextElement.DEFAULT_FONT_DEPTH = .2;
@@ -158,7 +158,7 @@ glam.TextElement.createVisual = function(docelt, material, param) {
 	                                            ]);
 
 
-	var visual = new Vizi.Visual(
+	var visual = new glam.Visual(
 			{ geometry: textGeo,
 				material: textmat
 			});

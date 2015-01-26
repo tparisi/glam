@@ -1,8 +1,10 @@
 /**
- * @fileoverview viewer - creates WebGL (Three.js/Vizi scene) by traversing document
+ * @fileoverview viewer - creates WebGL (Three.js/GLAM scene) by traversing document
  * 
  * @author Tony Parisi
  */
+
+goog.provide('glam.DOMViewer');
 
 glam.DOMViewer = function(doc) {
 
@@ -29,7 +31,7 @@ glam.DOMViewer.prototype.initRenderer = function() {
 			}
 		}
 	}
-	this.app = new Vizi.Viewer({ container : this.documentParent, 
+	this.app = new glam.Viewer({ container : this.documentParent, 
 		headlight: false, 
 		riftRender:this.riftRender, 
 		cardboard:this.cardboardRender,
@@ -38,7 +40,7 @@ glam.DOMViewer.prototype.initRenderer = function() {
 
 glam.DOMViewer.prototype.initDefaultScene = function() {
 	
-	this.scene = new Vizi.Object;
+	this.scene = new glam.Object;
 	this.app.sceneRoot.addChild(this.scene);
 	this.app.defaultCamera.position.set(0, 0, 5);
 }
@@ -67,7 +69,7 @@ glam.DOMViewer.prototype.traverse = function(docelt, sceneobj) {
 			tag = tag.toLowerCase();
 
 		var fn = null;
-		var type = tag ? glam.DOM.Types.types[tag] : null;
+		var type = tag ? glam.DOMTypes.types[tag] : null;
 		if (type && type.cls && (fn = type.cls.create) && typeof(fn) == "function") {
 			// console.log("    * found it in table!");
 			glam.DOMElement.init(childelt);
@@ -90,7 +92,7 @@ glam.DOMViewer.prototype.addNode = function(docelt) {
 	if (tag)
 		tag = tag.toLowerCase();
 	var fn = null;
-	var type = tag ? glam.DOM.Types.types[tag] : null;
+	var type = tag ? glam.DOMTypes.types[tag] : null;
 	if (type && type.cls && (fn = type.cls.create) && typeof(fn) == "function") {
 
 		glam.DOMElement.init(docelt);
@@ -149,7 +151,7 @@ glam.DOMViewer.prototype.prepareViewsAndControllers = function() {
 	var cameras = this.app.cameras;
 	if (cameras && cameras.length) {
 		var cam = cameras[0];
-		var controller = Vizi.Application.instance.controllerScript;
+		var controller = glam.Application.instance.controllerScript;
 		controller.camera = cam;
 		controller.enabled = true;
 		cam.active = true;

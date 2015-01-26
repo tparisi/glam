@@ -4,7 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.CylinderElement = {};
+goog.provide('glam.CylinderElement');
 
 glam.CylinderElement.DEFAULT_RADIUS = 2;
 glam.CylinderElement.DEFAULT_HEIGHT = 2;
@@ -33,7 +33,7 @@ glam.CylinderElement.getAttributes = function(docelt, style, param) {
 
 glam.CylinderElement.createVisual = function(docelt, material, param) {
 
-	var visual = new Vizi.Visual(
+	var visual = new glam.Visual(
 			{ geometry: new THREE.CylinderGeometry(param.radius, param.radius, param.height, 32),
 				material: material
 			});

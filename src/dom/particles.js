@@ -4,7 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.ParticlesElement = {};
+goog.provide('glam.ParticlesElement');
 
 glam.ParticlesElement.create = function(docelt, style) {
 
@@ -26,18 +26,18 @@ glam.ParticlesElement.create = function(docelt, style) {
 	param.geometry = elts.geometry;
 
 	// Create the particle system
-	var ps = Vizi.ParticleSystem(param);
+	var ps = glam.ParticleSystem(param);
 
 	// Got emitters in there? Add them
 	glam.ParticlesElement.addEmitters(elts.emitters, ps);
 
 	// Bind the properties
-	var visual = ps.getComponent(Vizi.Visual);
+	var visual = ps.getComponent(glam.Visual);
 	docelt.geometry = visual.geometry;
 	docelt.material = visual.material;
 	
 	// Start it
-	var pscript = ps.getComponent(Vizi.ParticleSystemScript);	
+	var pscript = ps.getComponent(glam.ParticleSystemScript);	
 	pscript.active = true;
 	return ps;
 }
@@ -71,7 +71,7 @@ glam.ParticlesElement.parse = function(docelt) {
 			if (emitter) {
 				glam.ParticlesElement.parseEmitter(emitter, param);
 
-				var pe = new Vizi.ParticleEmitter(param);
+				var pe = new glam.ParticleEmitter(param);
 				result.emitters.push(pe);
 			}
 		}
@@ -83,7 +83,7 @@ glam.ParticlesElement.parse = function(docelt) {
 		verts = verts[0];
 		if (verts) {
 			var geometry = new THREE.Geometry;
-			glam.DOM.Types.parseVector3Array(verts, geometry.vertices);
+			glam.DOMTypes.parseVector3Array(verts, geometry.vertices);
 			result.geometry = geometry;
 		}
 	}
@@ -128,22 +128,22 @@ glam.ParticlesElement.parseEmitter = function(emitter, param) {
 
 	var vel = emitter.getAttribute('velocity');
 	if (vel) {
-		glam.DOM.Types.parseVector3(vel, velocity);
+		glam.DOMTypes.parseVector3(vel, velocity);
 	}
 	
 	var accel = emitter.getAttribute('acceleration');
 	if (accel) {
-		glam.DOM.Types.parseVector3(accel, acceleration);
+		glam.DOMTypes.parseVector3(accel, acceleration);
 	}
 	
 	var posSpread = emitter.getAttribute('positionSpread');
 	if (posSpread) {
-		glam.DOM.Types.parseVector3(posSpread, positionSpread);
+		glam.DOMTypes.parseVector3(posSpread, positionSpread);
 	}
 
 	var accelSpread = emitter.getAttribute('accelerationSpread');
 	if (accelSpread) {
-		glam.DOM.Types.parseVector3(accelSpread, accelerationSpread);
+		glam.DOMTypes.parseVector3(accelSpread, accelerationSpread);
 	}
 
 	var blending = THREE.NoBlending;

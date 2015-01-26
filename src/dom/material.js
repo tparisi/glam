@@ -4,7 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.DOMMaterial = {};
+goog.provide('glam.DOMMaterial');
 
 glam.DOMMaterial.create = function(style, createCB, objtype) {
 	var material = null;
@@ -357,7 +357,7 @@ glam.DOMMaterial.callShaderMaterialCallbacks = function(vsurl, fsurl) {
 	
 	var entry = glam.DOMMaterial.shaderMaterials[key];
 	if (entry && entry.material) {
-		for (cb in entry.callbacks) {
+		for (var cb in entry.callbacks) {
 			entry.callbacks[cb](entry.material);
 		}
 	}

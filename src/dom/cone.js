@@ -4,7 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.ConeElement = {};
+goog.provide('glam.ConeElement');
 
 glam.ConeElement.DEFAULT_RADIUS = 2;
 glam.ConeElement.DEFAULT_HEIGHT = 2;
@@ -34,7 +34,7 @@ glam.ConeElement.getAttributes = function(docelt, style, param) {
 
 glam.ConeElement.createVisual = function(docelt, material, param) {
 	
-	var visual = new Vizi.Visual(
+	var visual = new glam.Visual(
 			{ geometry: new THREE.CylinderGeometry(0, param.radius, param.height, 32),
 				material: material
 			});

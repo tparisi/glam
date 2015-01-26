@@ -4,7 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.CircleElement = {};
+goog.provide('glam.CircleElement');
 
 glam.CircleElement.DEFAULT_RADIUS = 2;
 glam.CircleElement.DEFAULT_RADIUS_SEGMENTS = 32;
@@ -34,7 +34,7 @@ glam.CircleElement.getAttributes = function(docelt, style, param) {
 
 glam.CircleElement.createVisual = function(docelt, material, param) {
 	
-	var visual = new Vizi.Visual(
+	var visual = new glam.Visual(
 			{ geometry: new THREE.CircleGeometry(param.radius, param.radiusSegments),
 				material: material
 			});

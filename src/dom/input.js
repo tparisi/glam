@@ -4,6 +4,8 @@
  * @author Tony Parisi
  */
 
+goog.provide('glam.DOMInput');
+
 glam.DOMInput = {};
 
 glam.DOMInput.add = function(docelt, obj) {
@@ -19,7 +21,7 @@ glam.DOMInput.add = function(docelt, obj) {
 						cancelable: true
 					}
 				);
-			for (propName in event) {
+			for (var propName in event) {
 				domEvent[propName] = event[propName];
 			}
 			var res = docelt.dispatchEvent(domEvent);
@@ -27,17 +29,17 @@ glam.DOMInput.add = function(docelt, obj) {
 		});
 	}
 	
-	var picker = new Vizi.Picker;
+	var picker = new glam.Picker;
 	
 	var events = ["click", "mouseover", "mouseout", "mousedown", "mouseup", "mousemove"];
-	for (index in events) {
+	for (var index in events) {
 		var evt = events[index];
 		addListener(picker, evt);
 	}
 		
 	obj.addComponent(picker);
 
-	var viewpicker = new Vizi.ViewPicker;
+	var viewpicker = new glam.ViewPicker;
 	obj.addComponent(viewpicker);
 	addListener(viewpicker, "viewover")
 	addListener(viewpicker, "viewout");

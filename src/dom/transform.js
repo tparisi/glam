@@ -4,7 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.DOMTransform = {};
+goog.provide('glam.DOMTransform');
 
 glam.DOMTransform.parse = function(docelt, style, obj) {
 	

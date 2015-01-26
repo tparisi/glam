@@ -4,12 +4,12 @@
  * @author Tony Parisi
  */
 
-glam.GroupElement = {};
+goog.provide('glam.GroupElement');
 
 glam.GroupElement.create = function(docelt, style) {
 
 	// Create the group
-	var group = new Vizi.Object;
+	var group = new glam.Object;
 	
 	return group;
 }

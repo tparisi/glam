@@ -4,6 +4,8 @@
  * @author Tony Parisi
  */
 
+goog.provide('glam.DOMParser');
+
 glam.DOMParser = {
 		
 	addDocument : function(doc)
@@ -46,7 +48,7 @@ glam.DOMParser = {
 
 	addStyle : function(declaration)
 	{
-		for (selector in declaration) {
+		for (var selector in declaration) {
 			glam.DOM.addStyle(selector, declaration[selector]);
 		}
 	},

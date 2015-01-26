@@ -4,7 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.VisualElement = {};
+goog.provide('glam.VisualElement');
 
 glam.VisualElement.create = function(docelt, style, cls) {
 
@@ -13,7 +13,7 @@ glam.VisualElement.create = function(docelt, style, cls) {
 	
 	cls.getAttributes(docelt, style, param);
 	
-	var obj = new Vizi.Object;	
+	var obj = new glam.Object;	
 	
 	var material = glam.DOMMaterial.create(style, function(material) {
 		glam.VisualElement.createVisual(obj, cls, docelt, material, param);
@@ -36,7 +36,7 @@ glam.VisualElement.createVisual = function(obj, cls, docelt, material, param) {
 
 glam.VisualElement.addProperties = function(docelt, obj) {
 
-	var visuals = obj.getComponents(Vizi.Visual);
+	var visuals = obj.getComponents(glam.Visual);
 	var visual = visuals[0];
 	
 	if (visual) {

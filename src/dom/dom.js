@@ -5,6 +5,7 @@
  */
 
 
+goog.provide('glam.DOM');
 
 glam.DOM = {
 
@@ -32,7 +33,7 @@ glam.DOM.ready = function() {
 }
 
 glam.DOM.createViewers = function() {
-	for (docname in glam.DOM.documents) {
+	for (var docname in glam.DOM.documents) {
 		var doc = glam.DOM.documents[docname];
 		var viewer = new glam.DOMViewer(doc);
 		glam.DOM.viewers[docname] = viewer;

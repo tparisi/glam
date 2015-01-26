@@ -4,7 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.BackgroundElement = {};
+goog.provide('glam.BackgroundElement');
 
 glam.BackgroundElement.DEFAULT_BACKGROUND_TYPE = "box";
 
@@ -20,19 +20,19 @@ glam.BackgroundElement.create = function(docelt, style) {
 
 	var background;
 	if (type == "box") {
-		background = Vizi.Prefabs.Skybox();
-		var skyboxScript = background.getComponent(Vizi.SkyboxScript);
+		background = glam.Prefabs.Skybox();
+		var skyboxScript = background.getComponent(glam.SkyboxScript);
 		skyboxScript.texture = param.envMap;
 	}
 	else if (type == "sphere") {
-		background = Vizi.Prefabs.Skysphere();
-		skysphereScript = background.getComponent(Vizi.SkysphereScript);
+		background = glam.Prefabs.Skysphere();
+		skysphereScript = background.getComponent(glam.SkysphereScript);
 		skysphereScript.texture = param.envMap;
 	}
 
 	glam.BackgroundElement.addHandlers(docelt, style, background);
 	
-	Vizi.Application.instance.addObject(background);
+	glam.Application.instance.addObject(background);
 	
 	return null;
 }
@@ -53,7 +53,7 @@ glam.BackgroundElement.onSetAttribute = function(obj, docelt, attr, val) {
 	switch (attr) {
 		case "sphere-image" :
 		case "sphereImage" :
-			var skysphereScript = obj.getComponent(Vizi.SkysphereScript);
+			var skysphereScript = obj.getComponent(glam.SkysphereScript);
 			if (skysphereScript) {
 				var envMap = THREE.ImageUtils.loadTexture(val);
 				skysphereScript.texture = envMap;

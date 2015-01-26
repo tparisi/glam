@@ -4,6 +4,8 @@
  * @author Tony Parisi
  */
 
+goog.provide('glam.DOMDocument');
+
 glam.DOMDocument = {
 		
 	scenes : {},

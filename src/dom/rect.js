@@ -4,7 +4,8 @@
  * @author Tony Parisi
  */
 
-glam.RectElement = {};
+
+goog.provide('glam.RectElement');
 
 glam.RectElement.DEFAULT_WIDTH = 2;
 glam.RectElement.DEFAULT_HEIGHT = 2;
@@ -46,7 +47,7 @@ glam.RectElement.getAttributes = function(docelt, style, param) {
 
 glam.RectElement.createVisual = function(docelt, material, param) {
 
-	var visual = new Vizi.Visual(
+	var visual = new glam.Visual(
 			{ geometry: new THREE.PlaneGeometry(param.width, param.height, param.widthSegments, param.heightSegments),
 				material: material
 			});

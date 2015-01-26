@@ -4,7 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.SphereElement = {};
+goog.provide('glam.SphereElement');
 
 glam.SphereElement.DEFAULT_RADIUS = 2;
 glam.SphereElement.DEFAULT_WIDTH_SEGMENTS = 32;
@@ -40,7 +40,7 @@ glam.SphereElement.getAttributes = function(docelt, style, param) {
 
 glam.SphereElement.createVisual = function(docelt, material, param) {
 
-	var visual = new Vizi.Visual(
+	var visual = new glam.Visual(
 			{ geometry: new THREE.SphereGeometry(param.radius, param.widthSegments, param.heightSegments),
 				material: material
 			});

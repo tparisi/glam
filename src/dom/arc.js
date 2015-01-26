@@ -4,7 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.ArcElement = {};
+goog.provide('glam.ArcElement');
 
 glam.ArcElement.DEFAULT_RADIUS = 2;
 glam.ArcElement.DEFAULT_RADIUS_SEGMENTS = 32;
@@ -51,7 +51,7 @@ glam.ArcElement.getAttributes = function(docelt, style, param) {
 
 glam.ArcElement.createVisual = function(docelt, material, param) {
 	
-	var visual = new Vizi.Visual(
+	var visual = new glam.Visual(
 			{ geometry: new THREE.CircleGeometry(param.radius, param.radiusSegments, param.startAngle, param.endAngle),
 				material: material
 			});

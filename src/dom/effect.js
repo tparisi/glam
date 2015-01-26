@@ -4,7 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.EffectElement = {};
+goog.provide('glam.EffectElement');
 
 glam.EffectElement.DEFAULT_BLOOM_STRENGTH = 1;
 glam.EffectElement.DEFAULT_FILM_GRAYSCALE = 0;
@@ -27,42 +27,42 @@ glam.EffectElement.create = function(docelt, style, app) {
 			if (str != undefined) {
 				strength = parseFloat(str);
 			}
-			effect = new Vizi.Effect(new THREE.BloomPass(strength));
+			effect = new glam.Effect(new THREE.BloomPass(strength));
 			break;
 
 		case "FXAA" :
-			effect = new Vizi.Effect(THREE.FXAAShader);
-			var w = Vizi.Graphics.instance.renderer.domElement.offsetWidth;
-			var h = Vizi.Graphics.instance.renderer.domElement.offsetHeight;
+			effect = new glam.Effect(THREE.FXAAShader);
+			var w = glam.Graphics.instance.renderer.domElement.offsetWidth;
+			var h = glam.Graphics.instance.renderer.domElement.offsetHeight;
 			effect.pass.uniforms['resolution'].value.set(1 / w, 1 / h);
 			break;
 			
 		case "Film" :
-			effect = new Vizi.Effect( THREE.FilmShader );
+			effect = new glam.Effect( THREE.FilmShader );
 			effect.pass.uniforms['grayscale'].value = glam.EffectElement.DEFAULT_FILM_GRAYSCALE;
 			effect.pass.uniforms['sCount'].value = glam.EffectElement.DEFAULT_FILM_SCANLINECOUNT;
 			effect.pass.uniforms['nIntensity'].value = glam.EffectElement.DEFAULT_FILM_INTENSITY;
 			break;
 			
 		case "RGBShift" :
-			effect = new Vizi.Effect( THREE.RGBShiftShader );
+			effect = new glam.Effect( THREE.RGBShiftShader );
 			effect.pass.uniforms[ 'amount' ].value = glam.EffectElement.DEFAULT_RGBSHIFT_AMOUNT;
 			break;
 			
 		case "DotScreen" :
-			effect = new Vizi.Effect(THREE.DotScreenShader);
+			effect = new glam.Effect(THREE.DotScreenShader);
 			effect.pass.uniforms[ 'scale' ].value = glam.EffectElement.DEFAULT_DOTSCREEN_SCALE;
 			break;
 
 		case "DotScreenRGB" :
-			effect = new Vizi.Effect(THREE.DotScreenRGBShader);
+			effect = new glam.Effect(THREE.DotScreenRGBShader);
 			effect.pass.uniforms[ 'scale' ].value = glam.EffectElement.DEFAULT_DOTSCREEN_SCALE;
 			break;
 	}
 	
 	if (effect) {
 		glam.EffectElement.parseAttributes(docelt, effect, style);
-		Vizi.Graphics.instance.addEffect(effect);
+		glam.Graphics.instance.addEffect(effect);
 	}
 	
 	return null;

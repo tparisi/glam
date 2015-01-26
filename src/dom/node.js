@@ -4,8 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.DOMElement = {};
-
+goog.provide('glam.DOMElement');
 
 glam.DOMElement.init = function(docelt) {
 
@@ -43,7 +42,7 @@ glam.DOMElement.getStyle = function(docelt) {
 	if (klass) {
 		
 		var klasses = klass.split(" ");
-		for (klassname in klasses) {
+		for (var klassname in klasses) {
 			var kls = klasses[klassname];
 			if (kls) {
 				var styl = glam.DOM.getStyle("." + kls);
