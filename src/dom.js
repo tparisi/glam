@@ -25,7 +25,7 @@ glam.DOM.ready = function() {
 	if (glam.DOM.isReady)
 		return;
 	
-	glam.DOM.parser.parseDocument();
+	glam.DOMParser.parseDocument();
 	glam.DOM.createViewers();
 	
 	glam.DOM.isReady = true;
@@ -34,7 +34,7 @@ glam.DOM.ready = function() {
 glam.DOM.createViewers = function() {
 	for (docname in glam.DOM.documents) {
 		var doc = glam.DOM.documents[docname];
-		var viewer = new glam.DOM.Viewer(doc);
+		var viewer = new glam.DOMViewer(doc);
 		glam.DOM.viewers[docname] = viewer;
 		viewer.go();
 	}

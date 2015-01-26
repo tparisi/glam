@@ -4,9 +4,9 @@
  * @author Tony Parisi
  */
 
-glam.DOM.Import = {};
+glam.ImportElement = {};
 
-glam.DOM.Import.create = function(docelt, style) {
+glam.ImportElement.create = function(docelt, style) {
 	var src = docelt.getAttribute('src');
 		
 	// Create the cube
@@ -16,7 +16,7 @@ glam.DOM.Import.create = function(docelt, style) {
 		var loader = new Vizi.Loader;
 
 		var loadCallback = function(data) {
-			glam.DOM.Import.onLoadComplete(obj, data, src);
+			glam.ImportElement.onLoadComplete(obj, data, src);
 			loader.removeEventListener("loaded", loadCallback);
 		}	
 
@@ -27,7 +27,7 @@ glam.DOM.Import.create = function(docelt, style) {
 	return obj;
 }
 
-glam.DOM.Import.onLoadComplete = function(obj, data, url) {
+glam.ImportElement.onLoadComplete = function(obj, data, url) {
 
 	obj.addChild(data.scene);
 }

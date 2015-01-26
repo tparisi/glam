@@ -4,23 +4,23 @@
  * @author Tony Parisi
  */
 
-glam.DOM.Rect = {};
+glam.RectElement = {};
 
-glam.DOM.Rect.DEFAULT_WIDTH = 2;
-glam.DOM.Rect.DEFAULT_HEIGHT = 2;
-glam.DOM.Rect.DEFAULT_WIDTH_SEGMENTS = 1;
-glam.DOM.Rect.DEFAULT_HEIGHT_SEGMENTS = 1;
+glam.RectElement.DEFAULT_WIDTH = 2;
+glam.RectElement.DEFAULT_HEIGHT = 2;
+glam.RectElement.DEFAULT_WIDTH_SEGMENTS = 1;
+glam.RectElement.DEFAULT_HEIGHT_SEGMENTS = 1;
 
-glam.DOM.Rect.create = function(docelt, style) {
-	return glam.DOM.Visual.create(docelt, style, glam.DOM.Rect);
+glam.RectElement.create = function(docelt, style) {
+	return glam.VisualElement.create(docelt, style, glam.RectElement);
 }
 
-glam.DOM.Rect.getAttributes = function(docelt, style, param) {
+glam.RectElement.getAttributes = function(docelt, style, param) {
 
-	var width = docelt.getAttribute('width') || glam.DOM.Rect.DEFAULT_WIDTH;
-	var height = docelt.getAttribute('height') || glam.DOM.Rect.DEFAULT_HEIGHT;
-	var widthSegments = docelt.getAttribute('width') || glam.DOM.Rect.DEFAULT_WIDTH_SEGMENTS;
-	var heightSegments = docelt.getAttribute('height') || glam.DOM.Rect.DEFAULT_HEIGHT_SEGMENTS;
+	var width = docelt.getAttribute('width') || glam.RectElement.DEFAULT_WIDTH;
+	var height = docelt.getAttribute('height') || glam.RectElement.DEFAULT_HEIGHT;
+	var widthSegments = docelt.getAttribute('width') || glam.RectElement.DEFAULT_WIDTH_SEGMENTS;
+	var heightSegments = docelt.getAttribute('height') || glam.RectElement.DEFAULT_HEIGHT_SEGMENTS;
 	
 	if (style) {
 		if (style.width)
@@ -44,7 +44,7 @@ glam.DOM.Rect.getAttributes = function(docelt, style, param) {
 	param.heightSegments = heightSegments;
 }
 
-glam.DOM.Rect.createVisual = function(docelt, material, param) {
+glam.RectElement.createVisual = function(docelt, material, param) {
 
 	var visual = new Vizi.Visual(
 			{ geometry: new THREE.PlaneGeometry(param.width, param.height, param.widthSegments, param.heightSegments),

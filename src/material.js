@@ -4,13 +4,13 @@
  * @author Tony Parisi
  */
 
-glam.DOM.Material = {};
+glam.DOMMaterial = {};
 
-glam.DOM.Material.create = function(style, createCB, objtype) {
+glam.DOMMaterial.create = function(style, createCB, objtype) {
 	var material = null;
 	
 	if (style) {
-		var param = glam.DOM.Material.parseStyle(style);
+		var param = glam.DOMMaterial.parseStyle(style);
 		if (style.shader) {
 			switch (style.shader.toLowerCase()) {
 				case "phong" :
@@ -30,7 +30,7 @@ glam.DOM.Material.create = function(style, createCB, objtype) {
 			}
 		}
 		else if (style["vertex-shader"] && style["fragment-shader"] && style["shader-uniforms"]) {
-			material = glam.DOM.Material.createShaderMaterial(style, param, createCB);
+			material = glam.DOMMaterial.createShaderMaterial(style, param, createCB);
 		}
 		else if (objtype == "line") {
 			if (param.dashSize !== undefined  || param.gapSize !== undefined) {
@@ -51,25 +51,25 @@ glam.DOM.Material.create = function(style, createCB, objtype) {
 	return material;
 }
 
-glam.DOM.Material.parseStyle = function(style) {
+glam.DOMMaterial.parseStyle = function(style) {
 	var image = "";
 	if (style.image) {
-		image = glam.DOM.Material.parseUrl(style.image);
+		image = glam.DOMMaterial.parseUrl(style.image);
 	}
 
 	var normalMap = "";
 	if (style["normal-image"]) {
-		normalMap = glam.DOM.Material.parseUrl(style["normal-image"]);
+		normalMap = glam.DOMMaterial.parseUrl(style["normal-image"]);
 	}
 
 	var bumpMap = "";
 	if (style["bump-image"]) {
-		bumpMap = glam.DOM.Material.parseUrl(style["bump-image"]);
+		bumpMap = glam.DOMMaterial.parseUrl(style["bump-image"]);
 	}
 
 	var specularMap = "";
 	if (style["specular-image"]) {
-		specularMap = glam.DOM.Material.parseUrl(style["specular-image"]);
+		specularMap = glam.DOMMaterial.parseUrl(style["specular-image"]);
 	}
 
 	var reflectivity;
@@ -80,7 +80,7 @@ glam.DOM.Material.parseStyle = function(style) {
 	if (style.refractionRatio)
 		refractionRatio = parseFloat(style.refractionRatio);
 	
-	var envMap = glam.DOM.Material.tryParseEnvMap(style);
+	var envMap = glam.DOMMaterial.tryParseEnvMap(style);
 	
 	var color;
 	var diffuse;
@@ -183,28 +183,28 @@ glam.DOM.Material.parseStyle = function(style) {
 	return param;
 }
 
-glam.DOM.Material.parseUrl = function(image) {
+glam.DOMMaterial.parseUrl = function(image) {
 	var regExp = /\(([^)]+)\)/;
 	var matches = regExp.exec(image);
 	image = matches[1];
 	return image;
 }
 
-glam.DOM.Material.tryParseEnvMap = function(style) {
+glam.DOMMaterial.tryParseEnvMap = function(style) {
 	var urls = [];
 	
 	if (style["cube-image-right"])
-		urls.push(glam.DOM.Material.parseUrl(style["cube-image-right"]));
+		urls.push(glam.DOMMaterial.parseUrl(style["cube-image-right"]));
 	if (style["cube-image-left"])
-		urls.push(glam.DOM.Material.parseUrl(style["cube-image-left"]));
+		urls.push(glam.DOMMaterial.parseUrl(style["cube-image-left"]));
 	if (style["cube-image-top"])
-		urls.push(glam.DOM.Material.parseUrl(style["cube-image-top"]));
+		urls.push(glam.DOMMaterial.parseUrl(style["cube-image-top"]));
 	if (style["cube-image-bottom"])
-		urls.push(glam.DOM.Material.parseUrl(style["cube-image-bottom"]));
+		urls.push(glam.DOMMaterial.parseUrl(style["cube-image-bottom"]));
 	if (style["cube-image-front"])
-		urls.push(glam.DOM.Material.parseUrl(style["cube-image-front"]));
+		urls.push(glam.DOMMaterial.parseUrl(style["cube-image-front"]));
 	if (style["cube-image-back"])
-		urls.push(glam.DOM.Material.parseUrl(style["cube-image-back"]));
+		urls.push(glam.DOMMaterial.parseUrl(style["cube-image-back"]));
 	
 	if (urls.length == 6) {
 		var cubeTexture = THREE.ImageUtils.loadTextureCube( urls );
@@ -212,12 +212,12 @@ glam.DOM.Material.tryParseEnvMap = function(style) {
 	}
 	
 	if (style["sphere-image"])
-		return THREE.ImageUtils.loadTexture(glam.DOM.Material.parseUrl(style["sphere-image"]), THREE.SphericalRefractionMapping);
+		return THREE.ImageUtils.loadTexture(glam.DOMMaterial.parseUrl(style["sphere-image"]), THREE.SphericalRefractionMapping);
 	
 	return null;
 }
 
-glam.DOM.Material.createShaderMaterial = function(style, param, createCB) {
+glam.DOMMaterial.createShaderMaterial = function(style, param, createCB) {
 	
 	function done() {
 		var material = new THREE.ShaderMaterial({
@@ -226,16 +226,16 @@ glam.DOM.Material.createShaderMaterial = function(style, param, createCB) {
 			uniforms: uniforms,
 		});
 		
-		glam.DOM.Material.saveShaderMaterial(vsurl, fsurl, material);
-		glam.DOM.Material.callShaderMaterialCallbacks(vsurl, fsurl);
+		glam.DOMMaterial.saveShaderMaterial(vsurl, fsurl, material);
+		glam.DOMMaterial.callShaderMaterialCallbacks(vsurl, fsurl);
 	}
 	
 	var vs = style["vertex-shader"];
 	var fs = style["fragment-shader"];
-	var uniforms = glam.DOM.Material.parseUniforms(style["shader-uniforms"], param);
+	var uniforms = glam.DOMMaterial.parseUniforms(style["shader-uniforms"], param);
 
-	var vsurl = glam.DOM.Material.parseUrl(vs);
-	var fsurl = glam.DOM.Material.parseUrl(fs);
+	var vsurl = glam.DOMMaterial.parseUrl(vs);
+	var fsurl = glam.DOMMaterial.parseUrl(fs);
 
 	if (!vsurl || !fsurl) {
 		var vselt = document.getElementById(vs);
@@ -255,16 +255,16 @@ glam.DOM.Material.createShaderMaterial = function(style, param, createCB) {
 		}
 	}	
 	
-	var material = glam.DOM.Material.getShaderMaterial(vsurl, fsurl);
+	var material = glam.DOMMaterial.getShaderMaterial(vsurl, fsurl);
 	if (material)
 		return material;
 	
-	glam.DOM.Material.addShaderMaterialCallback(vsurl, fsurl, createCB);
+	glam.DOMMaterial.addShaderMaterialCallback(vsurl, fsurl, createCB);
 	
-	if (glam.DOM.Material.getShaderMaterialLoading(vsurl, fsurl))
+	if (glam.DOMMaterial.getShaderMaterialLoading(vsurl, fsurl))
 		return;
 	
-	glam.DOM.Material.setShaderMaterialLoading(vsurl, fsurl);
+	glam.DOMMaterial.setShaderMaterialLoading(vsurl, fsurl);
 	
 	var vstext = "";
 	var fstext = "";
@@ -285,7 +285,7 @@ glam.DOM.Material.createShaderMaterial = function(style, param, createCB) {
 	});	
 }
 
-glam.DOM.Material.parseUniforms = function(uniformsText, param) {
+glam.DOMMaterial.parseUniforms = function(uniformsText, param) {
 	
 	var uniforms = {
 	};
@@ -311,7 +311,7 @@ glam.DOM.Material.parseUniforms = function(uniformsText, param) {
 				value = param.envMap;
 			}
 			else {
-				var image = glam.DOM.Material.parseUrl(value);
+				var image = glam.DOMMaterial.parseUrl(value);
 				value = THREE.ImageUtils.loadTexture(image);
 				value.wrapS = value.wrapT = THREE.Repeat;
 			}
@@ -328,34 +328,34 @@ glam.DOM.Material.parseUniforms = function(uniformsText, param) {
 	return uniforms;
 }
 
-glam.DOM.Material.shaderMaterials = {};
+glam.DOMMaterial.shaderMaterials = {};
 
-glam.DOM.Material.saveShaderMaterial = function(vsurl, fsurl, material) {
+glam.DOMMaterial.saveShaderMaterial = function(vsurl, fsurl, material) {
 	var key = vsurl + fsurl;
-	var entry = glam.DOM.Material.shaderMaterials[key];
+	var entry = glam.DOMMaterial.shaderMaterials[key];
 	entry.material = material;
 	entry.loading = false;
 }
 
-glam.DOM.Material.addShaderMaterialCallback = function(vsurl, fsurl, cb) {
+glam.DOMMaterial.addShaderMaterialCallback = function(vsurl, fsurl, cb) {
 	var key = vsurl + fsurl;
 	
-	var entry = glam.DOM.Material.shaderMaterials[key];
+	var entry = glam.DOMMaterial.shaderMaterials[key];
 	if (!entry) {
-		glam.DOM.Material.shaderMaterials[key] = {
+		glam.DOMMaterial.shaderMaterials[key] = {
 			material : null,
 			loading : false,
 			callbacks : [],
 		};
 	}
 	
-	glam.DOM.Material.shaderMaterials[key].callbacks.push(cb);
+	glam.DOMMaterial.shaderMaterials[key].callbacks.push(cb);
 }
 
-glam.DOM.Material.callShaderMaterialCallbacks = function(vsurl, fsurl) {
+glam.DOMMaterial.callShaderMaterialCallbacks = function(vsurl, fsurl) {
 	var key = vsurl + fsurl;
 	
-	var entry = glam.DOM.Material.shaderMaterials[key];
+	var entry = glam.DOMMaterial.shaderMaterials[key];
 	if (entry && entry.material) {
 		for (cb in entry.callbacks) {
 			entry.callbacks[cb](entry.material);
@@ -363,10 +363,10 @@ glam.DOM.Material.callShaderMaterialCallbacks = function(vsurl, fsurl) {
 	}
 }
 
-glam.DOM.Material.getShaderMaterial = function(vsurl, fsurl) {
+glam.DOMMaterial.getShaderMaterial = function(vsurl, fsurl) {
 	
 	var key = vsurl + fsurl;
-	var entry = glam.DOM.Material.shaderMaterials[key];
+	var entry = glam.DOMMaterial.shaderMaterials[key];
 	if (entry) {
 		return entry.material;
 	}
@@ -375,34 +375,34 @@ glam.DOM.Material.getShaderMaterial = function(vsurl, fsurl) {
 	}
 }
 
-glam.DOM.Material.setShaderMaterialLoading = function(vsurl, fsurl) {
+glam.DOMMaterial.setShaderMaterialLoading = function(vsurl, fsurl) {
 	
 	var key = vsurl + fsurl;
-	var entry = glam.DOM.Material.shaderMaterials[key];
+	var entry = glam.DOMMaterial.shaderMaterials[key];
 	if (entry) {
 		entry.loading = true;
 	}
 }
 
-glam.DOM.Material.getShaderMaterialLoading = function(vsurl, fsurl) {
+glam.DOMMaterial.getShaderMaterialLoading = function(vsurl, fsurl) {
 	
 	var key = vsurl + fsurl;
-	var entry = glam.DOM.Material.shaderMaterials[key];
+	var entry = glam.DOMMaterial.shaderMaterials[key];
 	return (entry && entry.loading);
 }
 
-glam.DOM.Material.addHandlers = function(docelt, style, obj) {
+glam.DOMMaterial.addHandlers = function(docelt, style, obj) {
 
 	docelt.glam.setAttributeHandlers.push(function(attr, val) {
-		glam.DOM.Material.onSetAttribute(obj, docelt, attr, val);
+		glam.DOMMaterial.onSetAttribute(obj, docelt, attr, val);
 	});
 	
 	style.setPropertyHandlers.push(function(attr, val) {
-		glam.DOM.Material.onSetProperty(obj, docelt, attr, val);
+		glam.DOMMaterial.onSetProperty(obj, docelt, attr, val);
 	});
 }
 
-glam.DOM.Material.onSetAttribute = function(obj, docelt, attr, val) {
+glam.DOMMaterial.onSetAttribute = function(obj, docelt, attr, val) {
 
 	var material = obj.visuals[0].material;
 	switch (attr) {
@@ -414,7 +414,7 @@ glam.DOM.Material.onSetAttribute = function(obj, docelt, attr, val) {
 	}
 }
 
-glam.DOM.Material.onSetProperty = function(obj, docelt, attr, val) {
+glam.DOMMaterial.onSetProperty = function(obj, docelt, attr, val) {
 
 	var material = obj.visuals[0].material;
 	switch (attr) {

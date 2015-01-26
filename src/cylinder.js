@@ -4,19 +4,19 @@
  * @author Tony Parisi
  */
 
-glam.DOM.Cylinder = {};
+glam.CylinderElement = {};
 
-glam.DOM.Cylinder.DEFAULT_RADIUS = 2;
-glam.DOM.Cylinder.DEFAULT_HEIGHT = 2;
+glam.CylinderElement.DEFAULT_RADIUS = 2;
+glam.CylinderElement.DEFAULT_HEIGHT = 2;
 
-glam.DOM.Cylinder.create = function(docelt, style) {
-	return glam.DOM.Visual.create(docelt, style, glam.DOM.Cylinder);
+glam.CylinderElement.create = function(docelt, style) {
+	return glam.VisualElement.create(docelt, style, glam.CylinderElement);
 }
 
-glam.DOM.Cylinder.getAttributes = function(docelt, style, param) {
+glam.CylinderElement.getAttributes = function(docelt, style, param) {
 
-	var radius = docelt.getAttribute('radius') || glam.DOM.Cylinder.DEFAULT_RADIUS;
-	var height = docelt.getAttribute('height') || glam.DOM.Cylinder.DEFAULT_HEIGHT;
+	var radius = docelt.getAttribute('radius') || glam.CylinderElement.DEFAULT_RADIUS;
+	var height = docelt.getAttribute('height') || glam.CylinderElement.DEFAULT_HEIGHT;
 	
 	if (style) {
 		if (style.radius)
@@ -31,7 +31,7 @@ glam.DOM.Cylinder.getAttributes = function(docelt, style, param) {
 	param.height = height;
 }	
 
-glam.DOM.Cylinder.createVisual = function(docelt, material, param) {
+glam.CylinderElement.createVisual = function(docelt, material, param) {
 
 	var visual = new Vizi.Visual(
 			{ geometry: new THREE.CylinderGeometry(param.radius, param.radius, param.height, 32),

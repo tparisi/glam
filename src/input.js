@@ -4,9 +4,9 @@
  * @author Tony Parisi
  */
 
-glam.DOM.Input = {};
+glam.DOMInput = {};
 
-glam.DOM.Input.add = function(docelt, obj) {
+glam.DOMInput.add = function(docelt, obj) {
 	
 	function addListener(picker, evt) {
 		picker.addEventListener(evt, function(event){

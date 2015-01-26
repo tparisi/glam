@@ -4,9 +4,9 @@
  * @author Tony Parisi
  */
 
-glam.DOM.Transform = {};
+glam.DOMTransform = {};
 
-glam.DOM.Transform.parse = function(docelt, style, obj) {
+glam.DOMTransform.parse = function(docelt, style, obj) {
 	
 	var t = {
 	};
@@ -14,19 +14,19 @@ glam.DOM.Transform.parse = function(docelt, style, obj) {
 	t.x = parseFloat(docelt.getAttribute('x')) || 0;
 	t.y = parseFloat(docelt.getAttribute('y')) || 0;
 	t.z = parseFloat(docelt.getAttribute('z')) || 0;
-	t.rx = glam.DOM.Transform.parseRotation(docelt.getAttribute('rx')) || 0;
-	t.ry = glam.DOM.Transform.parseRotation(docelt.getAttribute('ry')) || 0;
-	t.rz = glam.DOM.Transform.parseRotation(docelt.getAttribute('rz')) || 0;
+	t.rx = glam.DOMTransform.parseRotation(docelt.getAttribute('rx')) || 0;
+	t.ry = glam.DOMTransform.parseRotation(docelt.getAttribute('ry')) || 0;
+	t.rz = glam.DOMTransform.parseRotation(docelt.getAttribute('rz')) || 0;
 	t.sx = parseFloat(docelt.getAttribute('sx')) || 1;
 	t.sy = parseFloat(docelt.getAttribute('sy')) || 1;
 	t.sz = parseFloat(docelt.getAttribute('sz')) || 1;
 	var transform = docelt.getAttribute('transform');
 	if (transform) {
-		glam.DOM.Transform.parseTransform(transform, t);
+		glam.DOMTransform.parseTransform(transform, t);
 	}
 
 	if (style) {
-		glam.DOM.Transform.parseStyle(style, t);
+		glam.DOMTransform.parseStyle(style, t);
 	}
 	
 	obj.transform.position.set(t.x, t.y, t.z);
@@ -34,15 +34,15 @@ glam.DOM.Transform.parse = function(docelt, style, obj) {
 	obj.transform.scale.set(t.sx, t.sy, t.sz);
 	
 	docelt.glam.setAttributeHandlers.push(function(attr, val) {
-		glam.DOM.Transform.onSetAttribute(obj, docelt, attr, val);
+		glam.DOMTransform.onSetAttribute(obj, docelt, attr, val);
 	});
 
 	style.setPropertyHandlers.push(function(attr, val) {
-		glam.DOM.Transform.onSetAttribute(obj, docelt, attr, val);
+		glam.DOMTransform.onSetAttribute(obj, docelt, attr, val);
 	});
 }
 
-glam.DOM.Transform.parseStyle = function(style, t) {
+glam.DOMTransform.parseStyle = function(style, t) {
 	
 	if (style) {
 		if (style.x) {
@@ -55,13 +55,13 @@ glam.DOM.Transform.parseStyle = function(style, t) {
 			t.z = parseFloat(style.z);
 		}
 		if (style.rx) {
-			t.rx = glam.DOM.Transform.parseRotation(style.rx);
+			t.rx = glam.DOMTransform.parseRotation(style.rx);
 		}
 		if (style.ry) {
-			t.ry = glam.DOM.Transform.parseRotation(style.ry);
+			t.ry = glam.DOMTransform.parseRotation(style.ry);
 		}
 		if (style.rz) {
-			t.rz = glam.DOM.Transform.parseRotation(style.rz);
+			t.rz = glam.DOMTransform.parseRotation(style.rz);
 		}
 		if (style.sx) {
 			t.sx = parseFloat(style.sx);
@@ -73,12 +73,12 @@ glam.DOM.Transform.parseStyle = function(style, t) {
 			t.sz = parseFloat(style.sz);
 		}
 		if (style.transform) {			
-			glam.DOM.Transform.parseTransform(style.transform, t);
+			glam.DOMTransform.parseTransform(style.transform, t);
 		}
 	}
 }
 
-glam.DOM.Transform.parseRotation = function(r) {
+glam.DOMTransform.parseRotation = function(r) {
 	if (!r)
 		return null;
 	
@@ -104,7 +104,7 @@ glam.DOM.Transform.parseRotation = function(r) {
 	return parseFloat(r);
 }
 
-glam.DOM.Transform.parseTransform = function(str, t) {
+glam.DOMTransform.parseTransform = function(str, t) {
 
 	var transforms = str.split(" ");
 	var i, len = transforms.length;
@@ -127,13 +127,13 @@ glam.DOM.Transform.parseTransform = function(str, t) {
 				t.z = parseFloat(value);
 				break;
 			case "rotateX" :
-				t.rx = glam.DOM.Transform.parseRotation(value);
+				t.rx = glam.DOMTransform.parseRotation(value);
 				break;
 			case "rotateY" :
-				t.ry = glam.DOM.Transform.parseRotation(value);
+				t.ry = glam.DOMTransform.parseRotation(value);
 				break;
 			case "rotateZ" :
-				t.rz = glam.DOM.Transform.parseRotation(value);
+				t.rz = glam.DOMTransform.parseRotation(value);
 				break;
 			case "scaleX" :
 				t.sx = parseFloat(value);
@@ -148,7 +148,7 @@ glam.DOM.Transform.parseTransform = function(str, t) {
 	}
 }
 
-glam.DOM.Transform.onSetAttribute = function(obj, docelt, attr, val) {
+glam.DOMTransform.onSetAttribute = function(obj, docelt, attr, val) {
 	var v = parseFloat(val);
 	switch(attr) {
 		case 'x' :

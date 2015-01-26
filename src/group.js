@@ -4,9 +4,9 @@
  * @author Tony Parisi
  */
 
-glam.DOM.Group = {};
+glam.GroupElement = {};
 
-glam.DOM.Group.create = function(docelt, style) {
+glam.GroupElement.create = function(docelt, style) {
 
 	// Create the group
 	var group = new Vizi.Object;

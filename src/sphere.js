@@ -4,21 +4,21 @@
  * @author Tony Parisi
  */
 
-glam.DOM.Sphere = {};
+glam.SphereElement = {};
 
-glam.DOM.Sphere.DEFAULT_RADIUS = 2;
-glam.DOM.Sphere.DEFAULT_WIDTH_SEGMENTS = 32;
-glam.DOM.Sphere.DEFAULT_HEIGHT_SEGMENTS = 32;
+glam.SphereElement.DEFAULT_RADIUS = 2;
+glam.SphereElement.DEFAULT_WIDTH_SEGMENTS = 32;
+glam.SphereElement.DEFAULT_HEIGHT_SEGMENTS = 32;
 
-glam.DOM.Sphere.create = function(docelt, style) {
-	return glam.DOM.Visual.create(docelt, style, glam.DOM.Sphere);
+glam.SphereElement.create = function(docelt, style) {
+	return glam.VisualElement.create(docelt, style, glam.SphereElement);
 }
 
-glam.DOM.Sphere.getAttributes = function(docelt, style, param) {
+glam.SphereElement.getAttributes = function(docelt, style, param) {
 	
-	var radius = docelt.getAttribute('radius') || glam.DOM.Sphere.DEFAULT_RADIUS;
-	var widthSegments = docelt.getAttribute('width-segments') || glam.DOM.Sphere.DEFAULT_WIDTH_SEGMENTS;
-	var heightSegments = docelt.getAttribute('height-segments') || glam.DOM.Sphere.DEFAULT_HEIGHT_SEGMENTS;
+	var radius = docelt.getAttribute('radius') || glam.SphereElement.DEFAULT_RADIUS;
+	var widthSegments = docelt.getAttribute('width-segments') || glam.SphereElement.DEFAULT_WIDTH_SEGMENTS;
+	var heightSegments = docelt.getAttribute('height-segments') || glam.SphereElement.DEFAULT_HEIGHT_SEGMENTS;
 	
 	if (style) {
 		if (style.radius)
@@ -38,7 +38,7 @@ glam.DOM.Sphere.getAttributes = function(docelt, style, param) {
 	param.heightSegments = heightSegments;
 }
 
-glam.DOM.Sphere.createVisual = function(docelt, material, param) {
+glam.SphereElement.createVisual = function(docelt, material, param) {
 
 	var visual = new Vizi.Visual(
 			{ geometry: new THREE.SphereGeometry(param.radius, param.widthSegments, param.heightSegments),

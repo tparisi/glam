@@ -4,7 +4,7 @@
  * @author Tony Parisi
  */
 
-glam.DOM.Style = function(docelt) {
+glam.DOMStyle = function(docelt) {
 
 	this.docelt = docelt;
 	this._properties = {
@@ -14,22 +14,22 @@ glam.DOM.Style = function(docelt) {
 	this.defineStandardProperties();
 }
 
-glam.DOM.Style.prototype = new Object;
+glam.DOMStyle.prototype = new Object;
 
-glam.DOM.Style.prototype.addProperties = function(props) {
+glam.DOMStyle.prototype.addProperties = function(props) {
 	for (p in props) {
 		this.addProperty(p, props[p]);
 	}
 }
 
-glam.DOM.Style.prototype.addProperty = function(propName, propValue) {
+glam.DOMStyle.prototype.addProperty = function(propName, propValue) {
 
 	this.defineProperty(propName, propValue);
 
 	this._properties[propName] = propValue;
 }
 
-glam.DOM.Style.prototype.addPropertiesFromString = function(str) {
+glam.DOMStyle.prototype.addPropertiesFromString = function(str) {
 	var propstrs = str.split(';');
 	var props = {
 	};
@@ -49,7 +49,7 @@ glam.DOM.Style.prototype.addPropertiesFromString = function(str) {
 	this.addProperties(props);
 }
 
-glam.DOM.Style.prototype.onPropertyChanged = function(propName, propValue) {
+glam.DOMStyle.prototype.onPropertyChanged = function(propName, propValue) {
 
 	// console.log(this.docelt.id, "property", propName, "value changed to", propValue);
 
@@ -62,7 +62,7 @@ glam.DOM.Style.prototype.onPropertyChanged = function(propName, propValue) {
 	}
 }
 
-glam.DOM.Style.prototype.defineProperty = function(propName, propValue) {
+glam.DOMStyle.prototype.defineProperty = function(propName, propValue) {
 	Object.defineProperty(this, propName, {
 			enumerable : true,
 			configurable : true,
@@ -76,9 +76,9 @@ glam.DOM.Style.prototype.defineProperty = function(propName, propValue) {
 		});
 }
 
-glam.DOM.Style.prototype.defineStandardProperties = function() {
+glam.DOMStyle.prototype.defineStandardProperties = function() {
 
-	var props = glam.DOM.Style._standardProperties
+	var props = glam.DOMStyle._standardProperties
 	var propName;
 	for (propName in props) {
 		var propValue = props[propName];
@@ -86,7 +86,7 @@ glam.DOM.Style.prototype.defineStandardProperties = function() {
 	}
 }
 
-glam.DOM.Style._standardProperties = {
+glam.DOMStyle._standardProperties = {
 		"angle" : "",
 		"backface-visibility" : "visible",
 		"background-type" : "",

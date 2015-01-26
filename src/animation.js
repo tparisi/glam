@@ -4,23 +4,23 @@
  * @author Tony Parisi
  */
 
-glam.DOM.Animation = {};
+glam.AnimationElement = {};
 
-glam.DOM.Animation.DEFAULT_DURATION = "1s";
-glam.DOM.Animation.DEFAULT_ITERATION_COUNT = "1";
-glam.DOM.Animation.DEFAULT_TIMING_FUNCTION = "linear";
-glam.DOM.Animation.DEFAULT_FRAME_TIME = "0%";
-glam.DOM.Animation.DEFAULT_FRAME_PROPERTY = "transform";
+glam.AnimationElement.DEFAULT_DURATION = "1s";
+glam.AnimationElement.DEFAULT_ITERATION_COUNT = "1";
+glam.AnimationElement.DEFAULT_TIMING_FUNCTION = "linear";
+glam.AnimationElement.DEFAULT_FRAME_TIME = "0%";
+glam.AnimationElement.DEFAULT_FRAME_PROPERTY = "transform";
 
-glam.DOM.Animation.create = function(docelt) {
+glam.AnimationElement.create = function(docelt) {
 
 	var id = docelt.id;
-	var duration = docelt.getAttribute('duration') || glam.DOM.Animation.DEFAULT_DURATION;
-	var iterationCount = docelt.getAttribute('iteration-count') || glam.DOM.Animation.DEFAULT_ITERATION_COUNT;
-	var timingFunction = docelt.getAttribute('timing-function') || glam.DOM.Animation.DEFAULT_TIMING_FUNCTION;
+	var duration = docelt.getAttribute('duration') || glam.AnimationElement.DEFAULT_DURATION;
+	var iterationCount = docelt.getAttribute('iteration-count') || glam.AnimationElement.DEFAULT_ITERATION_COUNT;
+	var timingFunction = docelt.getAttribute('timing-function') || glam.AnimationElement.DEFAULT_TIMING_FUNCTION;
 	
-	duration = glam.DOM.Animation.parseTime(duration);
-	var easing = glam.DOM.Animation.parseTimingFunction(timingFunction);
+	duration = glam.AnimationElement.parseTime(duration);
+	var easing = glam.AnimationElement.parseTimingFunction(timingFunction);
 	var loop = (iterationCount.toLowerCase() == "infinite") ? true : false;
 	
 	var i, 
@@ -35,27 +35,27 @@ glam.DOM.Animation.create = function(docelt) {
 			tag = tag.toLowerCase();
 		
 		if (tag == "keyframe") {
-			var frame = glam.DOM.Animation.parseFrame(childelt);
+			var frame = glam.AnimationElement.parseFrame(childelt);
 			frames.push(frame);
 		}
 	}
 	
-	var anim = glam.DOM.Animation.build(duration, loop, easing, frames);
+	var anim = glam.AnimationElement.build(duration, loop, easing, frames);
 	
 	glam.DOM.addAnimation(id, anim);
-	glam.DOM.Animation.callParseCallbacks(id, anim);
+	glam.AnimationElement.callParseCallbacks(id, anim);
 }
 
-glam.DOM.Animation.parseFrame = function(docelt) {
+glam.AnimationElement.parseFrame = function(docelt) {
 
-	var time = docelt.getAttribute('time') || glam.DOM.Animation.DEFAULT_FRAME_TIME;
-	var frametime = glam.DOM.Animation.parseFrameTime(time);
-	var property = docelt.getAttribute('property') || glam.DOM.Animation.DEFAULT_FRAME_PROPERTY;
+	var time = docelt.getAttribute('time') || glam.AnimationElement.DEFAULT_FRAME_TIME;
+	var frametime = glam.AnimationElement.parseFrameTime(time);
+	var property = docelt.getAttribute('property') || glam.AnimationElement.DEFAULT_FRAME_PROPERTY;
 	var value = docelt.getAttribute('value') || "";
 	
 	if (property == "transform") {
 		var t = {};
-		glam.DOM.Transform.parseTransform(value, t);
+		glam.DOMTransform.parseTransform(value, t);
 
 		return {
 			time : frametime,
@@ -65,8 +65,8 @@ glam.DOM.Animation.parseFrame = function(docelt) {
 	}
 	else if (property == "material") {
 
-		var s = glam.DOM.Animation.parseMaterial(value);
-		var param = glam.DOM.Material.parseStyle(s);
+		var s = glam.AnimationElement.parseMaterial(value);
+		var param = glam.DOMMaterial.parseStyle(s);
 
 		return {
 			time : frametime,
@@ -77,7 +77,7 @@ glam.DOM.Animation.parseFrame = function(docelt) {
 	
 }
 
-glam.DOM.Animation.createFromStyle = function(docelt, style, obj) {
+glam.AnimationElement.createFromStyle = function(docelt, style, obj) {
 	var animationSpec,
 		animationName,
 		duration,
@@ -122,11 +122,11 @@ glam.DOM.Animation.createFromStyle = function(docelt, style, obj) {
 		}
 	}
 	
-    duration = duration || glam.DOM.Animation.DEFAULT_DURATION;
-	duration = glam.DOM.Animation.parseTime(duration);
-    timingFunction = timingFunction || glam.DOM.Animation.DEFAULT_TIMING_FUNCTION;
-	easing = glam.DOM.Animation.parseTimingFunction(timingFunction);
-    iterationCount = iterationCount || glam.DOM.Animation.DEFAULT_ITERATION_COUNT;
+    duration = duration || glam.AnimationElement.DEFAULT_DURATION;
+	duration = glam.AnimationElement.parseTime(duration);
+    timingFunction = timingFunction || glam.AnimationElement.DEFAULT_TIMING_FUNCTION;
+	easing = glam.AnimationElement.parseTimingFunction(timingFunction);
+    iterationCount = iterationCount || glam.AnimationElement.DEFAULT_ITERATION_COUNT;
 	loop = (iterationCount.toLowerCase() == "infinite") ? true : false;				
 	
 	if (animationName) {
@@ -143,7 +143,7 @@ glam.DOM.Animation.createFromStyle = function(docelt, style, obj) {
 				frametime = 1;
 			}
 			else {
-				frametime = glam.DOM.Animation.parseFrameTime(k);
+				frametime = glam.AnimationElement.parseFrameTime(k);
 			}
 
 			var framevalue;
@@ -157,11 +157,11 @@ glam.DOM.Animation.createFromStyle = function(docelt, style, obj) {
 					
 					type = "transform";
 					framevalue = {};
-					glam.DOM.Transform.parseTransform(value, framevalue);
+					glam.DOMTransform.parseTransform(value, framevalue);
 				}
 				else if (prop == "opacity" || prop == "color") {
 					type = "material";
-					framevalue = glam.DOM.Material.parseStyle(framedata);
+					framevalue = glam.DOMMaterial.parseStyle(framedata);
 				}
 				
 				var frame = {
@@ -173,13 +173,13 @@ glam.DOM.Animation.createFromStyle = function(docelt, style, obj) {
 			}			
 		}
 		
-		var anim = glam.DOM.Animation.build(duration, loop, easing, frames);
-		glam.DOM.Animation.addAnimationToObject(anim, obj);
+		var anim = glam.AnimationElement.build(duration, loop, easing, frames);
+		glam.AnimationElement.addAnimationToObject(anim, obj);
 	}
 	
 }
 
-glam.DOM.Animation.build = function(duration, loop, easing, frames) {
+glam.AnimationElement.build = function(duration, loop, easing, frames) {
 
 	var poskeys = [];
 	var posvalues = [];
@@ -276,7 +276,7 @@ glam.DOM.Animation.build = function(duration, loop, easing, frames) {
 	return anim;
 }
 
-glam.DOM.Animation.parseTime = function(time) {
+glam.AnimationElement.parseTime = function(time) {
 	var index = time.indexOf("ms");
 	if (index != -1)
 		return parseFloat(time.split("ms")[0]);
@@ -287,7 +287,7 @@ glam.DOM.Animation.parseTime = function(time) {
 	
 }
 
-glam.DOM.Animation.parseFrameTime = function(time) {
+glam.AnimationElement.parseFrameTime = function(time) {
 	var index = time.indexOf("%");
 	if (index != -1)
 		return parseFloat(time.split("%")[0]) / 100;
@@ -295,7 +295,7 @@ glam.DOM.Animation.parseFrameTime = function(time) {
 		return parseFloat(time);
 }
 
-glam.DOM.Animation.parseTimingFunction = function(timingFunction) {
+glam.AnimationElement.parseTimingFunction = function(timingFunction) {
 	timingFunction = timingFunction.toLowerCase();
 	switch (timingFunction) {
 	
@@ -311,7 +311,7 @@ glam.DOM.Animation.parseTimingFunction = function(timingFunction) {
 	}
 }
 
-glam.DOM.Animation.parseMaterial = function(value) {
+glam.AnimationElement.parseMaterial = function(value) {
 
 	var s = {};
 	
@@ -331,25 +331,25 @@ glam.DOM.Animation.parseMaterial = function(value) {
 	return s;
 }
 
-glam.DOM.Animation.parse = function(docelt, style, obj) {
+glam.AnimationElement.parse = function(docelt, style, obj) {
 	var animationId = docelt.getAttribute('animation');
 	if (animationId) {
 		var animation = glam.DOM.getAnimation(animationId);
 		if (animation) {
-			glam.DOM.Animation.addAnimationToObject(animation, obj);
+			glam.AnimationElement.addAnimationToObject(animation, obj);
 		}
 		else {
-			glam.DOM.Animation.addParseCallback(animationId, function(animation) {
-				glam.DOM.Animation.addAnimationToObject(animation, obj);				
+			glam.AnimationElement.addParseCallback(animationId, function(animation) {
+				glam.AnimationElement.addAnimationToObject(animation, obj);				
 			});
 		}
 	}
 	else {
-		glam.DOM.Animation.createFromStyle(docelt, style, obj);
+		glam.AnimationElement.createFromStyle(docelt, style, obj);
 	}
 }
 
-glam.DOM.Animation.addAnimationToObject = function(animation, obj) {
+glam.AnimationElement.addAnimationToObject = function(animation, obj) {
 		
 	var interps = [];
 	if (animation.poskeys.length) {
@@ -401,21 +401,21 @@ glam.DOM.Animation.addAnimationToObject = function(animation, obj) {
 	}
 }
 
-glam.DOM.Animation.parseCallbacks = {};
+glam.AnimationElement.parseCallbacks = {};
 
-glam.DOM.Animation.addParseCallback = function(id, cb) {
-	var cbs = glam.DOM.Animation.parseCallbacks[id];
+glam.AnimationElement.addParseCallback = function(id, cb) {
+	var cbs = glam.AnimationElement.parseCallbacks[id];
 	if (!cbs) {
 		cbs = { callbacks : [] };
-		glam.DOM.Animation.parseCallbacks[id] = cbs;
+		glam.AnimationElement.parseCallbacks[id] = cbs;
 	}
 
 	cbs.callbacks.push(cb);
 	
 }
 
-glam.DOM.Animation.callParseCallbacks = function(id, anim) {
-	var cbs = glam.DOM.Animation.parseCallbacks[id];
+glam.AnimationElement.callParseCallbacks = function(id, anim) {
+	var cbs = glam.AnimationElement.parseCallbacks[id];
 	if (cbs) {
 		var callbacks = cbs.callbacks;
 		var i, len = callbacks.length;

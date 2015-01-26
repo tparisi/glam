@@ -4,18 +4,18 @@
  * @author Tony Parisi
  */
 
-glam.DOM.Line = {};
+glam.LineElement = {};
 
-glam.DOM.Line.create = function(docelt, style) {
+glam.LineElement.create = function(docelt, style) {
 		
 	if (style) {
 	}
 	
-	var material = glam.DOM.Material.create(style, null, "line");
+	var material = glam.DOMMaterial.create(style, null, "line");
 	
 	var geometry = new THREE.Geometry;
 	
-	glam.DOM.Line.parse(docelt, geometry, material);
+	glam.LineElement.parse(docelt, geometry, material);
 	
 	var line = new THREE.Line(geometry, material);
 	
@@ -33,7 +33,7 @@ glam.DOM.Line.create = function(docelt, style) {
 	return obj;
 }
 
-glam.DOM.Line.parse = function(docelt, geometry, material) {
+glam.LineElement.parse = function(docelt, geometry, material) {
 
 	var verts = docelt.getElementsByTagName('vertices');
 	if (verts) {

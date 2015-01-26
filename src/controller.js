@@ -4,9 +4,9 @@
  * @author Tony Parisi
  */
 
-glam.DOM.Controller = {};
+glam.ControllerElement = {};
 
-glam.DOM.Controller.create = function(docelt, style, app) {
+glam.ControllerElement.create = function(docelt, style, app) {
 	var on = true;
 	
 	var noheadlight = docelt.getAttribute("noheadlight");

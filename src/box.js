@@ -4,21 +4,21 @@
  * @author Tony Parisi
  */
 
-glam.DOM.Box = {};
+glam.BoxElement = {};
 
-glam.DOM.Box.DEFAULT_WIDTH = 2;
-glam.DOM.Box.DEFAULT_HEIGHT = 2;
-glam.DOM.Box.DEFAULT_DEPTH = 2;
+glam.BoxElement.DEFAULT_WIDTH = 2;
+glam.BoxElement.DEFAULT_HEIGHT = 2;
+glam.BoxElement.DEFAULT_DEPTH = 2;
 
-glam.DOM.Box.create = function(docelt, style) {
-	return glam.DOM.Visual.create(docelt, style, glam.DOM.Box);
+glam.BoxElement.create = function(docelt, style) {
+	return glam.VisualElement.create(docelt, style, glam.BoxElement);
 }
 
-glam.DOM.Box.getAttributes = function(docelt, style, param) {
+glam.BoxElement.getAttributes = function(docelt, style, param) {
 
-	var width = docelt.getAttribute('width') || glam.DOM.Box.DEFAULT_WIDTH;
-	var height = docelt.getAttribute('height') || glam.DOM.Box.DEFAULT_HEIGHT;
-	var depth = docelt.getAttribute('depth') || glam.DOM.Box.DEFAULT_DEPTH;
+	var width = docelt.getAttribute('width') || glam.BoxElement.DEFAULT_WIDTH;
+	var height = docelt.getAttribute('height') || glam.BoxElement.DEFAULT_HEIGHT;
+	var depth = docelt.getAttribute('depth') || glam.BoxElement.DEFAULT_DEPTH;
 	
 	if (style) {
 		if (style.width)
@@ -38,7 +38,7 @@ glam.DOM.Box.getAttributes = function(docelt, style, param) {
 	param.depth = depth;
 }
 
-glam.DOM.Box.createVisual = function(docelt, material, param) {
+glam.BoxElement.createVisual = function(docelt, material, param) {
 
 	var visual = new Vizi.Visual(
 			{ geometry: new THREE.BoxGeometry(param.width, param.height, param.depth),

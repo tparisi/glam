@@ -4,16 +4,16 @@
  * @author Tony Parisi
  */
 
-glam.DOM.Effect = {};
+glam.EffectElement = {};
 
-glam.DOM.Effect.DEFAULT_BLOOM_STRENGTH = 1;
-glam.DOM.Effect.DEFAULT_FILM_GRAYSCALE = 0;
-glam.DOM.Effect.DEFAULT_FILM_SCANLINECOUNT = 512;
-glam.DOM.Effect.DEFAULT_FILM_INTENSITY = 0.5;
-glam.DOM.Effect.DEFAULT_RGBSHIFT_AMOUNT = 0.0015;
-glam.DOM.Effect.DEFAULT_DOTSCREEN_SCALE = 1;
+glam.EffectElement.DEFAULT_BLOOM_STRENGTH = 1;
+glam.EffectElement.DEFAULT_FILM_GRAYSCALE = 0;
+glam.EffectElement.DEFAULT_FILM_SCANLINECOUNT = 512;
+glam.EffectElement.DEFAULT_FILM_INTENSITY = 0.5;
+glam.EffectElement.DEFAULT_RGBSHIFT_AMOUNT = 0.0015;
+glam.EffectElement.DEFAULT_DOTSCREEN_SCALE = 1;
 
-glam.DOM.Effect.create = function(docelt, style, app) {
+glam.EffectElement.create = function(docelt, style, app) {
 	
 	var type = docelt.getAttribute("type");
 	
@@ -22,7 +22,7 @@ glam.DOM.Effect.create = function(docelt, style, app) {
 	switch (type) {
 
 		case "Bloom" :
-			var strength = glam.DOM.Effect.DEFAULT_BLOOM_STRENGTH;
+			var strength = glam.EffectElement.DEFAULT_BLOOM_STRENGTH;
 			var str = docelt.getAttribute("strength");
 			if (str != undefined) {
 				strength = parseFloat(str);
@@ -39,36 +39,36 @@ glam.DOM.Effect.create = function(docelt, style, app) {
 			
 		case "Film" :
 			effect = new Vizi.Effect( THREE.FilmShader );
-			effect.pass.uniforms['grayscale'].value = glam.DOM.Effect.DEFAULT_FILM_GRAYSCALE;
-			effect.pass.uniforms['sCount'].value = glam.DOM.Effect.DEFAULT_FILM_SCANLINECOUNT;
-			effect.pass.uniforms['nIntensity'].value = glam.DOM.Effect.DEFAULT_FILM_INTENSITY;
+			effect.pass.uniforms['grayscale'].value = glam.EffectElement.DEFAULT_FILM_GRAYSCALE;
+			effect.pass.uniforms['sCount'].value = glam.EffectElement.DEFAULT_FILM_SCANLINECOUNT;
+			effect.pass.uniforms['nIntensity'].value = glam.EffectElement.DEFAULT_FILM_INTENSITY;
 			break;
 			
 		case "RGBShift" :
 			effect = new Vizi.Effect( THREE.RGBShiftShader );
-			effect.pass.uniforms[ 'amount' ].value = glam.DOM.Effect.DEFAULT_RGBSHIFT_AMOUNT;
+			effect.pass.uniforms[ 'amount' ].value = glam.EffectElement.DEFAULT_RGBSHIFT_AMOUNT;
 			break;
 			
 		case "DotScreen" :
 			effect = new Vizi.Effect(THREE.DotScreenShader);
-			effect.pass.uniforms[ 'scale' ].value = glam.DOM.Effect.DEFAULT_DOTSCREEN_SCALE;
+			effect.pass.uniforms[ 'scale' ].value = glam.EffectElement.DEFAULT_DOTSCREEN_SCALE;
 			break;
 
 		case "DotScreenRGB" :
 			effect = new Vizi.Effect(THREE.DotScreenRGBShader);
-			effect.pass.uniforms[ 'scale' ].value = glam.DOM.Effect.DEFAULT_DOTSCREEN_SCALE;
+			effect.pass.uniforms[ 'scale' ].value = glam.EffectElement.DEFAULT_DOTSCREEN_SCALE;
 			break;
 	}
 	
 	if (effect) {
-		glam.DOM.Effect.parseAttributes(docelt, effect, style);
+		glam.EffectElement.parseAttributes(docelt, effect, style);
 		Vizi.Graphics.instance.addEffect(effect);
 	}
 	
 	return null;
 }
 
-glam.DOM.Effect.parseAttributes = function(docelt, effect, style) {
+glam.EffectElement.parseAttributes = function(docelt, effect, style) {
 	
 	var disabled = docelt.getAttribute("disabled");
 	if (disabled != undefined) {
@@ -91,7 +91,7 @@ glam.DOM.Effect.parseAttributes = function(docelt, effect, style) {
 				
 					case "t" :
 						
-						var image = glam.DOM.Material.parseUrl(attr);
+						var image = glam.DOMMaterial.parseUrl(attr);
 						value = THREE.ImageUtils.loadTexture(image);
 						value.wrapS = value.wrapT = THREE.Repeat;
 						break;

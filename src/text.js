@@ -4,40 +4,40 @@
  * @author Tony Parisi
  */
 
-glam.DOM.Text = {};
+glam.TextElement = {};
 
-glam.DOM.Text.DEFAULT_FONT_SIZE = 1;
-glam.DOM.Text.DEFAULT_FONT_DEPTH = .2;
-glam.DOM.Text.DEFAULT_FONT_BEVEL = "none";
-glam.DOM.Text.DEFAULT_BEVEL_SIZE = .01;
-glam.DOM.Text.DEFAULT_BEVEL_THICKNESS = .02;
-glam.DOM.Text.DEFAULT_FONT_FAMILY = "helvetica";
-glam.DOM.Text.DEFAULT_FONT_WEIGHT = "normal";
-glam.DOM.Text.DEFAULT_FONT_STYLE = "normal";
+glam.TextElement.DEFAULT_FONT_SIZE = 1;
+glam.TextElement.DEFAULT_FONT_DEPTH = .2;
+glam.TextElement.DEFAULT_FONT_BEVEL = "none";
+glam.TextElement.DEFAULT_BEVEL_SIZE = .01;
+glam.TextElement.DEFAULT_BEVEL_THICKNESS = .02;
+glam.TextElement.DEFAULT_FONT_FAMILY = "helvetica";
+glam.TextElement.DEFAULT_FONT_WEIGHT = "normal";
+glam.TextElement.DEFAULT_FONT_STYLE = "normal";
 
-glam.DOM.Text.BEVEL_EPSILON = 0.0001;
+glam.TextElement.BEVEL_EPSILON = 0.0001;
 
-glam.DOM.Text.DEFAULT_VALUE = "",
+glam.TextElement.DEFAULT_VALUE = "",
 
-glam.DOM.Text.create = function(docelt, style) {
-	return glam.DOM.Visual.create(docelt, style, glam.DOM.Text);
+glam.TextElement.create = function(docelt, style) {
+	return glam.VisualElement.create(docelt, style, glam.TextElement);
 }
 
-glam.DOM.Text.getAttributes = function(docelt, style, param) {
+glam.TextElement.getAttributes = function(docelt, style, param) {
 
 	// Font stuff
 	// for now: helvetiker, optimer - typeface.js stuff
 	// could also do: gentilis, droid sans, droid serif but the files are big.
-	var fontFamily = docelt.getAttribute('fontFamily') || glam.DOM.Text.DEFAULT_FONT_FAMILY; // "optimer";
-	var fontWeight = docelt.getAttribute('fontWeight') || glam.DOM.Text.DEFAULT_FONT_WEIGHT; // "bold"; // normal bold
-	var fontStyle = docelt.getAttribute('fontStyle') || glam.DOM.Text.DEFAULT_FONT_STYLE; // "normal"; // normal italic
+	var fontFamily = docelt.getAttribute('fontFamily') || glam.TextElement.DEFAULT_FONT_FAMILY; // "optimer";
+	var fontWeight = docelt.getAttribute('fontWeight') || glam.TextElement.DEFAULT_FONT_WEIGHT; // "bold"; // normal bold
+	var fontStyle = docelt.getAttribute('fontStyle') || glam.TextElement.DEFAULT_FONT_STYLE; // "normal"; // normal italic
 
 	// Size, depth, bevel etc.
-	var fontSize = docelt.getAttribute('fontSize') || glam.DOM.Text.DEFAULT_FONT_SIZE;
-	var fontDepth = docelt.getAttribute('fontDepth') || glam.DOM.Text.DEFAULT_FONT_DEPTH;
-	var fontBevel = docelt.getAttribute('fontBevel') || glam.DOM.Text.DEFAULT_FONT_BEVEL;
-	var bevelSize = docelt.getAttribute('bevelSize') || glam.DOM.Text.DEFAULT_BEVEL_SIZE;
-	var bevelThickness = docelt.getAttribute('bevelThickness') || glam.DOM.Text.DEFAULT_BEVEL_THICKNESS;
+	var fontSize = docelt.getAttribute('fontSize') || glam.TextElement.DEFAULT_FONT_SIZE;
+	var fontDepth = docelt.getAttribute('fontDepth') || glam.TextElement.DEFAULT_FONT_DEPTH;
+	var fontBevel = docelt.getAttribute('fontBevel') || glam.TextElement.DEFAULT_FONT_BEVEL;
+	var bevelSize = docelt.getAttribute('bevelSize') || glam.TextElement.DEFAULT_BEVEL_SIZE;
+	var bevelThickness = docelt.getAttribute('bevelThickness') || glam.TextElement.DEFAULT_BEVEL_THICKNESS;
 	
 	if (style) {
 		if (style["font-family"])
@@ -97,12 +97,12 @@ glam.DOM.Text.getAttributes = function(docelt, style, param) {
 	}
 	// hack because no-bevel shading has bad normals along text edge
 	if (!bevelEnabled) {
-		bevelThickness = bevelSize = glam.DOM.Text.BEVEL_EPSILON;
+		bevelThickness = bevelSize = glam.TextElement.BEVEL_EPSILON;
 		bevelEnabled = true;
 	}
 
 	// The text value
-	var value = docelt.getAttribute('value') || glam.DOM.Text.DEFAULT_VALUE;
+	var value = docelt.getAttribute('value') || glam.TextElement.DEFAULT_VALUE;
 
 	if (!value) {
 		value = docelt.textContent;
@@ -119,7 +119,7 @@ glam.DOM.Text.getAttributes = function(docelt, style, param) {
 	param.fontStyle = fontStyle;
 }
 
-glam.DOM.Text.createVisual = function(docelt, material, param) {
+glam.TextElement.createVisual = function(docelt, material, param) {
 
 	if (!param.value) {
 		return null;

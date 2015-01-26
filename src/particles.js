@@ -4,15 +4,15 @@
  * @author Tony Parisi
  */
 
-glam.DOM.Particles = {};
+glam.ParticlesElement = {};
 
-glam.DOM.Particles.create = function(docelt, style) {
+glam.ParticlesElement.create = function(docelt, style) {
 
-	var mparam = glam.DOM.Material.parseStyle(style);
+	var mparam = glam.DOMMaterial.parseStyle(style);
 
 	// Parse the attributes
 	var param = {};
-	glam.DOM.Particles.getAttributes(docelt, style, param);
+	glam.ParticlesElement.getAttributes(docelt, style, param);
 	
 	// Throw in the texture from the material
 	param.map = mparam.map;      // for static geometry-based
@@ -20,7 +20,7 @@ glam.DOM.Particles.create = function(docelt, style) {
 	param.color = mparam.color;
 	
 	// Parse the child elements
-	var elts = glam.DOM.Particles.parse(docelt);
+	var elts = glam.ParticlesElement.parse(docelt);
 	
 	// Got geometry in there? Pass it on
 	param.geometry = elts.geometry;
@@ -29,7 +29,7 @@ glam.DOM.Particles.create = function(docelt, style) {
 	var ps = Vizi.ParticleSystem(param);
 
 	// Got emitters in there? Add them
-	glam.DOM.Particles.addEmitters(elts.emitters, ps);
+	glam.ParticlesElement.addEmitters(elts.emitters, ps);
 
 	// Bind the properties
 	var visual = ps.getComponent(Vizi.Visual);
@@ -42,15 +42,15 @@ glam.DOM.Particles.create = function(docelt, style) {
 	return ps;
 }
 
-glam.DOM.Particles.getAttributes = function(docelt, style, param) {
-	var maxAge = docelt.getAttribute('maxAge') || glam.DOM.Particles.DEFAULT_MAX_AGE;
+glam.ParticlesElement.getAttributes = function(docelt, style, param) {
+	var maxAge = docelt.getAttribute('maxAge') || glam.ParticlesElement.DEFAULT_MAX_AGE;
 	var size = parseFloat(docelt.getAttribute('size'));
 
 	param.maxAge = parseFloat(maxAge);
 	param.size = size;
 }
 
-glam.DOM.Particles.parse = function(docelt) {
+glam.ParticlesElement.parse = function(docelt) {
 	
 	var result = {
 			geometry : null,
@@ -69,7 +69,7 @@ glam.DOM.Particles.parse = function(docelt) {
 			
 			var emitter = emitters[i];
 			if (emitter) {
-				glam.DOM.Particles.parseEmitter(emitter, param);
+				glam.ParticlesElement.parseEmitter(emitter, param);
 
 				var pe = new Vizi.ParticleEmitter(param);
 				result.emitters.push(pe);
@@ -91,7 +91,7 @@ glam.DOM.Particles.parse = function(docelt) {
 	return result;
 }
 
-glam.DOM.Particles.parseEmitter = function(emitter, param) {
+glam.ParticlesElement.parseEmitter = function(emitter, param) {
 	    
 	var size = parseFloat(emitter.getAttribute('size'));
 	var sizeEnd = parseFloat(emitter.getAttribute('sizeEnd'));
@@ -189,7 +189,7 @@ glam.DOM.Particles.parseEmitter = function(emitter, param) {
 	param.blending = blending;
 }
 
-glam.DOM.Particles.addEmitters = function(emitters, ps) {
+glam.ParticlesElement.addEmitters = function(emitters, ps) {
 	
 	var i, len = emitters.length;
 	for (i = 0; i < len; i++) {
@@ -197,5 +197,5 @@ glam.DOM.Particles.addEmitters = function(emitters, ps) {
 	}
 }
 
-glam.DOM.Particles.DEFAULT_MAX_AGE = 1;
+glam.ParticlesElement.DEFAULT_MAX_AGE = 1;
 

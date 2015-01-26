@@ -4,23 +4,23 @@
  * @author Tony Parisi
  */
 
-glam.DOM.Mesh = {};
-glam.DOM.Mesh.VERTEX_NORMALS = false;
-glam.DOM.Mesh.VERTEX_COLORS = false;
+glam.MeshElement = {};
+glam.MeshElement.VERTEX_NORMALS = false;
+glam.MeshElement.VERTEX_COLORS = false;
 
-glam.DOM.Mesh.create = function(docelt, style) {
+glam.MeshElement.create = function(docelt, style) {
 	
-	return glam.DOM.Visual.create(docelt, style, glam.DOM.Mesh);
+	return glam.VisualElement.create(docelt, style, glam.MeshElement);
 }
 
-glam.DOM.Mesh.getAttributes = function(docelt, style, param) {
+glam.MeshElement.getAttributes = function(docelt, style, param) {
 	
 	var vertexNormals = docelt.getAttribute('vertexNormals');
 	if (vertexNormals !== null) {
 		vertexNormals = true;
 	}
 	else {
-		vertexNormals = glam.DOM.Mesh.VERTEX_NORMALS;
+		vertexNormals = glam.MeshElement.VERTEX_NORMALS;
 	}
 	
 	var vertexColors = docelt.getAttribute('vertexColors');
@@ -28,7 +28,7 @@ glam.DOM.Mesh.getAttributes = function(docelt, style, param) {
 		vertexColors = true;
 	}
 	else {
-		vertexColors = glam.DOM.Mesh.VERTEX_COLORS;
+		vertexColors = glam.MeshElement.VERTEX_COLORS;
 	}
 	
 	if (style) {
@@ -42,11 +42,11 @@ glam.DOM.Mesh.getAttributes = function(docelt, style, param) {
 	param.vertexColors = vertexColors;
 }
 
-glam.DOM.Mesh.createVisual = function(docelt, material, param) {
+glam.MeshElement.createVisual = function(docelt, material, param) {
 
 	var geometry = new THREE.Geometry;
 	
-	glam.DOM.Mesh.parse(docelt, geometry, material, param);
+	glam.MeshElement.parse(docelt, geometry, material, param);
 	
 	var mesh = new THREE.Mesh(geometry, material);
 	var visual = new Vizi.Visual(
@@ -57,7 +57,7 @@ glam.DOM.Mesh.createVisual = function(docelt, material, param) {
 	return visual;
 }
 
-glam.DOM.Mesh.parse = function(docelt, geometry, material, param) {
+glam.MeshElement.parse = function(docelt, geometry, material, param) {
 
 	var verts = docelt.getElementsByTagName('vertices');
 	if (verts) {

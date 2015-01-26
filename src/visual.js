@@ -4,9 +4,9 @@
  * @author Tony Parisi
  */
 
-glam.DOM.Visual = {};
+glam.VisualElement = {};
 
-glam.DOM.Visual.create = function(docelt, style, cls) {
+glam.VisualElement.create = function(docelt, style, cls) {
 
 	var param = {
 	};
@@ -15,26 +15,26 @@ glam.DOM.Visual.create = function(docelt, style, cls) {
 	
 	var obj = new Vizi.Object;	
 	
-	var material = glam.DOM.Material.create(style, function(material) {
-		glam.DOM.Visual.createVisual(obj, cls, docelt, material, param);
+	var material = glam.DOMMaterial.create(style, function(material) {
+		glam.VisualElement.createVisual(obj, cls, docelt, material, param);
 	});
 	
 	if (material) {
-		glam.DOM.Visual.createVisual(obj, cls, docelt, material, param);
+		glam.VisualElement.createVisual(obj, cls, docelt, material, param);
 	}
 	
 	return obj;
 }
 
-glam.DOM.Visual.createVisual = function(obj, cls, docelt, material, param) {
+glam.VisualElement.createVisual = function(obj, cls, docelt, material, param) {
 	var visual = cls.createVisual(docelt, material, param);	
 	if (visual) {
 		obj.addComponent(visual);
-		glam.DOM.Visual.addProperties(docelt, obj);
+		glam.VisualElement.addProperties(docelt, obj);
 	}
 }
 
-glam.DOM.Visual.addProperties = function(docelt, obj) {
+glam.VisualElement.addProperties = function(docelt, obj) {
 
 	var visuals = obj.getComponents(Vizi.Visual);
 	var visual = visuals[0];
