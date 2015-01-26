@@ -159,6 +159,8 @@
   var REmunged = /%\w`(\d+)`\w%/;
   var uid = 0; // unique id number
   function munge(str, full){
+  	var match;
+  	var replacement;
     str = str
     .replace(REatcomment,'$1') // strip /*@ comments but leave the text (to let invalid CSS through)
     .replace(REcomment_string, function (s, string){ // strip strings and escaped characters, leaving munged markers, and strip comments
@@ -179,7 +181,8 @@
   }
 
   function restore(str){
-		if (str === undefined) return str;
+  	var match;
+	if (str === undefined) return str;
     while (match = REmunged.exec(str)){
       str = str.replace(REmunged, munged[match[1]]);
     }
@@ -214,6 +217,9 @@
   }
 		
 	function dojQuery (selector, which, value, value2){ // value2 is the value for the livequery no longer match
+		// a plugin
+		// late bind parseArguments so "this" is defined correctly
+		function p (str) { return function() { return $.fn[which].apply($(this), $.parsecss.parseArguments.call(this, str)) } };
 		if (/show|hide/.test(which)) which +=  'Default'; // -jquery-show is a shortcut for -jquery-showDefault
 		if (value2 !== undefined && $.livequery){
 			// mode is 0 for a static value (can be evaluated when parsed); 
@@ -224,9 +230,6 @@
 			mode = /\bthis\b/.test(value) ? 1 : 0;
 		}
 		if (which && $.fn[which]){
-			// a plugin
-			// late bind parseArguments so "this" is defined correctly
-			function p (str) { return function() { return $.fn[which].apply($(this), $.parsecss.parseArguments.call(this, str)) } };
 			switch (mode){
 				case 0: return $.fn[which].apply($(selector), $.parsecss.parseArguments(value));
 				case 1: return $(selector).each(p(value));
