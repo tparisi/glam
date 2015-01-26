@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <script src="../../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
-<script src="../../build/glam.js" ></script>
+<script src="../../build/glam.min.js" ></script>
 <title>glam - Imported scene with skybox background</title>
 
 <style>
@@ -57,7 +57,7 @@
 	<controller noheadlight></controller>
 	<import id="imported_scene" src="../../models/futurgo_city/futurgo_city.dae" ></import>
 	<camera y='10' class="animFly"></camera>
-	<effect type="Film" disabled sCount='2048' grayscale='0' nIntensity='1' sIntensity='.5'></effect>	
+	<effect type="Film" sCount='2048' grayscale='0' nIntensity='1' sIntensity='.5'></effect>	
 	<effect type="DotScreenRGB" disabled scale='2'></effect>
 	<effect type="Bloom" strength='.667' kernelSize='100'></effect>
   </scene>

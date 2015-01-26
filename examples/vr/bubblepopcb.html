@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 
 <script src="../../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
-<script src="../../build/glam.js" ></script>
+<script src="../../build/glam.min.js" ></script>
 
 <title>glam - bubble pop!</title>
 
@@ -184,10 +184,10 @@ $(document).ready(function(){
 	scene = document.getElementsByTagName('scene')[0];
 	addBubbles();
 
-    var canvas = Vizi.Graphics.instance.renderer.domElement;
+    var canvas = glam.Graphics.instance.renderer.domElement;
     canvas.addEventListener("touchstart", function(event) {
     	if (!fullscreen) {
-			Vizi.Graphics.instance.setFullScreen(true);
+			glam.setFullScreen(true);
 			fullscreen = true;    		
     	}
     	else {
