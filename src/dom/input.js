@@ -22,7 +22,12 @@ glam.DOMInput.add = function(docelt, obj) {
 					}
 				);
 			for (var propName in event) {
-				domEvent[propName] = event[propName];
+				if (domEvent[propName] === undefined) {
+					domEvent[propName] = event[propName];					
+				}
+				else {
+					; // console.log("Skipping prop", propName);					
+				}
 			}
 			var res = docelt.dispatchEvent(domEvent);
 			
