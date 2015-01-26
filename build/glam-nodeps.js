@@ -9159,12 +9159,754 @@ glam.RiftControllerScript.prototype.createControls = function(camera)
 
 
 /**
+ * @fileoverview model import parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
+
+goog.provide('glam.ImportElement');
+
+glam.ImportElement.create = function(docelt, style) {
+	var src = docelt.getAttribute('src');
+		
+	// Create the cube
+	var obj = new glam.Object;	
+
+	if (src) {
+		var loader = new glam.Loader;
+
+		var loadCallback = function(data) {
+			glam.ImportElement.onLoadComplete(obj, data, src);
+			loader.removeEventListener("loaded", loadCallback);
+		}	
+
+		loader.addEventListener("loaded", loadCallback);
+		loader.loadScene(src);
+	}
+
+	return obj;
+}
+
+glam.ImportElement.onLoadComplete = function(obj, data, url) {
+
+	obj.addChild(data.scene);
+}
+/**
+ * @fileoverview effect parser/implementation. supports built-in postprocessing effects
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.EffectElement');
+
+glam.EffectElement.DEFAULT_BLOOM_STRENGTH = 1;
+glam.EffectElement.DEFAULT_FILM_GRAYSCALE = 0;
+glam.EffectElement.DEFAULT_FILM_SCANLINECOUNT = 512;
+glam.EffectElement.DEFAULT_FILM_INTENSITY = 0.5;
+glam.EffectElement.DEFAULT_RGBSHIFT_AMOUNT = 0.0015;
+glam.EffectElement.DEFAULT_DOTSCREEN_SCALE = 1;
+
+glam.EffectElement.create = function(docelt, style, app) {
+	
+	var type = docelt.getAttribute("type");
+	
+	var effect = null;
+	
+	switch (type) {
+
+		case "Bloom" :
+			var strength = glam.EffectElement.DEFAULT_BLOOM_STRENGTH;
+			var str = docelt.getAttribute("strength");
+			if (str != undefined) {
+				strength = parseFloat(str);
+			}
+			effect = new glam.Effect(new THREE.BloomPass(strength));
+			break;
+
+		case "FXAA" :
+			effect = new glam.Effect(THREE.FXAAShader);
+			var w = glam.Graphics.instance.renderer.domElement.offsetWidth;
+			var h = glam.Graphics.instance.renderer.domElement.offsetHeight;
+			effect.pass.uniforms['resolution'].value.set(1 / w, 1 / h);
+			break;
+			
+		case "Film" :
+			effect = new glam.Effect( THREE.FilmShader );
+			effect.pass.uniforms['grayscale'].value = glam.EffectElement.DEFAULT_FILM_GRAYSCALE;
+			effect.pass.uniforms['sCount'].value = glam.EffectElement.DEFAULT_FILM_SCANLINECOUNT;
+			effect.pass.uniforms['nIntensity'].value = glam.EffectElement.DEFAULT_FILM_INTENSITY;
+			break;
+			
+		case "RGBShift" :
+			effect = new glam.Effect( THREE.RGBShiftShader );
+			effect.pass.uniforms[ 'amount' ].value = glam.EffectElement.DEFAULT_RGBSHIFT_AMOUNT;
+			break;
+			
+		case "DotScreen" :
+			effect = new glam.Effect(THREE.DotScreenShader);
+			effect.pass.uniforms[ 'scale' ].value = glam.EffectElement.DEFAULT_DOTSCREEN_SCALE;
+			break;
+
+		case "DotScreenRGB" :
+			effect = new glam.Effect(THREE.DotScreenRGBShader);
+			effect.pass.uniforms[ 'scale' ].value = glam.EffectElement.DEFAULT_DOTSCREEN_SCALE;
+			break;
+	}
+	
+	if (effect) {
+		glam.EffectElement.parseAttributes(docelt, effect, style);
+		glam.Graphics.instance.addEffect(effect);
+	}
+	
+	return null;
+}
+
+glam.EffectElement.parseAttributes = function(docelt, effect, style) {
+	
+	var disabled = docelt.getAttribute("disabled");
+	if (disabled != undefined) {
+		effect.pass.enabled = false;
+	}
+	
+	var uniforms = effect.pass.uniforms;
+	
+	for (var u in uniforms) {
+		
+		var attr = docelt.getAttribute(u);
+		if (attr) {
+			
+			var value = null;
+			var uniform = uniforms[u];
+
+			if (uniform) {
+				
+				switch (uniform.type) {
+				
+					case "t" :
+						
+						var image = glam.DOMMaterial.parseUrl(attr);
+						value = THREE.ImageUtils.loadTexture(image);
+						value.wrapS = value.wrapT = THREE.Repeat;
+						break;
+						
+					case "f" :
+						
+						value = parseFloat(attr);						
+						break;
+
+					case "i" :
+						
+						value = parseInt(attr);						
+						break;
+				}
+				
+				if (value) {
+					uniform.value = value;
+				}
+			}
+		}
+	}
+}
+
+/**
+ * @fileoverview text primitive parser/implementation. only supports helvetiker and optimer fonts right now.
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.TextElement');
+
+glam.TextElement.DEFAULT_FONT_SIZE = 1;
+glam.TextElement.DEFAULT_FONT_DEPTH = .2;
+glam.TextElement.DEFAULT_FONT_BEVEL = "none";
+glam.TextElement.DEFAULT_BEVEL_SIZE = .01;
+glam.TextElement.DEFAULT_BEVEL_THICKNESS = .02;
+glam.TextElement.DEFAULT_FONT_FAMILY = "helvetica";
+glam.TextElement.DEFAULT_FONT_WEIGHT = "normal";
+glam.TextElement.DEFAULT_FONT_STYLE = "normal";
+
+glam.TextElement.BEVEL_EPSILON = 0.0001;
+
+glam.TextElement.DEFAULT_VALUE = "",
+
+glam.TextElement.create = function(docelt, style) {
+	return glam.VisualElement.create(docelt, style, glam.TextElement);
+}
+
+glam.TextElement.getAttributes = function(docelt, style, param) {
+
+	// Font stuff
+	// for now: helvetiker, optimer - typeface.js stuff
+	// could also do: gentilis, droid sans, droid serif but the files are big.
+	var fontFamily = docelt.getAttribute('fontFamily') || glam.TextElement.DEFAULT_FONT_FAMILY; // "optimer";
+	var fontWeight = docelt.getAttribute('fontWeight') || glam.TextElement.DEFAULT_FONT_WEIGHT; // "bold"; // normal bold
+	var fontStyle = docelt.getAttribute('fontStyle') || glam.TextElement.DEFAULT_FONT_STYLE; // "normal"; // normal italic
+
+	// Size, depth, bevel etc.
+	var fontSize = docelt.getAttribute('fontSize') || glam.TextElement.DEFAULT_FONT_SIZE;
+	var fontDepth = docelt.getAttribute('fontDepth') || glam.TextElement.DEFAULT_FONT_DEPTH;
+	var fontBevel = docelt.getAttribute('fontBevel') || glam.TextElement.DEFAULT_FONT_BEVEL;
+	var bevelSize = docelt.getAttribute('bevelSize') || glam.TextElement.DEFAULT_BEVEL_SIZE;
+	var bevelThickness = docelt.getAttribute('bevelThickness') || glam.TextElement.DEFAULT_BEVEL_THICKNESS;
+	
+	if (style) {
+		if (style["font-family"])
+			fontFamily = style["font-family"];
+		if (style["font-weight"])
+			fontWeight = style["font-weight"];
+		if (style["font-style"])
+			fontStyle = style["font-style"];
+		if (style["font-size"])
+			fontSize = style["font-size"];
+		if (style["font-depth"])
+			fontDepth = style["font-depth"];
+		if (style["font-bevel"])
+			fontBevel = style["font-bevel"];
+		if (style["bevel-size"])
+			bevelSize = style["bevel-size"];
+		if (style["bevel-thickness"])
+			bevelThickness = style["bevel-thickness"];
+	}
+
+	// set up defaults, safeguards; convert to typeface.js names
+	fontFamily = fontFamily.toLowerCase();
+	switch (fontFamily) {
+		case "optima" :
+			fontFamily = "optimer"; 
+			break;
+		case "helvetica" :
+		default :
+			fontFamily = "helvetiker"; 
+			break;
+	}
+
+	// final safeguard, make sure font is there. if not, use helv
+	var face = THREE.FontUtils.faces[fontFamily];
+	if (!face) {
+		fontFamily = "helvetiker"; 
+	}
+	
+	fontWeight = fontWeight.toLowerCase();
+	if (fontWeight != "bold") {
+		fontWeight = "normal";
+	}
+
+	fontStyle = fontStyle.toLowerCase();
+	// N.B.: for now, just use normal, italic doesn't seem to work 
+	if (true) { // fontStyle != "italic") {
+		fontStyle = "normal";
+	}
+	
+	fontSize = parseFloat(fontSize);
+	fontDepth = parseFloat(fontDepth);
+	bevelSize = parseFloat(bevelSize);
+	bevelThickness = parseFloat(bevelThickness);
+	var bevelEnabled = (fontBevel.toLowerCase() == "bevel") ? true : false;
+	if (!fontDepth) {
+		bevelEnabled = false;
+	}
+	// hack because no-bevel shading has bad normals along text edge
+	if (!bevelEnabled) {
+		bevelThickness = bevelSize = glam.TextElement.BEVEL_EPSILON;
+		bevelEnabled = true;
+	}
+
+	// The text value
+	var value = docelt.getAttribute('value') || glam.TextElement.DEFAULT_VALUE;
+
+	if (!value) {
+		value = docelt.textContent;
+	}
+	
+	param.value = value;
+	param.fontSize = fontSize;
+	param.fontDepth = fontDepth;
+	param.bevelSize = bevelSize;
+	param.bevelThickness = bevelThickness;
+	param.bevelEnabled = bevelEnabled;
+	param.fontFamily = fontFamily;
+	param.fontWeight = fontWeight;
+	param.fontStyle = fontStyle;
+}
+
+glam.TextElement.createVisual = function(docelt, material, param) {
+
+	if (!param.value) {
+		return null;
+	}
+	
+	var curveSegments = 4;
+
+	var textGeo = new THREE.TextGeometry( param.value, {
+
+		font: param.fontFamily,
+		weight: param.fontWeight,
+		style: param.fontStyle,
+
+		size: param.fontSize,
+		height: param.fontDepth,
+		curveSegments: curveSegments,
+
+		bevelThickness: param.bevelThickness,
+		bevelSize: param.bevelSize,
+		bevelEnabled: param.bevelEnabled,
+
+		material: 0,
+		extrudeMaterial: 1
+
+	});
+
+	textGeo.computeBoundingBox();
+	textGeo.computeVertexNormals();
+
+	var frontMaterial = material.clone();
+	frontMaterial.shading = THREE.FlatShading;
+	var extrudeMaterial = material.clone();
+	extrudeMaterial.shading = THREE.SmoothShading;
+	var textmat = new THREE.MeshFaceMaterial( [ frontMaterial,  // front
+	                                            extrudeMaterial // side
+	                                            ]);
+
+
+	var visual = new glam.Visual(
+			{ geometry: textGeo,
+				material: textmat
+			});
+
+	textGeo.center();
+	
+	return visual;
+}
+/**
+ * @fileoverview cylinder parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.CylinderElement');
+
+glam.CylinderElement.DEFAULT_RADIUS = 2;
+glam.CylinderElement.DEFAULT_HEIGHT = 2;
+
+glam.CylinderElement.create = function(docelt, style) {
+	return glam.VisualElement.create(docelt, style, glam.CylinderElement);
+}
+
+glam.CylinderElement.getAttributes = function(docelt, style, param) {
+
+	var radius = docelt.getAttribute('radius') || glam.CylinderElement.DEFAULT_RADIUS;
+	var height = docelt.getAttribute('height') || glam.CylinderElement.DEFAULT_HEIGHT;
+	
+	if (style) {
+		if (style.radius)
+			radius = style.radius;
+		if (style.height)
+			height = style.height;
+	}
+	
+	radius = parseFloat(radius);
+	height = parseFloat(height);
+	param.radius = radius;
+	param.height = height;
+}	
+
+glam.CylinderElement.createVisual = function(docelt, material, param) {
+
+	var visual = new glam.Visual(
+			{ geometry: new THREE.CylinderGeometry(param.radius, param.radius, param.height, 32),
+				material: material
+			});
+	
+	return visual;
+}
+/**
+ * @fileoverview particle system parser/implementation
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.ParticlesElement');
+
+glam.ParticlesElement.create = function(docelt, style) {
+
+	var mparam = glam.DOMMaterial.parseStyle(style);
+
+	// Parse the attributes
+	var param = {};
+	glam.ParticlesElement.getAttributes(docelt, style, param);
+	
+	// Throw in the texture from the material
+	param.map = mparam.map;      // for static geometry-based
+	param.texture = mparam.map;  // for dynamic emitter-based
+	param.color = mparam.color;
+	
+	// Parse the child elements
+	var elts = glam.ParticlesElement.parse(docelt);
+	
+	// Got geometry in there? Pass it on
+	param.geometry = elts.geometry;
+
+	// Create the particle system
+	var ps = glam.ParticleSystem(param);
+
+	// Got emitters in there? Add them
+	glam.ParticlesElement.addEmitters(elts.emitters, ps);
+
+	// Bind the properties
+	var visual = ps.getComponent(glam.Visual);
+	docelt.geometry = visual.geometry;
+	docelt.material = visual.material;
+	
+	// Start it
+	var pscript = ps.getComponent(glam.ParticleSystemScript);	
+	pscript.active = true;
+	return ps;
+}
+
+glam.ParticlesElement.getAttributes = function(docelt, style, param) {
+	var maxAge = docelt.getAttribute('maxAge') || glam.ParticlesElement.DEFAULT_MAX_AGE;
+	var size = parseFloat(docelt.getAttribute('size'));
+
+	param.maxAge = parseFloat(maxAge);
+	param.size = size;
+}
+
+glam.ParticlesElement.parse = function(docelt) {
+	
+	var result = {
+			geometry : null,
+			emitters : [
+			            ],
+	};
+	
+	// Any emitters?
+	var emitters = docelt.getElementsByTagName('emitter');
+	if (emitters) {
+		var i, len = emitters.length;
+		for (i = 0; i < len; i++) {
+			
+			var param = {
+			};
+			
+			var emitter = emitters[i];
+			if (emitter) {
+				glam.ParticlesElement.parseEmitter(emitter, param);
+
+				var pe = new glam.ParticleEmitter(param);
+				result.emitters.push(pe);
+			}
+		}
+	}
+	
+	// Or just static vertices...? Not working yet
+	var verts = docelt.getElementsByTagName('vertices');
+	if (verts) {
+		verts = verts[0];
+		if (verts) {
+			var geometry = new THREE.Geometry;
+			glam.DOMTypes.parseVector3Array(verts, geometry.vertices);
+			result.geometry = geometry;
+		}
+	}
+	
+	return result;
+}
+
+glam.ParticlesElement.parseEmitter = function(emitter, param) {
+	    
+	var size = parseFloat(emitter.getAttribute('size'));
+	var sizeEnd = parseFloat(emitter.getAttribute('sizeEnd'));
+	var particlesPerSecond = parseInt(emitter.getAttribute('particlesPerSecond'));
+	var opacityStart = parseFloat(emitter.getAttribute('opacityStart'));
+	var opacityMiddle = parseFloat(emitter.getAttribute('opacityMiddle'));
+	var opacityEnd = parseFloat(emitter.getAttribute('opacityEnd'));
+	
+	var colorStart, colorEnd;
+	if (css = emitter.getAttribute('colorStart')) {
+		colorStart = new THREE.Color().setStyle(css);
+	}
+	if (css = emitter.getAttribute('colorEnd')) {
+		colorEnd = new THREE.Color().setStyle(css);
+	}
+	
+	var vx = parseFloat(emitter.getAttribute('vx')) || 0;
+	var vy = parseFloat(emitter.getAttribute('vy')) || 0;
+	var vz = parseFloat(emitter.getAttribute('vz')) || 0;
+	var ax = parseFloat(emitter.getAttribute('ax')) || 0;
+	var ay = parseFloat(emitter.getAttribute('ay')) || 0;
+	var az = parseFloat(emitter.getAttribute('az')) || 0;
+	var psx = parseFloat(emitter.getAttribute('psx')) || 0;
+	var psy = parseFloat(emitter.getAttribute('psy')) || 0;
+	var psz = parseFloat(emitter.getAttribute('psz')) || 0;
+	var asx = parseFloat(emitter.getAttribute('asx')) || 0;
+	var asy = parseFloat(emitter.getAttribute('asy')) || 0;
+	var asz = parseFloat(emitter.getAttribute('asz')) || 0;
+
+	var velocity = new THREE.Vector3(vx, vy, vz);
+	var acceleration = new THREE.Vector3(ax, ay, az);
+	var positionSpread = new THREE.Vector3(psx, psy, psz);
+	var accelerationSpread = new THREE.Vector3(asx, asy, asz);
+
+	var vel = emitter.getAttribute('velocity');
+	if (vel) {
+		glam.DOMTypes.parseVector3(vel, velocity);
+	}
+	
+	var accel = emitter.getAttribute('acceleration');
+	if (accel) {
+		glam.DOMTypes.parseVector3(accel, acceleration);
+	}
+	
+	var posSpread = emitter.getAttribute('positionSpread');
+	if (posSpread) {
+		glam.DOMTypes.parseVector3(posSpread, positionSpread);
+	}
+
+	var accelSpread = emitter.getAttribute('accelerationSpread');
+	if (accelSpread) {
+		glam.DOMTypes.parseVector3(accelSpread, accelerationSpread);
+	}
+
+	var blending = THREE.NoBlending;
+	var blend = emitter.getAttribute('blending') || "";
+	switch (blend.toLowerCase()) {
+	
+		case "normal" :
+			blending = THREE.NormalBlending;
+			break;
+		case "additive" :
+			blending = THREE.AdditiveBlending;
+			break;
+		case "subtractive" :
+			blending = THREE.SubtractiveBlending;
+			break;
+		case "multiply" :
+			blending = THREE.MultiplyBlending;
+			break;
+		case "custom" :
+			blending = THREE.CustomBlending;
+			break;
+		case "none" :
+		default :
+			break;
+	}
+	
+	param.size = size;
+	param.sizeEnd = sizeEnd;
+	if (colorStart !== undefined) {
+		param.colorStart = colorStart;
+	}
+	if (colorEnd !== undefined) {
+		param.colorEnd = colorEnd;
+	}	
+	param.particlesPerSecond = particlesPerSecond;	
+	param.opacityStart = opacityStart;
+	param.opacityMiddle = opacityMiddle;
+	param.opacityEnd = opacityEnd;
+	param.velocity = velocity;
+	param.acceleration = acceleration;
+	param.positionSpread = positionSpread;
+	param.accelerationSpread = accelerationSpread; 
+	param.blending = blending;
+}
+
+glam.ParticlesElement.addEmitters = function(emitters, ps) {
+	
+	var i, len = emitters.length;
+	for (i = 0; i < len; i++) {
+		ps.addComponent(emitters[i]);
+	}
+}
+
+glam.ParticlesElement.DEFAULT_MAX_AGE = 1;
+
+/**
+ * @fileoverview background parser/implementation. supports skyboxes and skyspheres
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.BackgroundElement');
+
+glam.BackgroundElement.DEFAULT_BACKGROUND_TYPE = "box";
+
+glam.BackgroundElement.create = function(docelt, style) {
+	var type = docelt.getAttribute('background-type') || glam.BackgroundElement.DEFAULT_BACKGROUND_TYPE;
+	type = docelt.getAttribute('type') || type;
+	
+	if (style) {
+		if (style["background-type"])
+			type = style["background-type"];
+		var  param = glam.DOMMaterial.parseStyle(style);
+	}	
+
+	var background;
+	if (type == "box") {
+		background = glam.Prefabs.Skybox();
+		var skyboxScript = background.getComponent(glam.SkyboxScript);
+		skyboxScript.texture = param.envMap;
+	}
+	else if (type == "sphere") {
+		background = glam.Prefabs.Skysphere();
+		skysphereScript = background.getComponent(glam.SkysphereScript);
+		skysphereScript.texture = param.envMap;
+	}
+
+	glam.BackgroundElement.addHandlers(docelt, style, background);
+	
+	glam.Application.instance.addObject(background);
+	
+	return null;
+}
+
+glam.BackgroundElement.addHandlers = function(docelt, style, obj) {
+
+	docelt.glam.setAttributeHandlers.push(function(attr, val) {
+		glam.BackgroundElement.onSetAttribute(obj, docelt, attr, val);
+	});
+	
+	style.setPropertyHandlers.push(function(attr, val) {
+		glam.BackgroundElement.onSetAttribute(obj, docelt, attr, val);
+	});
+}
+
+glam.BackgroundElement.onSetAttribute = function(obj, docelt, attr, val) {
+
+	switch (attr) {
+		case "sphere-image" :
+		case "sphereImage" :
+			var skysphereScript = obj.getComponent(glam.SkysphereScript);
+			if (skysphereScript) {
+				var envMap = THREE.ImageUtils.loadTexture(val);
+				skysphereScript.texture = envMap;
+			}
+			else {
+			}
+			break;
+	}
+}
+/**
+ * @fileoverview controller parser/implementation. supports model, FPS and Rift
+ * 
+ * @author Tony Parisi
+ */
+
+goog.provide('glam.ControllerElement');
+
+glam.ControllerElement.create = function(docelt, style, app) {
+	var on = true;
+	
+	var noheadlight = docelt.getAttribute("noheadlight");
+	if (noheadlight !== null) {
+		on = false;
+		app.controllerScript.headlightOn = false;
+	}
+	
+	var type = docelt.getAttribute("type");
+	if (type !== null) {
+		type = type.toLowerCase();
+		if (type == "fps") {
+			
+			var x = parseFloat(docelt.getAttribute('x')) || 0;
+			var y = parseFloat(docelt.getAttribute('y')) || 0;
+			var z = parseFloat(docelt.getAttribute('z')) || 0;
+			
+			var controller = glam.Prefabs.FirstPersonController({active:true, headlight:on});
+			var controllerScript = controller.getComponent(glam.FirstPersonControllerScript);
+			app.addObject(controller);
+
+			var object = new glam.Object;	
+			var camera = new glam.PerspectiveCamera();
+			object.addComponent(camera);
+			app.addObject(object);
+
+			controllerScript.camera = camera;
+			camera.active = true;
+			
+		}
+		else if (type == "rift") {
+			var controller = glam.Prefabs.RiftController({active:true, 
+				headlight:on,
+				mouseLook:false,
+				useVRJS : true,
+			});
+			var controllerScript = controller.getComponent(glam.RiftControllerScript);			
+			app.addObject(controller);
+
+			var object = new glam.Object;	
+			var camera = new glam.PerspectiveCamera();
+			object.addComponent(camera);
+			app.addObject(object);
+
+			controllerScript.camera = camera;
+			camera.active = true;
+			
+			if (app.controllerScript) {
+				app.controllerScript.enabled = false;
+			}
+			
+			// hack because existing FPS or model controller
+			// will clobber our values
+			app.controller = controller;
+			app.controllerScript = controllerScript;
+		}
+		else if (type == "deviceorientation") {
+			var controller = glam.Prefabs.DeviceOrientationController({active:true, 
+				headlight:on,
+				mouseLook:false,
+				useVRJS : true,
+			});
+			var controllerScript = controller.getComponent(glam.DeviceOrientationControllerScript);			
+			app.addObject(controller);
+
+			var object = new glam.Object;	
+			var camera = new glam.PerspectiveCamera();
+			object.addComponent(camera);
+			app.addObject(object);
+
+			controllerScript.camera = camera;
+			camera.active = true;
+			
+			if (app.controllerScript) {
+				app.controllerScript.enabled = false;
+			}
+			
+			// hack because existing FPS or model controller
+			// will clobber our values
+			app.controller = controller;
+			app.controllerScript = controllerScript;
+		}
+	}
+	
+	return null;
+}
+/**
  * @fileoverview built-in types and utilities to support glam parser
  * 
  * @author Tony Parisi
  */
 
 goog.provide('glam.DOMTypes');
+goog.require('glam.BoxElement');
+goog.require('glam.ConeElement');
+goog.require('glam.CylinderElement');
+goog.require('glam.SphereElement');
+goog.require('glam.RectElement');
+goog.require('glam.CircleElement');
+goog.require('glam.ArcElement');
+goog.require('glam.GroupElement');
+goog.require('glam.AnimationElement');
+goog.require('glam.BackgroundElement');
+goog.require('glam.ImportElement');
+goog.require('glam.CameraElement');
+goog.require('glam.ControllerElement');
+goog.require('glam.TextElement');
+goog.require('glam.MeshElement');
+goog.require('glam.LineElement');
+goog.require('glam.LightElement');
+goog.require('glam.ParticlesElement');
+goog.require('glam.EffectElement');
 
 glam.DOMTypes = {
 };
@@ -9817,175 +10559,6 @@ glam.OrbitControls = function ( object, domElement ) {
 };
 
 glam.OrbitControls.prototype = Object.create( THREE.EventDispatcher.prototype );
-/**
- * @fileoverview text primitive parser/implementation. only supports helvetiker and optimer fonts right now.
- * 
- * @author Tony Parisi
- */
-
-goog.provide('glam.TextElement');
-
-glam.TextElement.DEFAULT_FONT_SIZE = 1;
-glam.TextElement.DEFAULT_FONT_DEPTH = .2;
-glam.TextElement.DEFAULT_FONT_BEVEL = "none";
-glam.TextElement.DEFAULT_BEVEL_SIZE = .01;
-glam.TextElement.DEFAULT_BEVEL_THICKNESS = .02;
-glam.TextElement.DEFAULT_FONT_FAMILY = "helvetica";
-glam.TextElement.DEFAULT_FONT_WEIGHT = "normal";
-glam.TextElement.DEFAULT_FONT_STYLE = "normal";
-
-glam.TextElement.BEVEL_EPSILON = 0.0001;
-
-glam.TextElement.DEFAULT_VALUE = "",
-
-glam.TextElement.create = function(docelt, style) {
-	return glam.VisualElement.create(docelt, style, glam.TextElement);
-}
-
-glam.TextElement.getAttributes = function(docelt, style, param) {
-
-	// Font stuff
-	// for now: helvetiker, optimer - typeface.js stuff
-	// could also do: gentilis, droid sans, droid serif but the files are big.
-	var fontFamily = docelt.getAttribute('fontFamily') || glam.TextElement.DEFAULT_FONT_FAMILY; // "optimer";
-	var fontWeight = docelt.getAttribute('fontWeight') || glam.TextElement.DEFAULT_FONT_WEIGHT; // "bold"; // normal bold
-	var fontStyle = docelt.getAttribute('fontStyle') || glam.TextElement.DEFAULT_FONT_STYLE; // "normal"; // normal italic
-
-	// Size, depth, bevel etc.
-	var fontSize = docelt.getAttribute('fontSize') || glam.TextElement.DEFAULT_FONT_SIZE;
-	var fontDepth = docelt.getAttribute('fontDepth') || glam.TextElement.DEFAULT_FONT_DEPTH;
-	var fontBevel = docelt.getAttribute('fontBevel') || glam.TextElement.DEFAULT_FONT_BEVEL;
-	var bevelSize = docelt.getAttribute('bevelSize') || glam.TextElement.DEFAULT_BEVEL_SIZE;
-	var bevelThickness = docelt.getAttribute('bevelThickness') || glam.TextElement.DEFAULT_BEVEL_THICKNESS;
-	
-	if (style) {
-		if (style["font-family"])
-			fontFamily = style["font-family"];
-		if (style["font-weight"])
-			fontWeight = style["font-weight"];
-		if (style["font-style"])
-			fontStyle = style["font-style"];
-		if (style["font-size"])
-			fontSize = style["font-size"];
-		if (style["font-depth"])
-			fontDepth = style["font-depth"];
-		if (style["font-bevel"])
-			fontBevel = style["font-bevel"];
-		if (style["bevel-size"])
-			bevelSize = style["bevel-size"];
-		if (style["bevel-thickness"])
-			bevelThickness = style["bevel-thickness"];
-	}
-
-	// set up defaults, safeguards; convert to typeface.js names
-	fontFamily = fontFamily.toLowerCase();
-	switch (fontFamily) {
-		case "optima" :
-			fontFamily = "optimer"; 
-			break;
-		case "helvetica" :
-		default :
-			fontFamily = "helvetiker"; 
-			break;
-	}
-
-	// final safeguard, make sure font is there. if not, use helv
-	var face = THREE.FontUtils.faces[fontFamily];
-	if (!face) {
-		fontFamily = "helvetiker"; 
-	}
-	
-	fontWeight = fontWeight.toLowerCase();
-	if (fontWeight != "bold") {
-		fontWeight = "normal";
-	}
-
-	fontStyle = fontStyle.toLowerCase();
-	// N.B.: for now, just use normal, italic doesn't seem to work 
-	if (true) { // fontStyle != "italic") {
-		fontStyle = "normal";
-	}
-	
-	fontSize = parseFloat(fontSize);
-	fontDepth = parseFloat(fontDepth);
-	bevelSize = parseFloat(bevelSize);
-	bevelThickness = parseFloat(bevelThickness);
-	bevelEnabled = (fontBevel.toLowerCase() == "bevel") ? true : false;
-	if (!fontDepth) {
-		bevelEnabled = false;
-	}
-	// hack because no-bevel shading has bad normals along text edge
-	if (!bevelEnabled) {
-		bevelThickness = bevelSize = glam.TextElement.BEVEL_EPSILON;
-		bevelEnabled = true;
-	}
-
-	// The text value
-	var value = docelt.getAttribute('value') || glam.TextElement.DEFAULT_VALUE;
-
-	if (!value) {
-		value = docelt.textContent;
-	}
-	
-	param.value = value;
-	param.fontSize = fontSize;
-	param.fontDepth = fontDepth;
-	param.bevelSize = bevelSize;
-	param.bevelThickness = bevelThickness;
-	param.bevelEnabled = bevelEnabled;
-	param.fontFamily = fontFamily;
-	param.fontWeight = fontWeight;
-	param.fontStyle = fontStyle;
-}
-
-glam.TextElement.createVisual = function(docelt, material, param) {
-
-	if (!param.value) {
-		return null;
-	}
-	
-	var curveSegments = 4;
-
-	var textGeo = new THREE.TextGeometry( param.value, {
-
-		font: param.fontFamily,
-		weight: param.fontWeight,
-		style: param.fontStyle,
-
-		size: param.fontSize,
-		height: param.fontDepth,
-		curveSegments: curveSegments,
-
-		bevelThickness: param.bevelThickness,
-		bevelSize: param.bevelSize,
-		bevelEnabled: param.bevelEnabled,
-
-		material: 0,
-		extrudeMaterial: 1
-
-	});
-
-	textGeo.computeBoundingBox();
-	textGeo.computeVertexNormals();
-
-	var frontMaterial = material.clone();
-	frontMaterial.shading = THREE.FlatShading;
-	var extrudeMaterial = material.clone();
-	extrudeMaterial.shading = THREE.SmoothShading;
-	var textmat = new THREE.MeshFaceMaterial( [ frontMaterial,  // front
-	                                            extrudeMaterial // side
-	                                            ]);
-
-
-	var visual = new glam.Visual(
-			{ geometry: textGeo,
-				material: textmat
-			});
-
-	textGeo.center();
-	
-	return visual;
-}
 /**
  * @fileoverview Camera Manager - singleton to manage cameras, active, resize etc.
  * 
@@ -11285,72 +11858,7 @@ glam.PickManager.findObjectPicker = function(event, hitPointWorld, object) {
 
 
 glam.PickManager.clickedObject = null;
-glam.PickManager.overObject  =  null;/**
- * @fileoverview background parser/implementation. supports skyboxes and skyspheres
- * 
- * @author Tony Parisi
- */
-
-goog.provide('glam.BackgroundElement');
-
-glam.BackgroundElement.DEFAULT_BACKGROUND_TYPE = "box";
-
-glam.BackgroundElement.create = function(docelt, style) {
-	var type = docelt.getAttribute('background-type') || glam.BackgroundElement.DEFAULT_BACKGROUND_TYPE;
-	type = docelt.getAttribute('type') || type;
-	
-	if (style) {
-		if (style["background-type"])
-			type = style["background-type"];
-		var  param = glam.DOMMaterial.parseStyle(style);
-	}	
-
-	var background;
-	if (type == "box") {
-		background = glam.Prefabs.Skybox();
-		var skyboxScript = background.getComponent(glam.SkyboxScript);
-		skyboxScript.texture = param.envMap;
-	}
-	else if (type == "sphere") {
-		background = glam.Prefabs.Skysphere();
-		skysphereScript = background.getComponent(glam.SkysphereScript);
-		skysphereScript.texture = param.envMap;
-	}
-
-	glam.BackgroundElement.addHandlers(docelt, style, background);
-	
-	glam.Application.instance.addObject(background);
-	
-	return null;
-}
-
-glam.BackgroundElement.addHandlers = function(docelt, style, obj) {
-
-	docelt.glam.setAttributeHandlers.push(function(attr, val) {
-		glam.BackgroundElement.onSetAttribute(obj, docelt, attr, val);
-	});
-	
-	style.setPropertyHandlers.push(function(attr, val) {
-		glam.BackgroundElement.onSetAttribute(obj, docelt, attr, val);
-	});
-}
-
-glam.BackgroundElement.onSetAttribute = function(obj, docelt, attr, val) {
-
-	switch (attr) {
-		case "sphere-image" :
-		case "sphereImage" :
-			var skysphereScript = obj.getComponent(glam.SkysphereScript);
-			if (skysphereScript) {
-				var envMap = THREE.ImageUtils.loadTexture(val);
-				skysphereScript.texture = envMap;
-			}
-			else {
-			}
-			break;
-	}
-}
-goog.provide('glam.AmbientLight');
+glam.PickManager.overObject  =  null;goog.provide('glam.AmbientLight');
 goog.require('glam.Light');
 
 glam.AmbientLight = function(param)
@@ -11373,366 +11881,6 @@ glam.AmbientLight.prototype.realize = function()
 {
 	glam.Light.prototype.realize.call(this);
 }
-/**
- * @fileoverview effect parser/implementation. supports built-in postprocessing effects
- * 
- * @author Tony Parisi
- */
-
-goog.provide('glam.EffectElement');
-
-glam.EffectElement.DEFAULT_BLOOM_STRENGTH = 1;
-glam.EffectElement.DEFAULT_FILM_GRAYSCALE = 0;
-glam.EffectElement.DEFAULT_FILM_SCANLINECOUNT = 512;
-glam.EffectElement.DEFAULT_FILM_INTENSITY = 0.5;
-glam.EffectElement.DEFAULT_RGBSHIFT_AMOUNT = 0.0015;
-glam.EffectElement.DEFAULT_DOTSCREEN_SCALE = 1;
-
-glam.EffectElement.create = function(docelt, style, app) {
-	
-	var type = docelt.getAttribute("type");
-	
-	var effect = null;
-	
-	switch (type) {
-
-		case "Bloom" :
-			var strength = glam.EffectElement.DEFAULT_BLOOM_STRENGTH;
-			var str = docelt.getAttribute("strength");
-			if (str != undefined) {
-				strength = parseFloat(str);
-			}
-			effect = new glam.Effect(new THREE.BloomPass(strength));
-			break;
-
-		case "FXAA" :
-			effect = new glam.Effect(THREE.FXAAShader);
-			var w = glam.Graphics.instance.renderer.domElement.offsetWidth;
-			var h = glam.Graphics.instance.renderer.domElement.offsetHeight;
-			effect.pass.uniforms['resolution'].value.set(1 / w, 1 / h);
-			break;
-			
-		case "Film" :
-			effect = new glam.Effect( THREE.FilmShader );
-			effect.pass.uniforms['grayscale'].value = glam.EffectElement.DEFAULT_FILM_GRAYSCALE;
-			effect.pass.uniforms['sCount'].value = glam.EffectElement.DEFAULT_FILM_SCANLINECOUNT;
-			effect.pass.uniforms['nIntensity'].value = glam.EffectElement.DEFAULT_FILM_INTENSITY;
-			break;
-			
-		case "RGBShift" :
-			effect = new glam.Effect( THREE.RGBShiftShader );
-			effect.pass.uniforms[ 'amount' ].value = glam.EffectElement.DEFAULT_RGBSHIFT_AMOUNT;
-			break;
-			
-		case "DotScreen" :
-			effect = new glam.Effect(THREE.DotScreenShader);
-			effect.pass.uniforms[ 'scale' ].value = glam.EffectElement.DEFAULT_DOTSCREEN_SCALE;
-			break;
-
-		case "DotScreenRGB" :
-			effect = new glam.Effect(THREE.DotScreenRGBShader);
-			effect.pass.uniforms[ 'scale' ].value = glam.EffectElement.DEFAULT_DOTSCREEN_SCALE;
-			break;
-	}
-	
-	if (effect) {
-		glam.EffectElement.parseAttributes(docelt, effect, style);
-		glam.Graphics.instance.addEffect(effect);
-	}
-	
-	return null;
-}
-
-glam.EffectElement.parseAttributes = function(docelt, effect, style) {
-	
-	var disabled = docelt.getAttribute("disabled");
-	if (disabled != undefined) {
-		effect.pass.enabled = false;
-	}
-	
-	var uniforms = effect.pass.uniforms;
-	
-	for (var u in uniforms) {
-		
-		var attr = docelt.getAttribute(u);
-		if (attr) {
-			
-			var value = null;
-			var uniform = uniforms[u];
-
-			if (uniform) {
-				
-				switch (uniform.type) {
-				
-					case "t" :
-						
-						var image = glam.DOMMaterial.parseUrl(attr);
-						value = THREE.ImageUtils.loadTexture(image);
-						value.wrapS = value.wrapT = THREE.Repeat;
-						break;
-						
-					case "f" :
-						
-						value = parseFloat(attr);						
-						break;
-
-					case "i" :
-						
-						value = parseInt(attr);						
-						break;
-				}
-				
-				if (value) {
-					uniform.value = value;
-				}
-			}
-		}
-	}
-}
-
-/**
- * @fileoverview cylinder parser/implementation
- * 
- * @author Tony Parisi
- */
-
-goog.provide('glam.CylinderElement');
-
-glam.CylinderElement.DEFAULT_RADIUS = 2;
-glam.CylinderElement.DEFAULT_HEIGHT = 2;
-
-glam.CylinderElement.create = function(docelt, style) {
-	return glam.VisualElement.create(docelt, style, glam.CylinderElement);
-}
-
-glam.CylinderElement.getAttributes = function(docelt, style, param) {
-
-	var radius = docelt.getAttribute('radius') || glam.CylinderElement.DEFAULT_RADIUS;
-	var height = docelt.getAttribute('height') || glam.CylinderElement.DEFAULT_HEIGHT;
-	
-	if (style) {
-		if (style.radius)
-			radius = style.radius;
-		if (style.height)
-			height = style.height;
-	}
-	
-	radius = parseFloat(radius);
-	height = parseFloat(height);
-	param.radius = radius;
-	param.height = height;
-}	
-
-glam.CylinderElement.createVisual = function(docelt, material, param) {
-
-	var visual = new glam.Visual(
-			{ geometry: new THREE.CylinderGeometry(param.radius, param.radius, param.height, 32),
-				material: material
-			});
-	
-	return visual;
-}
-/**
- * @fileoverview particle system parser/implementation
- * 
- * @author Tony Parisi
- */
-
-goog.provide('glam.ParticlesElement');
-
-glam.ParticlesElement.create = function(docelt, style) {
-
-	var mparam = glam.DOMMaterial.parseStyle(style);
-
-	// Parse the attributes
-	var param = {};
-	glam.ParticlesElement.getAttributes(docelt, style, param);
-	
-	// Throw in the texture from the material
-	param.map = mparam.map;      // for static geometry-based
-	param.texture = mparam.map;  // for dynamic emitter-based
-	param.color = mparam.color;
-	
-	// Parse the child elements
-	var elts = glam.ParticlesElement.parse(docelt);
-	
-	// Got geometry in there? Pass it on
-	param.geometry = elts.geometry;
-
-	// Create the particle system
-	var ps = glam.ParticleSystem(param);
-
-	// Got emitters in there? Add them
-	glam.ParticlesElement.addEmitters(elts.emitters, ps);
-
-	// Bind the properties
-	var visual = ps.getComponent(glam.Visual);
-	docelt.geometry = visual.geometry;
-	docelt.material = visual.material;
-	
-	// Start it
-	var pscript = ps.getComponent(glam.ParticleSystemScript);	
-	pscript.active = true;
-	return ps;
-}
-
-glam.ParticlesElement.getAttributes = function(docelt, style, param) {
-	var maxAge = docelt.getAttribute('maxAge') || glam.ParticlesElement.DEFAULT_MAX_AGE;
-	var size = parseFloat(docelt.getAttribute('size'));
-
-	param.maxAge = parseFloat(maxAge);
-	param.size = size;
-}
-
-glam.ParticlesElement.parse = function(docelt) {
-	
-	var result = {
-			geometry : null,
-			emitters : [
-			            ],
-	};
-	
-	// Any emitters?
-	var emitters = docelt.getElementsByTagName('emitter');
-	if (emitters) {
-		var i, len = emitters.length;
-		for (i = 0; i < len; i++) {
-			
-			var param = {
-			};
-			
-			var emitter = emitters[i];
-			if (emitter) {
-				glam.ParticlesElement.parseEmitter(emitter, param);
-
-				var pe = new glam.ParticleEmitter(param);
-				result.emitters.push(pe);
-			}
-		}
-	}
-	
-	// Or just static vertices...? Not working yet
-	var verts = docelt.getElementsByTagName('vertices');
-	if (verts) {
-		verts = verts[0];
-		if (verts) {
-			var geometry = new THREE.Geometry;
-			glam.DOMTypes.parseVector3Array(verts, geometry.vertices);
-			result.geometry = geometry;
-		}
-	}
-	
-	return result;
-}
-
-glam.ParticlesElement.parseEmitter = function(emitter, param) {
-	    
-	var size = parseFloat(emitter.getAttribute('size'));
-	var sizeEnd = parseFloat(emitter.getAttribute('sizeEnd'));
-	var particlesPerSecond = parseInt(emitter.getAttribute('particlesPerSecond'));
-	var opacityStart = parseFloat(emitter.getAttribute('opacityStart'));
-	var opacityMiddle = parseFloat(emitter.getAttribute('opacityMiddle'));
-	var opacityEnd = parseFloat(emitter.getAttribute('opacityEnd'));
-	
-	var colorStart, colorEnd;
-	if (css = emitter.getAttribute('colorStart')) {
-		colorStart = new THREE.Color().setStyle(css);
-	}
-	if (css = emitter.getAttribute('colorEnd')) {
-		colorEnd = new THREE.Color().setStyle(css);
-	}
-	
-	var vx = parseFloat(emitter.getAttribute('vx')) || 0;
-	var vy = parseFloat(emitter.getAttribute('vy')) || 0;
-	var vz = parseFloat(emitter.getAttribute('vz')) || 0;
-	var ax = parseFloat(emitter.getAttribute('ax')) || 0;
-	var ay = parseFloat(emitter.getAttribute('ay')) || 0;
-	var az = parseFloat(emitter.getAttribute('az')) || 0;
-	var psx = parseFloat(emitter.getAttribute('psx')) || 0;
-	var psy = parseFloat(emitter.getAttribute('psy')) || 0;
-	var psz = parseFloat(emitter.getAttribute('psz')) || 0;
-	var asx = parseFloat(emitter.getAttribute('asx')) || 0;
-	var asy = parseFloat(emitter.getAttribute('asy')) || 0;
-	var asz = parseFloat(emitter.getAttribute('asz')) || 0;
-
-	var velocity = new THREE.Vector3(vx, vy, vz);
-	var acceleration = new THREE.Vector3(ax, ay, az);
-	var positionSpread = new THREE.Vector3(psx, psy, psz);
-	var accelerationSpread = new THREE.Vector3(asx, asy, asz);
-
-	var vel = emitter.getAttribute('velocity');
-	if (vel) {
-		glam.DOMTypes.parseVector3(vel, velocity);
-	}
-	
-	var accel = emitter.getAttribute('acceleration');
-	if (accel) {
-		glam.DOMTypes.parseVector3(accel, acceleration);
-	}
-	
-	var posSpread = emitter.getAttribute('positionSpread');
-	if (posSpread) {
-		glam.DOMTypes.parseVector3(posSpread, positionSpread);
-	}
-
-	var accelSpread = emitter.getAttribute('accelerationSpread');
-	if (accelSpread) {
-		glam.DOMTypes.parseVector3(accelSpread, accelerationSpread);
-	}
-
-	var blending = THREE.NoBlending;
-	var blend = emitter.getAttribute('blending') || "";
-	switch (blend.toLowerCase()) {
-	
-		case "normal" :
-			blending = THREE.NormalBlending;
-			break;
-		case "additive" :
-			blending = THREE.AdditiveBlending;
-			break;
-		case "subtractive" :
-			blending = THREE.SubtractiveBlending;
-			break;
-		case "multiply" :
-			blending = THREE.MultiplyBlending;
-			break;
-		case "custom" :
-			blending = THREE.CustomBlending;
-			break;
-		case "none" :
-		default :
-			break;
-	}
-	
-	param.size = size;
-	param.sizeEnd = sizeEnd;
-	if (colorStart !== undefined) {
-		param.colorStart = colorStart;
-	}
-	if (colorEnd !== undefined) {
-		param.colorEnd = colorEnd;
-	}	
-	param.particlesPerSecond = particlesPerSecond;	
-	param.opacityStart = opacityStart;
-	param.opacityMiddle = opacityMiddle;
-	param.opacityEnd = opacityEnd;
-	param.velocity = velocity;
-	param.acceleration = acceleration;
-	param.positionSpread = positionSpread;
-	param.accelerationSpread = accelerationSpread; 
-	param.blending = blending;
-}
-
-glam.ParticlesElement.addEmitters = function(emitters, ps) {
-	
-	var i, len = emitters.length;
-	for (i = 0; i < len; i++) {
-		ps.addComponent(emitters[i]);
-	}
-}
-
-glam.ParticlesElement.DEFAULT_MAX_AGE = 1;
-
 /**
  * @fileoverview RotateBehavior - simple angular rotation
  * 
@@ -12841,101 +12989,6 @@ glam.DeviceOrientationControllerScript.prototype.setHeadlightOn = function(on)
 glam.DeviceOrientationControllerScript.prototype.setCamera = function(camera) {
 	this._camera = camera;
 	this.controls = this.createControls(camera);
-}
-/**
- * @fileoverview controller parser/implementation. supports model, FPS and Rift
- * 
- * @author Tony Parisi
- */
-
-goog.provide('glam.ControllerElement');
-
-glam.ControllerElement.create = function(docelt, style, app) {
-	var on = true;
-	
-	var noheadlight = docelt.getAttribute("noheadlight");
-	if (noheadlight !== null) {
-		on = false;
-		app.controllerScript.headlightOn = false;
-	}
-	
-	var type = docelt.getAttribute("type");
-	if (type !== null) {
-		type = type.toLowerCase();
-		if (type == "fps") {
-			
-			var x = parseFloat(docelt.getAttribute('x')) || 0;
-			var y = parseFloat(docelt.getAttribute('y')) || 0;
-			var z = parseFloat(docelt.getAttribute('z')) || 0;
-			
-			var controller = glam.Prefabs.FirstPersonController({active:true, headlight:on});
-			var controllerScript = controller.getComponent(glam.FirstPersonControllerScript);
-			app.addObject(controller);
-
-			var object = new glam.Object;	
-			var camera = new glam.PerspectiveCamera();
-			object.addComponent(camera);
-			app.addObject(object);
-
-			controllerScript.camera = camera;
-			camera.active = true;
-			
-		}
-		else if (type == "rift") {
-			var controller = glam.Prefabs.RiftController({active:true, 
-				headlight:on,
-				mouseLook:false,
-				useVRJS : true,
-			});
-			var controllerScript = controller.getComponent(glam.RiftControllerScript);			
-			app.addObject(controller);
-
-			var object = new glam.Object;	
-			var camera = new glam.PerspectiveCamera();
-			object.addComponent(camera);
-			app.addObject(object);
-
-			controllerScript.camera = camera;
-			camera.active = true;
-			
-			if (app.controllerScript) {
-				app.controllerScript.enabled = false;
-			}
-			
-			// hack because existing FPS or model controller
-			// will clobber our values
-			app.controller = controller;
-			app.controllerScript = controllerScript;
-		}
-		else if (type == "deviceorientation") {
-			var controller = glam.Prefabs.DeviceOrientationController({active:true, 
-				headlight:on,
-				mouseLook:false,
-				useVRJS : true,
-			});
-			var controllerScript = controller.getComponent(glam.DeviceOrientationControllerScript);			
-			app.addObject(controller);
-
-			var object = new glam.Object;	
-			var camera = new glam.PerspectiveCamera();
-			object.addComponent(camera);
-			app.addObject(object);
-
-			controllerScript.camera = camera;
-			camera.active = true;
-			
-			if (app.controllerScript) {
-				app.controllerScript.enabled = false;
-			}
-			
-			// hack because existing FPS or model controller
-			// will clobber our values
-			app.controller = controller;
-			app.controllerScript = controllerScript;
-		}
-	}
-	
-	return null;
 }
 /**
  * @author mrdoob / http://mrdoob.com/

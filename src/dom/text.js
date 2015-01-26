@@ -91,7 +91,7 @@ glam.TextElement.getAttributes = function(docelt, style, param) {
 	fontDepth = parseFloat(fontDepth);
 	bevelSize = parseFloat(bevelSize);
 	bevelThickness = parseFloat(bevelThickness);
-	bevelEnabled = (fontBevel.toLowerCase() == "bevel") ? true : false;
+	var bevelEnabled = (fontBevel.toLowerCase() == "bevel") ? true : false;
 	if (!fontDepth) {
 		bevelEnabled = false;
 	}

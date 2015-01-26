@@ -5,6 +5,25 @@
  */
 
 goog.provide('glam.DOMTypes');
+goog.require('glam.BoxElement');
+goog.require('glam.ConeElement');
+goog.require('glam.CylinderElement');
+goog.require('glam.SphereElement');
+goog.require('glam.RectElement');
+goog.require('glam.CircleElement');
+goog.require('glam.ArcElement');
+goog.require('glam.GroupElement');
+goog.require('glam.AnimationElement');
+goog.require('glam.BackgroundElement');
+goog.require('glam.ImportElement');
+goog.require('glam.CameraElement');
+goog.require('glam.ControllerElement');
+goog.require('glam.TextElement');
+goog.require('glam.MeshElement');
+goog.require('glam.LineElement');
+goog.require('glam.LightElement');
+goog.require('glam.ParticlesElement');
+goog.require('glam.EffectElement');
 
 glam.DOMTypes = {
 };
