@@ -1,39 +1,39 @@
 BUILDDIR=../build
 OUTPUT="$BUILDDIR/glam.min.js"
-SOURCES="../src/glam.js \
-../src/dom.js \
-../src/animation.js \
-../src/arc.js \
-../src/background.js \
-../src/camera.js \
-../src/circle.js \
-../src/classList.js \
-../src/box.js \
-../src/cone.js \
-../src/controller.js \
-../src/cylinder.js \
-../src/document.js \
-../src/effect.js \
-../src/group.js \
-../src/import.js \
-../src/input.js \
-../src/light.js \
-../src/line.js \
-../src/material.js \
-../src/mesh.js \
-../src/node.js \
-../src/parser.js \
-../src/particles.js \
-../src/rect.js \
-../src/renderer.js \
-../src/sphere.js \
-../src/style.js \
-../src/text.js \
-../src/transform.js \
-../src/transition.js \
-../src/types.js \
-../src/viewer.js \
-../src/visual.js"
+SOURCES="../src/dom/glam.js \
+../src/dom/dom.js \
+../src/dom/animation.js \
+../src/dom/arc.js \
+../src/dom/background.js \
+../src/dom/camera.js \
+../src/dom/circle.js \
+../src/dom/classList.js \
+../src/dom/box.js \
+../src/dom/cone.js \
+../src/dom/controller.js \
+../src/dom/cylinder.js \
+../src/dom/document.js \
+../src/dom/effect.js \
+../src/dom/group.js \
+../src/dom/import.js \
+../src/dom/input.js \
+../src/dom/light.js \
+../src/dom/line.js \
+../src/dom/material.js \
+../src/dom/mesh.js \
+../src/dom/node.js \
+../src/dom/parser.js \
+../src/dom/particles.js \
+../src/dom/rect.js \
+../src/dom/renderer.js \
+../src/dom/sphere.js \
+../src/dom/style.js \
+../src/dom/text.js \
+../src/dom/transform.js \
+../src/dom/transition.js \
+../src/dom/types.js \
+../src/dom/viewer.js \
+../src/dom/visual.js"
 
 LIBS="../libs/parsecss/jquery.parsecss.js \
 ../libs/vizi/vizi.min.js"
