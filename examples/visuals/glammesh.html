@@ -2,7 +2,6 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<script src="../../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
 <script src="../../build/glam.min.js" ></script>
 <title>glam - mesh tests</title>
 
@@ -34,7 +33,7 @@
 	
 </style>
 <script>
-$(document).ready(function(){
+window.addEventListener('load', function(){
 
 	glam.ready();
 
@@ -53,8 +52,9 @@ $(document).ready(function(){
 			event.target.geometry.verticesNeedUpdate = true;
 		});
 	}
-	
-});
+
+},
+false);
 
 </script>
 </head>

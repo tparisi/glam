@@ -1,3 +1,0 @@
-server:
-	python -m SimpleHTTPServer
-

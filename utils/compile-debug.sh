@@ -1,11 +1,11 @@
 BUILDDIR=../build
 TARGET="$BUILDDIR/glam-nodeps.js"
 OUTPUT="$BUILDDIR/glam.js"
-#THREEDIR=../libs/three.js.r66
 THREEDIR=../libs/three.js.r68
 THREE="$THREEDIR/three.js"
 STATS="$THREEDIR/stats.min.js"
-LOADERS="$THREEDIR/loaders/ColladaLoader.js \
+LOADERS="$THREEDIR/controls/VRControls.js \
+$THREEDIR/loaders/ColladaLoader.js \
 $THREEDIR/loaders/glTF/glTF-parser.js \
 $THREEDIR/loaders/glTF/glTFLoader.js \
 $THREEDIR/loaders/glTF/glTFLoaderUtils.js \
@@ -17,6 +17,7 @@ $THREEDIR/postprocessing/MaskPass.js \
 $THREEDIR/postprocessing/RenderPass.js \
 $THREEDIR/postprocessing/ShaderPass.js \
 $THREEDIR/renderers/StereoEffect.js \
+$THREEDIR/renderers/VREffect.js \
 $THREEDIR/shaders/ConvolutionShader.js \
 $THREEDIR/shaders/CopyShader.js \
 $THREEDIR/shaders/DotScreenShader.js \
@@ -24,14 +25,11 @@ $THREEDIR/shaders/DotScreenRGBShader.js \
 $THREEDIR/shaders/FilmShader.js \
 $THREEDIR/shaders/FXAAShader.js \
 $THREEDIR/shaders/RGBShiftShader.js \
-../libs/oculus/VREffect.js \
-../libs/oculus/VRControls.js \
 $THREEDIR/ParticleEngine/ShaderParticles.min.js"
 
 RAF=../libs/requestAnimationFrame/RequestAnimationFrame.js
 TWEEN=../libs/tween.js/tween.min.js
-PARSECSS=../libs/parsecss/jquery.parsecss.js
-LIBS="$THREE $STATS $LOADERS $TWEEN $RAF $PARSECSS"
+LIBS="$THREE $STATS $LOADERS $TWEEN $RAF"
 NODEPS=../src/config/nodeps.js
 FONTS="../fonts/helvetiker_bold.typeface.js \
 ../fonts/helvetiker_regular.typeface.js"
