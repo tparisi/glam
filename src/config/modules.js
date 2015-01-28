@@ -94,6 +94,7 @@ goog.require('glam.LineElement');
 goog.require('glam.DOMMaterial');
 goog.require('glam.MeshElement');
 goog.require('glam.DOMElement');
+goog.require('glam.CSSParser');
 goog.require('glam.DOMParser');
 goog.require('glam.ParticlesElement');
 goog.require('glam.RectElement');

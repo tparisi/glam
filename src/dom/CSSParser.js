@@ -24,51 +24,42 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 
+goog.provide('glam.CSSParser');
+glam.CSSParser = {
 
-(function($){
+};
 
-	// utility function, since we want to allow $('style') and $(document), so we need to look for elements in the jQuery object ($.fn.filter) and elements that are children of the jQuery object ($.fn.find)
-	$.fn.findandfilter = function(selector){
+
+(function(parser){
+
+	parser.extend = function(a, b){
+		for(var key in b)
+		    if(b.hasOwnProperty(key))
+		        a[key] = b[key];
+	    return a;
+	}
+
+	// utility function, since we want to allow parser('style') and parser(document), so we need to look for elements in the jQuery object (parser.fn.filter) and elements that are children of the jQuery object (parser.fn.find)
+	parser.findandfilter = function(selector){
 		var ret = this.filter(selector).add(this.find(selector));
 		ret.prevObject = ret.prevObject.prevObject; // maintain the filter/end chain correctly (the filter and the find both push onto the chain). 
 		return ret;
 	};
 	
-  $.fn.parsecss = function(callback, parseAttributes){
-		var parse = function(str) { $.parsecss(str, callback) }; // bind the callback
-    this
-    .findandfilter ('style').each (function(){
-      parse(this.innerHTML);
-    })
-    .end()
-    .findandfilter ('link[type="text/css"]').each (function(){
-			// only get the stylesheet if it's not disabled, it won't trigger cross-site security (doesn't start with anything like http:) and it uses the appropriate media)
-			if (!this.disabled && !/^\w+:/.test($(this).attr('href')) && $.parsecss.mediumApplies(this.media)) $.get(this.href, parse);
-    })
-    .end();
-		
-		if (parseAttributes){
-			$.get(location.pathname+location.search, function(HTMLtext) {
-				styleAttributes(HTMLtext, callback);
-			}, 'text');
-		}
-		
-		return this;
-	};
 
-  $.parsecss = function(str, callback){
+  parser.parsecss = function(str, callback){
     var ret = {};
 		str = munge(str).replace(/@(([^;`]|`[^b]|`b[^%])*(`b%)?);?/g, function(s,rule){
 			// @rules end with ; or a block, with the semicolon not being part of the rule but the closing brace (represented by `b%) is
-			processAtRule($.trim(rule), callback);
+			processAtRule(rule.trim(), callback);
 			return '';
 		});
 
-    $.each (str.split('`b%'), function(i,css){ // split on the end of a block 
+    str.split('`b%').forEach(function(css){ // split on the end of a block 
 			css = css.split('%b`'); // css[0] is the selector; css[1] is the index in munged for the cssText
 			if (css.length < 2) return; // invalid css
 			css[0] = restore(css[0]);
-			ret[css[0]] = $.extend(ret[css[0]] || {}, parsedeclarations(css[1]));
+			ret[css[0]] = parser.extend(ret[css[0]] || {}, parsedeclarations(css[1]));
     });
 		callback(ret);
   };
@@ -83,22 +74,22 @@
 	// number corresponding to the declaration block. parsedeclarations will do restore('%b`'+n+'`b%') to get it back.
 
 	// if anyone ever implements http://www.w3.org/TR/cssom-view/#the-media-interface, we're ready
-  $.parsecss.mediumApplies = (window.media && window.media.query) || function(str){
+  parser.parsecss.mediumApplies = (window.media && window.media.query) || function(str){
     if (!str) return true; // if no descriptor, everything applies
     if (str in media) return media[str];
-		var style = $('<style media="'+str+'">body {position: relative; z-index: 1;}</style>').appendTo('head');
-		return media[str] = [$('body').css('z-index')==1, style.remove()][0]; // the [x,y][0] is a silly hack to evaluate two expressions and return the first
+		var style = parser('<style media="'+str+'">body {position: relative; z-index: 1;}</style>').appendTo('head');
+		return media[str] = [parser('body').css('z-index')==1, style.remove()][0]; // the [x,y][0] is a silly hack to evaluate two expressions and return the first
   };
 
-  $.parsecss.isValidSelector = function(str){
-		var s = $('<style>'+str+'{}</style>').appendTo('head')[0];
+  parser.parsecss.isValidSelector = function(str){
+		var s = parser('<style>'+str+'{}</style>').appendTo('head')[0];
 		// s.styleSheet is IE; it accepts illegal selectors but converts them to UNKNOWN. Standards-based (s.shee.cssRules) just reject the rule
-		return [s.styleSheet ? !/UNKNOWN/i.test(s.styleSheet.cssText) : !!s.sheet.cssRules.length, $(s).remove()][0]; // the [x,y][0] is a silly hack to evaluate two expressions and return the first
+		return [s.styleSheet ? !/UNKNOWN/i.test(s.styleSheet.cssText) : !!s.sheet.cssRules.length, parser(s).remove()][0]; // the [x,y][0] is a silly hack to evaluate two expressions and return the first
   };
 	
-	$.parsecss.parseArguments = function(str){
+	parser.parsecss.parseArguments = function(str){
 		if (!str) return [];
-		var ret = [], mungedArguments = munge(str, true).split(/\s+/); // can't use $.map because it flattens arrays !
+		var ret = [], mungedArguments = munge(str, true).split(/\s+/); // can't use parser.map because it flattens arrays !
 		for (var i = 0; i < mungedArguments.length; ++i) {
 			var a = restore(mungedArguments[i]);
 			try{
@@ -110,21 +101,9 @@
 		return ret;
 	};
 
-	// uses the parsed css to apply useful jQuery functions
-	$.parsecss.jquery = function(css){
-		for (var selector in css){
-			for (var property in css[selector]){
-				var match = /^-jquery(-(.*))?/.exec(property);
-				if (!match) continue;
-				var value = munge(css[selector][property]).split('!'); // exclamation point separates the parts of livequery actions
-				var which = match[2];
-				dojQuery(selector, which, restore(value[0]), restore(value[1]));
-			}
-		}
-	};
 
 	// expose the styleAttributes function
-	$.parsecss.styleAttributes = styleAttributes;
+	parser.parsecss.styleAttributes = styleAttributes;
 	
   // caches
   var media = {}; // media description strings
@@ -133,10 +112,10 @@
   // private functions
 
   function parsedeclarations(index){ // take a string from the munged array and parse it into an object of property: value pairs
-		var str = munged[index].replace(/^{|}$/g, ''); // find the string and remove the surrounding braces
+		var str = munged[index].replace(/^{|}parser/g, ''); // find the string and remove the surrounding braces
 		str = munge(str); // make sure any internal braces or strings are escaped
     var parsed = {};
-    $.each (str.split(';'), function (i, decl){
+    str.split(';').forEach(function (decl){
       decl = decl.split(':');
       if (decl.length < 2) return;
       parsed[restore(decl[0])] = restore(decl.slice(1).join(':'));
@@ -162,7 +141,7 @@
   	var match;
   	var replacement;
     str = str
-    .replace(REatcomment,'$1') // strip /*@ comments but leave the text (to let invalid CSS through)
+    .replace(REatcomment,'parser1') // strip /*@ comments but leave the text (to let invalid CSS through)
     .replace(REcomment_string, function (s, string){ // strip strings and escaped characters, leaving munged markers, and strip comments
 			if (!string) return '';
       var replacement = '%s`'+(++uid)+'`s%';
@@ -186,7 +165,7 @@
     while (match = REmunged.exec(str)){
       str = str.replace(REmunged, munged[match[1]]);
     }
-    return $.trim(str);
+    return str.trim();
   }
 
   function processAtRule (rule, callback){
@@ -194,20 +173,20 @@
     var type = split.shift(); // first word
     if (type=='media'){
       var css = restore(split.pop()).slice(1,-1); // last word is the rule; need to strip the outermost braces
-      if ($.parsecss.mediumApplies(split.join(' '))){
-        $.parsecss(css, callback);
+      if (parser.parsecss.mediumApplies(split.join(' '))){
+        parser.parsecss(css, callback);
       }
     }else if (type=='import'){
       var url = restore(split.shift());
-      if ($.parsecss.mediumApplies(split.join(' '))){
-        url = url.replace(/^url\(|\)$/gi, '').replace(/^["']|["']$/g, ''); // remove the url('...') wrapper
-        $.get(url, function(str) { $.parsecss(str, callback) });
+      if (parser.parsecss.mediumApplies(split.join(' '))){
+        url = url.replace(/^url\(|\)parser/gi, '').replace(/^["']|["']parser/g, ''); // remove the url('...') wrapper
+        parser.get(url, function(str) { parser.parsecss(str, callback) });
       }
     }else if (type=='-webkit-keyframes' || type=='-moz-keyframes' || type=='keyframes'){
         var kfName = split.shift();
         var css = restore(split.join(' '));
         css = css.substr(1, css.length - 2); // strip {}
-        $.parsecss(css, function(keyframes) {
+        parser.parsecss(css, function(keyframes) {
         	// console.log("Parsed keyframes: ", keyframes);
         	var ret = {};
         	ret[kfName] = keyframes;
@@ -216,70 +195,7 @@
     }
   }
 		
-	function dojQuery (selector, which, value, value2){ // value2 is the value for the livequery no longer match
-		// a plugin
-		// late bind parseArguments so "this" is defined correctly
-		function p (str) { return function() { return $.fn[which].apply($(this), $.parsecss.parseArguments.call(this, str)) } };
-		if (/show|hide/.test(which)) which +=  'Default'; // -jquery-show is a shortcut for -jquery-showDefault
-		if (value2 !== undefined && $.livequery){
-			// mode is 0 for a static value (can be evaluated when parsed); 
-			// 1 for delayed (refers to "this" which means it needs to be evaluated separately for each element matched), and
-			// 2 for livequery; evaluated whenever elments change
-			var mode = 2;
-		}else{
-			mode = /\bthis\b/.test(value) ? 1 : 0;
-		}
-		if (which && $.fn[which]){
-			switch (mode){
-				case 0: return $.fn[which].apply($(selector), $.parsecss.parseArguments(value));
-				case 1: return $(selector).each(p(value));
-				case 2: return (new $.livequery(selector, document, undefined, p(value), value2 === '' ? undefined : p(value2))).run();
-			}
-		}else if (which){
-			// a plugin but one that was not defined
-			return undefined;
-		}else{
-			// straight javascript
-			switch (mode){
-				case 0: return eval(value);
-				case 1: return $(selector).each(Function(value));
-				case 2: return (new $.livequery(selector, document, undefined, Function(value), value2 === '' ? undefined : Function(value2))).run();
-			}
-		}
-	}
 
-	// override show and hide. $.data(el, 'showDefault') is a function that is to be used for show if no arguments are passed in (if there are arguments, they override the stored function)
-	// Many of the effects call the native show/hide() with no arguments, resulting in an infinite loop.
-	var _show = {show: $.fn.show, hide: $.fn.hide}; // save the originals
-	$.each(['show','hide'], function(){
-		var which = this, show = _show[which], plugin = which+'Default';
-		$.fn[which] = function(){
-			if (arguments.length > 0) return show.apply(this, arguments);
-			return this.each(function(){
-				var fn = $.data(this, plugin), $this = $(this);
-				if (fn){
-					$.removeData(this, plugin); // prevent the infinite loop
-					fn.call($this);
-					$this.queue(function(){$this.data(plugin, fn).dequeue()}); // put the function back at the end of the animation
-				}else{
-					show.call($this);
-				}
-			});
-		};
-		$.fn[plugin] = function(){
-			var args = $.makeArray(arguments), name = args[0];
-			if ($.fn[name]){ // a plugin
-				args.shift();
-				var fn = $.fn[name];
-			}else if ($.effects && $.effects[name]){ // a jQuery UI effect. They require an options object as the second argument
-				if (typeof args[1] != 'object') args.splice(1,0,{});
-				fn = _show[which];
-			}else{ // regular show/hide
-				fn = _show[which];
-			}
-			return this.data(plugin, function(){fn.apply(this,args)});
-		};
-	});
 		
 	// experimental: find unrecognized style attributes in elements by reloading the code as text
 	var RESGMLcomment = /<!--([^-]|-[^-])*-->/g; // as above, a simplification of real comments. Don't put -- in your HTML comments!
@@ -288,16 +204,16 @@
 
 	function styleAttributes (HTMLtext, callback) {
 		var ret = '', style, tags = {}; //  keep track of tags so we can identify elements unambiguously
-		HTMLtext = HTMLtext.replace(RESGMLcomment, '').replace(REnotATag, '$1');
+		HTMLtext = HTMLtext.replace(RESGMLcomment, '').replace(REnotATag, 'parser1');
 		munge(HTMLtext).replace(REtag, function(s, tag, attrs){
 			tag = tag.toLowerCase();
 			if (tags[tag]) ++tags[tag]; else tags[tag] = 1;
 			if (style = /\bstyle\s*=\s*(%s`\d+`s%)/i.exec(attrs)){ // style attributes must be of the form style = "a: bc" ; they must be in quotes. After munging, they are marked with numbers. Grab that number
 				var id = /\bid\s*=\s*(\S+)/i.exec(attrs); // find the id if there is one.
-				if (id) id = '#'+restore(id[1]).replace(/^['"]|['"]$/g,''); else id = tag + ':eq(' + (tags[tag]-1) + ')';
-				ret += [id, '{', restore(style[1]).replace(/^['"]|['"]$/g,''),'}'].join('');
+				if (id) id = '#'+restore(id[1]).replace(/^['"]|['"]parser/g,''); else id = tag + ':eq(' + (tags[tag]-1) + ')';
+				ret += [id, '{', restore(style[1]).replace(/^['"]|['"]parser/g,''),'}'].join('');
 			}
 		});
-		$.parsecss(ret, callback);
+		parser.parsecss(ret, callback);
 	}
-})(jQuery);
+})(glam.CSSParser);

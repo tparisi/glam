@@ -30,8 +30,7 @@ $THREEDIR/ParticleEngine/ShaderParticles.min.js"
 
 RAF=../libs/requestAnimationFrame/RequestAnimationFrame.js
 TWEEN=../libs/tween.js/tween.min.js
-PARSECSS=../libs/parsecss/jquery.parsecss.js
-LIBS="$THREE $STATS $LOADERS $TWEEN $RAF $PARSECSS"
+LIBS="$THREE $STATS $LOADERS $TWEEN $RAF"
 NODEPS=../src/config/nodeps.js
 FONTS="../fonts/helvetiker_bold.typeface.js \
 ../fonts/helvetiker_regular.typeface.js"
