@@ -61,10 +61,9 @@ glam.DOM.getAnimation = function(id) {
 	return glam.DOM.animations[id];
 }
 
-
-$(document).ready(function(){
-
-	glam.DOM.ready();
-});
-
+window.addEventListener('load',
+	function() {
+		glam.DOM.ready();
+	}, 
+	false);
 

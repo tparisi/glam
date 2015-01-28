@@ -2,8 +2,7 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<script src="../../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
-<script src="../../build/glam.min.js" ></script>
+<script src="../../build/glam.js" ></script>
 <title>glam - sun shader</title>
 
 <style>
@@ -43,13 +42,14 @@
 
 var theSun = null;
 var startTime = Date.now();
-$(document).ready(function(){
+window.addEventListener('load', function(){
 
 	glam.ready();
 
-	theSun = $('#sun')[0];
+	theSun = document.getElementById("sun");
 	run();	
-});
+},
+false);
 
 function run() {
 

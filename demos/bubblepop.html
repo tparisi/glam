@@ -2,7 +2,6 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<script src="../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
 <script src="../build/glam.min.js" ></script>
 
 <title>glam - bubble pop!</title>
@@ -149,13 +148,14 @@ function addBubbles(scene) {
 	}
 }
 
-$(document).ready(function(){
+window.addEventListener('load', function(){
 
 	glam.ready();
 	var scene = document.getElementsByTagName('scene')[0];
 	addBubbles(scene);
 
-});
+},
+false);
 
 </script>
 </head>
