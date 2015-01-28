@@ -51,7 +51,7 @@ glam.DOMDocument = {
 		for (i = 0; i < len; i++)
 		{
 			{
-				$.parsecss(styles[i].childNodes[0].data,
+				glam.CSSParser.parsecss(styles[i].childNodes[0].data,
 						function(css) {
 								glam.DOMDocument.addStyle(css);
 							}

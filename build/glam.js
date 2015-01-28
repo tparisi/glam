@@ -49563,12 +49563,11 @@ glam.DOM.getAnimation = function(id) {
 	return glam.DOM.animations[id];
 }
 
-
-$(document).ready(function(){
-
-	glam.DOM.ready();
-});
-
+window.addEventListener('load',
+	function() {
+		glam.DOM.ready();
+	}, 
+	false);
 
 /**
  * @fileoverview Picker component - add one to get picking support on your object
@@ -52768,7 +52767,7 @@ glam.DOMMaterial.createShaderMaterial = function(style, param, createCB) {
 	var vstext = "";
 	var fstext = "";
 	
-	$.ajax({
+	glam.System.ajax({
 	      type: 'GET',
 	      url: vsurl,
 	      dataType: "text",
@@ -52776,7 +52775,7 @@ glam.DOMMaterial.createShaderMaterial = function(style, param, createCB) {
 	});	
 	
 	
-	$.ajax({
+	glam.System.ajax({
 	      type: 'GET',
 	      url: fsurl,
 	      dataType: "text",
@@ -53319,7 +53318,7 @@ glam.DOMDocument = {
 		for (i = 0; i < len; i++)
 		{
 			{
-				$.parsecss(styles[i].childNodes[0].data,
+				glam.CSSParser.parsecss(styles[i].childNodes[0].data,
 						function(css) {
 								glam.DOMDocument.addStyle(css);
 							}
@@ -55021,7 +55020,6 @@ glam.DOMParser = {
 		for (i = 0; i < len; i++)
 		{
 			if (styles[i].childNodes.length) {
-//				$.parsecss(styles[i].childNodes[0].data,
 				glam.CSSParser.parsecss(styles[i].childNodes[0].data,
 						function(css) {
 								glam.DOMParser.addStyle(css);
@@ -58074,7 +58072,27 @@ glam.System = {
 	error : function() {
 		var args = ["[glam] "].concat([].slice.call(arguments));
 		console.error.apply(console, args);
-	}
+	},
+	ajax : function(param) {
+
+		var type = param.type,
+			url = param.url,
+			dataType = param.dataType,
+			success = param.success,
+			error = param.error;
+
+        var xhr = new XMLHttpRequest();
+        xhr.open(type, url, true);
+        xhr.responseType = dataType;
+
+        xhr.addEventListener( 'load', function ( event ) {
+            success(xhr.response);
+        }, false );
+        xhr.addEventListener( 'error', function ( event ) {
+            error(xhr.status);
+        }, false );
+        xhr.send(null);
+    },		
 };goog.provide('glam.PointLight');
 goog.require('glam.Light');
 
