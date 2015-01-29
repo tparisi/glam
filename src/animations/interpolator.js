@@ -2,34 +2,40 @@
  * @fileoverview Interpolator for key frame animation
  * @author Tony Parisi
  */
-goog.provide('glam.Interpolator');
-goog.require('glam.EventDispatcher');
+
+//goog.provide('glam.Interpolator')
+
+module.exports = Interpolator;
+
+var EventDispatcher = require('../events/eventDispatcher');
+var util = require("util");
+
+util.inherits(Interpolator, EventDispatcher);
 
 //Interpolator class
 //Construction/initialization
-glam.Interpolator = function(param) 
+function Interpolator(param)
 {
-	glam.EventDispatcher.call(param);
-	    		
+	EventDispatcher.call(param);
+
 	param = param || {};
-	
+
 	this.keys = param.keys || [];
 	this.values = param.values || [];
 	this.target = param.target ? param.target : null;
 	this.running = false;
 }
 
-goog.inherits(glam.Interpolator, glam.EventDispatcher);
-	
-glam.Interpolator.prototype.realize = function()
+
+Interpolator.prototype.realize = function()
 {
 	if (this.keys && this.values)
 	{
 		this.setValue(this.keys, this.values);
-	}	    		
+	}
 }
 
-glam.Interpolator.prototype.setValue = function(keys, values)
+Interpolator.prototype.setValue = function(keys, values)
 {
 	this.keys = [];
 	this.values = [];
@@ -41,7 +47,7 @@ glam.Interpolator.prototype.setValue = function(keys, values)
 }
 
 //Copying helper functions
-glam.Interpolator.prototype.copyKeys = function(from, to)
+Interpolator.prototype.copyKeys = function(from, to)
 {
 	var i = 0, len = from.length;
 	for (i = 0; i < len; i++)
@@ -50,7 +56,7 @@ glam.Interpolator.prototype.copyKeys = function(from, to)
 	}
 }
 
-glam.Interpolator.prototype.copyValues = function(from, to)
+Interpolator.prototype.copyValues = function(from, to)
 {
 	var i = 0, len = from.length;
 	for (i = 0; i < len; i++)
@@ -61,12 +67,12 @@ glam.Interpolator.prototype.copyValues = function(from, to)
 	}
 }
 
-glam.Interpolator.prototype.copyValue = function(from, to)
+Interpolator.prototype.copyValue = function(from, to)
 {
 	for ( var property in from ) {
-		
-		if ( from[ property ] === null ) {		
-		continue;		
+
+		if ( from[ property ] === null ) {
+		continue;
 		}
 
 		to[ property ] = from[ property ];
@@ -74,7 +80,7 @@ glam.Interpolator.prototype.copyValue = function(from, to)
 }
 
 //Interpolation and tweening methods
-glam.Interpolator.prototype.interp = function(fract)
+Interpolator.prototype.interp = function(fract)
 {
 	var value;
 	var i, len = this.keys.length;
@@ -99,7 +105,7 @@ glam.Interpolator.prototype.interp = function(fract)
 			value = this.tween(val1, val2, (fract - key1) / (key2 - key1));
 		}
 	}
-	
+
 	if (this.target)
 	{
 		this.copyValue(value, this.target);
@@ -110,19 +116,19 @@ glam.Interpolator.prototype.interp = function(fract)
 	}
 }
 
-glam.Interpolator.prototype.tween = function(from, to, fract)
+Interpolator.prototype.tween = function(from, to, fract)
 {
 	var value = {};
 	for ( var property in from ) {
-		
-		if ( from[ property ] === null ) {		
-		continue;		
+
+		if ( from[ property ] === null ) {
+		continue;
 		}
 
 		var range = to[property] - from[property];
 		var delta = range * fract;
 		value[ property ] = from[ property ] + delta;
 	}
-	
+
 	return value;
 }
