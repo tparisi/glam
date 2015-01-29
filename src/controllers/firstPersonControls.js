@@ -5,12 +5,16 @@
  */
 
 /* Heavily adapted version of Three.js FirstPerson controls for GLAM
- * 
+ *
  */
 
-goog.provide('glam.FirstPersonControls');
+// goog.provide('FirstPersonControls');
 
-glam.FirstPersonControls = function ( object, domElement ) {
+module.exports = FirstPersonControls;
+
+var Gamepad = require("../input/gamepad");
+
+function FirstPersonControls( object, domElement ) {
 
 	this.object = object;
 	this.target = new THREE.Vector3( 0, 0, 0 );
@@ -24,7 +28,7 @@ glam.FirstPersonControls = function ( object, domElement ) {
 	this.tiltSpeed = 5;
 	this.turnAngle = 0;
 	this.tiltAngle = 0;
-	
+
 	this.mouseX = 0;
 	this.mouseY = 0;
 	this.lastMouseX = 0;
@@ -34,7 +38,7 @@ glam.FirstPersonControls = function ( object, domElement ) {
 	this.touchScreenY = 0;
 	this.lookTouchId = -1;
 	this.moveTouchId = -1;
-	
+
 	this.lat = 0;
 	this.lon = 0;
 	this.phi = 0;
@@ -49,7 +53,7 @@ glam.FirstPersonControls = function ( object, domElement ) {
 	this.turnLeft = false;
 	this.tiltUp = false;
 	this.tiltDown = false;
-	
+
 	this.mouseDragOn = false;
 	this.mouseLook = false;
 
@@ -91,7 +95,7 @@ glam.FirstPersonControls = function ( object, domElement ) {
 			this.mouseY = event.pageY - this.domElement.offsetTop - this.viewHalfY;
 
 		}
-				
+
 		this.lastMouseX = this.mouseX;
 		this.lastMouseY = this.mouseY;
 		this.mouseDragOn = true;
@@ -123,12 +127,12 @@ glam.FirstPersonControls = function ( object, domElement ) {
 	this.onTouchStart = function ( event ) {
 
 		event.preventDefault();
-		
+
 		if (event.touches.length > 0) {
 
 			if (this.lookTouchId == -1) {
 				this.lookTouchId = event.touches[0].identifier;
-			
+
 				// synthesize a left mouse button event
 				var mouseEvent = {
 					'type': 'mousedown',
@@ -145,38 +149,38 @@ glam.FirstPersonControls = function ( object, domElement ) {
 				    'button': 0,
 				    'preventDefault' : event.preventDefault
 					};
-				
+
 				this.onMouseDown(mouseEvent);
 			}
 			else {
 				// second touch does move
-				this.touchScreenX = event.touches[1].screenX; 
+				this.touchScreenX = event.touches[1].screenX;
 				this.touchScreenY = event.touches[1].screenY;
 				this.moveTouchId = event.touches[1].identifier;
 			}
-			
+
 		}
-		
+
 	}
 
-	
+
 	this.onTouchMove = function ( event ) {
 
 		event.preventDefault();
-		
-		var lookTouch = null, moveTouch = null, 
+
+		var lookTouch = null, moveTouch = null,
 			len = event.changedTouches.length;
-		
+
 		for (var i = 0; i < len; i++) {
-			
+
 			if (event.changedTouches[i].identifier == this.lookTouchId)
 				lookTouch = event.changedTouches[i];
-			
+
 			if (event.changedTouches[i].identifier == this.moveTouchId)
 				moveTouch = event.changedTouches[i];
-				
+
 		}
-		
+
 		if (lookTouch) {
 			// synthesize a left mouse button event
 			var mouseEvent = {
@@ -194,7 +198,7 @@ glam.FirstPersonControls = function ( object, domElement ) {
 			    'button': 0,
 			    'preventDefault' : event.preventDefault
 				};
-			
+
 			this.onMouseMove(mouseEvent);
 		}
 
@@ -203,14 +207,14 @@ glam.FirstPersonControls = function ( object, domElement ) {
 			// second touch does move
 			var deltaX = moveTouch.screenX - this.touchScreenX;
 			var deltaY = moveTouch.screenY - this.touchScreenY;
-			
-			this.touchScreenX = moveTouch.screenX; 
-			this.touchScreenY = moveTouch.screenY; 
-			
+
+			this.touchScreenX = moveTouch.screenX;
+			this.touchScreenY = moveTouch.screenY;
+
 			if (deltaX > 0) {
 				this.moveRight = true;
 			}
-			
+
 			if (deltaX < 0) {
 				this.moveLeft = true;
 			}
@@ -218,32 +222,32 @@ glam.FirstPersonControls = function ( object, domElement ) {
 			if (deltaY > 0) {
 				this.moveBackward = true;
 			}
-			
+
 			if (deltaY < 0) {
 				this.moveForward = true;
 			}
 
-			
+
 		}
-	
+
 	}
 
-	
+
 	this.onTouchEnd = function ( event ) {
-		
+
 		event.preventDefault();
-		
-		var lookTouch = null, moveTouch = null, 
+
+		var lookTouch = null, moveTouch = null,
 		len = event.changedTouches.length;
-	
+
 		for (var i = 0; i < len; i++) {
-			
+
 			if (event.changedTouches[i].identifier == this.lookTouchId)
 				lookTouch = event.changedTouches[i];
-			
+
 			if (event.changedTouches[i].identifier == this.moveTouchId)
 				moveTouch = event.changedTouches[i];
-				
+
 		}
 
 		if (lookTouch) {
@@ -263,30 +267,30 @@ glam.FirstPersonControls = function ( object, domElement ) {
 			    'button': 0,
 			    'preventDefault' : event.preventDefault
 			};
-			
+
 			this.onMouseUp(mouseEvent);
-			
+
 			this.lookTouchId = -1;
 		}
-		
+
 		if (moveTouch) {
 			// second touch does move
-			this.touchScreenX = moveTouch.screenX; 
-			this.touchScreenY = moveTouch.screenY; 
-			
-			this.moveRight = false;		
+			this.touchScreenX = moveTouch.screenX;
+			this.touchScreenY = moveTouch.screenY;
+
+			this.moveRight = false;
 			this.moveLeft = false;
 			this.moveBackward = false;
 			this.moveForward = false;
-			
+
 			this.moveTouchId = -1;
 		}
-		
+
 	}
-	
+
 	this.onGamepadButtonsChanged = function ( event ) {
 	}
-	
+
 	var MOVE_VTHRESHOLD = 0.2;
 	var MOVE_HTHRESHOLD = 0.5;
 	this.onGamepadAxesChanged = function ( event ) {
@@ -295,8 +299,8 @@ glam.FirstPersonControls = function ( object, domElement ) {
 		var i, len = axes.length;
 		for (i = 0; i < len; i++) {
 			var axis = axes[i];
-			
-			if (axis.axis == glam.Gamepad.AXIS_LEFT_V) {
+
+			if (axis.axis == Gamepad.AXIS_LEFT_V) {
 				// +Y is down
 				if (axis.value < -MOVE_VTHRESHOLD) {
 					this.moveForward = true;
@@ -311,7 +315,7 @@ glam.FirstPersonControls = function ( object, domElement ) {
 					this.moveForward = false;
 				}
 			}
-			else if (axis.axis == glam.Gamepad.AXIS_LEFT_H) {
+			else if (axis.axis == Gamepad.AXIS_LEFT_H) {
 				// +X is to the right
 				if (axis.value > MOVE_HTHRESHOLD) {
 					this.moveRight = true;
@@ -326,7 +330,7 @@ glam.FirstPersonControls = function ( object, domElement ) {
 					this.moveRight = false;
 				}
 			}
-			else if (axis.axis == glam.Gamepad.AXIS_RIGHT_V) {
+			else if (axis.axis == Gamepad.AXIS_RIGHT_V) {
 				// +Y is down
 				if (axis.value < -MOVE_VTHRESHOLD) {
 					this.tiltUp = true;
@@ -341,7 +345,7 @@ glam.FirstPersonControls = function ( object, domElement ) {
 					this.tiltUp = false;
 				}
 			}
-			else if (axis.axis == glam.Gamepad.AXIS_RIGHT_H) {
+			else if (axis.axis == Gamepad.AXIS_RIGHT_H) {
 				if (axis.value > MOVE_HTHRESHOLD) {
 					this.turnLeft = true;
 					this.turnRight = false;
@@ -355,10 +359,10 @@ glam.FirstPersonControls = function ( object, domElement ) {
 					this.turnRight = false;
 				}
 			}
-		
+
 		}
 	};
-	
+
 	this.onKeyDown = function ( event ) {
 
 		//event.preventDefault();
@@ -410,29 +414,29 @@ glam.FirstPersonControls = function ( object, domElement ) {
 	this.update = function( delta ) {
 
 		if ( this.enabled === false ) return;
-		
+
 		this.startY = this.object.position.y;
-		
+
 		var actualMoveSpeed = delta * this.movementSpeed;
 
-		if ( this.moveForward ) 
+		if ( this.moveForward )
 			this.object.translateZ( - actualMoveSpeed );
-		if ( this.moveBackward ) 
+		if ( this.moveBackward )
 			this.object.translateZ( actualMoveSpeed );
 
-		if ( this.moveLeft ) 
+		if ( this.moveLeft )
 			this.object.translateX( - actualMoveSpeed );
-		if ( this.moveRight ) 
+		if ( this.moveRight )
 			this.object.translateX( actualMoveSpeed );
 
 		this.object.position.y = this.startY;
-		
+
 		var actualLookSpeed = delta * this.lookSpeed;
 
 		var DRAG_DEAD_ZONE = 1;
-		
+
 		if ((this.mouseDragOn || this.mouseLook) && this.lookSpeed) {
-			
+
 			var deltax = this.lastMouseX - this.mouseX;
 			if (Math.abs(deltax) < DRAG_DEAD_ZONE)
 				dlon = 0;
@@ -444,7 +448,7 @@ glam.FirstPersonControls = function ( object, domElement ) {
 				dlat = 0;
 			var dlat = deltay / this.viewHalfY * 900;
 			this.lat += dlat * this.lookSpeed;
-			
+
 			this.theta = THREE.Math.degToRad( this.lon );
 
 			this.lat = Math.max( - 85, Math.min( 85, this.lat ) );
@@ -452,26 +456,26 @@ glam.FirstPersonControls = function ( object, domElement ) {
 
 			var targetPosition = this.target,
 				position = this.object.position;
-	
+
 			targetPosition.x = position.x - Math.sin( this.theta );
 			targetPosition.y = position.y + Math.sin( this.phi );
 			targetPosition.z = position.z - Math.cos( this.theta );
-	
+
 			this.object.lookAt( targetPosition );
-			
+
 			this.lastMouseX = this.mouseX;
 			this.lastMouseY = this.mouseY;
 		}
-		
+
 		if (this.turnRight || this.turnLeft || this.tiltUp || this.tiltDown) {
-			
+
 			var dlon = 0;
 			if (this.turnRight)
 				dlon = 1;
 			else if (this.turnLeft)
 				dlon = -1;
 			this.lon += dlon * this.turnSpeed;
-			
+
 			var dlat = 0;
 			if (this.tiltUp)
 				dlat = 1;
@@ -487,16 +491,16 @@ glam.FirstPersonControls = function ( object, domElement ) {
 
 			var targetPosition = this.target,
 				position = this.object.position;
-	
+
 			if (this.turnSpeed) {
 				targetPosition.x = position.x - Math.sin( this.theta );
 			}
-			
+
 			if (this.tiltSpeed) {
 				targetPosition.y = position.y + Math.sin( this.phi );
 				targetPosition.z = position.z - Math.cos( this.theta );
 			}
-			
+
 			if (this.turnSpeed || this.tiltSpeed) {
 				this.object.lookAt( targetPosition );
 			}
@@ -515,13 +519,13 @@ glam.FirstPersonControls = function ( object, domElement ) {
 	this.domElement.addEventListener( 'keydown', bind( this, this.onKeyDown ), false );
 	this.domElement.addEventListener( 'keyup', bind( this, this.onKeyUp ), false );
 	this.domElement.addEventListener( 'resize', bind( this, this.handleResize ), false );
-	
-	var gamepad = glam.Gamepad.instance;
+
+	var gamepad = Gamepad.instance;
 	if (gamepad) {
 		gamepad.addEventListener( 'buttonsChanged', bind( this, this.onGamepadButtonsChanged ), false );
 		gamepad.addEventListener( 'axesChanged', bind( this, this.onGamepadAxesChanged ), false );
 	}
-	
+
 	function bind( scope, fn ) {
 
 		return function () {

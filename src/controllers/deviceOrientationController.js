@@ -1,35 +1,44 @@
 
-goog.require('glam.Prefabs');
+//goog.provide('DeviceOrientationControllerScript');
 
-glam.Prefabs.DeviceOrientationController = function(param)
+module.exports = DeviceOrientationControllerScript;
+
+// Object is already defined as a global, so we're gonna name it GlamObject to avoid conflict
+var GlamObject = require("../core/object");
+var Prefabs = require("../prefabs/prefabs");
+var Script = require("../scripts/script");
+var DirectionalLight = require("../lights/directionalLight");
+
+ver util = require("util");
+
+util.inherits(DeviceOrientationControllerScript, Script);
+
+Prefabs.DeviceOrientationController = function(param)
 {
 	param = param || {};
-	
-	var controller = new glam.Object(param);
-	var controllerScript = new glam.DeviceOrientationControllerScript(param);
+
+	var controller = new GlamObject(param);
+	var controllerScript = new DeviceOrientationControllerScript(param);
 	controller.addComponent(controllerScript);
 
 	var intensity = param.headlight ? 1 : 0;
-	
-	var headlight = new glam.DirectionalLight({ intensity : intensity });
+
+	var headlight = new DirectionalLight({ intensity : intensity });
 	controller.addComponent(headlight);
-		
+
 	return controller;
 }
 
-goog.provide('glam.DeviceOrientationControllerScript');
-goog.require('glam.Script');
-
-glam.DeviceOrientationControllerScript = function(param)
+function DeviceOrientationControllerScript(param)
 {
-	glam.Script.call(this, param);
+	Script.call(this, param);
 
 	this._enabled = (param.enabled !== undefined) ? param.enabled : true;
 	this._headlightOn = param.headlight;
 	this.roll = (param.roll !== undefined) ? param.roll : true;
-		
-    Object.defineProperties(this, {
-    	camera: {
+
+		Object.defineProperties(this, {
+			camera: {
 			get : function() {
 				return this._camera;
 			},
@@ -37,45 +46,44 @@ glam.DeviceOrientationControllerScript = function(param)
 				this.setCamera(camera);
 			}
 		},
-    	enabled : {
-    		get: function() {
-    			return this._enabled;
-    		},
-    		set: function(v) {
-    			this.setEnabled(v);
-    		}
-    	},
-        headlightOn: {
-	        get: function() {
-	            return this._headlightOn;
-	        },
-	        set:function(v)
-	        {
-	        	this.setHeadlightOn(v);
-	        }
-    	},
-    });
+			enabled : {
+				get: function() {
+					return this._enabled;
+				},
+				set: function(v) {
+					this.setEnabled(v);
+				}
+			},
+				headlightOn: {
+					get: function() {
+							return this._headlightOn;
+					},
+					set:function(v)
+					{
+						this.setHeadlightOn(v);
+					}
+			},
+		});
 }
 
-goog.inherits(glam.DeviceOrientationControllerScript, glam.Script);
 
-glam.DeviceOrientationControllerScript.prototype.realize = function() {
-	this.headlight = this._object.getComponent(glam.DirectionalLight);
+DeviceOrientationControllerScript.prototype.realize = function() {
+	this.headlight = this._object.getComponent(DirectionalLight);
 	this.headlight.intensity = this._headlightOn ? 1 : 0;
 }
 
-glam.DeviceOrientationControllerScript.prototype.createControls = function(camera)
+DeviceOrientationControllerScript.prototype.createControls = function(camera)
 {
-	var controls = new glam.DeviceOrientationControlsCB(camera.object);
-	
+	var controls = new DeviceOrientationControlsCB(camera.object);
+
 	if (this._enabled)
 		controls.connect();
-	
+
 	controls.roll = this.roll;
 	return controls;
 }
 
-glam.DeviceOrientationControllerScript.prototype.update = function()
+DeviceOrientationControllerScript.prototype.update = function()
 {
 	if (this._enabled)
 		this.controls.update();
@@ -83,10 +91,10 @@ glam.DeviceOrientationControllerScript.prototype.update = function()
 	if (this._headlightOn)
 	{
 		this.headlight.direction.copy(this._camera.position).negate();
-	}	
+	}
 }
 
-glam.DeviceOrientationControllerScript.prototype.setEnabled = function(enabled)
+DeviceOrientationControllerScript.prototype.setEnabled = function(enabled)
 {
 	this._enabled = enabled;
 	if (this._enabled)
@@ -95,7 +103,7 @@ glam.DeviceOrientationControllerScript.prototype.setEnabled = function(enabled)
 		this.controls.disconnect();
 }
 
-glam.DeviceOrientationControllerScript.prototype.setHeadlightOn = function(on)
+DeviceOrientationControllerScript.prototype.setHeadlightOn = function(on)
 {
 	this._headlightOn = on;
 	if (this.headlight) {
@@ -103,7 +111,7 @@ glam.DeviceOrientationControllerScript.prototype.setHeadlightOn = function(on)
 	}
 }
 
-glam.DeviceOrientationControllerScript.prototype.setCamera = function(camera) {
+DeviceOrientationControllerScript.prototype.setCamera = function(camera) {
 	this._camera = camera;
 	this.controls = this.createControls(camera);
 }

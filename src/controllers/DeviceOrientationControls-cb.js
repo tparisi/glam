@@ -15,9 +15,10 @@
  * (http://w3c.github.io/deviceorientation/spec-source-orientation.html)
  */
 
-goog.provide('glam.DeviceOrientationControlsCB');
+// goog.provide('glam.DeviceOrientationControlsCB');
+module.exports = DeviceOrientationControlsCB;
 
-glam.DeviceOrientationControlsCB = function(object) {
+function DeviceOrientationControlsCB(object) {
 
   this.object = object;
 
@@ -73,7 +74,7 @@ glam.DeviceOrientationControlsCB = function(object) {
       case 'portrait-primary':
         return 0;
     }
-    // this returns 90 if width is greater then height 
+    // this returns 90 if width is greater then height
     // and window orientation is undefined OR 0
     // if (!window.orientation && window.innerWidth > window.innerHeight)
     //   return 90;
@@ -93,7 +94,7 @@ glam.DeviceOrientationControlsCB = function(object) {
       if (this.freeze) return;
 
       // should not need this
-      var orientation = getOrientation(); 
+      var orientation = getOrientation();
       if (orientation !== this.screenOrientation) {
         this.screenOrientation = orientation;
         this.autoAlign = true;
@@ -156,7 +157,7 @@ glam.DeviceOrientationControlsCB = function(object) {
   // //debug
   // window.addEventListener('click', (function(){
   //   this.align();
-  // }).bind(this)); 
+  // }).bind(this));
 
   this.align = function() {
 
@@ -202,4 +203,3 @@ glam.DeviceOrientationControlsCB = function(object) {
 
 
 };
-

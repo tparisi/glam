@@ -5,9 +5,11 @@
  * W3C Device Orientation control (http://w3c.github.io/deviceorientation/spec-source-orientation.html)
  */
 
-goog.provide('glam.DeviceOrientationControls');
+// goog.provide('glam.DeviceOrientationControls');
 
-glam.DeviceOrientationControls = function(object) {
+module.exports = DeviceOrientationControls;
+
+function DeviceOrientationControls(object) {
 
 	var scope = this;
 
