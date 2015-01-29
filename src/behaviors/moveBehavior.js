@@ -1,23 +1,28 @@
 /**
  * @fileoverview MoveBehavior - simple angular rotation
- * 
+ *
  * @author Tony Parisi
  */
 
-goog.provide('glam.MoveBehavior');
-goog.require('glam.Behavior');
+// goog.provide('MoveBehavior');
 
-glam.MoveBehavior = function(param) {
+module.exports = MoveBehavior;
+
+var Behavior = require("./behaviour");
+var util = require("util");
+
+util.inherits(MoveBehavior, Behavior);
+
+function MoveBehavior(param) {
 	param = param || {};
 	this.duration = (param.duration !== undefined) ? param.duration : 1;
 	this.moveVector = (param.moveVector !== undefined) ? param.moveVector : new THREE.Vector3(0, 1, 0);
 	this.tween = null;
-    glam.Behavior.call(this, param);
+    Behavior.call(this, param);
 }
 
-goog.inherits(glam.MoveBehavior, glam.Behavior);
 
-glam.MoveBehavior.prototype.start = function()
+MoveBehavior.prototype.start = function()
 {
 	if (this.running)
 		return;
@@ -30,11 +35,11 @@ glam.MoveBehavior.prototype.start = function()
 	.easing(TWEEN.Easing.Quadratic.InOut)
 	.repeat(0)
 	.start();
-	
-	glam.Behavior.prototype.start.call(this);
+
+	Behavior.prototype.start.call(this);
 }
 
-glam.MoveBehavior.prototype.evaluate = function(t)
+MoveBehavior.prototype.evaluate = function(t)
 {
 	if (t >= this.duration)
 	{
@@ -46,17 +51,17 @@ glam.MoveBehavior.prototype.evaluate = function(t)
 			this.dispatchEvent("complete");
 		}
 	}
-	
+
 	this.moveDelta.copy(this.movePosition).sub(this.prevMovePosition);
 	this.prevMovePosition.copy(this.movePosition);
 	this._object.transform.position.add(this.moveDelta);
 }
 
 
-glam.MoveBehavior.prototype.stop = function()
+MoveBehavior.prototype.stop = function()
 {
 	if (this.tween)
 		this.tween.stop();
-	
-	glam.Behavior.prototype.stop.call(this);
+
+	Behavior.prototype.stop.call(this);
 }

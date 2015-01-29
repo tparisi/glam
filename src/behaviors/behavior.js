@@ -1,46 +1,53 @@
 /**
  * @fileoverview Behavior component - base class for time-based behaviors
- * 
+ *
  * @author Tony Parisi
  */
 
-goog.provide('glam.Behavior');
-goog.require('glam.Component');
+// goog.provide('glam.Behavior');
 
-glam.Behavior = function(param) {
+module.exports = Behavior;
+
+var Component = require("../core/component");
+var Time = require("../time/time");
+var System = require("../system/system");
+var util = require("util");
+
+util.inherits(Behavior, Component);
+
+function  Behavior(param) {
 	param = param || {};
 	this.startTime = 0;
 	this.running = false;
 	this.loop = (param.loop !== undefined) ? param.loop : false;
 	this.autoStart = (param.autoStart !== undefined) ? param.autoStart : false;
-    glam.Component.call(this, param);
+    Component.call(this, param);
 }
 
-goog.inherits(glam.Behavior, glam.Component);
 
-glam.Behavior.prototype._componentCategory = "behaviors";
+Behavior.prototype._componentCategory = "behaviors";
 
-glam.Behavior.prototype.realize = function()
+Behavior.prototype.realize = function()
 {
-	glam.Component.prototype.realize.call(this);
-	
+	Component.prototype.realize.call(this);
+
 	if (this.autoStart)
 		this.start();
 }
 
-glam.Behavior.prototype.start = function()
+Behavior.prototype.start = function()
 {
-	this.startTime = glam.Time.instance.currentTime;
+	this.startTime = Time.instance.currentTime;
 	this.running = true;
 }
 
-glam.Behavior.prototype.stop = function()
+Behavior.prototype.stop = function()
 {
 	this.startTime = 0;
 	this.running = false;
 }
 
-glam.Behavior.prototype.toggle = function()
+Behavior.prototype.toggle = function()
 {
 	if (this.running)
 		this.stop();
@@ -48,22 +55,22 @@ glam.Behavior.prototype.toggle = function()
 		this.start();
 }
 
-glam.Behavior.prototype.update = function()
+Behavior.prototype.update = function()
 {
 	if (this.running)
 	{
 		// N.B.: soon, add logic to subtract suspend times
-		var now = glam.Time.instance.currentTime;
+		var now = Time.instance.currentTime;
 		var elapsedTime = (now - this.startTime) / 1000;
-		
+
 		this.evaluate(elapsedTime);
 	}
 }
 
-glam.Behavior.prototype.evaluate = function(t)
+Behavior.prototype.evaluate = function(t)
 {
-	if (glam.Behavior.WARN_ON_ABSTRACT)
-		glam.System.warn("Abstract Behavior.evaluate called");
+	if (Behavior.WARN_ON_ABSTRACT)
+		System.warn("Abstract Behavior.evaluate called");
 }
 
-glam.Behavior.WARN_ON_ABSTRACT = true;
+Behavior.WARN_ON_ABSTRACT = true;
