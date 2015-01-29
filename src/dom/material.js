@@ -269,7 +269,7 @@ glam.DOMMaterial.createShaderMaterial = function(style, param, createCB) {
 	var vstext = "";
 	var fstext = "";
 	
-	$.ajax({
+	glam.System.ajax({
 	      type: 'GET',
 	      url: vsurl,
 	      dataType: "text",
@@ -277,7 +277,7 @@ glam.DOMMaterial.createShaderMaterial = function(style, param, createCB) {
 	});	
 	
 	
-	$.ajax({
+	glam.System.ajax({
 	      type: 'GET',
 	      url: fsurl,
 	      dataType: "text",

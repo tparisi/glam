@@ -2,7 +2,6 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<script src="../../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
 <script src="../../build/glam.min.js" ></script>
 <title>Scene with skysphere background and environment map</title>
 
@@ -29,7 +28,7 @@
 </style>
 <script>
 var skysphere = null;
-$(document).ready(function(){
+window.addEventListener('load',function(){
 
 	glam.ready();
 
@@ -49,7 +48,7 @@ $(document).ready(function(){
 		glam.setFullScreen( true );
 	};
 
-});
+}, false);
 
 </script>
 </head>

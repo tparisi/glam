@@ -5,6 +5,7 @@
  */
 
 goog.provide('glam.DOMParser');
+goog.require('glam.CSSParser');
 
 glam.DOMParser = {
 		
@@ -83,7 +84,7 @@ glam.DOMParser = {
 		for (i = 0; i < len; i++)
 		{
 			if (styles[i].childNodes.length) {
-				$.parsecss(styles[i].childNodes[0].data,
+				glam.CSSParser.parsecss(styles[i].childNodes[0].data,
 						function(css) {
 								glam.DOMParser.addStyle(css);
 							}
