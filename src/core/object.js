@@ -1,33 +1,40 @@
 /**
  * @fileoverview Object collects a group of Components that define an object and its behaviors
- * 
+ *
  * @author Tony Parisi
  */
-goog.provide('glam.Object');
-goog.require('glam.EventDispatcher');
+module.exports = Object;
+
+var EventDispatcher = require("../events/eventDispatcher");
+var Transform = require("../scene/transform");
+var System = require("../system/system");
+
+var util = require("util");
+
+util.inherits(Object, EventDispatcher);
 
 /**
  * Creates a new Object.
  * @constructor
- * @extends {glam.EventDispatcher}
+ * @extends {EventDispatcher}
  */
-glam.Object = function(param) {
-    glam.EventDispatcher.call(this);
-    
+Object = function Object(param) {
+    EventDispatcher.call(this);
+
     /**
      * @type {number}
      * @private
      */
-    this._id = glam.Object.nextId++;
+    this._id = Object.nextId++;
 
     /**
-     * @type {glam.Object}
+     * @type {Object}
      * @private
      */
     this._parent = null;
 
     /**
-     * @type {Array.<glam.Object>}
+     * @type {Array.<Object>}
      * @private
      */
     this._children = [];
@@ -43,40 +50,39 @@ glam.Object = function(param) {
      * @public
      */
     this.name = "";
- 
+
     /**
      * @type {Boolean}
      * @private
      */
     this._realizing = false;
-    
+
     /**
      * @type {Boolean}
      * @private
      */
     this._realized = false;
-    
-    // Automatically create a transform component unless the caller says not to 
+
+    // Automatically create a transform component unless the caller says not to
     var autoCreateTransform = true;
     if (param && param.autoCreateTransform !== undefined)
     	autoCreateTransform = param.autoCreateTransform;
-    
+
 	if (autoCreateTransform)
 	{
-		this.addComponent(new glam.Transform(param));
+		this.addComponent(new Transform(param));
 	}
 }
 
-goog.inherits(glam.Object, glam.EventDispatcher);
 
 /**
  * The next identifier to hand out.
  * @type {number}
  * @private
  */
-glam.Object.nextId = 0;
+Object.nextId = 0;
 
-glam.Object.prototype.getID = function() {
+Object.prototype.getID = function() {
     return this._id;
 }
 
@@ -86,18 +92,18 @@ glam.Object.prototype.getID = function() {
 
 /**
  * Sets the parent of the Object.
- * @param {glam.Object} parent The parent of the Object.
+ * @param {Object} parent The parent of the Object.
  * @private
  */
-glam.Object.prototype.setParent = function(parent) {
+Object.prototype.setParent = function(parent) {
     this._parent = parent;
 }
 
 /**
  * Adds a child to the Object.
- * @param {glam.Object} child The child to add.
+ * @param {Object} child The child to add.
  */
-glam.Object.prototype.addChild = function(child) {
+Object.prototype.addChild = function(child) {
     if (!child)
     {
         throw new Error('Cannot add a null child');
@@ -120,9 +126,9 @@ glam.Object.prototype.addChild = function(child) {
 
 /**
  * Removes a child from the Object
- * @param {glam.Object} child The child to remove.
+ * @param {Object} child The child to remove.
  */
-glam.Object.prototype.removeChild = function(child) {
+Object.prototype.removeChild = function(child) {
     var i = this._children.indexOf(child);
 
     if (i != -1)
@@ -136,12 +142,12 @@ glam.Object.prototype.removeChild = function(child) {
 
 /**
  * Removes a child from the Object
- * @param {glam.Object} child The child to remove.
+ * @param {Object} child The child to remove.
  */
-glam.Object.prototype.getChild = function(index) {
+Object.prototype.getChild = function(index) {
 	if (index >= this._children.length)
 		return null;
-	
+
 	return this._children[index];
 }
 
@@ -151,14 +157,14 @@ glam.Object.prototype.getChild = function(index) {
 
 /**
  * Adds a Component to the Object.
- * @param {glam.Component} component.
+ * @param {Component} component.
  */
-glam.Object.prototype.addComponent = function(component) {
+Object.prototype.addComponent = function(component) {
     if (!component)
     {
         throw new Error('Cannot add a null component');
     }
-    
+
     if (component._object)
     {
         throw new Error('Component is already attached to an Object')
@@ -170,10 +176,10 @@ glam.Object.prototype.addComponent = function(component) {
     	if (this[proto._componentProperty])
     	{
     		var t = proto._componentPropertyType;
-            glam.System.warn('Object already has a ' + t + ' component');
+            System.warn('Object already has a ' + t + ' component');
             return;
     	}
-    	
+
     	this[proto._componentProperty] = component;
     }
 
@@ -181,13 +187,13 @@ glam.Object.prototype.addComponent = function(component) {
     {
     	if (!this[proto._componentCategory])
     		this[proto._componentCategory] = [];
-    	
+
     	this[proto._componentCategory].push(component);
     }
-    
+
     this._components.push(component);
     component.setObject(this);
-    
+
     if ((this._realizing || this._realized) && !component._realized)
     {
     	component.realize();
@@ -196,12 +202,12 @@ glam.Object.prototype.addComponent = function(component) {
 
 /**
  * Removes a Component from the Object.
- * @param {glam.Component} component.
+ * @param {Component} component.
  */
-glam.Object.prototype.removeComponent = function(component) {
+Object.prototype.removeComponent = function(component) {
 	if (!component)
 		return;
-	
+
     var i = this._components.indexOf(component);
 
     if (i != -1)
@@ -210,11 +216,11 @@ glam.Object.prototype.removeComponent = function(component) {
     	{
     		component.removeFromScene();
     	}
-    	
+
         this._components.splice(i, 1);
         component.setObject(null);
     }
-    
+
     var proto = Object.getPrototypeOf(component);
     if (proto._componentProperty)
     {
@@ -235,9 +241,9 @@ glam.Object.prototype.removeComponent = function(component) {
 
 /**
  * Removes all Components from the Object in one call
- * @param {glam.Component} component.
+ * @param {Component} component.
  */
-glam.Object.prototype.removeAllComponents = function() {
+Object.prototype.removeAllComponents = function() {
     var i, len = this._components.length;
 
     for (i = 0; i < len; i++)
@@ -248,7 +254,7 @@ glam.Object.prototype.removeAllComponents = function() {
     		component.removeFromScene();
     		component._realized = component._realizing = false;
     	}
-    	
+
         component.setObject(null);
     }
 }
@@ -257,9 +263,9 @@ glam.Object.prototype.removeAllComponents = function() {
  * Retrieves a Component of a given type in the Object.
  * @param {Object} type.
  */
-glam.Object.prototype.getComponent = function(type) {
+Object.prototype.getComponent = function(type) {
 	var i, len = this._components.length;
-	
+
 	for (i = 0; i < len; i++)
 	{
 		var component = this._components[i];
@@ -268,7 +274,7 @@ glam.Object.prototype.getComponent = function(type) {
 			return component;
 		}
 	}
-	
+
 	return null;
 }
 
@@ -276,11 +282,11 @@ glam.Object.prototype.getComponent = function(type) {
  * Retrieves a Component of a given type in the Object.
  * @param {Object} type.
  */
-glam.Object.prototype.getComponents = function(type) {
+Object.prototype.getComponents = function(type) {
 	var i, len = this._components.length;
-	
+
 	var components = [];
-	
+
 	for (i = 0; i < len; i++)
 	{
 		var component = this._components[i];
@@ -289,7 +295,7 @@ glam.Object.prototype.getComponents = function(type) {
 			components.push(component);
 		}
 	}
-	
+
 	return components;
 }
 
@@ -297,19 +303,19 @@ glam.Object.prototype.getComponents = function(type) {
 //Initialize methods
 //---------------------------------------------------------------------
 
-glam.Object.prototype.realize = function() {
+Object.prototype.realize = function() {
     this._realizing = true;
-    
+
     this.realizeComponents();
     this.realizeChildren();
-        
+
     this._realized = true;
 }
 
 /**
  * @private
  */
-glam.Object.prototype.realizeComponents = function() {
+Object.prototype.realizeComponents = function() {
     var component;
     var count = this._components.length;
     var i = 0;
@@ -327,7 +333,7 @@ glam.Object.prototype.realizeComponents = function() {
 /**
  * @private
  */
-glam.Object.prototype.realizeChildren = function() {
+Object.prototype.realizeChildren = function() {
     var child;
     var count = this._children.length;
     var i = 0;
@@ -344,7 +350,7 @@ glam.Object.prototype.realizeChildren = function() {
 // Update methods
 //---------------------------------------------------------------------
 
-glam.Object.prototype.update = function() {
+Object.prototype.update = function() {
     this.updateComponents();
     this.updateChildren();
 }
@@ -352,7 +358,7 @@ glam.Object.prototype.update = function() {
 /**
  * @private
  */
-glam.Object.prototype.updateComponents = function() {
+Object.prototype.updateComponents = function() {
     var component;
     var count = this._components.length;
     var i = 0;
@@ -366,7 +372,7 @@ glam.Object.prototype.updateComponents = function() {
 /**
  * @private
  */
-glam.Object.prototype.updateChildren = function() {
+Object.prototype.updateChildren = function() {
     var child;
     var count = this._children.length;
     var i = 0;
@@ -381,7 +387,7 @@ glam.Object.prototype.updateChildren = function() {
 // Traversal and query methods
 //---------------------------------------------------------------------
 
-glam.Object.prototype.traverse = function (callback) {
+Object.prototype.traverse = function (callback) {
 
 	callback(this);
 
@@ -392,7 +398,7 @@ glam.Object.prototype.traverse = function (callback) {
 	}
 }
 
-glam.Object.prototype.findCallback = function(n, query, found) {
+Object.prototype.findCallback = function(n, query, found) {
 	if (typeof(query) == "string")
 	{
 		if (n.name == query)
@@ -416,26 +422,26 @@ glam.Object.prototype.findCallback = function(n, query, found) {
 	}
 }
 
-glam.Object.prototype.findNode = function(str) {
+Object.prototype.findNode = function(str) {
 	var that = this;
 	var found = [];
 	this.traverse(function (o) { that.findCallback(o, str, found); });
-	
+
 	return found[0];
 }
 
-glam.Object.prototype.findNodes = function(query) {
+Object.prototype.findNodes = function(query) {
 	var that = this;
 	var found = [];
 	this.traverse(function (o) { that.findCallback(o, query, found); });
-	
+
 	return found;
 }
 
-glam.Object.prototype.map = function(query, callback){
+Object.prototype.map = function(query, callback){
 	var found = this.findNodes(query);
 	var i, len = found.length;
-	
+
 	for (i = 0; i < len; i++) {
 		callback(found[i]);
 	}
