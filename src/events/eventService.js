@@ -1,17 +1,20 @@
 /**
  *
  */
-goog.require('glam.Service');
-goog.provide('glam.EventService');
+module.exports = EventService;
+
+var Application = require("../core/application");
+var util = require("util");
+
+util.inherits(EventService, Service);
 
 /**
  * The EventService.
  *
- * @extends {glam.Service}
+ * @extends {Service}
  */
-glam.EventService = function() {};
+function EventService() {};
 
-goog.inherits(glam.EventService, glam.Service);
 
 //---------------------------------------------------------------------
 // Initialization/Termination
@@ -20,23 +23,23 @@ goog.inherits(glam.EventService, glam.Service);
 /**
  * Initializes the events system.
  */
-glam.EventService.prototype.initialize = function(param) {};
+EventService.prototype.initialize = function(param) {};
 
 /**
  * Terminates the events world.
  */
-glam.EventService.prototype.terminate = function() {};
+EventService.prototype.terminate = function() {};
 
 
 /**
  * Updates the EventService.
  */
-glam.EventService.prototype.update = function()
+EventService.prototype.update = function()
 {
 	do
 	{
-		glam.EventService.eventsPending = false;
-		glam.Application.instance.updateObjects();
+		EventService.eventsPending = false;
+		Application.instance.updateObjects();
 	}
-	while (glam.EventService.eventsPending);
+	while (EventService.eventsPending);
 }
