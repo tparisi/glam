@@ -1,36 +1,41 @@
+module.exports = RiftControllerScript;
 
-goog.require('glam.Prefabs');
+var Prefabs = require("../prefabs/prefabs");
+var Script = require("../scripts/script");
+var GlamObject = require("../core/object");
+var DirectionalLight = require("../lights/directionalLight");
 
-glam.Prefabs.RiftController = function(param)
+var util = require("util");
+
+util.inherits(RiftControllerScript, Script);
+
+Prefabs.RiftController = function(param)
 {
 	param = param || {};
-	
-	var controller = new glam.Object(param);
-	var controllerScript = new glam.RiftControllerScript(param);
+
+	var controller = new GlamObject(param);
+	var controllerScript = new RiftControllerScript(param);
 	controller.addComponent(controllerScript);
 
 	var intensity = param.headlight ? 1 : 0;
-	
-	var headlight = new glam.DirectionalLight({ intensity : intensity });
+
+	var headlight = new DirectionalLight({ intensity : intensity });
 	controller.addComponent(headlight);
 
 	return controller;
 }
 
-goog.provide('glam.RiftControllerScript');
-goog.require('glam.Script');
-
-glam.RiftControllerScript = function(param)
+RiftControllerScript = function(param)
 {
-	glam.Script.call(this, param);
+	Script.call(this, param);
 
 	this._enabled = (param.enabled !== undefined) ? param.enabled : true;
 	this.riftControls = null;
 
 	this._headlightOn = param.headlight;
-	
+
 	this.cameraDir = new THREE.Vector3;
-	
+
     Object.defineProperties(this, {
     	camera: {
 			get : function() {
@@ -51,40 +56,38 @@ glam.RiftControllerScript = function(param)
     });
 }
 
-goog.inherits(glam.RiftControllerScript, glam.Script);
-
-glam.RiftControllerScript.prototype.realize = function()
+RiftControllerScript.prototype.realize = function()
 {
-	this.headlight = this._object.getComponent(glam.DirectionalLight);
+	this.headlight = this._object.getComponent(DirectionalLight);
 	this.headlight.intensity = this._headlightOn ? 1 : 0;
 }
 
-glam.RiftControllerScript.prototype.update = function()
+RiftControllerScript.prototype.update = function()
 {
 	if (this._enabled && this.riftControls) {
 		this.riftControls.update();
 	}
-	
+
 	if (this._headlightOn)
 	{
 		this.cameraDir.set(0, 0, -1);
 		this.cameraDir.transformDirection(this.camera.object.matrixWorld);
-		
+
 		this.headlight.direction.copy(this.cameraDir);
-	}	
+	}
 }
 
-glam.RiftControllerScript.prototype.setEnabled = function(enabled)
+RiftControllerScript.prototype.setEnabled = function(enabled)
 {
 	this._enabled = enabled;
 }
 
-glam.RiftControllerScript.prototype.setCamera = function(camera) {
+RiftControllerScript.prototype.setCamera = function(camera) {
 	this._camera = camera;
 	this.riftControls = this.createControls(camera);
 }
 
-glam.RiftControllerScript.prototype.createControls = function(camera)
+RiftControllerScript.prototype.createControls = function(camera)
 {
 	var controls = new THREE.VRControls(camera.object, function(err) {
 			if (err) {
@@ -95,5 +98,3 @@ glam.RiftControllerScript.prototype.createControls = function(camera)
 	// N.B.: this only works because the callback up there is synchronous...
 	return controls;
 }
-
-

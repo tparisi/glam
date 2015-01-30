@@ -17,9 +17,9 @@
  * @author benvanik
  */
 
-goog.provide('glam.OculusRiftControls');
+module.exports = OculusRiftControls;
 
-glam.OculusRiftControls = function ( camera ) {
+function OculusRiftControls( camera ) {
 
 	var scope = this;
 
@@ -176,14 +176,14 @@ glam.OculusRiftControls = function ( camera ) {
 			//rotation.setFromEuler(angles, 'XYZ');
 			//rotation.normalize();
 			// velocity.applyQuaternion(rotation);
-			
-			if (!(rotation.x == 0 && 
+
+			if (!(rotation.x == 0 &&
 					rotation.y == 0 &&
 					rotation.z == 0 &&
 					rotation.w == 0)) {
-				
+
 				moveObject.quaternion.copy(rotation);
-				
+
 			}
 		}
 

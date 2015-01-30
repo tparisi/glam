@@ -2,9 +2,9 @@
  * @author mrdoob / http://mrdoob.com/
  */
 
-goog.provide('glam.PointerLockControls');
+module.exports = PointerLockControls;
 
-glam.PointerLockControls = function ( camera ) {
+function PointerLockControls( camera ) {
 
   var scope = this;
   this.speed = 0.05
@@ -187,7 +187,7 @@ glam.PointerLockControls = function ( camera ) {
 
 
     yawObject.translateX( velocity.x );
-    yawObject.translateY( velocity.y ); 
+    yawObject.translateY( velocity.y );
     yawObject.translateZ( velocity.z );
 
     if ( yawObject.position.y < 10 ) {
