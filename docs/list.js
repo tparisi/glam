@@ -24,8 +24,9 @@ var list = {
 	},
 
 	"Reference": {
-		"Elements": [
+		"Elements Reference": [
 			[ "Transformable Elements", "reference/elements/scene/transformable-elements"],
+			[ "Visual Elements", "reference/elements/visuals/visual-elements"],
 			[ "<glam>", "reference/elements/scene/glam"],
 			[ "<scene>", "reference/elements/scene/scene"],
 			[ "<group>", "reference/elements/scene/group"],
@@ -39,6 +40,7 @@ var list = {
 			[ "<uvs>", "reference/elements/visuals/uvs"],
 			[ "<colors>", "reference/elements/visuals/colors"],
 			[ "<faces>", "reference/elements/visuals/faces"],
+			[ "<particles>", "reference/elements/visuals/particles"],
 			[ "<arc>", "reference/elements/visuals2d/arc"],
 			[ "<circle>", "reference/elements/visuals2d/circle"],
 			[ "<rect>", "reference/elements/visuals2d/rect"],
@@ -53,7 +55,7 @@ var list = {
 			[ "<controller>", "reference/elements/controllers/controller"],
 			[ "<renderer>", "reference/elements/rendering/renderer"],
 		],
-		"CSS Properties": [
+		"CSS Properties Reference": [
 			[ "transform", "reference/css/transform"],
 			[ "animation", "reference/css/animation"],
 			[ "transition", "reference/css/transition"],
@@ -68,7 +70,7 @@ var list = {
 			[ "vertex-shader", "reference/css/vertex-shader"],
 			[ "shader-uniforms", "reference/css/shader-uniforms"],
 		],
-		"Events": [
+		"Events Reference": [
 			[ "MouseEvent3D", "reference/events/MouseEvent3D"],
 			[ "TouchEvent3D", "reference/events/TouchEvent3D"],
 			[ "Touch3D", "reference/events/Touch3D"],
