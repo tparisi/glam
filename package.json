@@ -1,0 +1,34 @@
+{
+  "name": "glam",
+  "version": "0.0.0",
+  "description": "glam (GL A nd M arkup) is a declarative language for creating 3D web content.",
+  "main": "src/index.js",
+  "directories": {
+    "example": "examples",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "browserify ./ -s glam -o build/glam.js",
+    "build": "watchify ./ -o -s glam build/glam.js",
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:tparisi/glam.git"
+  },
+  "keywords": [
+    "gl",
+    "markup",
+    "3d"
+  ],
+  "author": "tparisi",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tparisi/glam/issues"
+  },
+  "homepage": "https://github.com/tparisi/glam",
+  "devDependencies": {
+    "browserify": "^8.1.1",
+    "watchify": "^2.2.1"
+  }
+}

@@ -7,12 +7,12 @@
 
 /* Hacked-up version of Three.js orbit controls for GLAM
  * Adds mode for one-button operation and optional userMinY
- * 
+ *
  */
 
-goog.provide('glam.OrbitControls');
+module.exports = OrbitControls;
 
-glam.OrbitControls = function ( object, domElement ) {
+function OrbitControls( object, domElement ) {
 
 	this.object = object;
 	this.domElement = ( domElement !== undefined ) ? domElement : document;
@@ -40,13 +40,13 @@ glam.OrbitControls = function ( object, domElement ) {
 
 	this.minDistance = 0;
 	this.maxDistance = Infinity;
-	
+
 	this.keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40 };
 
 	this.oneButton = false;
-	
+
 	this.usekeys = false;
-	
+
 	// internals
 
 	var scope = this;
@@ -281,11 +281,11 @@ glam.OrbitControls = function ( object, domElement ) {
 			    'button': 0,
 			    'preventDefault' : function() {}
 				};
-			
+
 			onMouseDown(mouseEvent);
 		}
 	}
-		
+
 	function onMouseMove( event ) {
 
 		if ( scope.enabled === false ) return;
@@ -332,7 +332,7 @@ glam.OrbitControls = function ( object, domElement ) {
 
 	function onTouchMove( event ) {
 		if ( scope.enabled === false ) return;
-		
+
 		if ( event.changedTouches.length > 1 ) {
 			var touch0 = null;
 			var touch1 = null;
@@ -341,7 +341,7 @@ glam.OrbitControls = function ( object, domElement ) {
 					touch0 = event.changedTouches[i];
 				else if (event.changedTouches[i].identifier == scope.touchId1)
 					touch1 = event.changedTouches[i];
-					
+
 			}
 			if (touch0 && touch1 && scope.userZoom) {
 				 var touchDistance = calcDistance(touch0, touch1);
@@ -372,7 +372,7 @@ glam.OrbitControls = function ( object, domElement ) {
 			    'button': 0,
 			    'preventDefault' : function() {}
 				};
-			
+
 			onMouseMove(mouseEvent);
 		}
 	}
@@ -382,7 +382,7 @@ glam.OrbitControls = function ( object, domElement ) {
 		var dy = touch1.clientY - touch0.clientY;
 		return Math.sqrt(dx * dx + dy * dy);
 	}
-	
+
 	function onMouseUp( event ) {
 
 		document.removeEventListener( 'mousemove', onMouseMove, false );
@@ -394,7 +394,7 @@ glam.OrbitControls = function ( object, domElement ) {
 
 	}
 
-	
+
 	function onTouchEnd( event ) {
 		if ( event.changedTouches.length > 1 ) {
 			// nothing to do
@@ -416,11 +416,11 @@ glam.OrbitControls = function ( object, domElement ) {
 			    'button': 0,
 			    'preventDefault' : function() {}
 			};
-			
+
 			onMouseUp(mouseEvent);
 		}
 	}
-		
+
 	function onMouseWheel( event ) {
 
 		event.preventDefault();
@@ -456,7 +456,7 @@ glam.OrbitControls = function ( object, domElement ) {
 		if ( !scope.usekeys) {
 			return;
 		}
-		
+
 		if ( scope.enabled === false ) return;
 		if ( scope.userPan === false ) return;
 
@@ -487,4 +487,4 @@ glam.OrbitControls = function ( object, domElement ) {
 
 };
 
-glam.OrbitControls.prototype = Object.create( THREE.EventDispatcher.prototype );
+OrbitControls.prototype = Object.create( THREE.EventDispatcher.prototype );

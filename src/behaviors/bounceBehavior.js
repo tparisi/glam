@@ -1,28 +1,32 @@
 /**
  * @fileoverview BounceBehavior - simple angular rotation
- * 
+ *
  * @author Tony Parisi
  */
 
-goog.provide('glam.BounceBehavior');
-goog.require('glam.Behavior');
+// goog.provide('BounceBehavior');
 
-glam.BounceBehavior = function(param) {
+module.exports = BounceBehavior;
+
+var Behavior = require("./behavior");
+var util = require("util");
+
+util.inherits(BounceBehavior, Behavior);
+
+function BounceBehavior(param) {
 	param = param || {};
 	this.duration = (param.duration !== undefined) ? param.duration : 1;
 	this.bounceVector = (param.bounceVector !== undefined) ? param.bounceVector : new THREE.Vector3(0, 1, 0);
 	this.tweenUp = null;
 	this.tweenDown = null;
-    glam.Behavior.call(this, param);
+    Behavior.call(this, param);
 }
 
-goog.inherits(glam.BounceBehavior, glam.Behavior);
-
-glam.BounceBehavior.prototype.start = function()
+BounceBehavior.prototype.start = function()
 {
 	if (this.running)
 		return;
-	
+
 	this.bouncePosition = new THREE.Vector3;
 	this.bounceEndPosition = this.bounceVector.clone();
 	this.prevBouncePosition = new THREE.Vector3;
@@ -31,17 +35,17 @@ glam.BounceBehavior.prototype.start = function()
 	.easing(TWEEN.Easing.Quadratic.InOut)
 	.repeat(0)
 	.start();
-	
-	glam.Behavior.prototype.start.call(this);
+
+	Behavior.prototype.start.call(this);
 }
 
-glam.BounceBehavior.prototype.evaluate = function(t)
+BounceBehavior.prototype.evaluate = function(t)
 {
 	this.bounceDelta.copy(this.bouncePosition).sub(this.prevBouncePosition);
 	this.prevBouncePosition.copy(this.bouncePosition);
-	
+
 	this._object.transform.position.add(this.bounceDelta);
-	
+
 	if (t >= (this.duration / 2))
 	{
 		if (this.tweenUp)
@@ -62,13 +66,13 @@ glam.BounceBehavior.prototype.evaluate = function(t)
 			.start();
 		}
 	}
-	
+
 	if (t >= this.duration)
 	{
 		this.tweenDown.stop();
 		this.tweenDown = null;
 		this.stop();
-		
+
 		if (this.loop)
 			this.start();
 	}

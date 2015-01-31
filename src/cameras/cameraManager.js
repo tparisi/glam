@@ -1,40 +1,46 @@
 /**
- * @fileoverview Camera Manager - singleton to manage cameras, active, resize etc.
- * 
- * @author Tony Parisi
- */
+* @fileoverview Camera Manager - singleton to manage cameras, active, resize etc.
+*
+* @author Tony Parisi
+*/
 
-goog.provide('glam.CameraManager');
+// goog.provide('CameraManager');
 
-glam.CameraManager.addCamera = function(camera)
+var CameraManager = {};
+
+module.exports = CameraManager;
+
+var Graphics = require("../graphics/graphics");
+
+CameraManager.addCamera = function(camera)
 {
-	glam.CameraManager.cameraList.push(camera);
+	CameraManager.cameraList.push(camera);
 }
 
-glam.CameraManager.removeCamera = function(camera)
+CameraManager.removeCamera = function(camera)
 {
-    var i = glam.CameraManager.cameraList.indexOf(camera);
+		var i = CameraManager.cameraList.indexOf(camera);
 
-    if (i != -1)
-    {
-    	glam.CameraManager.cameraList.splice(i, 1);
-    }
+		if (i != -1)
+		{
+			CameraManager.cameraList.splice(i, 1);
+		}
 }
 
-glam.CameraManager.setActiveCamera = function(camera)
+CameraManager.setActiveCamera = function(camera)
 {
-	if (glam.CameraManager.activeCamera && glam.CameraManager.activeCamera != camera)
-		glam.CameraManager.activeCamera.active = false;
-	
-	glam.CameraManager.activeCamera = camera;
-	glam.Graphics.instance.setCamera(camera.object);
+	if (CameraManager.activeCamera && CameraManager.activeCamera != camera)
+		CameraManager.activeCamera.active = false;
+
+	CameraManager.activeCamera = camera;
+	Graphics.instance.setCamera(camera.object);
 }
 
 
-glam.CameraManager.handleWindowResize = function(width, height)
+CameraManager.handleWindowResize = function(width, height)
 {
-	var cameras = glam.CameraManager.cameraList;
-	
+	var cameras = CameraManager.cameraList;
+
 	if (cameras.length == 0)
 		return false;
 
@@ -49,5 +55,5 @@ glam.CameraManager.handleWindowResize = function(width, height)
 }
 
 
-glam.CameraManager.cameraList = [];
-glam.CameraManager.activeCamera = null;
+CameraManager.cameraList = [];
+CameraManager.activeCamera = null;

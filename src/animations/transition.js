@@ -2,41 +2,45 @@
  * @fileoverview General-purpose transitions
  * @author Tony Parisi
  */
-goog.provide('glam.Transition');
-goog.require('glam.Component');
+// goog.provide('glam.Transition');
+
+module.exports = Transition;
+
+var Component = require("../core/component");
+var util = require("util");
+
+util.inherits(Transition, Component);
 
 // Transition class
 // Construction/initialization
-glam.Transition = function(param) 
+function Transition(param)
 {
-    glam.Component.call(this, param);
-	    		
+    Component.call(this, param);
+
 	param = param || {};
-	
+
 	this.running = false;
-	this.duration = param.duration ? param.duration : glam.Transition.default_duration;
+	this.duration = param.duration ? param.duration : Transition.default_duration;
 	this.loop = param.loop ? param.loop : false;
 	this.autoStart = param.autoStart || false;
-	this.easing = param.easing || glam.Transition.default_easing;
+	this.easing = param.easing || Transition.default_easing;
 	this.target = param.target;
 	this.to = param.to;
 }
 
-goog.inherits(glam.Transition, glam.Component);
-	
-glam.Transition.prototype.realize = function()
+Transition.prototype.realize = function()
 {
-	glam.Component.prototype.realize.call(this);
+	Component.prototype.realize.call(this);
 	this.createTweens();
 	if (this.autoStart) {
 		this.start();
 	}
 }
 
-glam.Transition.prototype.createTweens = function()
+Transition.prototype.createTweens = function()
 {
 	var repeatCount = this.loop ? Infinity : 0;
-	
+
 	var that = this;
 	this.tween = new TWEEN.Tween(this.target)
 		.to(this.to, this.duration)
@@ -49,32 +53,32 @@ glam.Transition.prototype.createTweens = function()
 }
 
 // Start/stop
-glam.Transition.prototype.start = function()
+Transition.prototype.start = function()
 {
 	if (this.running)
 		return;
-	
+
 	this.running = true;
-	
+
 	this.tween.start();
 }
 
-glam.Transition.prototype.stop = function()
+Transition.prototype.stop = function()
 {
 	if (!this.running)
 		return;
-	
+
 	this.running = false;
 	this.dispatchEvent("complete");
 
 	this.tween.stop();
 }
 
-glam.Transition.prototype.onTweenComplete = function()
+Transition.prototype.onTweenComplete = function()
 {
 	this.running = false;
 	this.dispatchEvent("complete");
 }
 // Statics
-glam.Transition.default_duration = 1000;
-glam.Transition.default_easing = TWEEN.Easing.Linear.None;
+Transition.default_duration = 1000;
+Transition.default_easing = TWEEN.Easing.Linear.None;

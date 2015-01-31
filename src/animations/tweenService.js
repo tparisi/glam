@@ -1,17 +1,21 @@
 /**
  *
  */
-goog.require('glam.Service');
-goog.provide('glam.TweenService');
+// goog.provide('TweenService');
+
+module.exports = TweenService;
+
+var Service = require("../core/service");
+var util = require("util");
 
 /**
  * The TweenService.
  *
- * @extends {glam.Service}
+ * @extends {Service}
  */
-glam.TweenService = function() {};
+TweenService = function() {};
 
-goog.inherits(glam.TweenService, glam.Service);
+goog.inherits(TweenService, Service);
 
 //---------------------------------------------------------------------
 // Initialization/Termination
@@ -20,18 +24,18 @@ goog.inherits(glam.TweenService, glam.Service);
 /**
  * Initializes the events system.
  */
-glam.TweenService.prototype.initialize = function(param) {};
+TweenService.prototype.initialize = function(param) {};
 
 /**
  * Terminates the events world.
  */
-glam.TweenService.prototype.terminate = function() {};
+TweenService.prototype.terminate = function() {};
 
 
 /**
  * Updates the TweenService.
  */
-glam.TweenService.prototype.update = function()
+TweenService.prototype.update = function()
 {
 	if (window.TWEEN)
 		TWEEN.update();

@@ -1,25 +1,29 @@
 /**
  * @fileoverview FadeBehavior - simple angular rotation
- * 
+ *
  * @author Tony Parisi
  */
 
-goog.provide('glam.FadeBehavior');
-goog.require('glam.Behavior');
+// goog.provide('FadeBehavior');
 
-glam.FadeBehavior = function(param) {
+module.exports = FadeBehavior;
+
+var Behavior = require("./behavior");
+var util = require("util");
+
+util.inherits(FadeBehavior, Behavior);
+
+function FadeBehavior(param) {
 	param = param || {};
 	this.duration = (param.duration !== undefined) ? param.duration : 1;
 	this.opacity = (param.opacity !== undefined) ? param.opacity : 0.5;
 	this.savedOpacities = [];
 	this.savedTransparencies = [];
 	this.tween = null;
-    glam.Behavior.call(this, param);
+	Behavior.call(this, param);
 }
 
-goog.inherits(glam.FadeBehavior, glam.Behavior);
-
-glam.FadeBehavior.prototype.start = function()
+FadeBehavior.prototype.start = function()
 {
 	if (this.running)
 		return;
@@ -31,20 +35,20 @@ glam.FadeBehavior.prototype.start = function()
 			this.savedOpacities.push(visuals[i].material.opacity);
 			this.savedTransparencies.push(visuals[i].material.transparent);
 			visuals[i].material.transparent = this.opacity < 1 ? true : false;
-		}	
+		}
 	}
-	
+
 	this.value = { opacity : this.savedOpacities[0] };
 	this.targetValue = { opacity : this.opacity };
 	this.tween = new TWEEN.Tween(this.value).to(this.targetValue, this.duration * 1000)
 	.easing(TWEEN.Easing.Quadratic.InOut)
 	.repeat(0)
 	.start();
-	
-	glam.Behavior.prototype.start.call(this);
+
+	Behavior.prototype.start.call(this);
 }
 
-glam.FadeBehavior.prototype.evaluate = function(t)
+FadeBehavior.prototype.evaluate = function(t)
 {
 	if (t >= this.duration)
 	{
@@ -52,23 +56,23 @@ glam.FadeBehavior.prototype.evaluate = function(t)
 		if (this.loop)
 			this.start();
 	}
-	
+
 	if (this._object.visuals)
 	{
 		var visuals = this._object.visuals;
 		var i, len = visuals.length;
 		for (i = 0; i < len; i++) {
 			visuals[i].material.opacity = this.value.opacity;
-		}	
+		}
 	}
 
 }
 
 
-glam.FadeBehavior.prototype.stop = function()
+FadeBehavior.prototype.stop = function()
 {
 	if (this.tween)
 		this.tween.stop();
 
-	glam.Behavior.prototype.stop.call(this);
+	Behavior.prototype.stop.call(this);
 }

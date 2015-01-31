@@ -1,39 +1,47 @@
+// goog.provide('ModelControllerScript');
 
-goog.require('glam.Prefabs');
+module.exports = ModelControllerScript;
 
-glam.Prefabs.ModelController = function(param)
+var GlamObject = require("../core/object");
+var Prefabs = require("../prefabs/prefabs");
+var Script = require("../scripts/script");
+var Graphics = require("../graphics/graphics");
+var OrbitControls = require("./orbitControls");
+var DirectionalLight = require("../lights/directionalLight");
+var util = require("util");
+
+util.inherits(ModelControllerScript, Script);
+
+Prefabs.ModelController = function(param)
 {
 	param = param || {};
-	
-	var controller = new glam.Object(param);
-	var controllerScript = new glam.ModelControllerScript(param);
+
+	var controller = new GlamObject(param);
+	var controllerScript = new ModelControllerScript(param);
 	controller.addComponent(controllerScript);
 
 	var intensity = param.headlight ? 1 : 0;
-	
-	var headlight = new glam.DirectionalLight({ intensity : intensity });
+
+	var headlight = new DirectionalLight({ intensity : intensity });
 	controller.addComponent(headlight);
-	
+
 	return controller;
 }
 
-goog.provide('glam.ModelControllerScript');
-goog.require('glam.Script');
-
-glam.ModelControllerScript = function(param)
+function ModelControllerScript(param)
 {
-	glam.Script.call(this, param);
+	Script.call(this, param);
 
-	this.radius = param.radius || glam.ModelControllerScript.default_radius;
-	this.minRadius = param.minRadius || glam.ModelControllerScript.default_min_radius;
-	this.minAngle = (param.minAngle !== undefined) ? param.minAngle : 
-		glam.ModelControllerScript.default_min_angle;
-	this.maxAngle = (param.maxAngle !== undefined) ? param.maxAngle : 
-		glam.ModelControllerScript.default_max_angle;
-	this.minDistance = (param.minDistance !== undefined) ? param.minDistance : 
-		glam.ModelControllerScript.default_min_distance;
-	this.maxDistance = (param.maxDistance !== undefined) ? param.maxDistance : 
-		glam.ModelControllerScript.default_max_distance;
+	this.radius = param.radius || ModelControllerScript.default_radius;
+	this.minRadius = param.minRadius || ModelControllerScript.default_min_radius;
+	this.minAngle = (param.minAngle !== undefined) ? param.minAngle :
+		ModelControllerScript.default_min_angle;
+	this.maxAngle = (param.maxAngle !== undefined) ? param.maxAngle :
+		ModelControllerScript.default_max_angle;
+	this.minDistance = (param.minDistance !== undefined) ? param.minDistance :
+		ModelControllerScript.default_min_distance;
+	this.maxDistance = (param.maxDistance !== undefined) ? param.maxDistance :
+		ModelControllerScript.default_max_distance;
 	this.allowPan = (param.allowPan !== undefined) ? param.allowPan : true;
 	this.allowZoom = (param.allowZoom !== undefined) ? param.allowZoom : true;
 	this.allowRotate = (param.allowRotate !== undefined) ? param.allowRotate : true;
@@ -42,7 +50,7 @@ glam.ModelControllerScript = function(param)
 	this._headlightOn = param.headlight;
 	this.cameras = [];
 	this.controlsList = [];
-	
+
     Object.defineProperties(this, {
     	camera: {
 			get : function() {
@@ -80,24 +88,23 @@ glam.ModelControllerScript = function(param)
     });
 }
 
-goog.inherits(glam.ModelControllerScript, glam.Script);
 
-glam.ModelControllerScript.prototype.realize = function()
+ModelControllerScript.prototype.realize = function()
 {
-	this.headlight = this._object.getComponent(glam.DirectionalLight);
+	this.headlight = this._object.getComponent(DirectionalLight);
 	this.headlight.intensity = this._headlightOn ? 1 : 0;
 }
 
-glam.ModelControllerScript.prototype.createControls = function(camera)
+ModelControllerScript.prototype.createControls = function(camera)
 {
-	var controls = new glam.OrbitControls(camera.object, glam.Graphics.instance.container);
+	var controls = new OrbitControls(camera.object, Graphics.instance.container);
 	controls.userMinY = this.minY;
 	controls.userMinZoom = this.minZoom;
 	controls.userMaxZoom = this.maxZoom;
 	controls.minPolarAngle = this.minAngle;
-	controls.maxPolarAngle = this.maxAngle;	
-	controls.minDistance = this.minDistance;	
-	controls.maxDistance = this.maxDistance;	
+	controls.maxPolarAngle = this.maxAngle;
+	controls.minDistance = this.minDistance;
+	controls.maxDistance = this.maxDistance;
 	controls.oneButton = this.oneButton;
 	controls.userPan = this.allowPan;
 	controls.userZoom = this.allowZoom;
@@ -106,22 +113,22 @@ glam.ModelControllerScript.prototype.createControls = function(camera)
 	return controls;
 }
 
-glam.ModelControllerScript.prototype.update = function()
+ModelControllerScript.prototype.update = function()
 {
 	this.controls.update();
 	if (this._headlightOn)
 	{
 		this.headlight.direction.copy(this._camera.position).negate();
-	}	
+	}
 }
 
-glam.ModelControllerScript.prototype.setCamera = function(camera) {
+ModelControllerScript.prototype.setCamera = function(camera) {
 	this._camera = camera;
 	this._camera.position.set(0, this.radius / 2, this.radius);
 	this.controls = this.createControls(camera);
 }
 
-glam.ModelControllerScript.prototype.setHeadlightOn = function(on)
+ModelControllerScript.prototype.setHeadlightOn = function(on)
 {
 	this._headlightOn = on;
 	if (this.headlight) {
@@ -129,19 +136,19 @@ glam.ModelControllerScript.prototype.setHeadlightOn = function(on)
 	}
 }
 
-glam.ModelControllerScript.prototype.setEnabled = function(enabled)
+ModelControllerScript.prototype.setEnabled = function(enabled)
 {
 	this._enabled = enabled;
 	this.controls.enabled = enabled;
 }
 
-glam.ModelControllerScript.default_radius = 10;
-glam.ModelControllerScript.default_min_radius = 1;
-glam.ModelControllerScript.default_min_angle = 0;
-glam.ModelControllerScript.default_max_angle = Math.PI;
-glam.ModelControllerScript.default_min_distance = 0;
-glam.ModelControllerScript.default_max_distance = Infinity;
-glam.ModelControllerScript.MAX_X_ROTATION = 0; // Math.PI / 12;
-glam.ModelControllerScript.MIN_X_ROTATION = -Math.PI / 2;
-glam.ModelControllerScript.MAX_Y_ROTATION = Math.PI * 2;
-glam.ModelControllerScript.MIN_Y_ROTATION = -Math.PI * 2;
+ModelControllerScript.default_radius = 10;
+ModelControllerScript.default_min_radius = 1;
+ModelControllerScript.default_min_angle = 0;
+ModelControllerScript.default_max_angle = Math.PI;
+ModelControllerScript.default_min_distance = 0;
+ModelControllerScript.default_max_distance = Infinity;
+ModelControllerScript.MAX_X_ROTATION = 0; // Math.PI / 12;
+ModelControllerScript.MIN_X_ROTATION = -Math.PI / 2;
+ModelControllerScript.MAX_Y_ROTATION = Math.PI * 2;
+ModelControllerScript.MIN_Y_ROTATION = -Math.PI * 2;

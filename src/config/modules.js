@@ -1,8 +1,10 @@
 /**
  * @fileoverview Module Configuration
- * 
+ *
  * @author Tony Parisi
  */
+
+// TODO: Kill meeee
 
 goog.provide('glam.Modules');
 goog.require('glam.Component');
@@ -116,4 +118,3 @@ glam.Modules = function()
 }
 
 var CLOSURE_NO_DEPS = true;
-

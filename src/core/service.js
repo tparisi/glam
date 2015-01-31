@@ -1,7 +1,8 @@
 /**
  * @author Tony Parisi
  */
-goog.provide('glam.Service');
+
+module.exports = Service;
 
 /**
  * Interface for a Service.
@@ -9,7 +10,7 @@ goog.provide('glam.Service');
  * Allows multiple different backends for the same type of service.
  * @interface
  */
-glam.Service = function() {};
+Service = function() {};
 
 //---------------------------------------------------------------------
 // Initialization/Termination
@@ -18,15 +19,15 @@ glam.Service = function() {};
 /**
  * Initializes the Service - Abstract.
  */
-glam.Service.prototype.initialize = function(param) {};
+Service.prototype.initialize = function(param) {};
 
 /**
  * Terminates the Service - Abstract.
  */
-glam.Service.prototype.terminate = function() {};
+Service.prototype.terminate = function() {};
 
 
 /**
  * Updates the Service - Abstract.
  */
-glam.Service.prototype.update = function() {};
+Service.prototype.update = function() {};

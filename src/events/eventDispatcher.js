@@ -1,22 +1,23 @@
 /**
  * @fileoverview EventDispatcher is the base class for any object that sends/receives messages
- * 
+ *
  * @author Tony Parisi
  */
-goog.provide('glam.EventDispatcher');
-goog.require('glam.EventService');
-goog.require('glam.Time');
+module.exports = EventDispatcher;
+
+var EventService = require("./eventService");
+var Time = require("./time/time");
 
 /**
  * @constructor
  */
-glam.EventDispatcher = function() {
+function EventDispatcher() {
     this.eventTypes = {};
     this.timestamps = {};
     this.connections = {};
 }
 
-glam.EventDispatcher.prototype.addEventListener = function(type, listener) {
+EventDispatcher.prototype.addEventListener = function(type, listener) {
     var listeners = this.eventTypes[type];
     if (listeners)
     {
@@ -35,7 +36,7 @@ glam.EventDispatcher.prototype.addEventListener = function(type, listener) {
     listeners.push(listener);
 }
 
-glam.EventDispatcher.prototype.removeEventListener =  function(type, listener) {
+EventDispatcher.prototype.removeEventListener =  function(type, listener) {
     if (listener)
     {
         var listeners = this.eventTypes[type];
@@ -56,18 +57,18 @@ glam.EventDispatcher.prototype.removeEventListener =  function(type, listener) {
     }
 }
 
-glam.EventDispatcher.prototype.dispatchEvent = function(type) {
+EventDispatcher.prototype.dispatchEvent = function(type) {
     var listeners = this.eventTypes[type];
 
     if (listeners)
     {
-    	var now = glam.Time.instance.currentTime;
-    	
+    	var now = Time.instance.currentTime;
+
     	if (this.timestamps[type] < now)
     	{
     		this.timestamps[type] = now;
-	    	glam.EventService.eventsPending = true;
-	    	
+	    	EventService.eventsPending = true;
+
     		[].shift.call(arguments);
 	    	for (var i = 0; i < listeners.length; i++)
 	        {
@@ -77,7 +78,7 @@ glam.EventDispatcher.prototype.dispatchEvent = function(type) {
     }
 }
 
-glam.EventDispatcher.prototype.hasEventListener = function (subscribers, subscriber) {
+EventDispatcher.prototype.hasEventListener = function (subscribers, subscriber) {
     var listeners = this.eventTypes[type];
     if (listeners)
         return (listeners.indexOf(listener) != -1)
@@ -85,7 +86,7 @@ glam.EventDispatcher.prototype.hasEventListener = function (subscribers, subscri
     	return false;
 }
 
-glam.EventDispatcher.prototype.connect = function(type, target, targetProp) {
+EventDispatcher.prototype.connect = function(type, target, targetProp) {
     var connections = this.connections[type];
     if (connections)
     {
@@ -104,15 +105,15 @@ glam.EventDispatcher.prototype.connect = function(type, target, targetProp) {
 
     var that = this;
     var listener = (function() { return function() { that.handleConnection(null, target, targetProp, arguments); } }) ();
-    var connection = { listener : listener, sourceProp : null, target : target, 
+    var connection = { listener : listener, sourceProp : null, target : target,
     		targetProp : targetProp };
     connections.push(connection);
     var connection = this.addEventListener(type, listener);
 }
 
-glam.EventDispatcher.prototype.handleConnection = function(sourceProp, target, targetProp, args) {
+EventDispatcher.prototype.handleConnection = function(sourceProp, target, targetProp, args) {
 	var targetValue = target[targetProp];
-	
+
 	if (typeof targetValue == "function") {
 		targetValue.apply(target, args);
 	}
@@ -125,5 +126,3 @@ glam.EventDispatcher.prototype.handleConnection = function(sourceProp, target, t
 		target[targetProp] = sourceProp ? args[0][sourceProp] : args[0];
 	}
 }
-
-    
