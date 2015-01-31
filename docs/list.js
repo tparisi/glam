@@ -2,7 +2,7 @@ var list = {
 
 	"Manual": {
 		"Introduction": [
-			[ "Getting Started with GLAM", "manual/introduction/Getting-started" ],
+			[ "Getting Started", "manual/introduction/Getting-started" ],
 			[ "Creating a scene", "manual/introduction/Creating-a-scene" ],
 		],
 		"Key Concepts": [
