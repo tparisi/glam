@@ -14,37 +14,21 @@
 		<div class="desc">The root element of a glam document.</div>
 
 
-		<h2>Constructor</h2>
+		<h2>Creating</h2>
 
 
-		<h3>[name]()</h3>
+		<h3>&lt;glam&gt;</h3>
 		<div>
-			This constructor sets the following properties to the correct type: matrixWorldInverse and projectionMatrix.
+			This creates the root GLAM document. Under the covers, this instantiates a GLAM application object that manages Three.js renderer and scene creation, window sizing and other events, as well as the <strong>requestAnimationFrame</strong> run loop. In the current implementation, the root &lt;glam&gt; tag must be created as a child of a &lt;div&gt; element. This restriction will probably go away soon.
 			
 		</div>
 
 
 		<h2>Attributes</h2>
 
-		<h3>[property:Matrix4 matrixWorldInverse]</h3>
-		<div>This is the inverse of matrixWorld. MatrixWorld contains the Matrix which has the world transform of the Camera.</div>
-
-		<h3>[property:Matrix4 projectionMatrix]</h3>
-		<div>This is the matrix which contains the projection.</div>
-
-
-		<h2>Methods</h2>
-
-		<h3>[method:null lookAt]( [page:Vector3 vector] )</h3>
 		<div>
-		vector — point to look at<br />
-		<br />
-		This makes the camera look at the vector position in the global space as long as the parent of this camera is the scene or at position (0,0,0).
+			This element has no attributes.
 		</div>
 
-
-		<h2>Source</h2>
-
-		[link:https://github.com/tparisi/glam/blob/master/src/[path].js src/[path].js]
 	</body>
 </html>

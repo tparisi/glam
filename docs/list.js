@@ -25,6 +25,7 @@ var list = {
 
 	"Reference": {
 		"Elements": [
+			[ "Transformable Elements", "reference/elements/scene/transformable-elements"],
 			[ "<glam>", "reference/elements/scene/glam"],
 			[ "<scene>", "reference/elements/scene/scene"],
 			[ "<group>", "reference/elements/scene/group"],
