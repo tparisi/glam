@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<script src="../../list.js"></script>
+		<script src="../../page.js"></script>
+		<link type="text/css" rel="stylesheet" href="../../page.css" />
+	</head>
+	<body>
+        <h1>3D interaction and DOM events</h1>
+
+            <section>
+
+                <h2>3D Mouse Events</h2>
+                    <p>GLAM defines new DOM event types for handling 3D interaction with the scene. These
+                    events generate 3D picking information
+                     </p>
+
+
+                        <strong>MouseEvent3D</strong> is a superset of MouseEvent that adds the following properites:
+                        <ul>
+                            <li><strong>point</strong> - the point of intersection with the pointing device, in 
+                                model space coordinates</li>
+                            <li><strong>face</strong> - the face intersected with the pointing device</li>
+                            <li><strong>normal</strong> - the normal vector to the intersected face</li>
+                            <li><strong>textureCoordinate - the interpoalted texture coordinate at the intersection
+                                point</strong></li>
+                        </ul>
+                        
+                <h2>3D Touch Events</h2>
+
+                    <p>For touch input, <strong>TouchEvent3D</strong> extends TouchEvent by containing an array of Touch3D objects instead
+                        of 2D Touch objects. Each Touch3D contains the 3D new properties defined by MouseEvent3D (see above).
+                    </p>
+
+                    <p>The following JavaScript code fragment listens for MouseEvent3D events on a mesh, placing an arrow that points out of the object along the intersected normal, from the point of intersection:</p>
+        <code>
+mesh.addEventListener("click", function(event) {
+    // handle click event by calling a user-defined function
+    // that adds geometric annotations to the scene graph
+    addNormalToMesh(mesh, event.point, event.normal);
+});
+        </code>
+
+                <h2>3D Viewing Events</h2>
+
+                    <p>GLAM defines events for when the camera is looking at an object; that is, when the ray cast from the camera position to the back plane of the view frustrum intersects an object. The events <strong>viewover</strong> and <strong>viewout</strong> are generated when the ray first interesects the object, and when it stops intersecting the object, respectively.
+                    </p>
+
+                    <p>
+                    3D viewing events are generally useful, but in particular are quite valuable in virtual reality applications, where the object is being looked at is used as a selection mechanism.
+                    </p>
+                    <p>The following JavaScript code fragment listens for <strong>viewover</strong> and <strong>viewout</strong> events on a sphere, using that to save away which sphere is being looked at:</p>
+        <code>
+    sphereelt.addEventListener("viewover", function(event) {
+        selectedBubble = groupelt;
+    });
+    sphereelt.addEventListener("viewout", function(event) {
+        selectedBubble = null;
+    });
+            </code>
+
+                    <p>For complete information on 3D input events, refer to the Events Reference.
+
+            </section>
+</html>
