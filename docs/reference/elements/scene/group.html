@@ -12,7 +12,10 @@
 		<h1>[name]</h1>
 
 		<div class="desc">A grouping element used to create the scene graph hierarchy. Groups are 
-		<a href="transformable-elements.html">transformable elements</a>; their position, rotation and scale can be changed. Transformations on group elements can be nested and therefore affect the transformations of all descendants. For more information see <a href="../../manual/concepts/transformation-hierarchy">The Transformation Hierarchy</a>. 
+		<a href="transformable-elements.html">transformable elements</a>; their position, rotation and scale can be changed. Transforms defined for a 'group' element affect all of its descendants. 'group' elements can be nested, thus creating a hierarchy of objects and their transformations. (For more information, see <a href="../../manual/concepts/transformation-hierarchy">The Transformation Hierarchy</a>.)
+
+		<p>Non-transformable elements such as 'animation' or 'effect' can also be grouped (by creating them as children of 'group' elements) for convenience, but the transformation hierarchy has no effect on those elements.</p>
+
 </div>
 
 		<h2>Creating</h2>

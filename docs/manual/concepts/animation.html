@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<script src="../../list.js"></script>
+		<script src="../../page.js"></script>
+		<link type="text/css" rel="stylesheet" href="../../page.css" />
+	</head>
+	<body>
+        <h1>3D Animation</h1>
+
+                <p>3D animation can be used to animate GLAM elements over time. 3D animation is not limited to transform values. Any element's attribute or
+                CSS property can be animated to create a 3D special
+                    effect, such as colors, opacity and material uniforms for shaders.</p>
+
+
+                <section>
+                    <h2>Using CSS Animations to Animate Elements</h2>
+                    <p>Standard CSS Animations can be applied to animate GLAM elements over time. The following CSS fragment defines
+                    a keyframe animation to rotate the cube <strong>cube1</strong> about its y-axis over a 10-second duration with
+                    looping:</p>            
+            <code>    
+/* keyframe animation for the cube: 10-second looping rotation about y-axis */
+@keyframes kfRotateY {
+  from {
+    transform: rotateY(0deg);
+  }
+
+  to {
+    transform: rotateY(360deg);
+  }
+}
+
+#cube1 {
+    animation-duration: 10s;
+    animation-name: kfRotateY;
+    animation-iteration-count: infinite;
+    animation-timing-function:linear;
+}
+            </code>    
+
+                </section>
+
+                <section>
+                    <h2>The 'animation' Element</h2>
+                    <p>GLAM elements can also be animated using the 'animation' element, a
+                        tag that can be defined within the GLAM document. This not only provides an alternate, more concise syntax, but is ultimately intended to support animation data that cannot be defined using
+                        the CSS animation standard.</p>  
+
+                    <p>Animations are defined using a combination of the 'animation' element and 'keyframe' elements to define the individual keyframes. Animations are bound to an element by setting the element's <strong>animation</strong> attribute.
+                    </p>
+                    <p>
+                    The following example animates
+
+                         <strong>cube1</strong> about its y-axis over a 10-second duration with
+                    looping:</p>            
+            <code>    
+&lt;glam&gt;
+  &lt;scene&gt;
+    &lt;box id="photocube" animation="animRotateY"&gt;&lt;/box&gt;
+    &lt;animation id="animRotateY" duration="10s" iteration-count="infinite" timing-function="linear"&gt;
+        &lt;keyframe time="0%" property="transform" value="rotateY(0deg);"&gt;&lt;/keyframe&gt;
+        &lt;keyframe time="50%" property="transform" value="rotateY(180deg);"&gt;&lt;/keyframe&gt;
+        &lt;keyframe time="100%" property="transform" value="rotateY(360deg);"&gt;&lt;/keyframe&gt;
+    &lt;/animation&gt;
+  &lt;/scene&gt;
+&lt;/glam&gt;
+            </code>    
+
+                </section>
+                <section>
+                    <h2>3D Transitions</h2>
+                    <p>3D transitions are a good way to produce one-shot effects such as chaging a color from one value to another over time (also known as a <i>tween</i>).</p>
+                    <p>NOTE: GLAM includes experimental support for 3D transitions, but it is currently not in good working order.</p>  
+
+                </section>
+
+</html>

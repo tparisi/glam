@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<script src="../../list.js"></script>
+		<script src="../../page.js"></script>
+		<link type="text/css" rel="stylesheet" href="../../page.css" />
+	</head>
+	<body>
+        <h1>Importing Models</h1>
+
+            <section>
+
+                    <p>GLAM provides authors a way to embed external 3D data into the document. This data is stored in other 
+                        standard 3D formats. This is analogous to embedding image files in JPEG or PNG format into
+                        a 2D HTML document. GLAM is not designed for compact representation, but rather for ease of authoring
+                        and interactivity. Therefore, as a practical matter it will often be desirable to embed
+                        models in formats intended to solve those problems, such as OBJ, COLLADA and glTF. GLAM
+                        achieves this through use of <i>imports</i>.
+                     </p>
+                     <p>The following example shows a GLAM scene that imports an OBJ model and adds
+                        a camera. The import element's <strong>src</strong>
+                        property specifies a URI to the imported scene file.
+                    </p>
+
+        <code>
+
+&lt;glam&gt;
+    &lt;scene&gt;
+        &lt;import id=&quot;imported_scene&quot; src=&quot;./models/model.obj&quot;&gt;
+        &lt;/import&gt;
+        &lt;camera&gt;&lt;/camera&gt;
+    &lt;/scene&gt;
+&lt;/glam&gt;
+
+        </code>
+
+            <p>
+                A GLAM scene can contain any number of 'import' elements. This is useful for importing multiple models into the same scene. 'import' elements can be transformed (translated, rotated, scaled) and animated just like any other GLAM element.
+            </p>
+            </section>
+
+
+    </section>
+
+</html>

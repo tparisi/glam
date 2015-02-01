@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<script src="../../list.js"></script>
+		<script src="../../page.js"></script>
+		<link type="text/css" rel="stylesheet" href="../../page.css" />
+	</head>
+	<body>
+
+            <h1>Navigation and Viewing</h1>
+            <section>
+                <h2>Camera controllers</h2>
+                <p>
+                    Rather than requiring the programmer to implement mouse-based control of a scene, for example to rotate a model or walk through a scene, GLAM provides built-in behavior in the form of <i>camera controllers</i>:
+                </p>
+                <ul>
+                    <li>
+                        FPS controller – first-person navigation: move the user through a scene with mouse, touch device and keyboard
+                    </li>
+                    <li>
+                        Model controller – orbit the camera around the center of the scene/model using the mouse, touch device and keyboard
+                    </li>
+                </ul>
+                <p>Controllers are added to a scene using the 'controller' element. This element has a <strong>type</strong> attribute that defines the interaction type, with valid values of "FPS" and "model".
+                </p>
+                <p>By default, GLAM creates a camera controller with <strong>type</strong> "model" so that simple scenes and models can be rotated with the mouse or touch device.
+                </p>
+            </section>
+
+
+</html>

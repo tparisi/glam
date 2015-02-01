@@ -56,7 +56,7 @@ var onDocumentLoad = function ( event ) {
 	}
 
 	// Edit button
-
+/*
 	var button = document.createElement( 'div' );
 	button.id = 'button';
 	button.textContent = 'Edit';
@@ -68,7 +68,7 @@ var onDocumentLoad = function ( event ) {
 	}, false );
 
 	document.body.appendChild( button );
-
+*/
 	// Syntax highlighting
 
 	var styleBase = document.createElement( 'link' );
