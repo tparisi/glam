@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<script src="../../list.js"></script>
+		<script src="../../page.js"></script>
+		<link type="text/css" rel="stylesheet" href="../../page.css" />
+	</head>
+	<body>
+		<h1>[name]</h1>
+
+            <section>
+                <h2>The transformation hierarchy</h2>
+
+                <p>
+                    Elements in the scene graph inherit the transform properties of their ancestors. All visual and transformable elements are transformed by composing their transforms (known as <i>local space</i> transforms) with the transforms of their ancestor grouping elements to create the final transformation of the element in world space. This nested composition of transforms is known as the <i>transformation hierarchy</i>.
+                </p>
+
+                <p>
+                    The following example creates a 'group' element, GROUP1, that is rotated by 30 degrees about its Y-axis. The mesh that is a direct descendant of GROUP1 is thus also rotated. A second group, GROUP2 is also a descendant of GROUP1. GROUP2 is also rotated about the Y-axis by 30 degrees, and is additionally scaled on the X-axis. GROUP2 contains a child mesh element that, because of the hierarchy of transforms under which it is defined, will be rotated about the Y-axis and scaled along the X-axis.
+                </p>
+                <code>
+&lt;style&gt;
+#GROUP1 {
+    transform: rotateY(30deg);
+}
+#GROUP2 {
+    transform: translate3d(2, 1, 0) scaleX(2);
+}
+&lt;/style&gt;
+
+&lt;glam&gt;
+    &lt;scene&gt;
+        &lt;group id='GROUP1'&gt;
+            &lt;mesh&gt;&lt;/mesh&gt;
+            &lt;group id='GROUP2'&gt;
+                &lt;mesh&gt;&lt;/mesh&gt;
+            &lt;/group&gt;
+        &lt;/group&gt;
+    &lt;/scene&gt;
+&lt;/glam&gt;
+
+
+                </code>
+
+            </section>
+
+        </section>
+
+
+</html>

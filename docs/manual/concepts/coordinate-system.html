@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<script src="../../list.js"></script>
+		<script src="../../page.js"></script>
+		<link type="text/css" rel="stylesheet" href="../../page.css" />
+	</head>
+	<body>
+		<h1>[name]</h1>
+
+        <h2>Coordinate systems, transformations, and units</h2>
+        <p>
+            GLAM defines a right-handed Cartesian coordinate space (or <i>
+                world
+                space
+            </i>) with the positive x-axis pointing to the right, the positive y-axis pointing up, and the positive z-axis pointing out of the screen. See Figure 1.
+        </p>
+        <div>
+            <figure>
+                <img src="../../images/figure-coordinatesystem.png"></img>
+                <figcaption>
+                    The WebSG Coordinate System
+                </figcaption>
+                Attribution:
+                <a href="https://commons.wikimedia.org/wiki/File:3D_coordinate_system.svg">
+                    https://commons.wikimedia.org/wiki/File:3D_coordinate_system.svg
+                </a><br>
+                Creative Commons Attribution-Share Alike 3.0 Unported License
+            </figure>
+        </div>
+        <p>
+            glam uses a single unit measure, the meter. Unlike 2D CSS coordinates, there is no concept of pixel, point, or other non-physical measurements such as em spaces. Conversions from CSS physical units other than meters (cm, mm, inch) can be achieved by using
+            3D scaling transformations.
+        </p>
+    </section>
+
+</html>
