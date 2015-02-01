@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<script src="../../list.js"></script>
+		<script src="../../page.js"></script>
+		<link type="text/css" rel="stylesheet" href="../../page.css" />
+	</head>
+	<body>
+        <h1>Shading, Materials and Lights</h1>
+
+        <section>
+            <section>
+
+                <h2>Shading models</h2>
+                <p>The surface color of GLAM objects is computed by combining their material values with
+                    lights in the scene in a process known as <i>shading</i>.
+                </p>
+                <p>For authoring convenience, several built-in shading models based on
+                    common 3D graphics techniques are defined:</p>
+                <ul>
+                    <li><i>Phong</i> - This material type implements a realistic-looking shading model with high performance. Phong-shaded objects will show brightly lit areas (specular reflections) where lit hits directly, will light well along any edges that mostly face the light source, and will darkly shade areas where the edge of the object faces away from the light source.</li>
+                    <li><i>Lambert - </i>With this shading model, the apparent brightness of the surface to an observer is the same regardless of the observer's angle of view. </li>
+                    <li><i>Unlit</i> - With this material type, only the textures, colors and transparency values are used to render the surface of the object. There is no contribution from lights in the scene.</li>
+                </ul>
+                <p>Authors may also choose to implement their own shading by using <a href="#programmable-shaders">
+                    programmable shaders</a>.</p>
+            </section>
+            <section>
+                <h2>Materials</h2>
+
+                <p>Materials define the surface properties of meshes and the color properties of points and lines. Using a material on an object determines the shading model that will be applied to render the object.
+                GLAM defines a set of built-in materials based on its built-in shading models: blinn/phong, lambert and unlit.</p>
+
+
+                <p>Authors specify materials via CSS. The type of material is specified using the CSS property <strong>shader</strong>. Valid values are <strong>phong</strong>, <strong>lambert</strong>, and <strong>unlit.</strong></p>
+
+                <p>GLAM uses the <a href="http://www.w3.org/TR/css3-color/">CSS Level 3 Color Module</a> color model for all
+                    visual and material color values.</p>
+
+               <p>
+                    Depending on the type of material, the following CSS properties
+                    can be used:</p>
+
+                <ul>
+                    <li>diffuse color (the <strong>color</strong> property)</li>
+                    <li>ambient color (the <strong>ambient-color</strong> property)</li>
+                    <li>specular color (the <strong>specular-color</strong> property)</li>
+                    <li>reflectivity coefficient (the <strong>reflectivity</strong> property)</li>
+                    <li>texture map (<strong>image</strong>,  <strong>normal-image</strong> and several other image-relate properties)</li>
+                </ul>
+
+                <p>In the following example, the sphere primitive 
+                    <strong>sphere1</strong> is styled with a phong-shaded material that has a diffuse texture map, a normal map (together specified in the <strong>image</strong> property), and a light gray diffuse color (the 
+                    <strong>color</strong> property):</p>
+
+       <code>
+#sphere1 {
+    shader:phong;
+    image:diffuse url(./images/earth.jpg) normal url(./images/earth-normal.jpg);
+    color:lightgray;
+}
+        </code>
+
+            </section>
+            <section>
+                <h2>Lights</h2>
+                <p>Lights are elements that define lighting characteristics of the scene. Light values are combined
+                    with material values to shade objects.
+                </p>
+                <p>For authoring convenience, several built-in light types based on
+                    common 3D graphics usage are defined:</p>
+                <ul>
+                    <li><i>Ambient Light</i></li>
+                    <li><i>Directional Light</i></li>
+                    <li><i>Point Light</i></li>
+                    <li><i>Spot Light</i></li>
+                </ul>
+                <p>The following fragment demonstrates scene lighting for each type:</p>
+        <code>
+&lt;light id="ambLight1" type='ambient'&gt;&lt;/light&gt;
+&lt;light id="dirLight1" type='directional'  dz='0' dy='-1' dx='0'&gt;&lt;/light&gt;
+&lt;light id="pointLight1" type='point'&gt;&lt;/light&gt;
+&lt;light id="spotLight1" type='spot' angle='15deg' exponent='1'&gt;&lt;/light&gt;
+        </code>
+
+                <p>The <strong>type</strong> attribute specifies the light type. Each type of light defines different attributes, though some attributes are shared among some lights. For example, both directional lights and spot lights define attributes <strong>dx</strong>, <strong>dy</strong> and <strong>dz</strong> for the
+                    x, y and z components of the lights' direction vectors, respectively.</p>
+
+                <p>Light elements are transformable, i.e. they can be positioned and oriented using transform properties, and they inherit the transforms of their ancestors. Light colors are specified in CSS using the <strong>color</strong> property.</p>
+
+                <p>Authors may also choose to implement their own light types for use with custom shading models by using <a href="#programmable-shaders">
+                    programmable shaders</a>.</p>
+            </section>
+        </section>
+
+            <section id="programmable-shaders">
+                <h2>Programmable shaders</h2>
+                <section>
+
+                    <p>GLAM allows authors to access the programmable pipeline in order to
+                     define custom shading models, deform geometry, animate the scene, and implement many other
+                     effects. This is done by creating programmable shaders as a combination of GLSL programs
+                     and CSS material properties that bind the rendered element to the shader program.</p>
+
+                    <p>
+                        The following CSS fragment defines a class, <strong>fresnel</strong>, for 
+                        shading objects using a fresnel shader program.
+                    </p>
+
+    <code>
+.fresnel {
+    vertex-shader:url(./shaders/fresnel.vs);
+    fragment-shader:url(./shaders/fresnel.fs);
+    shader-uniforms:mRefractionRatio f 1.02 mFresnelBias f 0.1 mFresnelPower f 2.0 mFresnelScale f 1.0 tCube t cube;
+}
+    </code>
+
+                    <ul>
+                        <li>The <strong>vertex-shader</strong> property is a URI to the GLSL source code for the vertex shader.</li>
+                        <li>The <strong>fragment-shader</strong> property is a URI to the GLSL source code for the fragment shader.</li>
+                        <li>The <strong>shader-uniforms</strong> property specifies the values to use as
+                            uniform inputs defined in the shader. Each value is a triple consisting of 
+                            the uniform's name, its data type ('f' for float, 't' for texture, 'c' for color, and so on), 
+                            and an initial/default value.</li>
+
+                    </ul>
+
+                </section>
+                <section>
+                    <h2>Built-in shader uniforms and attributes</h2>
+                    <p>Because GLAM supplies out-of-the-box behavior, it by necessity has to maintain internal
+                        state of the scene graph that a shader may need to access as uniforms. Examples of this include
+                         the world matrix for each object, the inverted view matrix for the active camera, and the world space 
+                         position values and colors of lights. The specification defines several uniforms that
+                         are reserved words for use in the shader-uniforms property (i.e. not allowed to be specified
+                         in the property). Some examples of built-in uniform reserved words:
+                    </p>
+                    <ul>
+                        <li><strong>modelViewMatrix</strong> - the camera space transform for the object.</li>
+                        <li><strong>projectionMatrix</strong> - the projection matrix used in vertex shaders to transform
+                            vertices from camera space to screen space.</li>
+                        <li><strong>lightPositions</strong> - an array of world space position vectors, one per light.</li>
+
+                    </ul>
+                    <p>For complete information, refer to the section on <a href="#predefined-uniform-declarations">
+                        predefined uniform declarations</a>.
+                </section>
+            </section>
+
+</html>
