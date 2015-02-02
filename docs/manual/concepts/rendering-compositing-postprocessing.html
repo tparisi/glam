@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<script src="../../list.js"></script>
+		<script src="../../page.js"></script>
+		<link type="text/css" rel="stylesheet" href="../../page.css" />
+	</head>
+	<body>
+
+            <h1>Rendering, Compositing and Postprocessing</h1>
+            <section>
+                <h2>Rendering</h2>
+            <p>
+                GLAM renders scenes using WebGL. By default, GLAM scenes are rendered in mono, but this behavior can be overridden using the &lt;renderer&gt; element and setting the <strong>type</strong> attribute to one of the following values:
+            </p>
+                <ul>
+                    <li>
+                        "cardboard" - render side-by-side WebGL with a 90-degree camera field-of-view, suitable for Google Cardboard devices
+                    </li>
+                    <li>
+                        "rift" – use Oculus Rift stereo rendering with barrel distortion, as implemented by WebVR-enabled browsers (currently only Firefox and Chrome)
+                    </li>
+                    <li>
+                        "standard" – standard rendering using WebGL; this is the default.
+                    </li>
+                </ul>
+            <p>
+                For example, the following GLAM document fragment renders a scene in side-by-side stereo for Google Cardboard:
+            </p>
+
+<code>
+&lt;glam&gt;
+  &lt;scene&gt;
+    &lt;renderer type="cardboard"&gt;&lt;/renderer&gt;
+    &lt;controller type="deviceOrientation"&gt;&lt;/controller&gt;
+    &lt;background id="sb1" class="skybox"&gt;&lt;/background&gt;
+  &lt;/scene&gt;
+&lt;/glam&gt;
+
+</code>            
+                In the future, GLAM may support Perhaps other rendering models such as physically based and deferred.
+            </p>
+
+            </section>
+            <section>
+                <h2>Compositing and Backgrounds</h2>
+
+                <p>
+                    GLAM scenes can be rendered in multiple layers that are blended (composited) back-to-front. Currently this is only used to render custom backgrounds via the &lt;background&gt; element but it may be used to support additional layer types in the future.
+                </p>
+                <p>
+                    Background elements use cube map or spherical images to render an infinitely far away backgrounds that re-orient with changes to the camera's orientation. The following example creates a spherical background for the scene using the &lt;background&gt; element and the <<strong>sphere-image</strong> CSS property:
+                </p>
+            </section>
+
+</html>

@@ -15,7 +15,7 @@ var list = {
 			[ "3D Events", "manual/concepts/events" ],
 			[ "Animation", "manual/concepts/animation" ],
 			[ "Navigation and viewing", "manual/concepts/navigation-viewing" ],
-			[ "Rendering, compositing and postprocessing", "manual/concepts/rendering" ],
+			[ "Rendering, compositing and postprocessing", "manual/concepts/rendering-compositing-postprocessing" ],
 			[ "Styling GLAM with CSS", "manual/concepts/styling" ],
 		],
 	},
