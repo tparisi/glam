@@ -47,10 +47,50 @@
                 <h2>Compositing and Backgrounds</h2>
 
                 <p>
-                    GLAM scenes can be rendered in multiple layers that are blended (composited) back-to-front. Currently this is only used to render custom backgrounds via the &lt;background&gt; element but it may be used to support additional layer types in the future.
+                    GLAM scenes can be rendered in multiple layers that are blended (or <i>composited</i>) back-to-front. Currently this is only used to render backgrounds via the &lt;background&gt; element but it may be used to support additional layer types in the future.
                 </p>
                 <p>
-                    Background elements use cube map or spherical images to render an infinitely far away backgrounds that re-orient with changes to the camera's orientation. The following example creates a spherical background for the scene using the &lt;background&gt; element and the <<strong>sphere-image</strong> CSS property:
+                    Background elements use cube map or spherical images to render an infinitely far away backdrop that re-orients with changes to the camera's orientation. The following example creates a spherical background for a scene using the &lt;background&gt; element and the <strong>sphere-image</strong> CSS property:
+                </p>
+
+<code>
+
+&lt;style&gt;
+    
+    #ss1 {
+        sphere-image:url(../../images/spherepano/pan0.jpg);
+    }
+    
+&lt;/style&gt;
+
+&lt;glam&gt;
+  &lt;scene&gt;
+    &lt;background id="ss1" type="sphere"&gt;&lt/background&gt;
+  &lt;/scene&gt;
+&lt;/glam&gt;
+
+</code>
+            </section>
+
+            <section>
+                <h2>Postprocessing Effects</h2>
+
+                <p>
+                    GLAM scenes support multi-pass postprocessing effects. Rather than the having to explicitly render the scene in multiple passes to achieve the desired effect, the developer can create effects simply by adding tags to the GLAM document.
+                </p>
+                <p>
+                    This feature is still experimental; only a few effects are currently supported. The following example shows the &lt;effect&gt; element used to define various effects, only one of which, the "Bloom" effect, is active for the scene. The <strong>disabled</strong> property is used to disable a specific effect. If multiple effects are enabled, they will be active and rendered in the order the elements appear in the GLAM document.
+                </p>
+
+<code>
+&lt;effect type="Film" grayscale="0" disabled&gt;&lt;/effect&gt;
+&lt;effect type="DotScreenRGB" scale="3" disabled&gt;&lt;/effect&gt;
+&lt;effect type="Bloom" strength="3"&gt;&lt;/effect&gt;
+&lt;effect type="RGBShift" amount=".005" disabled&gt;&lt;/effect&gt;
+</code>
+
+                <p>
+                    &lt;effect&gt; elements can be placed anywhere in the scene, for example is child elements of a group, for convenience. They are not affected by the transform hierarchy.
                 </p>
             </section>
 
