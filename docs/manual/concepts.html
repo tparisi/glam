@@ -10,12 +10,9 @@
 
         <div class="title">Key Concepts</div>
 
-        <h1 id="coordinate-system">The 3D Coordinate System</h1>
+        <h1 id="coordinate-system">Coordinate System, Units and Transformations</h1>
         <p>
-            GLAM defines a right-handed Cartesian coordinate space (or <i>
-                world
-                space
-            </i>) with the positive x-axis pointing to the right, the positive y-axis pointing up, and the positive z-axis pointing out of the screen. See Figure 1.
+            GLAM defines a right-handed Cartesian coordinate space  with the positive x-axis pointing to the right, the positive y-axis pointing up, and the positive z-axis pointing out of the screen. See Figure 1.
         </p>
         <div>
             <figure>
@@ -31,18 +28,22 @@
                 Creative Commons Attribution-Share Alike 3.0 Unported License
             </figure>
         </div>
+        <section>
+        <h2 id="units">Units</h2>
+
         <p>
             glam uses a single unit measure, the meter. Unlike 2D CSS coordinates, there is no concept of pixel, point, or other non-physical measurements such as em spaces. Conversions from CSS physical units other than meters (cm, mm, inch) can be achieved by using
             3D scaling transformations.
         </p>
-    </section>
+        </section>
 
 
-            <section>
+        <section>
 
         <h2 id="transformation-hierarchy">The Transformation Hierarchy</h2>
                 <p>
-                    Elements in the scene graph inherit the transform properties of their ancestors. All visual and transformable elements are transformed by composing their transforms (known as <i>local space</i> transforms) with the transforms of their ancestor grouping elements to create the final transformation of the element in world space. This nested composition of transforms is known as the <i>transformation hierarchy</i>.
+                    Elements in the scene graph inherit the transform properties of their ancestors. All visual and transformable elements are transformed by composing their transforms (known as <i>local space</i> transforms) with the transforms of their ancestor grouping elements to create the final transformation of the element in the global coordinate system 
+                    (or <i> world space </i>). This nested composition of transforms is known as the <i>transformation hierarchy</i>.
                 </p>
 
                 <p>
@@ -259,7 +260,7 @@
 
                 <p>Authors specify materials via CSS. The type of material is specified using the CSS property <strong>shader</strong>. Valid values are <strong>phong</strong>, <strong>lambert</strong>, and <strong>unlit.</strong></p>
 
-                <p>GLAM uses the <a href="http://www.w3.org/TR/css3-color/">CSS Level 3 Color Module</a> color model for all
+                <p>GLAM uses the <a href="http://www.w3.org/TR/css3-color/" target="_blank">CSS Level 3 Color Module</a> color model for all
                     visual and material color values.</p>
 
                <p>
@@ -434,7 +435,7 @@
                         of 2D Touch objects. Each Touch3D contains the 3D new properties defined by MouseEvent3D (see above).
                     </p>
 
-                    <p>The following JavaScript code fragment listens for MouseEvent3D events on a mesh, placing an arrow that points out of the object along the intersected normal, from the point of intersection:</p>
+                    <p>The following JavaScript pseudocode listens for MouseEvent3D events on a mesh, placing an arrow that points out of the object along the intersected normal, from the point of intersection:</p>
         <code>
 mesh.addEventListener("click", function(event) {
     // handle click event by calling a user-defined function
@@ -529,8 +530,9 @@ mesh.addEventListener("click", function(event) {
                 <section>
                     <h2>3D Transitions</h2>
                     <p>3D transitions are a good way to produce one-shot effects such as chaging a color from one value to another over time (also known as a <i>tween</i>).</p>
-                    <p>NOTE: GLAM includes experimental support for 3D transitions, but it is currently not in good working order.</p>  
-
+                    <div class="note">
+                    NOTE: GLAM includes experimental support for 3D transitions, but it is currently not in good working order.
+                    </div>
                 </section>
 
             <h1 id="navigation-and-viewing">Navigation and Viewing</h1>
@@ -668,8 +670,6 @@ mesh.addEventListener("click", function(event) {
                 <li><a href='#style-property-dash-size'>'dash-size'</a></li>
                 <li><a href='#style-property-gap-size'>'gap-size'</a></li>
                 <li><a href='#style-property-line-width'>'line-width'</a></li>
-                <li><a href='#style-property-vertex-colors'>'vertex-colors'</a></li>
-                <li><a href='#style-property-vertex-normals'>'vertex-normals'</a></li>
             </ul>
             <p>
 
