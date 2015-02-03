@@ -1294,7 +1294,8 @@ blending='additive'&gt;&lt;/emitter&gt;
 
 		<h1 id="animation-element">The 'animation' element</h1>
 
-		<div class="desc">Defines a key frame animation using tags instead of CSS animations, providing a more concise representation and the potential for future extension outside the current specification.
+		<div class="desc">Defines a key frame animation using tags instead of CSS animations, providing a more concise representation and the potential for future extension outside the current specification. Animations are specified by creating
+			one more <a href='#keyframe-element'>keyframe elements</a> as children.
 		</div>
 
 		<div class="desc">Elements are animated by setting their <strong>animation</strong> property to the identifier of the animation element.
@@ -1354,6 +1355,359 @@ blending='additive'&gt;&lt;/emitter&gt;
 	        </table>
 	        </dl>
 	        <p>The interpolation function for the animation. Currently only <strong>linear</strong> is supported but other types will be added soon.
+	        </p>
+	        </div>
+
+    	</div>
+
+
+	<section>
+
+		<h1 id="keyframe-element">The 'keyframe' element</h1>
+
+		<div class="desc">Defines key frame data for a single frame of animation. This element can only be a child of an 'animation' element.
+		</div>
+
+		<h2>Creating</h2>
+
+<code>
+    &lt;keyframe time="0%" property="transform" value="rotateY(0deg);"&gt;&lt;/keyframe&gt;
+</code>
+		<div>
+			Creates an animation frame to animate the elements <strong>transform</strong>
+			property, for the key at time 0%, with a value of 0-degree rotation about the y-axis.
+		</div>
+
+
+        <h2>Attributes</h2>
+
+        <div class="element-description">
+
+	        <div class="propdef" id='keyframe-time'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'time'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">String</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>0%
+	        </table>
+	        </dl>
+	        <p>A time value for the key frame, in percentages between 0 and 100 inclusive.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='keyframe-property'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'property'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">String</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>
+	        </table>
+	        </dl>
+	        <p>The name of the element's property targeted by the animation.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='keyframe-value'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'value'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">String</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>
+	        </table>
+	        </dl>
+	        <p>The value of the element's property targeted by the animation.
+	        </p>
+	        </div>
+
+    	</div>
+
+	</section>
+
+
+	<section>
+
+		<h1 id="transition-element">The 'transition' element</h1>
+
+		<div class="desc">An animation transition.</div>
+
+		<div class='note'>
+			NOTE: This element is experimental and not yet working properly. Best to avoid for now.
+		</div>
+
+
+        <h2>Attributes</h2>
+
+        <div class="element-description">
+        	TBD.
+
+    	</div>
+
+	</section>
+
+
+	<section>
+
+		<h1 id="controller-element">The 'controller' element</h1>
+
+		<div class="desc">A camera controller for navigating within the scene. The following controller types are supported:</div>
+
+        <ul>
+            <li>
+                FPS controller – first-person navigation: move the user through a scene with mouse, touch device and keyboard
+            </li>
+            <li>
+                Model controller – orbit the camera around the center of the scene/model using the mouse, touch device and keyboard
+            </li>
+            <li>
+                Device orientation controller – use HTML5 device orientation API to detect changes in orientation via the mobile device's accelerometer and gyroscope and rotate the camera
+            </li>
+            <li>
+                Rift controller – use the WebVR API for Oculus Rift to detect changes in the headset's position and orientation and move/rotate the camera
+            </li>
+        </ul>
+
+		<h2>Creating</h2>
+
+
+<code>
+&lt;controller&gt;
+</code>
+		<div>
+			Creates a camera controller with default type ("model").
+			
+		</div>
+
+
+        <h2>Attributes</h2>
+
+        <div class="element-description">
+
+	        <div class="propdef" id='controller-type'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'type'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">String</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>model
+	        </table>
+	        </dl>
+	        <p>Specifies the type of controller. Valid values are <strong>model</strong> (the default), <strong>FPS</strong>, <strong>deviceOrientation</strong>, and <strong>rift</strong>.
+	        </p>
+	        </div>
+
+
+
+    	</div>
+
+	</section>
+
+	<section>
+
+		<h1 id="renderer-element">The 'renderer' element</h1>
+
+		<div class="desc">Denotes the style of rendering used to render the scene, one of the following types:</div>
+
+        <ul>
+            <li>
+                standard – the scene is rendered using the standard Three.js WebGL renderer 
+            </li>
+            <li>
+                rift – the scene is rendered with stereographic camera separation, barrel distortion and fullscreen-mode display for the Oculus Rift, using the new experimental WebVR APIs (Firefox and Chrome only)
+            </li>
+            <li>
+                cardboard – the scene is rendered with stereographic camera separation and a 90 degree field of view in side-by-side viewports, to conform to the Google Cardboard viewing model.
+            </li>
+        </ul>
+
+		<h2>Creating</h2>
+
+
+<code>
+&lt;renderer&gt;
+</code>
+		<div>
+			Creates a renderer with default type ("standard"). The 'renderer' element must be a top-level child of the 'glam' element i.e. a peer to any 'scene' elements.			
+		</div>
+
+
+        <h2>Attributes</h2>
+
+        <div class="element-description">
+
+	        <div class="propdef" id='renderer-type'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'type'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">String</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>standard
+	        </table>
+	        </dl>
+	        <p>Specifies the type of renderer. Valid values are <strong>standard</strong> (the default), <strong>rift</strong>, and <strong>cardboard</strong>.
+	        </p>
+	        </div>
+
+
+
+    	</div>
+
+	</section>
+
+	<section>
+
+		<h1 id="background-element">The 'background' element</h1>
+
+		<div class="desc">This element is used to create spherical and cubic panoramic backgrounds. The background is rendered before the main scene using a second camera. Changes to the main camera's orientation are reflected in the background's camera; however changes to the main camera's position are not. Therefore, the background always appears the same distance away.</div>
+
+		<div>
+			Spherical backgrounds use a single texture projected onto the inside of a sphere using an equirectangular projection. The texture is defined in the CSS <strong>sphere-image</strong> property for the element. 
+		</div>
+		<div>
+			Cubic backgrounds use six 'cubemap' textures project onto the inside of a cube. The textures are defined in the <strong>cube-image-right</strong>, <strong>cube-image-left</strong> etc. properties.
+		</div>
+
+
+		<h2>Creating</h2>
+
+
+<code>
+&lt;background&gt;
+</code>
+		<div>
+			Creates a background with default type ("box"). The 'background' element can appear anywhere in the scene; however it is not affected by the transform hierarchy.
+		</div>
+
+
+        <h2>Attributes</h2>
+
+        <div class="element-description">
+
+	        <div class="propdef" id='background-type'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'type'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">String</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>standard
+	        </table>
+	        </dl>
+	        <p>Specifies the type of background. Valid values are <strong>box</strong> (the default), and <strong>sphere</strong>.
+	        </p>
+	        </div>
+
+
+
+    	</div>
+
+	</section>
+
+	<section>
+
+		<h1 id="effect-element">The 'effect' element</h1>
+
+		<div class="desc">Effect elements are used to create postprocessing effects
+		applied to the entire GLAM scene, such as screen doors and glows. Multiple effects may be used in the same scene; they will be applied in the order in which they are defined in the file.</div>
+
+		<div>
+			Current effect types supported are "film", for an old-time film effect (color or grayscale), "dotscreen" (the scene is rendered as dots, either color or grayscale), "bloom" for glow effects and "rgbshift" for color effectsd.
+		</div>
+		<div class='note'>
+			GLAM's effects are still experimental and only a few are supported. We hope to implement a more complete set in the near future.
+		</div>
+
+   	<effect type="Film" grayscale="0" disabled></effect>
+	<effect type="DotScreenRGB" scale="3" disabled></effect>
+	<effect type="Bloom" strength="3" ></effect>
+	<effect type="RGBShift" amount=".005" disabled></effect>
+
+
+		<h2>Creating</h2>
+
+
+<code>
+&lt;effect&gt;
+</code>
+		<div>
+			Creates an empty 'effect' element. This has no visible result.
+		</div>
+
+
+        <h2>Attributes</h2>
+
+        <div class="element-description">
+
+	        <div class="propdef" id='effect-type'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'type'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">String</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>
+	        </table>
+	        </dl>
+	        <p>Specifies the type of background. Valid values are <strong>film</strong>, 
+	        	<strong>dotscreen</strong>, <strong>dotscreenrgb</strong>,
+	        	<strong>bloom</strong>,  
+	        	and <strong>rgbshift</strong>.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='effect-disabled'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'disabled'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Boolean</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>false
+	        </table>
+	        </dl>
+	        <p>Disables the effect, if specified.
+	        </p>
+	        </div>
+
+	        <h2>Type-specific effect attributes</h2>
+	        These attributes may apply to one or more effect types in a type-specific way.
+	        Currently they are implemented as pass-throughs to the Three.js effects and postprocessing shaders. These need to be defined more rigorously in the future.
+
+	        <div class="propdef" id='effect-grayscale'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'grayscale'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>0
+	        </table>
+	        </dl>
+	        <p>0 indicates color, 1 grayscale. (DERP fix) (Film effect)
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='effect-strength'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'strength'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>0
+	        </table>
+	        </dl>
+	        <p>The strength of the effect. (Bloom pass effect)
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='effect-amount'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'amount'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>0
+	        </table>
+	        </dl>
+	        <p>The amount of the effect to apply. (RGBShift effect)
 	        </p>
 	        </div>
 
