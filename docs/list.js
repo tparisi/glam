@@ -27,6 +27,7 @@ var list = {
 
 	"Reference": {
 		"Elements Reference": [
+			[ "Elements Reference", "reference/elementsreference" ],
 			[ "Transformable Elements", "reference/elementsreference", "transformable-elements"],
 			[ "Visual Elements", "reference/elementsreference", "visual-elements"],
 			[ "<glam>", "reference/elementsreference", "glam-element"],
@@ -61,6 +62,7 @@ var list = {
 			[ "<effect>", "reference/elementsreference", "effect-element"],
 		],
 		"CSS Properties Reference": [
+			[ "CSS Properties Reference", "reference/cssreference"],
 			[ "transform", "reference/cssreference", "transform"],
 			[ "animation", "reference/cssreference", "animation"],
 			[ "transition", "reference/cssreference", "transition"],
@@ -85,10 +87,11 @@ var list = {
 			[ "shader-uniforms", "reference/cssreference", "shader-uniforms"],
 		],
 		"Events Reference": [
-			[ "MouseEvent3D", "reference/events/MouseEvent3D"],
-			[ "TouchEvent3D", "reference/events/TouchEvent3D"],
-			[ "Touch3D", "reference/events/Touch3D"],
-			[ "ViewEvent3D", "reference/events/ViewEvent3D"],
+			[ "Events Reference", "reference/eventsreference"],
+			[ "MouseEvent3D", "reference/eventsreference", "MouseEvent3D"],
+			[ "TouchEvent3D", "reference/eventsreference", "TouchEvent3D"],
+			[ "Touch3D", "reference/eventsreference", "Touch3D"],
+			[ "ViewEvent3D", "reference/eventsreference", "ViewEvent3D"],
 		],
 	},
 

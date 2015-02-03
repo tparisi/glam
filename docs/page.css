@@ -41,7 +41,7 @@ body {
 	font-family: 'PT Sans';
 	font-size: 15px;
 	line-height: 18px;
-	overflow: auto;
+	overflow: hidden;
 }
 
 a {
