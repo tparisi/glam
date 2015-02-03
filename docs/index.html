@@ -405,17 +405,28 @@
 
 			}
 
+			function findName(hash, member) {
+				var entry = list[decodeUrl(hash[0])][decodeUrl(hash[1])];
+				var i, len = entry.length;
+				for (i = 0; i < len; i++) {
+					if (entry[i][2] == member) {
+						return entry[i][0];
+					}
+				}
+			}
+
 			function goToHash() {
 
 				var hash = window.location.hash.substring( 1 ).split(DELIMITER);
-				var member = hash[2].split("#")
-				goTo( decodeUrl(hash[0]), decodeUrl(hash[1]), decodeUrl(member.length > 1 ? member[1] : member[0]), decodeUrl(member.length > 1 ? member[1] : '') );
+				var member = hash[2].split("#");
+
+				goTo( decodeUrl(hash[0]), decodeUrl(hash[1]), decodeUrl(member.length > 1 ? findName(hash, member[1]) : member[0]), decodeUrl(member.length > 1 ? member[1] : '') );
 
 			}
 
-			// window.addEventListener( 'hashchange', goToHash, false );
+			window.addEventListener( 'hashchange', goToHash, false );
 
-			// if ( window.location.hash.length > 0 ) goToHash();
+			 if ( window.location.hash.length > 0 ) goToHash();
 
 		</script>
 	</body>

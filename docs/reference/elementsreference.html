@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<script src="../list.js"></script>
+		<script src="../page.js"></script>
+		<link type="text/css" rel="stylesheet" href="../page.css" />
+	</head>
+	<body>
+
+	<section>
+        <div class="title">Elements Reference</div>
+
+		<h1 id="transformable-elements">Transformable Elements</h1>
+
+		<div class="desc">GLAM transformable elements are elements that can be positioned, rotated and scaled, including
+			<ul>
+				<li>&lt;group&gt;</li>
+				<li>&lt;import&gt;</li>
+				<li>&lt;camera&gt;</li>
+				<li>&lt;light&gt;</li>
+			</ul>
+			and the visual elements
+			<ul>
+				<li>&lt;box&gt;</li>
+				<li>&lt;cone&gt;</li>
+				<li>&lt;cylinder&gt;</li>
+				<li>&lt;sphere&gt;</li>
+				<li>&lt;text&gt;</li>
+				<li>&lt;mesh&gt;</li>
+				<li>&lt;points&gt;</li>
+				<li>&lt;lines&gt;</li>
+				<li>&lt;particles&gt;</li>
+				<li>&lt;arc&gt;</li>
+				<li>&lt;circle&gt;</li>
+				<li>&lt;rect&gt;</li>
+			</ul>
+		</div>
+		<div>
+			Transformable elements may be transformed using the CSS
+		 <a href="../css/transform.html">transform</a> property, or by
+		 setting the position, rotation and scale attributes listed below.
+
+		</div>
+
+
+		<h2>Attributes</h2>
+
+		<h3 id="attribute-x">[attribute:x]</h3>
+		<div>
+			The x coordinate of the element's position. This is a synonym for <a href="#attribute-px">px</a>.
+		</div>
+
+		<h3 id="attribute-y">[attribute:y]</h3>
+		<div>
+			The y coordinate of the element's position. This is a synonym for <a href="#attribute-py">py</a>.
+		</div>
+
+		<h3 id="attribute-z">[attribute:z]</h3>
+		<div>
+			The z coordinate of the element's position. This is a synonym for <a href="#attribute-pz">pz</a>.
+		</div>
+
+		<h3 id="attribute-rx">[attribute:rx]</h3>
+		<div>
+			The x coordinate of the element's rotation.
+		</div>
+
+		<h3 id="attribute-ry">[attribute:ry]</h3>
+		<div>
+			The y coordinate of the element's rotation.
+		</div>
+
+		<h3 id="attribute-rz">[attribute:rz]</h3>
+		<div>
+			The z coordinate of the element's rotation.
+		</div>
+
+		<h3 id="attribute-sx">[attribute:sx]</h3>
+		<div>
+			The x coordinate of the element's scale.
+		</div>
+
+		<h3 id="attribute-sy">[attribute:sy]</h3>
+		<div>
+			The y coordinate of the element's scale.
+		</div>
+
+		<h3 id="attribute-sz">[attribute:sz]</h3>
+		<div>
+			The z coordinate of the element's scale.
+		</div>
+
+
+		<h3 id="attribute-px">[attribute:px]</h3>
+		<div>
+			The x coordinate of the element's position.
+		</div>
+
+		<h3 id="attribute-py">[attribute:py]</h3>
+		<div>
+			The y coordinate of the element's position.
+		</div>
+
+		<h3 id="attribute-pz">[attribute:pz]</h3>
+		<div>
+			The z coordinate of the element's position.
+		</div>
+
+	</section>
+	<section>
+		<h1 id="visual-elements">Visual Elements</h1>
+
+		<div class="desc">Visual elements are elements that have a visible appearance
+			in a GLAM scene, including
+			<ul>
+				<li>&lt;box&gt;</li>
+				<li>&lt;cone&gt;</li>
+				<li>&lt;cylinder&gt;</li>
+				<li>&lt;sphere&gt;</li>
+				<li>&lt;text&gt;</li>
+				<li>&lt;mesh&gt;</li>
+				<li>&lt;points&gt;</li>
+				<li>&lt;lines&gt;</li>
+				<li>&lt;particles&gt;</li>
+				<li>&lt;arc&gt;</li>
+				<li>&lt;circle&gt;</li>
+				<li>&lt;rect&gt;</li>
+			</ul>
+		</div>
+		<div>
+			The appearance of visual elements may be changed using CSS
+		 <a href="../css/material-properties.html">material properties</a> such as
+		 <strong>diffuse-color</strong> and <strong>image</strong>.
+
+		</div>
+	</section>
+
+	<section>
+		<h1 id="glam-element">The 'glam' element</h1>
+
+		<div class="desc">The root element of a glam document.</div>
+
+
+		<h2>Creating</h2>
+
+
+		<h3>&lt;glam&gt;</h3>
+		<div>
+			This creates the root GLAM document. Under the covers, this instantiates a GLAM application object that manages Three.js renderer and scene creation, window sizing and other events, as well as the <strong>requestAnimationFrame</strong> run loop. In the current implementation, the root &lt;glam&gt; tag must be created as a child of a &lt;div&gt; element. This restriction will probably go away soon.
+			
+		</div>
+
+
+		<h2>Attributes</h2>
+
+		<div>
+			This element has no attributes.
+		</div>
+
+	</section>
+	<section>
+
+		<h1 id="scene-element">The 'scene' element</h1>
+
+		<div class="desc">The root element of the visual scene. All visual objects must be created as child elements of a &lt;scene&gt; element.</div>
+
+
+		<h2>Creating</h2>
+
+
+		<h3>&lt;scene&gt;</h3>
+		<div>
+			This creates the root object of the visual scene. In the current implementation, there can be only one &lt;scene&gt; element per GLAM document. This restriction may go away soon.
+			
+		</div>
+
+
+		<h2>Attributes</h2>
+
+		<div>
+			This element has no attributes.
+		</div>
+
+	</section>
+	<section>
+
+		<h1 id="group-element">The 'group' element</h1>
+
+		<div class="desc">A grouping element used to create the scene graph hierarchy. </div>
+
+		Groups are 
+		<a href="#transformable-elements">transformable elements</a>; their position, rotation and scale can be changed. Transforms defined for a 'group' element affect all of its descendants. 'group' elements can be nested, thus creating a hierarchy of objects and their transformations. (For more information, see <a href="../manual/concepts.html#transformation-hierarchy">The Transformation Hierarchy</a>.)
+
+		<p>Non-transformable elements such as 'animation' or 'effect' can also be grouped (by creating them as children of 'group' elements) for convenience, but the transformation hierarchy has no effect on those elements.</p>
+
+
+		<h2>Creating</h2>
+
+
+		<h3>&lt;group&gt;</h3>
+		<div>
+			Creates a group. A group can contain zero or more GLAM elements, either leaf elements (visuals, lights, cameras etc) or other groups.
+			
+		</div>
+
+
+		<h2>Attributes</h2>
+
+		Groups inherit the position, rotation and scale attributes defined for 
+		<a href="#transformable-elements">transformable elements</a>.
+	</section>
+
+
+	</body>
+</html>
