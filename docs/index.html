@@ -280,12 +280,12 @@
 						var li = document.createElement( 'li' );
 						var a = document.createElement( 'a' );
 						a.setAttribute( 'href', '#' );
-						( function( s, c, p ) { 
+						( function( s, c, p, m ) { 
 							a.addEventListener( 'click', function( e ) {
-								goTo( s, c, p );
+								goTo( s, c, p, m );
 								e.preventDefault();
 							} ) 
-						} )( section, category, page[ 0 ] )
+						} )( section, category, page[ 0 ], page[ 2 ] )
 						a.textContent = page[ 0 ];
 						li.appendChild( a );
 						ul.appendChild( li );
@@ -393,7 +393,8 @@
 				} 
 
 				var title = 'GLAM documentation - ' + section + ' - ' + name;
-				var url = encodeUrl(section) + DELIMITER + encodeUrl( category ) + DELIMITER + encodeUrl(name) + (!!member ? MEMBER_DELIMITER + encodeUrl(member) : '');
+				var url = encodeUrl(section) + DELIMITER + encodeUrl( category ) + DELIMITER +  
+				(!!member ? ("#" + encodeUrl(member)) : encodeUrl(name));
 
 				window.location.hash = url;
 				window.document.title = title;
@@ -407,14 +408,14 @@
 			function goToHash() {
 
 				var hash = window.location.hash.substring( 1 ).split(DELIMITER);
-				var member = hash[2].split(MEMBER_DELIMITER)
-				goTo( decodeUrl(hash[0]), decodeUrl(hash[1]), decodeUrl(member[0]), decodeUrl(member.length > 1 ? member[1] : '') );
+				var member = hash[2].split("#")
+				goTo( decodeUrl(hash[0]), decodeUrl(hash[1]), decodeUrl(member.length > 1 ? member[1] : member[0]), decodeUrl(member.length > 1 ? member[1] : '') );
 
 			}
 
-			window.addEventListener( 'hashchange', goToHash, false );
+			// window.addEventListener( 'hashchange', goToHash, false );
 
-			if ( window.location.hash.length > 0 ) goToHash();
+			// if ( window.location.hash.length > 0 ) goToHash();
 
 		</script>
 	</body>

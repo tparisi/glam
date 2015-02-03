@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<script src="../list.js"></script>
+		<script src="../page.js"></script>
+		<link type="text/css" rel="stylesheet" href="../page.css" />
+	</head>
+	<body>
+
+        <div class="title">Key Concepts</div>
+
+        <h1 id="coordinate-system">The 3D Coordinate System</h1>
+        <p>
+            GLAM defines a right-handed Cartesian coordinate space (or <i>
+                world
+                space
+            </i>) with the positive x-axis pointing to the right, the positive y-axis pointing up, and the positive z-axis pointing out of the screen. See Figure 1.
+        </p>
+        <div>
+            <figure>
+                <img src="../images/figure-coordinatesystem.png"></img>
+                <figcaption>
+                    Figure 1. The GLAM Coordinate System
+                </figcaption>
+                Attribution:
+                <a href="https://commons.wikimedia.org/wiki/File:3D_coordinate_system.svg"
+                target = "_blank">
+                    https://commons.wikimedia.org/wiki/File:3D_coordinate_system.svg
+                </a><br>
+                Creative Commons Attribution-Share Alike 3.0 Unported License
+            </figure>
+        </div>
+        <p>
+            glam uses a single unit measure, the meter. Unlike 2D CSS coordinates, there is no concept of pixel, point, or other non-physical measurements such as em spaces. Conversions from CSS physical units other than meters (cm, mm, inch) can be achieved by using
+            3D scaling transformations.
+        </p>
+    </section>
+
+
+            <section>
+
+        <h2 id="transformation-hierarchy">The Transformation Hierarchy</h2>
+                <p>
+                    Elements in the scene graph inherit the transform properties of their ancestors. All visual and transformable elements are transformed by composing their transforms (known as <i>local space</i> transforms) with the transforms of their ancestor grouping elements to create the final transformation of the element in world space. This nested composition of transforms is known as the <i>transformation hierarchy</i>.
+                </p>
+
+                <p>
+                    The following example creates a 'group' element, GROUP1, that is rotated by 30 degrees about its Y-axis. The mesh that is a direct descendant of GROUP1 is thus also rotated. A second group, GROUP2 is also a descendant of GROUP1. GROUP2 is also rotated about the Y-axis by 30 degrees, and is additionally scaled on the X-axis. GROUP2 contains a child mesh element that, because of the hierarchy of transforms under which it is defined, will be rotated about the Y-axis and scaled along the X-axis.
+                </p>
+                <code>
+&lt;style&gt;
+#GROUP1 {
+    transform: rotateY(30deg);
+}
+#GROUP2 {
+    transform: translate3d(2, 1, 0) scaleX(2);
+}
+&lt;/style&gt;
+
+&lt;glam&gt;
+    &lt;scene&gt;
+        &lt;group id='GROUP1'&gt;
+            &lt;mesh&gt;&lt;/mesh&gt;
+            &lt;group id='GROUP2'&gt;
+                &lt;mesh&gt;&lt;/mesh&gt;
+            &lt;/group&gt;
+        &lt;/group&gt;
+    &lt;/scene&gt;
+&lt;/glam&gt;
+
+
+                </code>
+
+            </section>
+
+        </section>
+
+        <section>
+        <h1 id="cameras-perspective">Cameras and perspective transformations</h1>
+
+            <section>
+                <h2>Cameras</h2>
+                <p>Camera elements define a position and direction from which the scene is viewed, and a viewing angle (<i>field of view</i>) for perspective rendering. Cameras also define near and far <i>clipping planes</i> to create a viewing volume outside of which no objects are visible. The following fragment defines a perspective camera with a 60 degree field of view, a near clipping plane at z=.01 units, and a far clipping plane at z=100000 units.</p>
+
+        <code>
+            &lt;camera fov='60deg' near='.01' far='100000'&gt;&lt;/camera&gt;
+        </code>
+
+                <p>Both perspective and orthographic camera types are supported.
+                </p>
+
+                <p>A GLAM document does not require a camera element to render the scene. If no camera element is present, the implementation provides a default perspective camera element with default values.
+                </p>
+
+
+            </section>
+            <section>
+                <h2>The viewport and viewing transformations</h2>
+                <p>The GLAM scene is ultimately rendered to a 2D surface within the client window, also known as the <i>viewport</i>. The viewport 
+                    is a a rectangular subregion corresponding to the entire bounds of the GLAM root element.</p>
+
+                <p>The camera parameters, taken together with the viewport definition, determine how 3D graphics are transformed from 
+                    3D world space into 2D screen space. For perspective cameras, a <i>perspective projection</i> is performed as depicted in Figure 1.
+                    </p>
+
+                    <div>
+                        <figure>
+                            <img src="../images/figure-perspectiveprojection.png"></img>
+                            <figcaption>
+                            Figure 1. Perspective Projection<br>
+                            </figcaption>
+                            Attribution: <a href="http://obviam.net/index.php/3d-programming-with-android-projections-perspective/" target="_blank">
+                            http://obviam.net/index.php/3d-programming-with-android-projections-perspective/</a>
+                        </figure>
+                    </div>
+
+            </section>
+        </section>
+
+        <section>
+        <h1 id="visuals">Visuals</h1>
+
+            <section>
+               <p>GLAM defines several visual elements, including geometric solids such as boxes and spheres, 3D text, triangle meshes, points, lines and particle systems. There are also supporting elements which define the 3D data for these types, e.g. vertices, normals, colors and texture coordinates.</p>
+
+            </section>
+            <section>
+                <h2>Geometric solids</h2>
+                <p>GLAM defines common geometric solids, or <i>primitives</i>: boxes, cones, cylinders and spheres. These elements
+                    are shorthand for creating triangle meshes of the same shape. Once created, these elements can 
+                    be accessed with the mesh DOM interfaces described in the reference.</p>
+            </section>
+            <section>
+                <h2>Meshes</h2>
+
+                    <p>Triangle meshes are defined as a set of vertices and triangular faces. Child elements 
+                    of the mesh include the <strong>vertices</strong> element and <strong>faces</strong> element, which define 
+                    the basic shape. Additional elements are used to define texture coordinates (<i>uvs</i>), normals
+                    and colors for the mesh.</p>
+                    <p>The following fragment creates a mesh in the shape of rectangle made out of
+                        two triangular faces.</p>
+
+        <code>
+
+    &lt;mesh&gt;
+        &lt;vertices&gt;-.5 -.5 0 .5 -.5 0 .5 .5 0 -.5 .5 0&lt;/vertices&gt;
+        &lt;normals&gt;0 1 1 0 0 1&lt;/normals&gt;
+        &lt;uvs&gt;0 0 1 0 1 1 0 0 1 1 0 1&lt;/uvs&gt;
+        &lt;faces&gt;0 1 2 0 2 3&lt;/faces&gt;
+    &lt;/mesh&gt;
+
+        </code>
+
+                    <p>The <strong>vertices</strong> and <strong>faces</strong> elements are required
+                    to define a mesh; the <strong>normals</strong>, <strong>uvs</strong>, and <strong>colors</strong>
+                    elements are optional. If they are not supplied GLAM will supply
+                    defaults and/or generate appropriate values.
+
+                </section>
+            </section>
+            <section>
+                <h2>Text</h2>
+                <p>GLAM supports the creation of text rendered as polygons. The 'text' element is shorthand for creating triangle
+                    meshes of the same shape. Once created, the polygons in the text element can 
+                    be accessed with the mesh DOM interfaces described elsewhere. The text value rendered is supplied in the
+                    <strong>textContent</strong> property of the element. 
+                    </p>
+                    <p>Text can be flat or extruded. There are also
+                    several CSS properties used to control beveling when text is extruded.
+                </p>
+                <p>The following example creates a an extruded, beveled text element that displays the text "GLAM" 
+                    using the Helvetica font.
+
+                </p>
+
+<code>
+
+&lt;head&gt;
+    &lt;style&gt;
+        #text1 {
+            font-depth:0.5;
+            font-bevel:bevel;
+            bevel-size:.01;
+            bevel-thickness:.02;
+            font-family:helvetica;
+        }
+    &lt;/style&gt;
+&lt;/head&gt;
+
+&lt;glam&gt;
+    &lt;scene&gt;
+        &lt;text id="text1"&gt;GLAM&lt;/text&gt;
+    &lt;/scene&gt;
+&lt;/glam&gt;
+</code>
+
+            </section>
+ 
+            <section>
+                <h2>Points</h2>
+                <p>GLAM supports sets of rendered points. Points contain 'vertices', 'colors' and 'sizes' elements, which
+                    the specify those respective properties. The following fragment defines a point set
+                    of four points of default size, colored red, green, yellow and blue, respectively.</p>
+    <code>
+            &lt;points id="points1"&gt;
+                &lt;vertices&gt;-.5 -.5 0 .5 -.5 0 .5 .5 0 -.5 .5 0&lt;/vertices&gt;
+                &lt;colors&gt;1 0 0 0 1 0 0 1 1 0 0 1&lt;/colors&gt;
+            &lt;points&gt;
+    </code>
+                <p>The 'colors' element is not required; if all points in the point set are the same color, the color of the points'
+                material can be used instead.</p>
+
+            </section>
+            <section>
+                <h2>Lines</h2>
+                <p>GLAM supports sets of rendered lines. Lines contain 'vertices' and 'colors' elements, which
+                    the specify those respective properties. The following fragment defines a line set that
+                    draws a rectangular outline with colors red, green, cyan, and blue.</p>
+
+    <code>
+            &lt;lines id="line1"&gt;
+                &lt;vertices&gt;-.5 -.5 0 .5 -.5 0 .5 .5 0 -.5 .5 0 -.5 -.5 0&lt;/vertices&gt;
+                &lt;colors&gt;1 0 0 0 1 0 0 1 1 0 0 1 1 0 0&lt;/colors&gt;
+            &lt;lines&gt;
+    </code>
+
+                <p>The 'colors' element is not required; if all lines in the line set are the same color, the color of the lines'
+                material can be used instead.</p>
+
+            </section>
+        </section>
+
+        <section>
+        <h1 id="shading-materials">Shading, Materials and Lights</h1>
+
+            <section>
+
+                <h2>Shading models</h2>
+                <p>The surface color of GLAM objects is computed by combining their material values with
+                    lights in the scene in a process known as <i>shading</i>.
+                </p>
+                <p>For authoring convenience, several built-in shading models based on
+                    common 3D graphics techniques are defined:</p>
+                <ul>
+                    <li><i>Phong</i> - This material type implements a realistic-looking shading model with high performance. Phong-shaded objects will show brightly lit areas (specular reflections) where lit hits directly, will light well along any edges that mostly face the light source, and will darkly shade areas where the edge of the object faces away from the light source.</li>
+                    <li><i>Lambert - </i>With this shading model, the apparent brightness of the surface to an observer is the same regardless of the observer's angle of view. </li>
+                    <li><i>Unlit</i> - With this material type, only the textures, colors and transparency values are used to render the surface of the object. There is no contribution from lights in the scene.</li>
+                </ul>
+                <p>Authors may also choose to implement their own shading by using <a href="#programmable-shaders">
+                    programmable shaders</a>.</p>
+            </section>
+            <section>
+                <h2>Materials</h2>
+
+                <p>Materials define the surface properties of meshes and the color properties of points and lines. Using a material on an object determines the shading model that will be applied to render the object.
+                GLAM defines a set of built-in materials based on its built-in shading models: blinn/phong, lambert and unlit.</p>
+
+
+                <p>Authors specify materials via CSS. The type of material is specified using the CSS property <strong>shader</strong>. Valid values are <strong>phong</strong>, <strong>lambert</strong>, and <strong>unlit.</strong></p>
+
+                <p>GLAM uses the <a href="http://www.w3.org/TR/css3-color/">CSS Level 3 Color Module</a> color model for all
+                    visual and material color values.</p>
+
+               <p>
+                    Depending on the type of material, the following CSS properties
+                    can be used:</p>
+
+                <ul>
+                    <li>diffuse color (the <strong>color</strong> property)</li>
+                    <li>ambient color (the <strong>ambient-color</strong> property)</li>
+                    <li>specular color (the <strong>specular-color</strong> property)</li>
+                    <li>reflectivity coefficient (the <strong>reflectivity</strong> property)</li>
+                    <li>texture map (<strong>image</strong>,  <strong>normal-image</strong> and several other image-relate properties)</li>
+                </ul>
+
+                <p>In the following example, the sphere primitive 
+                    <strong>sphere1</strong> is styled with a phong-shaded material that has a diffuse texture map, a normal map (together specified in the <strong>image</strong> property), and a light gray diffuse color (the 
+                    <strong>color</strong> property):</p>
+
+       <code>
+#sphere1 {
+    shader:phong;
+    image:diffuse url(./images/earth.jpg) normal url(./images/earth-normal.jpg);
+    color:lightgray;
+}
+        </code>
+
+            </section>
+            <section>
+                <h2>Lights</h2>
+                <p>Lights are elements that define lighting characteristics of the scene. Light values are combined
+                    with material values to shade objects.
+                </p>
+                <p>For authoring convenience, several built-in light types based on
+                    common 3D graphics usage are defined:</p>
+                <ul>
+                    <li><i>Ambient Light</i></li>
+                    <li><i>Directional Light</i></li>
+                    <li><i>Point Light</i></li>
+                    <li><i>Spot Light</i></li>
+                </ul>
+                <p>The following fragment demonstrates scene lighting for each type:</p>
+        <code>
+&lt;light id="ambLight1" type='ambient'&gt;&lt;/light&gt;
+&lt;light id="dirLight1" type='directional'  dz='0' dy='-1' dx='0'&gt;&lt;/light&gt;
+&lt;light id="pointLight1" type='point'&gt;&lt;/light&gt;
+&lt;light id="spotLight1" type='spot' angle='15deg' exponent='1'&gt;&lt;/light&gt;
+        </code>
+
+                <p>The <strong>type</strong> attribute specifies the light type. Each type of light defines different attributes, though some attributes are shared among some lights. For example, both directional lights and spot lights define attributes <strong>dx</strong>, <strong>dy</strong> and <strong>dz</strong> for the
+                    x, y and z components of the lights' direction vectors, respectively.</p>
+
+                <p>Light elements are transformable, i.e. they can be positioned and oriented using transform properties, and they inherit the transforms of their ancestors. Light colors are specified in CSS using the <strong>color</strong> property.</p>
+
+                <p>Authors may also choose to implement their own light types for use with custom shading models by using <a href="#programmable-shaders">
+                    programmable shaders</a>.</p>
+            </section>
+        </section>
+
+            <section id="programmable-shaders">
+                <h2>Programmable shaders</h2>
+                <section>
+
+                    <p>GLAM allows authors to access the programmable pipeline in order to
+                     define custom shading models, deform geometry, animate the scene, and implement many other
+                     effects. This is done by creating programmable shaders as a combination of GLSL programs
+                     and CSS material properties that bind the rendered element to the shader program.</p>
+
+                    <p>
+                        The following CSS fragment defines a class, <strong>fresnel</strong>, for 
+                        shading objects using a fresnel shader program.
+                    </p>
+
+    <code>
+.fresnel {
+    vertex-shader:url(./shaders/fresnel.vs);
+    fragment-shader:url(./shaders/fresnel.fs);
+    shader-uniforms:mRefractionRatio f 1.02 mFresnelBias f 0.1 mFresnelPower f 2.0 mFresnelScale f 1.0 tCube t cube;
+}
+    </code>
+
+                    <ul>
+                        <li>The <strong>vertex-shader</strong> property is a URI to the GLSL source code for the vertex shader.</li>
+                        <li>The <strong>fragment-shader</strong> property is a URI to the GLSL source code for the fragment shader.</li>
+                        <li>The <strong>shader-uniforms</strong> property specifies the values to use as
+                            uniform inputs defined in the shader. Each value is a triple consisting of 
+                            the uniform's name, its data type ('f' for float, 't' for texture, 'c' for color, and so on), 
+                            and an initial/default value.</li>
+
+                    </ul>
+
+                </section>
+                <section>
+                    <h2>Built-in shader uniforms and attributes</h2>
+                    <p>Because GLAM supplies out-of-the-box behavior, it by necessity has to maintain internal
+                        state of the scene graph that a shader may need to access as uniforms. Examples of this include
+                         the world matrix for each object, the inverted view matrix for the active camera, and the world space 
+                         position values and colors of lights. The specification defines several uniforms that
+                         are reserved words for use in the shader-uniforms property (i.e. not allowed to be specified
+                         in the property). Some examples of built-in uniform reserved words:
+                    </p>
+                    <ul>
+                        <li><strong>modelViewMatrix</strong> - the camera space transform for the object.</li>
+                        <li><strong>projectionMatrix</strong> - the projection matrix used in vertex shaders to transform
+                            vertices from camera space to screen space.</li>
+                        <li><strong>lightPositions</strong> - an array of world space position vectors, one per light.</li>
+
+                    </ul>
+                    <p>For complete information, refer to the section on <a href="#predefined-uniform-declarations">
+                        predefined uniform declarations</a>.
+                </section>
+            </section>
+
+        <h1 id="imports">Importing Models</h1>
+
+            <section>
+
+                    <p>GLAM provides authors a way to embed external 3D models and scenes
+                     into the main scene. This data is stored in other 
+                        standard 3D formats such as OBJ, COLLADA or glTF. This is analogous to embedding image files in JPEG or PNG format into
+                        a 2D HTML document. GLAM is not designed for compact representation, but rather for ease of authoring
+                        and interactivity. Therefore, as a practical matter it will often be desirable to embed
+                        models in formats. GLAM
+                        achieves this through use of <i>imports</i>.
+                     </p>
+                     <p>The following example shows a GLAM scene that imports an OBJ model and adds
+                        a camera. The import element's <strong>src</strong>
+                        property specifies a URI to the imported scene file.
+                    </p>
+
+        <code>
+
+&lt;glam&gt;
+    &lt;scene&gt;
+        &lt;import id=&quot;imported_scene&quot; src=&quot;./models/model.obj&quot;&gt;
+        &lt;/import&gt;
+        &lt;camera&gt;&lt;/camera&gt;
+    &lt;/scene&gt;
+&lt;/glam&gt;
+
+        </code>
+
+            <p>
+                A GLAM scene can contain any number of 'import' elements. This is useful for importing multiple models into the same scene. 'import' elements can be transformed (translated, rotated, scaled) and animated just like any other GLAM element.
+            </p>
+            </section>
+
+
+    </section>
+        <h1 id="events">3D interaction and DOM events</h1>
+
+            <section>
+
+                <h2>3D Mouse Events</h2>
+                    <p>GLAM defines new DOM event types for handling 3D interaction with the scene. These
+                    events generate 3D picking information
+                     </p>
+
+
+                        <strong>MouseEvent3D</strong> is a superset of MouseEvent that adds the following properites:
+                        <ul>
+                            <li><strong>point</strong> - the point of intersection with the pointing device, in 
+                                model space coordinates</li>
+                            <li><strong>face</strong> - the face intersected with the pointing device</li>
+                            <li><strong>normal</strong> - the normal vector to the intersected face</li>
+                            <li><strong>textureCoordinate - the interpoalted texture coordinate at the intersection
+                                point</strong></li>
+                        </ul>
+                        
+                <h2>3D Touch Events</h2>
+
+                    <p>For touch input, <strong>TouchEvent3D</strong> extends TouchEvent by containing an array of Touch3D objects instead
+                        of 2D Touch objects. Each Touch3D contains the 3D new properties defined by MouseEvent3D (see above).
+                    </p>
+
+                    <p>The following JavaScript code fragment listens for MouseEvent3D events on a mesh, placing an arrow that points out of the object along the intersected normal, from the point of intersection:</p>
+        <code>
+mesh.addEventListener("click", function(event) {
+    // handle click event by calling a user-defined function
+    // that adds geometric annotations to the scene graph
+    addNormalToMesh(mesh, event.point, event.normal);
+});
+        </code>
+
+                <h2>3D Viewing Events</h2>
+
+                    <p>GLAM defines events for when the camera is looking at an object; that is, when the ray cast from the camera position to the back plane of the view frustrum intersects an object. The events <strong>viewover</strong> and <strong>viewout</strong> are generated when the ray first interesects the object, and when it stops intersecting the object, respectively.
+                    </p>
+
+                    <p>
+                    3D viewing events are generally useful, but in particular are quite valuable in virtual reality applications, where the object is being looked at is used as a selection mechanism.
+                    </p>
+                    <p>The following JavaScript code fragment listens for <strong>viewover</strong> and <strong>viewout</strong> events on a sphere, using that to save away which sphere is being looked at:</p>
+        <code>
+    sphereelt.addEventListener("viewover", function(event) {
+        selectedBubble = groupelt;
+    });
+    sphereelt.addEventListener("viewout", function(event) {
+        selectedBubble = null;
+    });
+            </code>
+
+                    <p>For complete information on 3D input events, refer to the Events Reference.
+
+            </section>
+
+        <h1 id="animation">3D Animation</h1>
+
+                <p>3D animation can be used to animate GLAM elements over time. 3D animation is not limited to transform values. Any element's attribute or
+                CSS property can be animated to create a 3D special
+                    effect, such as colors, opacity and material uniforms for shaders.</p>
+
+
+                <section>
+                    <h2>Using CSS Animations to Animate Elements</h2>
+                    <p>Standard CSS Animations can be applied to animate GLAM elements over time. The following CSS fragment defines
+                    a keyframe animation to rotate the cube <strong>cube1</strong> about its y-axis over a 10-second duration with
+                    looping:</p>            
+            <code>    
+/* keyframe animation for the cube: 10-second looping rotation about y-axis */
+@keyframes kfRotateY {
+  from {
+    transform: rotateY(0deg);
+  }
+
+  to {
+    transform: rotateY(360deg);
+  }
+}
+
+#cube1 {
+    animation-duration: 10s;
+    animation-name: kfRotateY;
+    animation-iteration-count: infinite;
+    animation-timing-function:linear;
+}
+            </code>    
+
+                </section>
+
+                <section>
+                    <h2>The 'animation' Element</h2>
+                    <p>GLAM elements can also be animated using the 'animation' element, a
+                        tag that can be defined within the GLAM document. This not only provides an alternate, more concise syntax, but is ultimately intended to support animation data that cannot be defined using
+                        the CSS animation standard.</p>  
+
+                    <p>Animations are defined using a combination of the 'animation' element and 'keyframe' elements to define the individual keyframes. Animations are bound to an element by setting the element's <strong>animation</strong> attribute.
+                    </p>
+                    <p>
+                    The following example animates
+
+                         <strong>cube1</strong> about its y-axis over a 10-second duration with
+                    looping:</p>            
+            <code>    
+&lt;glam&gt;
+  &lt;scene&gt;
+    &lt;box id="photocube" animation="animRotateY"&gt;&lt;/box&gt;
+    &lt;animation id="animRotateY" duration="10s" iteration-count="infinite" timing-function="linear"&gt;
+        &lt;keyframe time="0%" property="transform" value="rotateY(0deg);"&gt;&lt;/keyframe&gt;
+        &lt;keyframe time="50%" property="transform" value="rotateY(180deg);"&gt;&lt;/keyframe&gt;
+        &lt;keyframe time="100%" property="transform" value="rotateY(360deg);"&gt;&lt;/keyframe&gt;
+    &lt;/animation&gt;
+  &lt;/scene&gt;
+&lt;/glam&gt;
+            </code>    
+
+                </section>
+                <section>
+                    <h2>3D Transitions</h2>
+                    <p>3D transitions are a good way to produce one-shot effects such as chaging a color from one value to another over time (also known as a <i>tween</i>).</p>
+                    <p>NOTE: GLAM includes experimental support for 3D transitions, but it is currently not in good working order.</p>  
+
+                </section>
+
+            <h1 id="navigation-and-viewing">Navigation and Viewing</h1>
+            <section>
+                <h2>Camera controllers</h2>
+                <p>
+                    Rather than requiring the programmer to implement mouse-based control of a scene, for example to rotate a model or walk through a scene, GLAM provides built-in behavior in the form of <i>camera controllers</i>:
+                </p>
+                <ul>
+                    <li>
+                        FPS controller – first-person navigation: move the user through a scene with mouse, touch device and keyboard
+                    </li>
+                    <li>
+                        Model controller – orbit the camera around the center of the scene/model using the mouse, touch device and keyboard
+                    </li>
+                    <li>
+                        Device orientation controller – use HTML5 device orientation API to detect changes in orientation via the mobile device's accelerometer and gyroscope and rotate the camera
+                    </li>
+                    <li>
+                        Rift controller – use the WebVR API for Oculus Rift to detect changes in the headset's position and orientation and move/rotate the camera
+                    </li>
+                </ul>
+                <p>Controllers are added to a scene using the 'controller' element. This element has a <strong>type</strong> attribute that defines the interaction type, with valid values of "FPS" and "model".
+                </p>
+                <p>By default, GLAM creates a camera controller with <strong>type</strong> "model" so that simple scenes and models can be rotated with the mouse or touch device.
+                </p>
+            </section>
+
+            <h1 id="rendering-compositing-postprocessing">Rendering, Compositing and Postprocessing</h1>
+            <section>
+                <h2>Rendering</h2>
+            <p>
+                GLAM renders scenes using WebGL. By default, GLAM scenes are rendered in mono, but this behavior can be overridden using the &lt;renderer&gt; element and setting the <strong>type</strong> attribute to one of the following values:
+            </p>
+                <ul>
+                    <li>
+                        "cardboard" - render side-by-side WebGL with a 90-degree camera field-of-view, suitable for Google Cardboard devices
+                    </li>
+                    <li>
+                        "rift" – use Oculus Rift stereo rendering with barrel distortion, as implemented by WebVR-enabled browsers (currently only Firefox and Chrome)
+                    </li>
+                    <li>
+                        "standard" – standard rendering using WebGL; this is the default.
+                    </li>
+                </ul>
+            <p>
+                For example, the following GLAM document fragment renders a scene in side-by-side stereo for Google Cardboard:
+            </p>
+
+<code>
+&lt;glam&gt;
+  &lt;scene&gt;
+    &lt;renderer type="cardboard"&gt;&lt;/renderer&gt;
+    &lt;controller type="deviceOrientation"&gt;&lt;/controller&gt;
+    &lt;background id="sb1" class="skybox"&gt;&lt;/background&gt;
+  &lt;/scene&gt;
+&lt;/glam&gt;
+
+</code>            
+                In the future, GLAM may support Perhaps other rendering models such as physically based and deferred.
+            </p>
+
+            </section>
+            <section>
+                <h2>Compositing and Backgrounds</h2>
+
+                <p>
+                    GLAM scenes can be rendered in multiple layers that are blended (or <i>composited</i>) back-to-front. Currently this is only used to render backgrounds via the &lt;background&gt; element but it may be used to support additional layer types in the future.
+                </p>
+                <p>
+                    Background elements use cube map or spherical images to render an infinitely far away backdrop that re-orients with changes to the camera's orientation. The following example creates a spherical background for a scene using the &lt;background&gt; element and the <strong>sphere-image</strong> CSS property:
+                </p>
+
+<code>
+
+&lt;style&gt;
+    
+    #ss1 {
+        sphere-image:url(../../images/spherepano/pan0.jpg);
+    }
+    
+&lt;/style&gt;
+
+&lt;glam&gt;
+  &lt;scene&gt;
+    &lt;background id="ss1" type="sphere"&gt;&lt/background&gt;
+  &lt;/scene&gt;
+&lt;/glam&gt;
+
+</code>
+            </section>
+
+            <section>
+                <h2>Postprocessing Effects</h2>
+
+                <p>
+                    GLAM scenes support multi-pass postprocessing effects. Rather than the having to explicitly render the scene in multiple passes to achieve the desired effect, the developer can create effects simply by adding tags to the GLAM document.
+                </p>
+                <p>
+                    This feature is still experimental; only a few effects are currently supported. The following example shows the &lt;effect&gt; element used to define various effects, only one of which, the "Bloom" effect, is active for the scene. The <strong>disabled</strong> property is used to disable a specific effect. If multiple effects are enabled, they will be active and rendered in the order the elements appear in the GLAM document.
+                </p>
+
+<code>
+&lt;effect type="Film" grayscale="0" disabled&gt;&lt;/effect&gt;
+&lt;effect type="DotScreenRGB" scale="3" disabled&gt;&lt;/effect&gt;
+&lt;effect type="Bloom" strength="3"&gt;&lt;/effect&gt;
+&lt;effect type="RGBShift" amount=".005" disabled&gt;&lt;/effect&gt;
+</code>
+
+                <p>
+                    &lt;effect&gt; elements can be placed anywhere in the scene, for example is child elements of a group, for convenience. They are not affected by the transform hierarchy.
+                </p>
+            </section>
+
+            <h1 id="styling">Styling GLAM with CSS</h1>
+
+    <section>
+        <section>
+            <h2>Interaction between the GLAM scene graph and 2D CSS page layout</h2>
+            <p>
+                The CSS layout rules for the page stop at the root &lt;glam&gt; element. For all descendants of the GLAM element, the CSS properties
+                specify 3D scene graph units, not page units. With the exception of 3D transforms, standard CSS layout properties do not apply.
+            </p>
+        </section>
+        <section>
+            <h2>Support for existing CSS properties: transforms and animations</h2>
+            <p>GLAM uses the existing CSS <strong>transform</strong> property to place objects in the 3D scene. GLAM also uses the CSS Animations and CSS Transitions properties to dynamically animate or transition property values. For more information, see <a href="#animation">3D animation</a>.</p>
+        </section>
+
+        <section>
+            <h2>Visual properties</h2> 
+            <p>Visual properties specify values for various visual elements such the width of lines, and how colors and normals are organized for meshes, points and lines. GLAM defines several new CSS properties to control the appearance
+                of visual objects, including 
+            <ul>
+                <li><a href='#style-property-dash-size'>'dash-size'</a></li>
+                <li><a href='#style-property-gap-size'>'gap-size'</a></li>
+                <li><a href='#style-property-line-width'>'line-width'</a></li>
+                <li><a href='#style-property-vertex-colors'>'vertex-colors'</a></li>
+                <li><a href='#style-property-vertex-normals'>'vertex-normals'</a></li>
+            </ul>
+            <p>
+
+        </section>
+        <section>
+            <h2>3D Text properties</h2>
+
+            <p>GLAM defines new CSS properties to control the appearance
+                of 3D extruded text, including bevel and thickness, such as 
+            <ul>
+                <li><a href='#style-property-bevel-size'>'bevel-size'</a></li>
+                <li><a href='#style-property-bevel-thickness'>'bevel-thickness'</a></li> 
+                <li><a href='#style-property-font-bevel'>'font-bevel'</a></li>
+                <li><a href='#style-property-font-depth'>'font-depth'</a></li>
+            </ul>
+            </p>
+
+        </section>
+        <section>
+            <h2>Material properties</h2>
+            <p>GLAM defines several new CSS properties for controlling the material
+                of a visual object, including</p>
+
+            <ul>
+                <li><a href='#style-property-diffuse-color'>'diffuse-color'</a></li> 
+                <li><a href='#style-property-specular-color'>'specular-color'</a></li> 
+                <li><a href='#style-property-ambient-color'>'ambient-color'</a></li> 
+                <li><a href='#style-property-reflectivity'>'reflectivity'</a></li> 
+                <li><a href='#style-property-image'>'image'</a></li>
+                <li><a href='#style-property-sphere-image'>'sphere-image'</a></li>
+                <li><a href='#style-property-cube-image-back'>'cube-image-back'</a></li>
+                <li><a href='#style-property-cube-image-bottom'>'cube-image-bottom'</a></li>
+                <li><a href='#style-property-cube-image-front'>'cube-image-front'</a></li>
+                <li><a href='#style-property-cube-image-left'>'cube-image-left'</a></li>
+                <li><a href='#style-property-cube-image-right'>'cube-image-right'</a></li>
+                <li><a href='#style-property-cube-image-top'>'cube-image-top'</a></li>
+                <li><a href='#style-property-shader'>'shader'</a></li>
+                <li><a href='#style-property-fragment-shader'>'fragment-shader'</a></li>
+                <li><a href='#style-property-vertex-shader'>'vertex-shader'</a></li>
+                <li><a href='#style-property-shader-uniforms'>'shader-uniforms'</a></li>
+            </ul>
+
+
+            </p>
+
+        </section>
+
+</html>
