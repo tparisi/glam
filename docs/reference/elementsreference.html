@@ -446,7 +446,7 @@
 
 		<div class="desc">Text elements define 3D text. The text can be flat, or extruded.</div>
 
-        <p>The <strong>textContent</strong> property of a text element can be used to define the text rendered on the screen; text can also be defined using the <strong>value<strong> attribute.</p>
+        <p>The <strong>textContent</strong> property of a text element can be used to define the text rendered on the screen; text can also be defined using the <strong>value</strong> attribute.</p>
 
 		Text elements are 
 		<a href="#transformable-elements">transformable elements</a>; their position, rotation and scale can be changed. Text elements are also <a href="#visual-elements">visual elements</a>, so their material properties can be changed using CSS.
@@ -1043,13 +1043,321 @@ blending='additive'&gt;&lt;/emitter&gt;
 	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>none
 	        </table>
 	        </dl>
-	        <p>The Three.js alpha blending operation used to render the particles. Valid values are <strong>"normal"</strong>, <strong>"additive"</strong>, <strong>"subtractive"</strong>, <strong>"multiply"</strong>, and <strong>"none"</strong> (the default).
+	        <p>The Three.js alpha blending operation used to render the particles. Valid values are <strong>normal</strong>, <strong>additive</strong>, <strong>subtractive</strong>, <strong>multiply</strong>, and <strong>none</strong> (the default).
 	        </p>
 	        </div>	 
 
 
     	</div>
 
+	</section>
+
+	<section>
+
+		<h1 id="2D-elements">The 2D elements 'arc', 'circle' and 'rect'</h1>
+
+		<div class='note'>
+			NOTE: These 2D primitives are experimental. They may go away, or be replaced by a more comprehensive shape library, or SVG tags. Do not rely on them!
+		</div>
+
+
+	</section>
+
+	<section>
+
+		<h1 id="camera-element">The 'camera' element</h1>
+
+		<div class="desc">A camera for viewing the scene. </div>
+
+		<p>
+		Cameras can be perspective or orthographic (however the current GLAM implementation only supports perspective cameras).
+		</p>
+
+		<p>
+		Cameras are 
+		<a href="#transformable-elements">transformable elements</a>; their position, rotation and scale can be changed.
+		</p>
+
+		<h2>Creating</h2>
+
+
+<code>
+&lt;camera&gt;
+</code>
+		<div>
+			Creates a perspective camera at the default position (origin) and orientation (pointing down the negative z-axis), with default field of view and clipping planes.
+			
+		</div>
+
+
+        <h2>Attributes</h2>
+
+        <div class="element-description">
+
+	        <div class="propdef" id='camera-type'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'type'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">String</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>perspective
+	        </table>
+	        </dl>
+	        <p>Specifies the type of camera. Valid values are <strong>perspective</strong> (the default) and <strong>orthographic</strong>.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='camera-fov'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'fov'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>45
+	        </table>
+	        </dl>
+	        <p>For perspective cameras, specifies the camera's horizontal field of view (in degrees).
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='camera-near'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'near'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>1
+	        </table>
+	        </dl>
+	        <p>Specifies the distance from the camera to the near clipping plane of the view frustrum.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='camera-far'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'far'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>10000
+	        </table>
+	        </dl>
+	        <p>Specifies the distance from the camera to the far clipping plane of the view frustrum.
+	        </p>
+	        </div>
+
+    	</div>
+
+	</section>
+
+	<section>
+
+		<h1 id="light-element">The 'light' element</h1>
+
+		<div class="desc">Scene lighting. Lights can be ambient, directional, point
+		or spot lights.</div>
+
+		<p>
+		Lights are 
+		<a href="#transformable-elements">transformable elements</a>; their position, rotation and scale can be changed.
+		</p>
+
+		<h2>Creating</h2>
+
+
+<code>
+&lt;light&gt;
+</code>
+		<div>
+			Creates a directional at the default position (origin) and direction (pointing down the negative z-axis).
+			
+		</div>
+
+
+        <h2>Attributes</h2>
+
+        <div class="element-description">
+
+	        <div class="propdef" id='light-type'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'type'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">String</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>directional
+	        </table>
+	        </dl>
+	        <p>Specifies the type of light. Valid values are <strong>ambient</strong>, <strong>directional</strong> (the default), <strong>point</strong> and <strong>spot</strong>.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='light-color'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'color'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">CSS</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>white
+	        </table>
+	        </dl>
+	        <p>Specifies the light's color (CSS color values).
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='light-angle'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'angle'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>90deg
+	        </table>
+	        </dl>
+	        <p>Specifies the angle (in degrees) of the cone for spotlights.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='light-exponent'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'exponent'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>10
+	        </table>
+	        </dl>
+	        <p>Specifies the exponent of a spotlight's falloff. Uses Three.js exponential falloff algorithm.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='light-distance'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'distance'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>0
+	        </table>
+	        </dl>
+	        <p>Specifies the distance over which point lights and spot lights illuminate objects. A value of 0 means that the light covers infinite distance (all objects in the scene).
+	        </p>
+	        </div>
+
+    	</div>
+
+	</section>
+
+	<section>
+
+		<h1 id="import-element">The 'import' element</h1>
+
+		<div class="desc">Imports external models defined in other 3D formats.
+			Formats currently supported are COLLADA and glTF. Support for OBJ and Three.js JSON format may be added in the future.
+		</div>
+
+		<p>Import elements are 
+		<a href="#transformable-elements">transformable elements</a>; their position, rotation and scale can be changed.
+		</p>
+
+		<h2>Creating</h2>
+
+<code>
+&lt;import src='path-to-some-file.dae'&gt;
+</code>
+		<div>
+			Imports a model in the COLLADA (.DAE) 3D file format.
+		</div>
+
+
+        <h2>Attributes</h2>
+
+        <div class="element-description">
+
+	        <div class="propdef" id='import-src'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'src'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">URI</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>
+	        </table>
+	        </dl>
+	        <p>Specifies the URI to the source file for the imported model. Formats currently supported are COLLADA and glTF. 
+	        </p>
+	        </div>
+
+    	</div>
+
+	</section>
+
+	<section>
+
+		<h1 id="animation-element">The 'animation' element</h1>
+
+		<div class="desc">Defines a key frame animation using tags instead of CSS animations, providing a more concise representation and the potential for future extension outside the current specification.
+		</div>
+
+		<div class="desc">Elements are animated by setting their <strong>animation</strong> property to the identifier of the animation element.
+		</div>
+
+		<h2>Creating</h2>
+
+<code>
+&lt;animation id="animRotateY" duration="10s" iteration-count="infinite" timing-function="linear"&gt;
+    &lt;keyframe time="0%" property="transform" value="rotateY(0deg);"&gt;&lt;/keyframe&gt;
+    &lt;keyframe time="50%" property="transform" value="rotateY(180deg);"&gt;&lt;/keyframe&gt;
+    &lt;keyframe time="100%" property="transform" value="rotateY(360deg);"&gt;&lt;/keyframe&gt;
+&lt;/animation&gt;
+</code>
+		<div>
+			The above example creates a key frame animation that rotates an object about its y-axis over 10 seconds in a loop.
+		</div>
+
+
+        <h2>Attributes</h2>
+
+        <div class="element-description">
+
+	        <div class="propdef" id='animation-duration'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'duration'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Time</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>1s
+	        </table>
+	        </dl>
+	        <p>The duration of the animation. Time units can be seconds (s) or milliseconds (ms).
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='animation-iteration-count'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'iteration-count'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">String</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>initial
+	        </table>
+	        </dl>
+	        <p>The number of iterations; currently only <strong>intial</strong> and <strong>infinite</strong> are supported but other types will be added soon.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='animation-timing-function'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'timing-function'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">String</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>linear
+	        </table>
+	        </dl>
+	        <p>The interpolation function for the animation. Currently only <strong>linear</strong> is supported but other types will be added soon.
+	        </p>
+	        </div>
+
+    	</div>
 
 	</section>
 

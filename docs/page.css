@@ -135,8 +135,9 @@ table code {
 }
 
 strong {
-	color: #000;
+	color: darkblue;
 	font-weight: normal;
+	font-style: italic;
 }
 
 #button {
