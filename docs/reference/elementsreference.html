@@ -130,7 +130,7 @@
 		</div>
 		<div>
 			The appearance of visual elements may be changed using CSS
-		 <a href="../css/material-properties.html">material properties</a> such as
+		 <a href="cssreference.html#material-properties">material properties</a> such as
 		 <strong>diffuse-color</strong> and <strong>image</strong>.
 
 		</div>
@@ -145,7 +145,9 @@
 		<h2>Creating</h2>
 
 
-		<h3>&lt;glam&gt;</h3>
+<code>
+&lt;glam&gt;
+</code>
 		<div>
 			This creates the root GLAM document. Under the covers, this instantiates a GLAM application object that manages Three.js renderer and scene creation, window sizing and other events, as well as the <strong>requestAnimationFrame</strong> run loop. In the current implementation, the root &lt;glam&gt; tag must be created as a child of a &lt;div&gt; element. This restriction will probably go away soon.
 			
@@ -168,8 +170,9 @@
 
 		<h2>Creating</h2>
 
-
-		<h3>&lt;scene&gt;</h3>
+<code>
+&lt;scene&gt;
+</code>
 		<div>
 			This creates the root object of the visual scene. In the current implementation, there can be only one &lt;scene&gt; element per GLAM document. This restriction may go away soon.
 			
@@ -197,8 +200,9 @@
 
 		<h2>Creating</h2>
 
-
-		<h3>&lt;group&gt;</h3>
+<code>
+&lt;group&gt;
+</code>
 		<div>
 			Creates a group. A group can contain zero or more GLAM elements, either leaf elements (visuals, lights, cameras etc) or other groups.
 			
@@ -211,6 +215,291 @@
 		<a href="#transformable-elements">transformable elements</a>.
 	</section>
 
+	<section>
+
+		<h1 id="box-element">The 'box' element</h1>
+
+		<div class="desc">A cubic solid with width, height and depth. </div>
+
+		Boxes are 
+		<a href="#transformable-elements">transformable elements</a>; their position, rotation and scale can be changed. Boxes are also <a href="#visual-elements">visual elements</a>, so their material properties can be changed using CSS.
+		</p>
+
+		<h2>Creating</h2>
+
+
+<code>
+&lt;box&gt;
+</code>
+		<div>
+			Creates a box of default width (2 x 2 x 2 units).
+			
+		</div>
+
+
+        <h2>Attributes</h2>
+
+        <div class="element-description">
+
+	        <div class="propdef" id='box-width'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'width'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>2
+	        </table>
+	        </dl>
+	        <p>Specifies the width of the box.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='box-height'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'height'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>2
+	        </table>
+	        </dl>
+	        <p>Specifies the height of the box.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='box-depth'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'depth'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>2
+	        </table>
+	        </dl>
+	        <p>Specifies the depth of the box.
+	        </p>
+	        </div>
+
+    	</div>
+
+	</section>
+
+	<section>
+
+		<h1 id="cone-element">The 'cone' element</h1>
+
+		<div class="desc">A cone solid. </div>
+
+		Cones are 
+		<a href="#transformable-elements">transformable elements</a>; their position, rotation and scale can be changed. Cones are also <a href="#visual-elements">visual elements</a>, so their material properties can be changed using CSS.
+		</p>
+
+		<h2>Creating</h2>
+
+<code>
+&lt;cone&gt;
+</code>
+		<div>
+			Creates a cone of default height (2 units) and radius (2 units).
+			
+		</div>
+
+
+        <h2>Attributes</h2>
+
+        <div class="element-description">
+
+	        <div class="propdef" id='cone-height'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'height'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>2
+	        </table>
+	        </dl>
+	        <p>Specifies the height of the cone.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='cone-radius'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'radius'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>2
+	        </table>
+	        </dl>
+	        <p>Specifies the radius of the cone.
+	        </p>
+	        </div>
+
+    	</div>
+
+	</section>
+
+	<section>
+
+		<h1 id="cylinder-element">The 'cylinder' element</h1>
+
+		<div class="desc">A cylinder solid. </div>
+
+		Cylinders are 
+		<a href="#transformable-elements">transformable elements</a>; their position, rotation and scale can be changed. Cylinders are also <a href="#visual-elements">visual elements</a>, so their material properties can be changed using CSS.
+		</p>
+
+		<h2>Creating</h2>
+
+
+<code>
+&lt;cylinder&gt;
+</code>
+
+		<div>
+			Creates a cylinder of default height (2 units) and radius (2 units).
+			
+		</div>
+
+
+        <h2>Attributes</h2>
+
+        <div class="element-description">
+
+	        <div class="propdef" id='cylinder-height'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'height'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>2
+	        </table>
+	        </dl>
+	        <p>Specifies the height of the cylinder.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='cylinder-radius'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'radius'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>2
+	        </table>
+	        </dl>
+	        <p>Specifies the radius of the cylinder.
+	        </p>
+	        </div>
+
+    	</div>
+
+	</section>
+
+	<section>
+
+		<h1 id="sphere-element">The 'sphere' element</h1>
+
+		<div class="desc">A sphere solid. </div>
+
+		Spheres are 
+		<a href="#transformable-elements">transformable elements</a>; their position, rotation and scale can be changed. Cylinders are also <a href="#visual-elements">visual elements</a>, so their material properties can be changed using CSS.
+		</p>
+
+		<h2>Creating</h2>
+
+<code>
+&lt;sphere&gt;
+</code>
+
+		<div>
+			Creates a sphere of default radius (2 units).
+			
+		</div>
+
+
+        <h2>Attributes</h2>
+
+        <div class="element-description">
+
+
+	        <div class="propdef" id='sphere-radius'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'radius'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>2
+	        </table>
+	        </dl>
+	        <p>Specifies the radius of the sphere.
+	        </p>
+	        </div>
+
+    	</div>
+
+	</section>
+
+	<section>
+
+		<h1 id="text-element">The 'text' element</h1>
+
+		<div class="desc">Text elements define 3D text. The text can be flat, or extruded.</div>
+
+        <p>The <strong>textContent</strong> property of a text element can be used to define the text rendered on the screen; text can also be defined using the <strong>value<strong> attribute.</p>
+
+		Text elements are 
+		<a href="#transformable-elements">transformable elements</a>; their position, rotation and scale can be changed. Text elements are also <a href="#visual-elements">visual elements</a>, so their material properties can be changed using CSS.
+		</p>
+
+		<h2>Creating</h2>
+
+<code>
+	&lt;text&gt;
+</code>
+
+		<div>
+			Creates a text element with no contents.			
+		</div>
+
+<code>
+	&lt;text value='hello'&gt;
+</code>
+
+		<div>
+			Creates a text element with the string 'hello' displayed.			
+		</div>
+
+<code>
+&lt;text&gt;
+	Hello, world.
+&lt;/text&gt;
+</code>
+
+		<div>
+			Creates a text element with the string 'Hello, world.' displayed.			
+		</div>
+
+        <h2>Attributes</h2>
+
+        <div class="element-description">
+
+	        <div class="propdef" id='text-value'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'value'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">String</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>
+	        </table>
+	        </dl>
+	        <p>Specifies the value of the string to be displayed.
+	        </p>
+	        </div>
+
+    	</div>
+
+	</section>
 
 	</body>
 </html>
