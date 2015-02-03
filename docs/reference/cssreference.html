@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<script src="../list.js"></script>
+		<script src="../page.js"></script>
+		<link type="text/css" rel="stylesheet" href="../page.css" />
+	</head>
+	<body>
+
+        <div class="title">CSS Properties Reference</div>
+
+    <section>
+        <section>
+            <h1>Interaction between GLAM scene graph and CSS layout</h1>
+            <p>
+                The CSS layout rules for the page stop at the GLAM element. For all descendants of the GLAM element, the CSS properties
+                specify 3D scene graph units, not page units. With the exception of 3D transforms, standard CSS layout properties do not apply.
+            </p>
+        </section>
+        <section id="transform">
+            <h1>CSS Transform properties</h1>
+            <p>GLAM uses CSS 3D transforms to place objects in the 3D scene by setting the <strong>transform</strong> property, such as in the following example:
+            </p>
+<code>
+    #photocube {
+        image:url(../../images/flowers.jpg);
+        transform:rotateX(30deg);
+    }
+</code>
+            <p>
+                Elements inherit the 3D transforms of the their ancestors.
+            </p>
+        </section>
+        <section id="animation">
+            <h1 id="transition">CSS Animation and Transition properties</h1>
+            <p>GLAM uses CSS Animations and CSS Transitions to dynamically animate or transition property values.</p>
+
+The following CSS fragment defines
+                    a keyframe animation to rotate the cube <strong>cube1</strong> about its y-axis over a 10-second duration with
+                    looping:</p>            
+            <code>    
+/* keyframe animation for the cube: 10-second looping rotation about y-axis */
+@keyframes kfRotateY {
+  from {
+    transform: rotateY(0deg);
+  }
+
+  to {
+    transform: rotateY(360deg);
+  }
+}
+
+#cube1 {
+    animation-duration: 10s;
+    animation-name: kfRotateY;
+    animation-iteration-count: infinite;
+    animation-timing-function:linear;
+}
+            </code>    
+
+        </section>
+
+        <section>
+            <h1 id="material-properties">Material properties</h1>
+
+             <p>GLAM defines several new CSS properties for controlling the material
+                of a visual element:
+                <a href='#ambient-color'>'ambient-color'</a>, 
+                <a href='#diffuse-color'>'diffuse-color'</a>, 
+                <a href='#emissive-color'>'emissive-color'</a>, 
+                <a href='#specular-color'>'specular-color'</a>, 
+                <a href='#reflectivity'>'reflectivity'</a>, 
+                <a href='#image'>'image'</a>, 
+                <a href='#normal-image'>'normal-image'</a>, 
+                <a href='#specular-image'>'specular-image'</a>, 
+                <a href='#cube-image-back'>'cube-image-back'</a>, 
+                <a href='#cube-image-bottom'>'cube-image-bottom'</a>, 
+                <a href='#cube-image-front'>'cube-image-front'</a>, 
+                <a href='#cube-image-left'>'cube-image-left'</a>, 
+                <a href='#cube-image-right'>'cube-image-right'</a>, 
+                <a href='#cube-image-top'>'cube-image-top'</a>, 
+                <a href='#sphere-image'>'sphere-image'</a>, 
+                <a href='#shader'>'shader'</a>, 
+                <a href='#fragment-shader'>'fragment-shader'</a>, 
+                <a href='#vertex-shader'>'vertex-shader'</a>,
+                <a href='#shader-uniforms'>'shader-uniforms'</a>,
+                and
+                <a href='#render-mode'>'render-mode'</a>.
+
+            <div class="propdef" id='ambient-color'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'ambient-color'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;color&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>white
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>Specifies the ambient color for materials of visual elements.
+            </p>
+            </div>
+
+
+            <div class="propdef" id='diffuse-color'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'diffuse-color'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;color&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>white
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>Specifies the diffuse color for materials of visual elements. This property is a synonym for the standard CSS property 'color'.
+            </p>
+            </div>
+
+            <div class="propdef" id='emissive-color'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'emissive-color'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;color&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>white
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>Specifies the emissive color for materials of visual elements.
+            </p>
+            </div>
+
+            <div class="propdef" id='specular-color'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'specular-color'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;color&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>white
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>Specifies the specular color for materials of visual elements.
+            </p>
+            </div>
+
+            <div class="propdef" id='reflectivity'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'reflectivity'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;number&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>Specifies the reflectivity for materials of visual elements. Applies to materials with specular reflection only.
+            </p>
+            </div>
+
+            <div class="propdef" id='image'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'image'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;URI&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>Specifies the URI to the texture map image for materials of visual elements.
+            </p>
+            </div>
+
+            <div class="propdef" id='normal-image'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'normal-image'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;URI&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>Specifies the URI to a normal map image for materials of visual elements.
+            </p>
+            </div>
+
+            <div class="propdef" id='specular-image'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'specular-image'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;URI&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>Specifies the URI to a specular map image for materials of visual elements.
+            </p>
+            </div>
+
+
+            <div class="propdef" id='cube-image-right'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'cube-image-right'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;URI&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>Specifies the URI to a the right image of a cubic environment map for materials of visual elements.
+            </p>
+            </div>
+
+            <div class="propdef" id='cube-image-left'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'cube-image-left'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;URI&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>Specifies the URI to a the left image of a cubic environment map for materials of visual elements.
+            </p>
+            </div>
+
+
+            <div class="propdef" id='cube-image-top'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'cube-image-top'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;URI&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>Specifies the URI to a the top image of a cubic environment map for materials of visual elements.
+            </p>
+            </div>
+
+            <div class="propdef" id='cube-image-bottom'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'cube-image-bottom'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;URI&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>Specifies the URI to a the bottom image of a cubic environment map for materials of visual elements.
+            </p>
+            </div>
+
+
+            <div class="propdef" id='cube-image-front'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'cube-image-front'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;URI&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>Specifies the URI to a the front image of a cubic environment map for materials of visual elements.
+            </p>
+            </div>
+            
+            <div class="propdef" id='cube-image-back'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'cube-image-back'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;URI&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>Specifies the URI to a the back image of a cubic environment map for materials of visual elements.
+            </p>
+            </div>
+
+
+            <div class="propdef" id='sphere-image'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'sphere-image'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;URI&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>Specifies the URI to a spherical environment map image for materials of visual elements.
+            </p>
+            </div>
+
+
+            <div class="propdef" id='shader'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'shader'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">phong | blinn | unlit</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>unlit
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>Specifies the fixed-function shader to apply to materials of visual elements.
+            </p>
+            </div>
+
+            <div class="propdef" id='fragment-shader'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'fragment-shader'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;URI&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>Specifies the URI to the GLSL fragment shader program for materials of visual elements.
+            </p>
+            </div>
+
+            <div class="propdef" id='vertex-shader'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'vertex-shader'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;URI&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>Specifies the URI to the GLSL vertex shader program for materials of visual elements.
+            </p>
+            </div>
+
+            <div class="propdef" id='shader-uniforms'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'shader-uniforms'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;string&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>Specifies the uniform input declarations for the GLSL fragment shader program for materials of visual elements.
+            </p>
+            </div>
+
+            <div class="propdef" id='render-mode'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'render-mode'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;URI&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>standard
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>An enumerated value defining the style of rendering. Valid values are 
+            <strong>"wireframe"</strong> and <strong>"standard"</strong> (the default).
+            </p>
+            </div>
+        </section>
+
+        <section>
+            <h1>Visual properties</h1>
+            
+            <p>The visual properties
+                <a href='#dash-size'>'dash-size'</a>, 
+                <a href='#gap-size'>'gap-size'</a>, 
+                <a href='#line-width'>'line-width'</a>,
+                and 
+                <a href='#point-size'>'point-size'</a> specify values for various visual elements such the width of lines and size of points.</p>
+
+
+            <div class="propdef" id='dash-size'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'dash-size'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;number&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>0
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>This property specifies the dash size for dashed lines (&lt;lines&gt; element only). A value of 0 means no dash.
+            </p>
+            </div>
+
+            <div class="propdef" id='gap-size'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'gap-size'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;number&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>0
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>This property specifies the gap size for dashed lines (&lt;lines&gt; element only). A value of 0 means no gap.
+            </p>
+            </div>
+
+            <div class="propdef" id='line-width'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'line-width'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;number&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>auto
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>This property specifies the width (thickness) of lines (&lt;lines&gt; element only). The default is implementation-specific.
+            </p>
+            </div>
+
+            <div class="propdef" id='point-size'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'point-size'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;number&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>0
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>visual elements
+            </table>
+            </dl>
+            <p>This property specifies the point size for points (&lt;points&gt; element only). A value of 0 means use a default size.
+            </p>
+            </div>
+
+        </section>
+        <section>
+            <h1>3D Text properties</h2>
+             
+            
+            <p>Properties to add to CSS for 3D text, including <a href='#bevel-size'>'bevel-size'</a>, 
+                <a href='#bevel-thickness'>'bevel-thickness'</a>, 
+                <a href='#font-bevel'>'font-bevel'</a>,
+                and 
+                <a href='#font-depth'>'font-depth'</a>.
+            </p>
+
+
+            <div class="propdef" id='bevel-size'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'bevel-size'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;number&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>auto
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>text elements
+            </table>
+            </dl>
+            <p>This property specifies the bevel size for beveled 3D text.
+            </p>
+            </div>
+            <div class="propdef" id='bevel-thickness'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'bevel-thickness'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;number&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>auto
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>text elements
+            </table>
+            </dl>
+            <p>This property specifies the bevel thickness for beveled 3D text.
+            </p>
+            </div>
+            <div class="propdef" id='font-bevel'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'font-bevel'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">bevel | none</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>bevel
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>text elements
+            </table>
+            </dl>
+            <p>Specifies whether to bevel 3D text.
+            </p>
+            </div>
+            <div class="propdef" id='font-depth'>
+            <dl><dt>
+            <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'font-depth'</dfn></a></span>
+            <dd>
+            <table class="propinfo" cellspacing=0 cellpadding=0>
+            <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">&lt;number&gt;</span>
+            <tr valign=baseline><td><em>Initial:</em>&nbsp;&nbsp;<td>0
+            <tr valign=baseline><td><em>Applies to:</em>&nbsp;&nbsp;<td>text elements
+            </table>
+            </dl>
+            <p>Specifies the depth to extrude 3D text along the model space z axis. A value of 0 means the text is not extruded but rendered as flat polygons.
+            </p>
+            </div>
+
+        </section>
+
+    </section>
+</html>

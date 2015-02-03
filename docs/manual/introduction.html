@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<script src="../list.js"></script>
+		<script src="../page.js"></script>
+		<link type="text/css" rel="stylesheet" href="../page.css" />
+	</head>
+	<body>
+
+        <div class="title">Introduction</div>
+
+		<div>NOTE: this is a work in progress.</div>
+
+		<h1 id="What-is-GLAM">What is GLAM?</h1>
+
+		<div>GLAM (GL And Markup) is a declarative language for 3D web content.</div>
+
+		<div>GLAM combines the power of WebGL with a set of easy-to-use markup tags and style properties. With GLAM, 3D authoring is like any other web authoring. To make 3D, you create elements, set their attributes, add event listeners, and define styles. Just like DOM used to make! Content is easy to animate: keyframes and tweens can be defined in a compact set of markup tags, or as standard CSS3 animations or transitions. GLAM is also fully extensible: to add custom behavior, write JavaScript event handlers. If you want fancy shading written in GLSL, simply specify your vertex and fragment shaders as properties of the object's style. GLAM renders with WebGL, using Three.js, and adds behaviors, interaction and lots of easy-to-use features on top. But most importantly, GLAM defines a markup language and set of stylesheet extensions that make 3D programming a snap.</div>
+
+		<div>
+
+			GLAM was created by Tony Parisi, the guy who made the Virtual Reality Markup Language (VRML), 20 years before anybody knew they needed it. Since then, Tony's learned a few more things about graphics, web browsers have grown up, and the world has caught up with the vision. GLAM is still quite young. We're adding features and demos at a rapid clip, and we are also looking closely at related technologies such as Web Components as they come of age. We'd love your feedback and contributions!
+		</div>
+
+		<h1 id="Getting-started">Getting started with GLAM</h1>
+		<div>
+			To add GLAM to your application, simply include either the debug or minified version of the library:
+
+		<code>
+		&lt;script src="pathtoglam/glam.js"&gt; &lt;/script&gt; OR
+
+		&lt;script src="pathtoglam/glam.min.js"&gt; &lt;/script&gt;
+		</code>
+
+		</div>
+
+		<h1 id="Creating-a-scene">Creating a simple GLAM scene</h1>
+
+		<div>The following document fragment defines a minimal, empty GLAM scene using the &lt;glam&gt; and &lt;scene&gt; elements.</div>
+
+		<code>
+        &lt;glam&gt;
+            &lt;scene&gt;&lt;/scene&gt;
+		&lt;/glam&gt;
+		</code>
+
+		<h1 id="A-complete-example">A complete example</h1>
+
+		<div>Describe here</div>
+
+		<code>
+		&lt;html&gt;
+		&lt;head&gt;
+			&lt;title&gt;A simple GLAM scene&lt;/title&gt;
+			&lt;script src="pathtoglam/glam.js"&gt; &lt;/script&gt;
+		&lt;/head&gt;
+		&lt;body&gt;
+            &lt;glam&gt;
+                &lt;scene&gt;
+                    &lt;cube&gt;&lt;/cube&gt;
+                &lt;/scene&gt;
+            &lt;/glam&gt;
+		&lt;/body&gt;
+		&lt;/html&gt;
+		</code>
+
+	</body>
+
+</html>
