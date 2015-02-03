@@ -57,6 +57,9 @@ glam.DOMTypes.parseVector3Array = function(element, vertices) {
 	var text = element.textContent;
 	var nums = text.match(/\S+/g);
 	
+	if (!nums)
+		return;
+
 	var i, len = nums.length;
 	if (len < 3)
 		return;
@@ -75,6 +78,9 @@ glam.DOMTypes.parseVector3Array = function(element, vertices) {
 glam.DOMTypes.parseVector3 = function(text, vec) {
 
 	var nums = text.match(/\S+/g);
+
+	if (!nums)
+		return;
 	
 	var i, len = nums.length;
 	if (len < 3)
@@ -90,6 +96,9 @@ glam.DOMTypes.parseVector3 = function(text, vec) {
 glam.DOMTypes.parseVector2Array = function(element, uvs) {
 	var text = element.textContent;
 	var nums = text.match(/\S+/g);
+
+	if (!nums)
+		return;
 	
 	var i, len = nums.length;
 	if (len < 2)
@@ -109,6 +118,9 @@ glam.DOMTypes.parseVector2Array = function(element, uvs) {
 glam.DOMTypes.parseColor3Array = function(element, colors) {
 	var text = element.textContent;
 	var nums = text.match(/\S+/g);
+
+	if (!nums)
+		return;
 	
 	var i, len = nums.length;
 	if (len < 3)
@@ -130,6 +142,9 @@ glam.DOMTypes.parseColor3Array = function(element, colors) {
 glam.DOMTypes.parseColor3 = function(text, c) {
 
 	var nums = text.match(/\S+/g);
+
+	if (!nums)
+		return;
 	
 	var i, len = nums.length;
 	if (len < 3)
@@ -146,6 +161,9 @@ glam.DOMTypes.parseFaceArray = function(element, faces) {
 	
 	var text = element.textContent;
 	var nums = text.match(/\S+/g);
+
+	if (!nums)
+		return;
 	
 	var i, len = nums.length;
 	if (len < 1)
@@ -166,6 +184,9 @@ glam.DOMTypes.parseFaceArray = function(element, faces) {
 glam.DOMTypes.parseUVArray = function(element, uvs) {
 	var text = element.textContent;
 	var nums = text.match(/\S+/g);
+
+	if (!nums)
+		return;
 	
 	var i, len = nums.length;
 	if (len < 6)
