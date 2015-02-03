@@ -46,6 +46,7 @@ var list = {
 			[ "<points>", "reference/elementsreference", "points-element"],
 			[ "<line>", "reference/elementsreference", "line-element"],
 			[ "<particles>", "reference/elementsreference", "particles-element"],
+			[ "<emitter>", "reference/elementsreference", "emitter-element"],
 			[ "<arc>", "reference/elementsreference", "arc-element"],
 			[ "<circle>", "reference/elementsreference", "circle-element"],
 			[ "<rect>", "reference/elementsreference", "rect-element"],

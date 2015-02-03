@@ -765,5 +765,293 @@
 
 	</section>
 
+	<section>
+
+		<h1 id="particles-element">The 'particles' element</h1>
+
+		<div class="desc">A particle system. Particle systems can be dynamic,
+			defined using the supporting element 'emitter', or static, defined as a set of points using the supporting element 'vertices'.</div>
+
+
+		<h2>Creating</h2>
+
+
+<code>
+&lt;particles&gt;
+</code>
+
+		<div>
+			Creates an empty particle system.			
+		</div>
+
+
+<code>
+&lt;particles maxAge='2' id='fire'&gt;
+	&lt;emitter particlesPerSecond='50' size='10' sizeEnd='5' opacityStart='0.2' 
+	opacityMiddle='0.4' opacityEnd='0.1' velocity='0 2.5 0' acceleration='0 3 0' 
+	positionSpread='2 3.5 2' accelerationSpread='1.5 .5 1.5' colorStart='yellow'
+	blending='additive'&gt;&lt;/emitter&gt;
+&lt;/particles&gt;
+</code>
+
+		<div>
+			Creates a dynamic particle system using an emitter.			
+		</div>
+
+<code>
+&lt;particles&gt;
+	&lt;vertices&gt;&lt;/vertices&gt;
+&lt;/particles&gt;
+</code>
+
+		<div>
+			Creates an empty, static particle system using the 'vertices' element.			
+		</div>
+
+        <h2>Attributes</h2>
+
+        <div class="element-description">
+
+	        <div class="propdef" id='particles-maxAge'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'maxAge'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>1
+	        </table>
+	        </dl>
+	        <p>The maximum age in seconds of a particle emitted by the particle system's 'emitter' child element.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='particles-size'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'size'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>1
+	        </table>
+	        </dl>
+	        <p>The size of particles in a static particle system.
+	        </p>
+	        </div>
+
+    	</div>
+
+
+	</section>
+
+	<section>
+
+		<h1 id="emitter-element">The 'emitter' element</h1>
+
+		<div class="desc">A supporting element defining the emission characteristics
+		of particles in a particle system. The 'emitter' element can only be a child of a 'particles' element.</div>
+
+
+		<h2>Creating</h2>
+
+
+<code>
+&lt;emitter&gt;
+</code>
+
+		<div>
+			Creates an empty emitter.			
+		</div>
+
+
+<code>
+&lt;emitter particlesPerSecond='50' size='10' sizeEnd='5' opacityStart='0.2' 
+opacityMiddle='0.4' opacityEnd='0.1' velocity='0 2.5 0' acceleration='0 3 0' 
+positionSpread='2 3.5 2' accelerationSpread='1.5 .5 1.5' colorStart='yellow'
+blending='additive'&gt;&lt;/emitter&gt;
+</code>
+
+		<div>
+			Creates an emitter with several attributes as described below.
+		</div>
+
+        <h2>Attributes</h2>
+
+        <div class="element-description">
+
+	        <div class="propdef" id='emitter-particlesPerSecond'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'particlesPerSecond'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>0
+	        </table>
+	        </dl>
+	        <p>The number of particles emitted per second.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='emitter-size'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'size'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>1
+	        </table>
+	        </dl>
+	        <p>The initial size of emitted particles.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='emitter-sizeEnd'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'sizeEnd'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>1
+	        </table>
+	        </dl>
+	        <p>The size of emitted particles at the end of their life cycle.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='emitter-opacityStart'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'opacityStart'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>1
+	        </table>
+	        </dl>
+	        <p>The opacity of emitted particles at the start of their life cycle.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='emitter-opacityMiddle'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'opacityMiddle'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>1
+	        </table>
+	        </dl>
+	        <p>The opacity of emitted particles at the middle of their life cycle.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='emitter-opacityEnd'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'opacityEnd'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>1
+	        </table>
+	        </dl>
+	        <p>The opacity of emitted particles at the end of their life cycle.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='emitter-velocity'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'velocity'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>1
+	        </table>
+	        </dl>
+	        <p>The initial velocity (m/sec) of emitted particles.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='emitter-acceleration'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'acceleration'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Number</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>1
+	        </table>
+	        </dl>
+	        <p>The acceleration (m/sec^^2) of emitted particles.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='emitter-positionSpread'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'positionSpread'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Vector3</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>1
+	        </table>
+	        </dl>
+	        <p>The amount of variance applied to particle positions in x, y and z.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='emitter-accelerationSpread'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'accelerationSpread'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Vector3</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>1
+	        </table>
+	        </dl>
+	        <p>The amount of variance applied to particle accelerations in x, y and z.
+	        </p>
+	        </div>	        
+
+	        <div class="propdef" id='emitter-colorStart'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'colorStart'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Color</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>1
+	        </table>
+	        </dl>
+	        <p>The initial color of emitted particles.
+	        </p>
+	        </div>	        
+
+	        <div class="propdef" id='emitter-colorEnd'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'colorEnd'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Color</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>1
+	        </table>
+	        </dl>
+	        <p>The end color of emitted particles.
+	        </p>
+	        </div>	    
+
+	        <div class="propdef" id='emitter-blending'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'blending'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">String</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>none
+	        </table>
+	        </dl>
+	        <p>The Three.js alpha blending operation used to render the particles. Valid values are <strong>"normal"</strong>, <strong>"additive"</strong>, <strong>"subtractive"</strong>, <strong>"multiply"</strong>, and <strong>"none"</strong> (the default).
+	        </p>
+	        </div>	 
+
+
+    	</div>
+
+
+	</section>
+
 	</body>
 </html>
