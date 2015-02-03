@@ -501,5 +501,269 @@
 
 	</section>
 
+	<section>
+
+		<h1 id="mesh-element">The 'mesh' element</h1>
+
+		<div class="desc">Mesh elements define triangle meshes. Meshes uses the supporting elements 'vertices', 'normals', 'uvs', 'colors' and 'faces' to specify their data.</div>
+
+		Meshes are 
+		<a href="#transformable-elements">transformable elements</a>; their position, rotation and scale can be changed. Meshes are also <a href="#visual-elements">visual elements</a>, so their material properties can be changed using CSS.
+		</p>
+
+		<h2>Creating</h2>
+
+<code>
+	&lt;mesh&gt;
+</code>
+
+		<div>
+			Creates an empty mesh.			
+		</div>
+
+<code>
+    &lt;mesh&gt;
+        &lt;vertices&gt;-.5 -.5 0 .5 -.5 0 .5 .5 0 -.5 .5 0&lt;/vertices&gt;
+        &lt;normals&gt;0 1 1 0 0 1&lt;/normals&gt;
+        &lt;uvs&gt;0 0 1 0 1 1 0 0 1 1 0 1&lt;/uvs&gt;
+        &lt;faces&gt;0 1 2 0 2 3&lt;/faces&gt;
+    &lt;/mesh&gt;
+</code>
+
+		<div>
+			Creates a rectangular mesh composed	of two triangles.	
+		</div>
+
+        <h2>Attributes</h2>
+
+        <div class="element-description">
+
+	        <div class="propdef" id='mesh-vertexColors'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'vertexColors'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Boolean</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>false
+	        </table>
+	        </dl>
+	        <p>If present, this attribute specifies that colors for the mesh are supplied on a per-vertex (vs. per-face) basis.
+	        </p>
+	        </div>
+
+	        <div class="propdef" id='mesh-vertexNormals'>
+	        <dl><dt>
+	        <span class="index-def" title="'top'"><a name="propdef-top" class="propdef-title"><dfn>'vertexNormals'</dfn></a></span>
+	        <dd>
+	        <table class="propinfo" cellspacing=0 cellpadding=0>
+	        <tr valign=baseline><td><em>Value:</em>&nbsp;&nbsp;<td><span class="value-inst-length">Boolean</span>
+	        <tr valign=baseline><td><em>Default:</em>&nbsp;&nbsp;<td>false
+	        </table>
+	        </dl>
+	        <p>If present, this attribute specifies that normals for the mesh are supplied on a per-vertex (vs. per-face) basis.
+	        </p>
+	        </div>
+
+    	</div>
+
+	</section>
+
+	<section>
+
+		<h1 id="vertices-element">The 'vertices' element</h1>
+
+		<div class="desc">A supporting element that defines the vertex data for meshes, points and lines. The 'vertices' element can only be a child element of these types.</div>
+
+
+		<h2>Creating</h2>
+
+
+<code>
+&lt;vertices&gt;-.5 -.5 0 .5 -.5 0 .5 .5 0 -.5 .5 0&lt;/vertices&gt;
+</code>
+
+        <h2>Attributes</h2>
+
+		<div>
+			This element has no attributes. The <strong>textContent</strong> property is used to supply vertex data as space-delimited floating-point numbers. The number of vertices supplied must be a multiple of 3.
+		</div>
+
+	</section>
+
+	<section>
+
+		<h1 id="normals-element">The 'normals' element</h1>
+
+		<div class="desc">A supporting element that defines the normal data for meshes, points and lines. The 'normals' element can only be a child element of these types.</div>
+
+
+		<h2>Creating</h2>
+
+
+<code>
+&lt;normals&gt;0 1 1 0 0 1&lt;/normals&gt;
+</code>
+
+        <h2>Attributes</h2>
+
+		<div>
+			This element has no attributes. 
+		</div>
+		<div>
+			The <strong>textContent</strong> property is used to supply normal data as space-delimited floating-point numbers. If the parent element's <strong>vertexNormals</strong> property is specified, then the normals are applied to each vertex, and the number of normals supplied must be a multiple of 3 and equal to the number of vertices supplied in the sibling 'vertices' element. If <strong>vertexNormals</strong> is not specified, then the the normals are applied to each face, and the number of normals supplied must be equal to the number of faces supplied in the sibling 'faces' element.
+		</div>
+
+	</section>
+
+		<h1 id="uvs-element">The 'uvs' element</h1>
+
+		<div class="desc">A supporting element that defines the texture coordinate data (known as <i>UV coordinates</i>) for meshes. The 'uvs' element can only be a child element of a mesh.</div>
+
+
+		<h2>Creating</h2>
+
+
+<code>
+&lt;uvs&gt;0 0 1 0 1 1 0 0 1 1 0 1&lt;/uvs&gt;
+</code>
+
+        <h2>Attributes</h2>
+
+		<div>
+			This element has no attributes. The <strong>textContent</strong> property is used to supply texture coordinate data as space-delimited floating-point numbers. The number of vertices supplied must be a multiple of 3 and equal to the number of vertices supplied in the sibling 'vertices' element.
+		</div>
+
+	</section>
+
+		<h1 id="colors-element">The 'colors' element</h1>
+
+		<div class="desc">A supporting element that defines the color data for meshes, points and lines. The 'colors' element can only be a child element of these types.</div>
+
+
+		<h2>Creating</h2>
+
+
+<code>
+
+&lt;colors&gt;1 0 0 0 1 0&lt;/colors&gt;
+</code>
+
+        <h2>Attributes</h2>
+
+		<div>
+			This element has no attributes. 
+		</div>
+		<div>
+			The <strong>textContent</strong> property is used to supply colors data as space-delimited floating-point numbers in the range [0..1] inclusive (floating point RGB). If the parent element's <strong>vertexColors</strong> property is specified, then the colors are applied to each vertex, and the number of colors supplied must be a multiple of 3 and equal to the number of vertices supplied in the sibling 'vertices' element. If <strong>vertexColors</strong> is not specified, then the the colors are applied to each face, and the number of colors supplied must be equal to the number of faces supplied in the sibling 'faces' element.
+		</div>
+
+	</section>
+
+	<section>
+
+		<h1 id="faces-element">The 'faces' element</h1>
+
+		<div class="desc">A supporting element that defines the faces data for meshes. The 'faces' element can only be a child element of a mesh.</div>
+
+
+		<h2>Creating</h2>
+
+
+<code>
+&lt;faces&gt;0 1 2 0 2 3&lt;/faces&gt;
+</code>
+
+		<div>
+			Defines a mesh composed of two triangles.			
+		</div>
+
+        <h2>Attributes</h2>
+
+		<div>
+			This element has no attributes. 
+		</div>
+		<div>
+			The <strong>textContent</strong> property is used to supply face data as space-delimited integers that are used as zero-based indices into the 'vertices' element data. The number of indices supplied must be a multiple of 3, and each index must be in the range from 0 to the number of items in the 'vertices' array minus 1.
+		</div>
+
+	<section>
+
+
+	<section>
+
+		<h1 id="points-element">The 'points' element</h1>
+
+		<div class="desc">A point set.</div>
+
+		<div class='note'>
+			NOTE: point sets are not yet implemented in GLAM.
+		</div>
+
+		<h2>Creating</h2>
+
+
+<code>
+&lt;points&gt;
+</code>
+
+		<div>
+			Creates an empty point set.
+			
+		</div>
+
+
+        <h2>Attributes</h2>
+
+        <div class="element-description">
+        	TBD.
+
+    	</div>
+
+	</section>
+
+	<section>
+
+		<h1 id="line-element">The 'line' element</h1>
+
+		<div class="desc">Line elements define line sets. Line sets uses the supporting elements 'vertices', and 'colors' and 'faces' to specify their data.</div>
+
+		Lines are 
+		<a href="#transformable-elements">transformable elements</a>; their position, rotation and scale can be changed. Meshes are also <a href="#visual-elements">visual elements</a>, so their material properties can be changed using CSS.
+		</p>
+
+		<div class='note'>
+			NOTE: this element should be renamed to 'lines' for consistency and clarity.
+		</div>
+
+		<h2>Creating</h2>
+
+<code>
+	&lt;line&gt;
+</code>
+
+		<div>
+			Creates an empty line set.			
+		</div>
+
+<code>
+&lt;line id="line1"&gt;
+	&lt;vertices&gt;-.5 -.5 0 .5 -.5 0 .5 .5 0 -.5 .5 0 -.5 -.5 0&lt;/vertices&gt;
+	&lt;colors&gt;1 0 0 0 1 0 0 1 1 0 0 1 1 0 0&lt;/colors&gt;
+&lt;/line>
+</code>
+
+		<div>
+			Creates a rectangular line set with line gradients ranging from red to green,
+			green to cyan, cyan to blue and blue to red, respectively.	
+		</div>
+
+        <h2>Attributes</h2>
+
+		<div>
+			This element has no attributes.
+		</div>
+
+	</section>
+
 	</body>
 </html>
