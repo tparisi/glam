@@ -32,28 +32,28 @@
 		}
 
 			*{ box-sizing: border-box; background-color:#222222;
-				color:white;}
+				color:#f0f0f0;}
 
 			body {
 				margin: 0px;
 				font-family: 'PT Sans';
-				font-size: 15px;
+				font-size: 14px;
 				line-height: 18px;
 			}
 
 			h1 {
 				margin-bottom: 20px;
-				font-size: 25px;
+				font-size: 24px;
 				font-weight: bold;
 				color: #FF6600;
 			}
 
 			h2 {
 				color: #999;
+				color: #FF6600;
 				font-size: 18px;
 				font-weight: normal;
 
-				margin-top: 15px;
 				margin-bottom: 30px;
 			}
 
@@ -84,10 +84,10 @@
 			#panel {
 				position: fixed;
 				left: 0px;
-				top: 0px;
+				top: 18px;
 				bottom: 0px;
 				width: 180px;
-				margin-left:6px;
+				margin-left:10px;
 				margin-top:20px;
 
 			}
@@ -112,15 +112,21 @@
 
 			.demo {
 				text-align:center;
-				width:220px;
+				width:200px;
 				height:190px;
 				margin-bottom:10px;
 			}
 
-			.demoImg {
-				margin-top:8px;
-				margin-left:14px;
-			}
+	
+				.demo img {
+					margin-top:8px;
+					margin-left:14px;
+					width: 200px;
+					height: 180px;
+					display: block;
+					float: left;
+					transition: opacity 0.2s;
+				}			
 
 			#viewer {
 				position: absolute;
@@ -130,13 +136,6 @@
 				margin-left:10px;
 			}
 
-				#viewer img {
-					width: 200px;
-					height: 160px;
-					display: block;
-					float: left;
-					transition: opacity 0.2s;
-				}
 
 				#viewer img:hover {
 					opacity: 0.75;
@@ -218,6 +217,34 @@
 				}
 			}
 
+			.feature {
+				line-height: 2em;
+				width:832px;
+			}
+
+			.featuretext {
+				padding-left:30px;
+				padding-right:30px;
+			}
+
+			.byline {
+				color: #999;
+				font-weight:bold;
+			}
+
+			.heroimage {
+				text-align: center;
+				padding-top:10px;
+			}
+
+			#demos {
+				padding-top:30px;
+			}
+
+			#examples {
+				padding-top:30px;
+			}
+
 		</style>
 	</head>
 	<body>
@@ -252,50 +279,38 @@
 				<a href="./docs/" target="_blank">DOCUMENTATION</a><br>
 				<a href="http://github.com/tparisi/glam" target="_blank">VIEW ON GITHUB</a>
 
-
-					<!--
-				<div id="resource">
-				<script>
-					var resources = [
-						'<a href="http://www.udacity.com/overview/Course/cs291/" target="_blank"><img src="files/udacity.png" width="121" height="152" /></a>',
-						'<a href="http://davidscottlyons.com/threejs/presentations/frontporch14/" target="_blank"><img src="files/intro.png" width="121" height="106" /></a>'
-					];
-					document.write( resources[ Math.floor( Math.random() * resources.length ) ] );
-				</script>
-				</div>
-
-				<div id="book">
-				<script>
-					var books = [
-						'<a href="http://shop.oreilly.com/product/0636920024729.do" target="_blank"><img src="files/books/webgl.png" width="100" height="132" /></a>',
-						'<a href="https://www.packtpub.com/web-development/learning-threejs-javascript-3d-library-webgl" target="_blank"><img src="files/books/learning-threejs-javascript-3d-library-webgl.png" width="100" height="123" /></a>',
-						'<a href="https://www.packtpub.com/game-development/game-development-threejs" target="_blank"><img src="files/books/game-development-threejs.png" width="100" height="123" /></a>',
-						'<a href="https://www.packtpub.com/web-development/threejs-essentials" target="_blank"><img src="files/books/threejs-essentials.png" width="100" height="124" /></a>',
-						'<a href="https://www.packtpub.com/web-development/threejs-cookbook" target="_blank"><img src="files/books/threejs-cookbook.png" width="100" height="123" /></a>'
-					];
-					document.write( books[ Math.floor( Math.random() * books.length ) ] );
-				</script>
-			-->
 				</div>
 			</div>
 		</div>
 
-		<script>
-		var panel = document.getElementById( 'panel' );
-		var expandButton = document.getElementById( 'expandButton' );
-		expandButton.addEventListener( 'click', function ( event ) {
-			panel.classList.toggle( 'collapsed' );
-			event.preventDefault();
-		} );
-		</script>
 
 		<div id="viewer">
 
-			<h1 id="news">News</h1>
+			<div id="news" class="feature">
 
-			COMING SOON: GLAM Alpha 2 Release with Cardboard VR support
+				<table>
+				<tr>
+					<td>
+					<h1>Cardboard VR Comes to GLAM!</h1>
+					<div class="featuretext">
+						<div class="byline"> February 3, 2015</div>
+						Thanks to the generous support of our <a href="https://www.kickstarter.com/projects/dodocase/diy-virtual-reality-open-source-future" target="_blank">DIYVR Kickstarter</a> backers, we were able to add VR rendering features to GLAM. Just point your mobile browser at <a href="./examples/vr/bubblepopcb.html" target="_blank">
+						this link
+						</a>, drop your phone in a Cardboard viewer, and go!
+					</div>
+				</td>
+				<td>
+				<div class="heroimage">
+					<a href="./examples/vr/bubblepopcb.html" target="_blank">
+					<img width=200 height=180 src="./img/demo/bubblepopcb.png">
+					</a>
+				</div>
+				</td>
+			</tr>
+		</table>
+			</div>
 
-			<h1 id="demos">Featured Demos</h1>
+			<h1 id="demos">Demos</h1>
 			<table>
 			<tr>
 			<td>
