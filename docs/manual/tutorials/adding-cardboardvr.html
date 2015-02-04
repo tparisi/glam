@@ -10,30 +10,44 @@
 
         <div class="title">Adding Cardboard VR to your GLAM Apps</div>
 
-		<h1 id="bubblepop-for-cardboard">Bubble Pop! for Cardboard</h1>
-		<div>stuff here.</div>
+		<div>This tutorial covers how to add Cardboard VR support to your GLAM Apps in a few easy steps.</div>
+
+		<div>To demonstrate, we are going to adapt the <i>Bubble Pop!</i> showcase for use with Cardboard. Now, <i>Bubble Pop!</i> is interesting because it not only has fun graphics against a panoramic background - great for VR - but it also features interaction. So, in this tutorial we will learn now to do the three things necessary to create a Cardboard application: stereo rendering in WebGL, head tracking use the phone's accelerometer/gyro, and input.</div>
+
+		<div>
+			First, let's try out the app. Using your mobile browser, click on the image below to launch the demo. After it's launched, tap once on the screen to go into fullscreen mode. Then pop your phone into your Cardboard viewer and go! You should be able to look around the scene-- up, down, left and right-- and see the background change.
+		</div>
 
 		<a href="../../../examples/vr/bubblepopcb.html" target="_blank">
 		<img width=400 height=250 src="../../images/bubblepopcb.png">
 		</a>
 
-		<h1 id="how-cardboardvr-works">How Cardboard VR works</h1>
+		<div>
+			Now, if you have one of those nifty <a href="https://www.kickstarter.com/projects/dodocase/diy-virtual-reality-open-source-future" target="_blank">DIYVR</a> Cardboard viewers from DODOcase, it also has an input level on the right side of the box. Whenever you are looking at a bubble, tap the lever. You should see the bubble disappear and hear the pop!
+		</div>
 
-		<div>stuff here.</div>
+		<div>
+			Let's walk through each of the steps.
+		</div>
 
 		<h1 id="turning-on-rendering">Turning on Cardboard VR rendering</h1>
 		<div>
-			blah
+			Turning on Cardboard rendering in GLAM is simple. You just add a &lt;renderer&gt; tag to your content:
+		</div>
 
 		<code>
 &lt;renderer type="cardboard"&gt;&lt;/renderer&gt;
 		</code>
 
+		<div>
+			Under the covers, GLAM does a side-by-side rendering. That is, instead of a single camera to render the scene, GLAM creates two cameras, each offset from the other by your interpupillary distance, and renders the scene from each camera to a separate viewport half the size of the screen.
 		</div>
 
 		<h1 id="adding-head-tracking">Adding head tracking</h1>
 
-		<div>blah</div>
+		<div>Cardboard VR uses the phone's gyro and accelerometer to track changes in orientation. Mobile browsers generate <strong>deviceOrientation</strong> events when the phone changes orientation; we use those inside GLAM to implement a camera controller suitable for use in VR.</div>
+
+		<div>To add a deviceOrientation camera controller to the GLAM scene, simply create a &lt;controller&gt; element with type <strong>deviceOrientation</strong> as follows: </div>
 
 <code>
 &lt;controller type="deviceOrientation"&gt;&lt;/controller&gt;
@@ -42,7 +56,9 @@
 
 		<h1 id="adding-head-tracking">Adding view event handling</h1>
 
-		<div>blah</div>
+		<div>One of the most challenging aspects of VR application design is input. Because our vision is cut off from the outside world, we don't have easy access to the mouse or keyboard like we do in regulard desktop applications. For Cardboard VR it's even worse, because the phone is contained in a box, making it hard or impossible to swipe and tap.</div>
+
+		<div>The way many VR developers are getting around this is to drive input using the user's eyes: i.e. whatever they are looking at becomes the selected object. GLAM defines events for this, <strong>viewover</strong> and <strong>viewout</strong>, that the developer can listen for with an event listener as follows.
 
 <code>
 	sphereelt.addEventListener("viewover", function(event) {
@@ -53,14 +69,17 @@
 	});
 </code>    
 
-		<h1 id="the-complete-markup">The complete markup</h1>
+		<div>
+		 Often view events are combined with a timer to implement some kind of "countdown" so that after a long enough period, the object automatically activates. We don't do that in the Cardboard version of <i>Bubble Pop!</i>; instead we use touch input. When the user taps, the currently selected bubble pops. So running this demo will require an input-capable Cardboard viewer, such as the <a href="https://www.kickstarter.com/projects/dodocase/diy-virtual-reality-open-source-future" target="_blank">DIYVR</a> Cardboard viewer from DODOcase.</div>
 
-		<div>Describe here</div>
 
-		To run the example, click
+		<h1 id="the-complete-markup">Summary</h1>
+
+		<div>Well that was pretty much it. As you can see it didn't take too much work to add Cardboard VR support to a GLAM scene. Make sure to try out the 
 		<a href="../../../examples/vr/bubblepopcb.html" target="_blank">
-		here</a>. Make sure to tap on the phone's screen to go full screen!
+		demo</a> in your mobile browser, and don't forget to tap on the phone's screen to go full screen!
 
+		</div>
 
 	</body>
 
