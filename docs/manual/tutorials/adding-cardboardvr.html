@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<script src="../../list.js"></script>
+		<script src="../../page.js"></script>
+		<link type="text/css" rel="stylesheet" href="../../page.css" />
+	</head>
+	<body>
+
+        <div class="title">Adding Cardboard VR to your GLAM Apps</div>
+
+		<h1 id="bubblepop-for-cardboard">Bubble Pop! for Cardboard</h1>
+		<div>stuff here.</div>
+
+		<a href="../../../examples/vr/bubblepopcb.html" target="_blank">
+		<img width=400 height=250 src="../../images/bubblepopcb.png">
+		</a>
+
+		<h1 id="how-cardboardvr-works">How Cardboard VR works</h1>
+
+		<div>stuff here.</div>
+
+		<h1 id="turning-on-rendering">Turning on Cardboard VR rendering</h1>
+		<div>
+			blah
+
+		<code>
+&lt;renderer type="cardboard"&gt;&lt;/renderer&gt;
+		</code>
+
+		</div>
+
+		<h1 id="adding-head-tracking">Adding head tracking</h1>
+
+		<div>blah</div>
+
+<code>
+&lt;controller type="deviceOrientation"&gt;&lt;/controller&gt;
+</code>            
+
+
+		<h1 id="adding-head-tracking">Adding view event handling</h1>
+
+		<div>blah</div>
+
+<code>
+	sphereelt.addEventListener("viewover", function(event) {
+		selectedBubble = groupelt;
+	});
+	sphereelt.addEventListener("viewout", function(event) {
+		selectedBubble = null;
+	});
+</code>    
+
+		<h1 id="the-complete-markup">The complete markup</h1>
+
+		<div>Describe here</div>
+
+		To run the example, click
+		<a href="../../../examples/vr/bubblepopcb.html" target="_blank">
+		here</a>. Make sure to tap on the phone's screen to go full screen!
+
+
+	</body>
+
+</html>
