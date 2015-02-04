@@ -22,6 +22,9 @@ var list = {
 				"manual/concepts", "rendering-compositing-postprocessing" ],
 			[ "Styling GLAM with CSS", "manual/concepts", "styling" ],
 		],
+		"Tutorials": [
+			[ "Adding Cardboard VR to your GLAM Apps", "manual/tutorials/adding-cardboardvr"],
+		],
 	},
 
 	"Reference": {
