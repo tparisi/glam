@@ -20,7 +20,11 @@ glam.DOMTransform.parse = function(docelt, style, obj) {
 	t.sx = parseFloat(docelt.getAttribute('sx')) || 1;
 	t.sy = parseFloat(docelt.getAttribute('sy')) || 1;
 	t.sz = parseFloat(docelt.getAttribute('sz')) || 1;
-	var transform = docelt.getAttribute('transform');
+	var transform = docelt.getAttribute('transform') ||
+		docelt.getAttribute('-webkit-transform') ||
+		docelt.getAttribute('-moz-transform') ||
+		docelt.getAttribute('-ms-transform') ||
+		docelt.getAttribute('-opera-transform');
 	if (transform) {
 		glam.DOMTransform.parseTransform(transform, t);
 	}
@@ -72,8 +76,14 @@ glam.DOMTransform.parseStyle = function(style, t) {
 		if (style.sz) {
 			t.sz = parseFloat(style.sz);
 		}
-		if (style.transform) {			
-			glam.DOMTransform.parseTransform(style.transform, t);
+		var transform = style['transform'] ||
+			style['-webkit-transform'] ||
+			style['-moz-transform'] ||
+			style['-ms-transform'] ||
+			style['-opera-transform'];
+
+		if (transform) {			
+			glam.DOMTransform.parseTransform(transform, t);
 		}
 	}
 }
