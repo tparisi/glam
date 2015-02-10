@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>GLAM - GL And Markup</title>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+
+		@font-face {
+		  font-family: 'PT Sans';
+		  font-style: normal;
+		  font-weight: 400;
+		  src: local('PT Sans'), local('PTSans-Regular'), url(./fonts/PT_Sans/v5/7YGmE4Ls5b94ct65u07hVQLUuEpTyoUstqEm5AMlJo4.woff) format('woff');
+		}
+		@font-face {
+		  font-family: 'PT Sans';
+		  font-style: normal;
+		  font-weight: 700;
+		  src: local('PT Sans Bold'), local('PTSans-Bold'), url(./fonts/PT_Sans/v5/0XxGQsSc1g4rdRdjJKZrNL3hpw3pgy2gAi-Ip7WPMi0.woff) format('woff');
+		}
+		@font-face {
+		  font-family: 'PT Sans';
+		  font-style: italic;
+		  font-weight: 400;
+		  src: local('PT Sans Italic'), local('PTSans-Italic'), url(./fonts/PT_Sans/v5/PIPMHY90P7jtyjpXuZ2cLLO3LdcAZYWl9Si6vvxL-qU.woff) format('woff');
+		}
+		@font-face {
+		  font-family: 'PT Sans';
+		  font-style: italic;
+		  font-weight: 700;
+		  src: local('PT Sans Bold Italic'), local('PTSans-BoldItalic'), url(./fonts/PT_Sans/v5/lILlYDvubYemzYzN7GbLkKRDOzjiPcYnFooOUGCOsRk.woff) format('woff');
+		}
+
+			*{ box-sizing: border-box; background-color:#222222;
+				color:#f0f0f0;}
+
+			body {
+				margin: 0px;
+				font-family: 'PT Sans';
+				font-size: 14px;
+				line-height: 18px;
+			}
+
+			h1 {
+				margin-bottom: 10px;
+				font-size: 24px;
+				font-weight: bold;
+				color: #FF6600;
+			}
+
+			h2 {
+				color: #999;
+				color: #FF6600;
+				font-size: 18px;
+				font-weight: normal;
+
+				margin-bottom: 30px;
+			}
+
+			hr {
+				border: 0px;
+				height: 1px;
+				background-color: #ccc;
+				margin: 30px 0px;
+			}
+
+			sup {
+				position: relative;
+				margin-left: 5px;
+				font-size: 15px;
+				top: -0.5em;
+				vertical-align: top;
+			}
+
+			a {
+				color: #2194CE;
+				text-decoration: none;
+			}
+
+			a:hover {
+				text-decoration: underline;
+			}
+
+			#panel {
+				position: fixed;
+				left: 0px;
+				top: 20px;
+				bottom: 0px;
+				width: 180px;
+				margin-left:10px;
+				margin-top:4px;
+
+			}
+
+				#panel #content {
+					padding: 0px 20px;
+					color: #2194CE;
+				}
+
+				#panel img {
+					margin-top:20px;
+				}
+
+				#panel #resource {
+					text-align: center;
+				}
+
+				#panel #book {
+					text-align: center;
+					margin-top: 15px;
+				}
+
+			.demo {
+				text-align:center;
+				width:200px;
+				height:190px;
+				margin-bottom:10px;
+			}
+
+	
+				.demo img {
+					margin-top:8px;
+					margin-left:14px;
+					width: 200px;
+					height: 180px;
+					display: block;
+					float: left;
+					transition: opacity 0.2s;
+				}			
+
+			#viewer {
+				position: absolute;
+				left: 180px;
+				top: 0px;
+				padding: 18px 20px;
+				margin-left:10px;
+			}
+
+
+				#viewer img:hover {
+					opacity: 0.75;
+				}
+
+			/* mobile */
+
+			#expandButton {
+				display: none;
+				position: absolute;
+				right: 20px;
+				top: 12px;
+				width: 32px;
+				height: 32px;
+			}
+
+				#expandButton span {
+					height: 2px;
+					background-color: #2194CE;
+					width: 16px;
+					position: absolute;
+					left: 8px;
+					top: 10px;
+				}
+
+				#expandButton span:nth-child(1) {
+					top: 16px;
+				}
+
+				#expandButton span:nth-child(2) {
+					top: 22px;
+				}
+
+			@media all and ( max-width: 640px ) {
+				h1{
+					margin-top: 20px;
+					margin-bottom: 20px;
+				}
+				h2{
+					margin-top: 20px;
+					margin-bottom: 20px;
+				}
+				#panel{
+					position: absolute;
+					left: 0;
+					top: 0;
+					height: 480px;
+					width: 100%;
+					right: 0;
+					z-index: 100;
+					overflow: hidden;
+					border-bottom: 1px solid #dedede;
+				}
+				#content{
+					position: absolute;
+					left: 0;
+					top: 60px;
+					right: 0;
+					bottom: 0;
+					font-size: 17px;
+					line-height: 22px;
+					overflow: auto;
+				}
+				#viewer{
+					position: absolute;
+					left: 0;
+					top: 56px;
+					width: 100%;
+				}
+				#viewer img {
+					width: 33.33%;
+					height: auto;
+				}
+				#expandButton{
+					display: block;
+				}
+				#panel.collapsed{
+					height: 56px;
+				}
+			}
+
+			.feature {
+				line-height: 2em;
+				width:832px;
+			}
+
+			.featuretext {
+				padding-left:30px;
+				padding-right:30px;
+			}
+
+			.byline {
+				color: #999;
+				font-weight:bold;
+			}
+
+			.heroimage {
+				text-align: center;
+				padding-top:10px;
+			}
+
+			#demos {
+				padding-top:30px;
+			}
+
+			#examples {
+				padding-top:30px;
+			}
+
+			.copyright {
+				font-size:10px;
+				text-align:left;
+				margin-left:10px;
+				width:100%;
+			}
+		</style>
+	</head>
+	<body>
+
+		<script src="//cdn.webglstats.com/stat.js" defer="defer" async="async"></script>
+
+		<script type="text/javascript">
+
+		  var _gaq = _gaq || [];
+		  _gaq.push(['_setAccount', 'UA-86951-15']);
+		  _gaq.push(['_trackPageview']);
+
+		  (function() {
+		    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+		    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+		    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		  })();
+
+		</script>
+
+		<div id="panel" class="collapsed">
+			<h1>GLAM</h1>
+			<a id="expandButton" href="#">
+				<span></span>
+				<span></span>
+				<span></span>
+			</a>
+
+			<div id="content">
+				<a href="#about">ABOUT</a><br>
+				<a href="#news">NEWS</a><br>
+				<a href="#demos">DEMOS</a><br>
+				<a href="#examples">EXAMPLES</a><br>
+				<a href="./docs/" target="_blank">DOCUMENTATION</a><br>
+				<a href="http://github.com/tparisi/glam" target="_blank">GITHUB</a><br>
+				<a href="#contribute">CONTRIBUTE</a><br>
+
+			</div>
+
+				<p class="copyright">
+				Copyright &copy; 2014
+				Third Eye
+				</p>
+		</div>
+
+
+		<div id="viewer">
+
+			<div id="about" class="feature">
+
+						<h1>Welcome</h1>
+					<div class="featuretext">
+
+GLAM (GL And Markup) is a declarative language for 3D web content.<p>
+<p>
+GLAM combines the power of WebGL with a set of easy-to-use markup tags and style properties. With GLAM, 3D authoring is like any other web authoring. To make 3D, you create elements, set their attributes, add event listeners, and define styles. Just like DOM used to make! Content is easy to animate: keyframes and tweens can be defined in a compact set of markup tags, or as standard CSS3 animations or transitions. 
+<p>GLAM is also fully extensible: to add custom behavior, write JavaScript event handlers. If you want fancy shading written in GLSL, simply specify your vertex and fragment shaders as properties of the object's style. GLAM renders with WebGL, using Three.js, and adds behaviors, interaction and lots of easy-to-use features on top. But most importantly, GLAM defines a markup language and set of stylesheet extensions that make 3D programming a snap.
+
+					</div>
+
+			</div>
+			<hr>
+
+			<div id="news" class="feature">
+
+				<h1>News</h2>
+				<table>
+				<tr>
+					<td>
+					<h2>Cardboard VR Comes to GLAM!</h2>
+					<div class="featuretext">
+						<div class="byline"> February 3, 2015</div>
+						Thanks to the generous support of our <a href="https://www.kickstarter.com/projects/dodocase/diy-virtual-reality-open-source-future" target="_blank">DIYVR Kickstarter</a> backers, we have added Cardboard VR rendering and head tracking to GLAM. Just point your mobile browser at <a href="./examples/vr/bubblepopcb.html" target="_blank">
+						this link
+						</a>, drop your phone in a Cardboard viewer, and go!
+						<p>
+						To learn how to add Cardboard VR to your GLAM apps, check out the <a href="docs/#Manual/Tutorials/Adding_Cardboard_VR_to_your_GLAM_Apps"
+						target="_blank">tutorial</a>.
+					</div>
+				</td>
+				<td>
+				<div class="heroimage">
+					<a href="./examples/vr/bubblepopcb.html" target="_blank">
+					<img width=200 height=180 src="./img/demo/bubblepopcb.png">
+					</a>
+				</div>
+				</td>
+				</tr>
+				</table>
+			</div>
+
+			<hr>
+
+			<h1 id="demos">Demos</h1>
+			<table>
+			<tr>
+			<td>
+			<div class="demo">
+				BUBBLE POP!
+				<div class="demoImg">
+					<a href="./demos/bubblepop.html" target="_blank">
+						<img width=160 height=160 src="./img/demo/bubblepop.jpg"></a>
+				</div>
+			<div>
+			</td>
+			<td>
+			<div class="demo">
+				GLAM CITY
+				<div class="demoImg">
+					<a href="./demos/glamcity.html" target="_blank">
+						<img width=160 height=160 src="./img/demo/glamcity.jpg"></a>
+				</div>
+			<div>
+			</td>
+			<td>
+			<div class="demo">
+				ANIMATED CUBE
+				<div class="demoImg">
+					<a href="./demos/glamcubeanimated.html" target="_blank">
+						<img width="160" height="160" src="./img/demo/glamcubeanimated.jpg"></a>
+				</div>
+			<div>
+			</td>
+			<td>
+			<div class="demo">
+				POSTPROCESSING
+				<div class="demoImg">
+					<a href="./demos/glamsceneanimatedeffects.html" target="_blank">
+						<img src="./img/demo/glamsceneanimatedeffects.jpg">
+						</a>
+				</div>
+			<div>
+			</td>
+			</tr>
+			</table>
+
+			<hr>
+
+			<h1 id="examples">Examples</h1>
+			<table>
+			<tr>
+			<td>
+			<div class="demo">
+				BASIC CUBE
+				<div class="demoImg">
+					<a href="./examples/basic/glamcube.html" target="_blank">
+						<img width=160 height=160 src="./img/demo/glamcube.jpg"></a>
+				</div>
+			<div>
+			</td>
+			<td>
+			<div class="demo">
+				SCENE
+				<div class="demoImg">
+					<a href="./examples/hierarchy/glamscene.html" target="_blank">
+						<img width=160 height=160 src="./img/demo/glamscene.jpg"></a>
+				</div>
+			<div>
+			</td>
+			<td>
+			<div class="demo">
+				ANIMATED CUBE
+				<div class="demoImg">
+					<a href="./examples/animation/glamcubeanimated.html" target="_blank">
+						<img width="160" height="160" src="./img/demo/glamcubeanimated.jpg"></a>
+				</div>
+			<div>
+			</td>
+			<td>
+			<div class="demo">
+				ANIMATED SCENE
+				<div class="demoImg">
+					<a href="./examples/animation/glamsceneanimated.html" target="_blank">
+						<img src="./img/demo/glamsceneanimated.jpg">
+						</a>
+				</div>
+			<div>
+			</td>
+			</tr>
+
+			<tr>
+			<td>
+			<div class="demo">
+				INTERACTION
+				<div class="demoImg">
+					<a href="./examples/interaction/glamcubeinteractive.html" target="_blank">
+						<img width=160 height=160 src="./img/demo/glamcubeinteractive.jpg"></a>
+				</div>
+			<div>
+			</td>
+			<td>
+			<div class="demo">
+				MESHES
+				<div class="demoImg">
+					<a href="./examples/visuals/glammesh.html" target="_blank">
+						<img width=160 height=160 src="./img/demo/glammesh.jpg"></a>
+				</div>
+			<div>
+			</td>
+			<td>
+			<div class="demo">
+				LINES
+				<div class="demoImg">
+					<a href="./examples/visuals/glamlines.html" target="_blank">
+						<img width="160" height="160" src="./img/demo/glamlines.jpg"></a>
+				</div>
+			<div>
+			</td>
+			<td>
+			<div class="demo">
+				3D TEXT
+				<div class="demoImg">
+					<a href="./examples/visuals/glamtext.html" target="_blank">
+						<img src="./img/demo/glamtext.jpg">
+						</a>
+				</div>
+			<div>
+			</td>
+			</tr>
+
+			<tr>
+			<td>
+			<div class="demo">
+				PARTICLE SYSTEMS
+				<div class="demoImg">
+					<a href="./examples/visuals/glamparticles.html" target="_blank">
+						<img width=160 height=160 src="./img/demo/glamparticles.jpg"></a>
+				</div>
+			<div>
+			</td>
+			<td>
+			<div class="demo">
+				IMPORTS
+				<div class="demoImg">
+					<a href="./examples/imports/glamimport.html" target="_blank">
+						<img width=160 height=160 src="./img/demo/glamcity.jpg"></a>
+				</div>
+			<div>
+			</td>
+			<td>
+			<div class="demo">
+				BUMP MAPPING
+				<div class="demoImg">
+					<a href="./examples/materials/glambumpmap.html" target="_blank">
+						<img width="160" height="160" src="./img/demo/glambumpmap.jpg"></a>
+				</div>
+			<div>
+			</td>
+			<td>
+			<div class="demo">
+				NORMAL MAPPING
+				<div class="demoImg">
+					<a href="./examples/materials/glamearth.html" target="_blank">
+						<img src="./img/demo/glamearth.jpg">
+						</a>
+				</div>
+			<div>
+			</td>
+			</tr>
+
+			<tr>
+			<td>
+			<div class="demo">
+				FRESNEL SHADER
+				<div class="demoImg">
+					<a href="./examples/shaders/glamshaderfresnel.html" target="_blank">
+						<img width=160 height=160 src="./img/demo/glamshaderfresnel.jpg"></a>
+				</div>
+			<div>
+			</td>
+			<td>
+			<div class="demo">
+				SUN SHADER
+				<div class="demoImg">
+					<a href="./examples/shaders/glamsun.html" target="_blank">
+						<img width=160 height=160 src="./img/demo/glamsun.jpg"></a>
+				</div>
+			<div>
+			</td>
+			<td>
+			<div class="demo">
+				SKYBOX
+				<div class="demoImg">
+					<a href="./examples/backgrounds/glamskybox.html" target="_blank">
+						<img width="160" height="160" src="./img/demo/glamskybox.jpg"></a>
+				</div>
+			<div>
+			</td>
+			<td>
+			<div class="demo">
+				SKYSPHERE
+				<div class="demoImg">
+					<a href="./examples/backgrounds/glamskysphere.html" target="_blank">
+						<img src="./img/demo/glamskysphere.jpg">
+						</a>
+				</div>
+			<div>
+			</td>
+			</tr>
+
+			<tr>
+			<td>
+			<div class="demo">
+				DOT SHADER EFFECT
+				<div class="demoImg">
+					<a href="./examples/effects/glamcubeeffects.html" target="_blank">
+						<img width=160 height=160 src="./img/demo/glamcubeeffects.jpg"></a>
+				</div>
+			<div>
+			</td>
+			<td>
+			<div class="demo">
+				BLOOM EFFECT
+				<div class="demoImg">
+					<a href="./examples/effects/glamsceneanimatedeffects.html" target="_blank">
+						<img width=160 height=160 src="./img/demo/glamsceneanimatedeffects.jpg"></a>
+				</div>
+			<div>
+			</td>
+			<td>
+			<div class="demo">
+				VR - GLAM CITY
+				<div class="demoImg">
+					<a href="./examples/vr/glamcityvr.html" target="_blank">
+						<img width="160" height="160" src="./img/demo/glamcityvr.jpg"></a>
+				</div>
+			<div>
+			</td>
+			<td>
+			<div class="demo">
+				VR - SKYSPHERE
+				<div class="demoImg">
+					<a href="./examples/vr/glamskyspherevr.html" target="_blank">
+						<img src="./img/demo/glamskyspherevr.jpg">
+						</a>
+				</div>
+			<div>
+			</td>
+			</tr>
+
+			</table>
+
+
+			<hr>
+
+			<h1 id="contribute">Contribute</h1>
+			GLAM is young and we're just getting started. We could use your help!<p>
+			Take a look at the code in the <a href="http://github.com/tparisi/glam" target="_blank">Github repo</a>, and if you'd like to help out, check out <a href="https://github.com/tparisi/glam/issues" target="_blank">issues page</a>, fork the repo and let's get to work!
+
+		</div>
+	</body>
+</html>
