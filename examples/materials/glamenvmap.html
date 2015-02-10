@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../../build/glam.min.js" ></script>
+<title>glam - bump mapping</title>
+
+<style>
+	body{
+		margin: 0px;
+		background-color: #000;
+	}
+
+	#earth {
+		shader:phong;
+		cube-image-right:url(../../images/Park2/posx.jpg);
+		cube-image-left:url(../../images/Park2/negx.jpg);
+		cube-image-top:url(../../images/Park2/posy.jpg);
+		cube-image-bottom:url(../../images/Park2/negy.jpg);
+		cube-image-front:url(../../images/Park2/posz.jpg);
+		cube-image-back:url(../../images/Park2/negz.jpg);
+		/*image:url(../../images/earth_atmos_2048.jpg);*/
+		backface-visibility:visible;
+	}
+	
+	@-webkit-keyframes kfRotateY {
+	  from {
+	    -webkit-transform: rotateY(0deg);
+	  }
+	
+	  to {
+	   -webkit-transform: rotateY(360deg);
+	  }
+	}
+	.animRotateY
+	 {
+	  -webkit-animation-duration: 90s;
+	  -webkit-animation-name: kfRotateY;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:linear;
+	}
+
+	
+</style>
+</head>
+<body>
+<!-- 
+glam - Simple scene with bump mapping
+ -->
+<div id="container" style="width:98%; height:98%;position:absolute;">
+<glam>
+  <scene>
+	<sphere id="earth" class="" radius='1'></sphere>
+  </scene>
+</glam>
+</div>
+
+</body>
+</html>
