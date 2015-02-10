@@ -21,18 +21,14 @@
 	}
 
 	.skybox {
-		cube-image-right:url(../../images/Park2_1024/posx.jpg);
-		cube-image-left:url(../../images/Park2_1024/negx.jpg);
-		cube-image-top:url(../../images/Park2_1024/posy.jpg);
-		cube-image-bottom:url(../../images/Park2_1024/negy.jpg);
-		cube-image-front:url(../../images/Park2_1024/posz.jpg);
-		cube-image-back:url(../../images/Park2_1024/negz.jpg);
+		cube-image-right:url(../../images/Park2_1024/posx.png);
+		cube-image-left:url(../../images/Park2_1024/negx.png);
+		cube-image-top:url(../../images/Park2_1024/posy.png);
+		cube-image-bottom:url(../../images/Park2_1024/negy.png);
+		cube-image-front:url(../../images/Park2_1024/posz.png);
+		cube-image-back:url(../../images/Park2_1024/negz.png);
 	}
 	
-	#ss1 {
-		sphere-image:url(../../images/spherepano/pan0.jpg);
-	}
-
 	.bubble {
 		radius:.5;
 		diffuse-color:lightgray;
@@ -218,6 +214,7 @@ The scene: cardboard renderer, VR controller, and the background; that's it
 <glam>
   <scene>
 	<renderer type="cardboard"></renderer>
+	<controller type="deviceOrientation"></controller>
 	<background id="sb1" class="skybox"></background>
   </scene>
 </glam>
