@@ -207,12 +207,22 @@ glam.DOMMaterial.tryParseEnvMap = function(style) {
 		urls.push(glam.DOMMaterial.parseUrl(style["cube-image-back"]));
 	
 	if (urls.length == 6) {
-		var cubeTexture = THREE.ImageUtils.loadTextureCube( urls );
+		console.log("**** GLAM: Loading cubemap", urls[0]);
+		var cubeTexture = THREE.ImageUtils.loadTextureCube( urls, THREE.Texture.DEFAULT_MAPPING,
+			function(texture) {
+				console.log("**** GLAM: cubemap loaded", texture, urls[0]);
+			} );
 		return cubeTexture;
 	}
 	
-	if (style["sphere-image"])
-		return THREE.ImageUtils.loadTexture(glam.DOMMaterial.parseUrl(style["sphere-image"]), THREE.SphericalRefractionMapping);
+	if (style["sphere-image"]) {
+		var url = glam.DOMMaterial.parseUrl(style["sphere-image"]);
+		console.log("**** GLAM: Loading spheremap", url);
+		return THREE.ImageUtils.loadTexture(url, THREE.SphericalRefractionMapping, 
+			function(texture) {
+				console.log("**** GLAM: spheremap loaded", texture, url);
+			});
+	}
 	
 	return null;
 }
