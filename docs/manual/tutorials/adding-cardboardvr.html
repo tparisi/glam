@@ -18,7 +18,7 @@
 			First, let's try out the app. Using your mobile browser, click on the image below to launch the demo. After it's launched, tap once on the screen to go into fullscreen mode. Then pop your phone into your Cardboard viewer and go! You should be able to look around the scene-- up, down, left and right-- and see the background change.
 		</div>
 
-		<a href="../../../examples/vr/bubblepopcb.html" target="_blank">
+		<a href="" onclick="openDemo();">
 		<img width=400 height=250 src="../../images/bubblepopcb.png">
 		</a>
 
@@ -76,11 +76,16 @@
 		<h1 id="the-complete-markup">Summary</h1>
 
 		<div>Well that was pretty much it. As you can see it didn't take too much work to add Cardboard VR support to a GLAM scene. Make sure to try out the 
-		<a href="../../../examples/vr/bubblepopcb.html" target="_blank">
+		<a href="" onclick="openDemo();">
 		demo</a> in your mobile browser, and don't forget to tap on the phone's screen to go full screen!
 
 		</div>
 
+	<script>
+	function openDemo() {
+		window.open("../../../examples/vr/bubblepopcb.html");
+	}
+	</script>
 	</body>
 
 </html>
