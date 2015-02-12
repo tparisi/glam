@@ -36,7 +36,8 @@ glam.DOMInput.add = function(docelt, obj) {
 	
 	var picker = new glam.Picker;
 	
-	var events = ["click", "mouseover", "mouseout", "mousedown", "mouseup", "mousemove"];
+	var events = ["click", "mouseover", "mouseout", "mousedown", "mouseup", "mousemove",
+		"touchstart", "touchend"];
 	for (var index in events) {
 		var evt = events[index];
 		addListener(picker, evt);
