@@ -104,6 +104,13 @@
 
 var pop = null;
 
+function popBubble(scene, elt) {
+		pop.pause();
+		pop.currentTime = 0;
+		pop.play();
+		scene.removeChild(elt);
+}
+
 function createBubble(scene, x, y, z, animClass) {
 	var groupelt = document.createElement('group');
 	
@@ -115,10 +122,11 @@ function createBubble(scene, x, y, z, animClass) {
 	sphereelt.setAttribute('class', "bubble skybox " + animClass);
 
 	sphereelt.addEventListener("click", function(event) {
-		pop.pause();
-		pop.currentTime = 0;
-		pop.play();
-		scene.removeChild(groupelt);
+		popBubble(scene, groupelt);
+	});
+
+	sphereelt.addEventListener("touchend", function(event) {
+		popBubble(scene, groupelt);
 	});
 
 	// sphereelt.setAttribute('animation', animClass);
