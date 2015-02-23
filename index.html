@@ -328,7 +328,10 @@
             expandBtn.addEventListener("touchstart",toggleMenu);
             
             expandMenu.addEventListener("click",function(){
-                expandMenu.style.display = 'none';
+                console.log(expandBtn.style.display);
+                if(expandBtn.style.display != '' && expandBtn.style.display != 'hidden' && expandBtn.style.display != 'none'){
+                    expandMenu.style.display = 'none';
+                }
             });
         </script>
 	</body>
