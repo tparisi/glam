@@ -52,25 +52,8 @@ glam.DOMMaterial.create = function(style, createCB, objtype) {
 }
 
 glam.DOMMaterial.parseStyle = function(style) {
-	var image = "";
-	if (style.image) {
-		image = glam.DOMMaterial.parseUrl(style.image);
-	}
 
-	var normalMap = "";
-	if (style["normal-image"]) {
-		normalMap = glam.DOMMaterial.parseUrl(style["normal-image"]);
-	}
-
-	var bumpMap = "";
-	if (style["bump-image"]) {
-		bumpMap = glam.DOMMaterial.parseUrl(style["bump-image"]);
-	}
-
-	var specularMap = "";
-	if (style["specular-image"]) {
-		specularMap = glam.DOMMaterial.parseUrl(style["specular-image"]);
-	}
+	var textures = glam.DOMMaterial.parseTextures(style);
 
 	var reflectivity;
 	if (style.reflectivity)
@@ -79,8 +62,6 @@ glam.DOMMaterial.parseStyle = function(style) {
 	var refractionRatio;
 	if (style.refractionRatio)
 		refractionRatio = parseFloat(style.refractionRatio);
-	
-	var envMap = glam.DOMMaterial.tryParseEnvMap(style);
 	
 	var color;
 	var diffuse;
@@ -139,16 +120,16 @@ glam.DOMMaterial.parseStyle = function(style) {
 	var param = {
 	};
 	
-	if (image)
-		param.map = THREE.ImageUtils.loadTexture(image);
-	if (envMap)
-		param.envMap = envMap;
-	if (normalMap)
-		param.normalMap = THREE.ImageUtils.loadTexture(normalMap);
-	if (bumpMap)
-		param.bumpMap = THREE.ImageUtils.loadTexture(bumpMap);
-	if (specularMap)
-		param.specularMap = THREE.ImageUtils.loadTexture(specularMap);
+	if (textures.image)
+		param.map = THREE.ImageUtils.loadTexture(textures.image);
+	if (textures.envMap)
+		param.envMap = textures.envMap;
+	if (textures.normalMap)
+		param.normalMap = THREE.ImageUtils.loadTexture(textures.normalMap);
+	if (textures.bumpMap)
+		param.bumpMap = THREE.ImageUtils.loadTexture(textures.bumpMap);
+	if (textures.specularMap)
+		param.specularMap = THREE.ImageUtils.loadTexture(textures.specularMap);
 	if (color !== undefined)
 		param.color = color;
 	if (diffuse !== undefined)
@@ -181,6 +162,99 @@ glam.DOMMaterial.parseStyle = function(style) {
 	param.side = side;
 	
 	return param;
+}
+
+glam.DOMMaterial.parseTextures = function(style) {
+
+	var textures = {
+
+	};
+
+	var image = style.image;
+	if (image) {
+		image = image.trim();
+		if (image.substr(0, 3) == "url") {
+			textures.image = glam.DOMMaterial.parseUrl(style.image);
+		}
+		else {
+			glam.DOMMaterial.parseTexturesImage(image, textures);
+			return textures;
+		}
+	}
+
+	if (style["normal-image"]) {
+		textures.normalMap = glam.DOMMaterial.parseUrl(style["normal-image"]);
+	}
+
+	if (style["bump-image"]) {
+		textures.bumpMap = glam.DOMMaterial.parseUrl(style["bump-image"]);
+	}
+
+	if (style["specular-image"]) {
+		textures.specularMap = glam.DOMMaterial.parseUrl(style["specular-image"]);
+	}
+
+	textures.envMap = glam.DOMMaterial.tryParseEnvMap(style);
+
+	return textures;
+}
+
+/*
+image = image.trim()
+"diffuse url(../../images/earth_atmos_2048.jpg) normal url(../../images/earth_normal_2048.jpg)  cube-right url(../../images/Park2/posx.jpg) cube-left url(../../images/Park2/negx.jpg)  cube-top url(../../images/Park2/posy.jpg)  cube-bottom url(../../images/Park2/negy.jpg) cube-front  url(../../images/Park2/posz.jpg) 		cube-back url(../../images/Park2/negz.jpg)  specular url(../../images/ash_uvgrid01-bw.jpg)"
+image
+"diffuse url(../../images/earth_atmos_2048.jpg) normal url(../../images/earth_normal_2048.jpg)  cube-right url(../../images/Park2/posx.jpg) cube-left url(../../images/Park2/negx.jpg)  cube-top url(../../images/Park2/posy.jpg)  cube-bottom url(../../images/Park2/negy.jpg) cube-front  url(../../images/Park2/posz.jpg) 		cube-back url(../../images/Park2/negz.jpg)  specular url(../../images/ash_uvgrid01-bw.jpg)"
+image.match(/\S+/g)
+["diffuse", "url(../../images/earth_atmos_2048.jpg)", "normal", "url(../../images/earth_normal_2048.jpg)", "cube-right", "url(../../images/Park2/posx.jpg)", "cube-left", "url(../../images/Park2/negx.jpg)", "cube-top", "url(../../images/Park2/posy.jpg)", "cube-bottom", "url(../../images/Park2/negy.jpg)", "cube-front", "url(../../images/Park2/posz.jpg)", "cube-back", "url(../../images/Park2/negz.jpg)", "specular", "url(../../images/ash_uvgrid01-bw.jpg)"]
+image.substr(0, 3)
+"dif"
+"url(asfasdfasdf".substr(0, 3)
+"url"
+*/
+
+glam.DOMMaterial.parseTexturesImage = function(image, textures) {
+
+	var images = image.match(/\S+/g);
+	var envmapStyle = {
+
+	};
+
+	var i, len = images.length;
+	for (i = 0; i < len; i += 2) {
+
+		var type = images[i],
+			url = images[i + 1];
+
+		switch (type) {
+			case 'diffuse' :
+				textures.image = glam.DOMMaterial.parseUrl(url);
+				break;
+			case 'normal' :
+				textures.normalMap = glam.DOMMaterial.parseUrl(url);
+				break;
+			case 'bump' :
+				textures.bumpMap = glam.DOMMaterial.parseUrl(url);
+				break;
+			case 'specular' :
+				textures.specularMap = glam.DOMMaterial.parseUrl(url);
+				break;
+
+			case 'sphere' :
+				envmapStyle['sphere-image'] = url;
+				break;
+
+			default :
+				if (type.indexOf('cube') != -1) {
+					var comp = type.substr(4, type.length - 4);
+					envmapStyle['cube-image' + comp] = url;
+				}
+
+				break;
+		}
+	}
+
+	textures.envMap = glam.DOMMaterial.tryParseEnvMap(envmapStyle);
+
 }
 
 glam.DOMMaterial.parseUrl = function(image) {

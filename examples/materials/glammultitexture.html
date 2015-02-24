@@ -1,0 +1,74 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../../build/glam.min.js" ></script>
+<title>glam - multiple textures in single image style</title>
+
+<style>
+	body{
+		margin: 0px;
+		background-color: #000;
+	}
+
+	#earth {
+		image:url(../../images/earth_atmos_2048.jpg);
+/*		bump-image:url(../../images/cloud.png); */
+		normal-image:url(../../images/earth_normal_2048.jpg);
+		cube-image-right:url(../../images/Park2/posx.jpg);
+		cube-image-left:url(../../images/Park2/negx.jpg);
+		cube-image-top:url(../../images/Park2/posy.jpg);
+		cube-image-bottom:url(../../images/Park2/negy.jpg);
+		cube-image-front:url(../../images/Park2/posz.jpg);
+		cube-image-back:url(../../images/Park2/negz.jpg);
+		specular-image:url(../../images/ash_uvgrid01-bw.jpg);
+		shader:phong;
+		rx:30deg;
+		width-segments:64;
+		height-segments:64;
+
+		image:    diffuse url(../../images/earth_atmos_2048.jpg) 
+					bump url(../../images/cloud.png) 
+					specular url(../../images/ash_uvgrid01-bw.jpg)  
+					cube-right url(../../images/Park2/posx.jpg) 
+					cube-left url(../../images/Park2/negx.jpg)
+					cube-top url(../../images/Park2/posy.jpg)  
+					cube-bottom url(../../images/Park2/negy.jpg) 
+					cube-front  url(../../images/Park2/posz.jpg) 		
+					cube-back url(../../images/Park2/negz.jpg)    ;
+	}
+	
+	@-webkit-keyframes kfRotateY {
+	  from {
+	    -webkit-transform: rotateY(0deg);
+	  }
+	
+	  to {
+	   -webkit-transform: rotateY(360deg);
+	  }
+	}
+	.animRotateY
+	 {
+	  -webkit-animation-duration: 90s;
+	  -webkit-animation-name: kfRotateY;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:linear;
+	}
+
+	
+</style>
+</head>
+<body>
+<!-- 
+glam - Simple scene with normal mapping
+ -->
+<div id="container" style="width:98%; height:98%;position:absolute;">
+<glam>
+  <scene>
+	<sphere id="earth" class="" radius='1'></sphere>
+  </scene>
+</glam>
+</div>
+
+</body>
+</html>
