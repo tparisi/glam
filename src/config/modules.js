@@ -100,6 +100,7 @@ goog.require('glam.ParticlesElement');
 goog.require('glam.RectElement');
 goog.require('glam.DOMRenderer');
 goog.require('glam.SphereElement');
+goog.require('glam.SurfaceElement');
 goog.require('glam.DOMStyle');
 goog.require('glam.TextElement');
 goog.require('glam.DOMTransform');

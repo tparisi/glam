@@ -1,0 +1,58 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../../build/glam.js" ></script>
+<title>glam - eight line cube</title>
+
+<style>
+
+	body{
+		margin: 0px;
+		background-color: #000;
+	}
+
+	#surf1 {
+		backface-visibility:visible;
+		image:url(../../images/flowers.jpg);
+		border-radius:64px;
+		border:10px solid;
+	}
+
+	@-webkit-keyframes kfRotateY {
+	  from {
+	    -webkit-transform: rotateY(0deg);
+	  }
+	
+	  to {
+	   -webkit-transform: rotateY(360deg);
+	  }
+	}
+	.animRotateY
+	 {
+	  -webkit-animation-duration: 4s;
+	  -webkit-animation-name: kfRotateY;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:linear;
+	}
+
+</style>
+</head>
+<body>
+<!-- 
+glam - Simple scene with cube
+ -->
+<div id="container" style="width:100%;height:100%;position:absolute;">
+<glam>
+  <scene>
+	<surface id="surf1" height='1' class=""></surface>
+	<effect type="Bloom" strength="1.2" disabled ></effect>
+  </scene>
+</glam>
+</div>
+
+
+</body>
+
+
+</html>

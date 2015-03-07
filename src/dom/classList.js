@@ -18,13 +18,19 @@ glam.DOMClassList.prototype.item = function(i) {
 }
 
 glam.DOMClassList.prototype.add = function(item) {
-	return this.push(item);
+	var i = this.push(item);
+	this.updateElement();
+	return i;
 }
 
 glam.DOMClassList.prototype.remove = function(item) {
 	var i = this.indexOf(item);
 	if (i != -1) {
 		this.splice(i, 1)
+		this.updateElement();
 	}
 }
 
+glam.DOMClassList.prototype.updateElement = function() {
+
+}

@@ -36,6 +36,15 @@ glam.ControllerElement.create = function(docelt, style, app) {
 			controllerScript.camera = camera;
 			camera.active = true;
 			
+			if (app.controllerScript) {
+				app.controllerScript.enabled = false;
+			}
+
+			// hack because existing FPS or model controller
+			// will clobber our values
+			app.controller = controller;
+			app.controllerScript = controllerScript;
+
 		}
 		else if (type == "rift") {
 			var controller = glam.Prefabs.RiftController({active:true, 

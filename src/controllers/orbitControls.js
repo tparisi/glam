@@ -160,6 +160,8 @@ glam.OrbitControls = function ( object, domElement ) {
 
 	this.update = function () {
 
+		if ( this.enabled === false ) return;
+
 		var position = this.object.position;
 		var offset = position.clone().sub( this.center );
 

@@ -49,6 +49,7 @@ glam.DOMTypes.types = {
 		"light" :  { cls : glam.LightElement, transform:true, animation:true },
 		"particles" :  { cls : glam.ParticlesElement, transform:true, animation:true },
 		"effect" :  { cls : glam.EffectElement, },
+		"surface" :  { cls : glam.SurfaceElement, transform:true, animation:true, input:true, visual:true },
 };
 
 
