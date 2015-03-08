@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<script src="../../build/glam.min.js" ></script>
+<script src="../../build/glam.js" ></script>
 
 <title>glam - Text</title>
 
@@ -56,6 +56,14 @@
 		cube-image-back:url(../../images/envmap/2-NEGATIVE_Z.jpg);
 	}
 
+	#text5 {
+		color:green;
+		font-family:Verdana;
+		font-style:italic;
+		font-render:bitmap;
+		backface-visibility:visible;
+	}	
+
 	@-webkit-keyframes kfRotateY {
 	  from {
 	    -webkit-transform: rotateY(0deg);
@@ -95,6 +103,7 @@
 	<group x='-1' y='-1.5' z='-2'>
 		<text id="text4" class="animRotateY2">G.L.A.M</text>
 	</group>
+	<text id="text5" class="">...GLAM...</text>
   </scene>
 </glam>
 

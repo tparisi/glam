@@ -105,7 +105,8 @@ glam.SurfaceElement.createVisual = function(docelt, material, param) {
 //	surfaceMaterial.color.setRGB(1, 0, 0);
 //	surfaceMaterial.map = null;
 
-	surfaceMaterial.map = this.createTexture("Hello World!", param);
+	surfaceMaterial.map = this.createTexture(param);
+	surfaceMaterial.depthWrite = false;
 
 	var visual = new glam.Visual(
 			{ geometry: new THREE.PlaneGeometry(param.width, param.height, param.widthSegments, param.heightSegments),
@@ -115,11 +116,11 @@ glam.SurfaceElement.createVisual = function(docelt, material, param) {
 	return visual;
 }
 
-glam.SurfaceElement.createTexture = function(string, param) {
+glam.SurfaceElement.createTexture = function(param) {
 
 	var totalSize = 2048;
 
-	var hAspect = 1, vAspect = .5;
+	var hAspect = 1, vAspect = param.height / param.width;
 
     this.canvas = document.createElement('canvas');
     this.canvas.width = totalSize * hAspect;
@@ -145,7 +146,9 @@ glam.SurfaceElement.createTexture = function(string, param) {
 
 //     ctx.fillStyle = "rgba( 255 , 255 , 255 , 0.95 )";
 
-	ctx.font="144px Helvetica Neue";
+	var fontSize = 72;
+	var fontName = "Helvetica Neue";
+	ctx.font= fontSize.toString() + "px " + fontName;
     ctx.fillStyle = "cyan";
 	ctx.fillText("GLAM <surface> Prototype",50,200);
 
