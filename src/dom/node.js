@@ -30,11 +30,6 @@ glam.DOMElement.getStyle = function(docelt) {
 	
 	var style = new glam.DOMStyle(docelt);
 	
-	if (docelt.id) {
-		var styl = glam.DOM.getStyle("#" + docelt.id);
-		style.addProperties(styl);
-	}
-	
 	var klass = docelt.getAttribute('class');
 	if (!klass)
 		klass = docelt['class'];
@@ -51,6 +46,11 @@ glam.DOMElement.getStyle = function(docelt) {
 				glamClassList.add(kls);
 			}
 		}
+	}
+	
+	if (docelt.id) {
+		var styl = glam.DOM.getStyle("#" + docelt.id);
+		style.addProperties(styl);
 	}
 	
 	var styl = docelt.getAttribute("style");

@@ -5839,6 +5839,13 @@ glam.SurfaceElement.DEFAULT_WIDTH = 2;
 glam.SurfaceElement.DEFAULT_HEIGHT = 2;
 glam.SurfaceElement.DEFAULT_WIDTH_SEGMENTS = 1;
 glam.SurfaceElement.DEFAULT_CURVATURE = 0;
+glam.SurfaceElement.DEFAULT_VALUE = "";
+glam.SurfaceElement.DEFAULT_COLOR = "black";
+glam.SurfaceElement.DEFAULT_BACKGROUND_COLOR = "white";
+glam.SurfaceElement.DEFAULT_FONT_FAMILY = "helvetica";
+glam.SurfaceElement.DEFAULT_FONT_WEIGHT = "normal";
+glam.SurfaceElement.DEFAULT_FONT_STYLE = "normal";
+glam.SurfaceElement.DEFAULT_FONT_SIZE = 10;
 
 glam.SurfaceElement.create = function(docelt, style) {
 	return glam.VisualElement.create(docelt, style, glam.SurfaceElement);
@@ -5851,6 +5858,12 @@ glam.SurfaceElement.getAttributes = function(docelt, style, param) {
 	var widthSegments = docelt.getAttribute('width') || glam.SurfaceElement.DEFAULT_WIDTH_SEGMENTS;
 	var heightSegments = docelt.getAttribute('height') || glam.SurfaceElement.DEFAULT_HEIGHT_SEGMENTS;
 	var curvature = docelt.getAttribute('curvature') || glam.SurfaceElement.DEFAULT_CURVATURE;
+	var color = docelt.getAttribute('color') || glam.SurfaceElement.DEFAULT_COLOR;
+	var backgroundColor = docelt.getAttribute('backgroundColor') || glam.SurfaceElement.DEFAULT_BACKGROUND_COLOR;
+	var fontFamily = docelt.getAttribute('fontFamily') || glam.SurfaceElement.DEFAULT_FONT_FAMILY; 
+	var fontWeight = docelt.getAttribute('fontWeight') || glam.SurfaceElement.DEFAULT_FONT_WEIGHT; 
+	var fontStyle = docelt.getAttribute('fontStyle') || glam.SurfaceElement.DEFAULT_FONT_STYLE; 
+	var fontSize = docelt.getAttribute('fontSize') || glam.SurfaceElement.DEFAULT_FONT_SIZE;
 
 	var border = 0,
 		borderRadius = 0,
@@ -5898,8 +5911,31 @@ glam.SurfaceElement.getAttributes = function(docelt, style, param) {
 		else {
 			borderRadiusBottom = borderRadius;
 		}
+
+		if (style.color)
+			color = style.color;
+
+		if (style["background-color"])
+			backgroundColor = style["background-color"];
+
+		if (style["font-family"])
+			fontFamily = style["font-family"];
+		if (style["font-weight"])
+			fontWeight = style["font-weight"];
+		if (style["font-style"])
+			fontStyle = style["font-style"];
+		if (style["font-size"])
+			fontSize = style["font-size"];
+
 	}
 	
+	// The text value
+	var value = docelt.getAttribute('value') || glam.SurfaceElement.DEFAULT_VALUE;
+
+	if (!value) {
+		value = docelt.textContent;
+	}
+
 	width = parseFloat(width);
 	height = parseFloat(height);
 	widthSegments = parseInt(widthSegments);
@@ -5911,6 +5947,7 @@ glam.SurfaceElement.getAttributes = function(docelt, style, param) {
 	borderRadiusLeft = parseInt(borderRadiusLeft);
 	borderRadiusRight = parseInt(borderRadiusRight);
 	borderRadiusBottom = parseInt(borderRadiusBottom);
+	fontSize = parseFloat(fontSize);
 
 	param.width = width;
 	param.height = height;
@@ -5923,17 +5960,22 @@ glam.SurfaceElement.getAttributes = function(docelt, style, param) {
 	param.borderRadiusLeft = borderRadiusLeft;
 	param.borderRadiusRight = borderRadiusRight;
 	param.borderRadiusBottom = borderRadiusBottom;
-
+	param.value = value;
+	param.color = color;
+	param.backgroundColor = backgroundColor;
+	param.fontFamily = fontFamily;
+	param.fontWeight = fontWeight;
+	param.fontStyle = fontStyle;
+	param.fontSize = fontSize;
 }
 
 glam.SurfaceElement.createVisual = function(docelt, material, param) {
 
 
 	var surfaceMaterial = material.clone();
-//	surfaceMaterial.color.setRGB(1, 0, 0);
-//	surfaceMaterial.map = null;
 
-	surfaceMaterial.map = this.createTexture(param);
+	surfaceMaterial.map = glam.SurfaceElement.createTexture(param);
+	surfaceMaterial.transparent = true;
 	surfaceMaterial.depthWrite = false;
 
 	var visual = new glam.Visual(
@@ -5947,42 +5989,50 @@ glam.SurfaceElement.createVisual = function(docelt, material, param) {
 glam.SurfaceElement.createTexture = function(param) {
 
 	var totalSize = 2048;
+	var FONT_MULTIPLIER = 1;
 
 	var hAspect = 1, vAspect = param.height / param.width;
 
-    this.canvas = document.createElement('canvas');
-    this.canvas.width = totalSize * hAspect;
-    this.canvas.height = totalSize * vAspect;
+    var canvas = document.createElement('canvas');
+    canvas.width = totalSize * hAspect;
+    canvas.height = totalSize * vAspect;
 
     /*  canvas.style.position = 'fixed';
      canvas.style.zIndex = '999';
      document.body.appendChild( canvas );*/
 
-    var ctx = this.canvas.getContext('2d');
+    var ctx = canvas.getContext('2d');
 
 
-    ctx.fillStyle = "white";
-    ctx.strokeStyle = "cyan";
+    ctx.fillStyle = "rgba(0, 0, 0, 0)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = param.backgroundColor;
+    ctx.strokeStyle = param.color;
     ctx.lineWidth = param.border;
-    this.roundRect(ctx, 0, 0, this.canvas.width, this.canvas.height, 
+    glam.SurfaceElement.roundRect(ctx, 0, 0, canvas.width, canvas.height, 
     		{
     			left:param.borderRadiusLeft, right:param.borderRadiusRight, 
     			top:param.borderRadiusTop, bottom:param.borderRadiusBottom
     		}, 
-    	false, param.border);
-//     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    	true, param.border);
 
-//     ctx.fillStyle = "rgba( 255 , 255 , 255 , 0.95 )";
+	var fontSize = param.fontSize * FONT_MULTIPLIER;
+	var fontName = param.fontFamily; // "Helvetica Neue";
+	var fontStyle = param.fontStyle;
+	var font = fontStyle + " " + fontSize.toString() + "px " + fontName;
+	ctx.font = font;
 
-	var fontSize = 72;
-	var fontName = "Helvetica Neue";
-	ctx.font= fontSize.toString() + "px " + fontName;
-    ctx.fillStyle = "cyan";
-	ctx.fillText("GLAM <surface> Prototype",50,200);
+//	var fontSize = 72;
+//	var fontName = "Helvetica Neue";
+//	ctx.font= fontSize.toString() + "px " + fontName;
+
+    ctx.fillStyle = param.color;
+	ctx.fillText(param.value,50,200);
 
 
     // Creates a texture
-    var texture = new THREE.Texture(this.canvas);
+    var texture = new THREE.Texture(canvas);
 
 
     texture.needsUpdate = true;
@@ -5994,9 +6044,6 @@ glam.SurfaceElement.roundRect = function(ctx, x, y, width, height, radius, fill,
   
   if (typeof stroke == "undefined" ) {
     stroke = true;
-  }
-  if (typeof radius === "undefined") {
-    radius = 5;
   }
 
   ctx.beginPath();
@@ -9351,11 +9398,6 @@ glam.DOMElement.getStyle = function(docelt) {
 	
 	var style = new glam.DOMStyle(docelt);
 	
-	if (docelt.id) {
-		var styl = glam.DOM.getStyle("#" + docelt.id);
-		style.addProperties(styl);
-	}
-	
 	var klass = docelt.getAttribute('class');
 	if (!klass)
 		klass = docelt['class'];
@@ -9372,6 +9414,11 @@ glam.DOMElement.getStyle = function(docelt) {
 				glamClassList.add(kls);
 			}
 		}
+	}
+	
+	if (docelt.id) {
+		var styl = glam.DOM.getStyle("#" + docelt.id);
+		style.addProperties(styl);
 	}
 	
 	var styl = docelt.getAttribute("style");
@@ -10016,10 +10063,8 @@ glam.TextElement.createBitmapText = function(docelt, material, param) {
 	var surfaceMaterial = material.clone();
 	surfaceMaterial.color.setRGB(1, 1, 1);
 
-//	surfaceMaterial.color.setRGB(1, 0, 0);
-//	surfaceMaterial.map = null;
-
 	surfaceMaterial.map = this.createTexture(param);
+	surfaceMaterial.transparent = true;
 	surfaceMaterial.depthWrite = false;
 
 	var visual = new glam.Visual(
@@ -10049,8 +10094,8 @@ glam.TextElement.createTexture = function(param) {
     var ctx = canvas.getContext('2d');
 
 
-    ctx.fillStyle = "white";
-//    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "rgba(0, 0, 0, 0)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 	var fontSize = param.fontSize * FONT_MULTIPLIER;
 	var fontName = param.fontFamily; // "Helvetica Neue";

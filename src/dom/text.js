@@ -206,10 +206,8 @@ glam.TextElement.createBitmapText = function(docelt, material, param) {
 	var surfaceMaterial = material.clone();
 	surfaceMaterial.color.setRGB(1, 1, 1);
 
-//	surfaceMaterial.color.setRGB(1, 0, 0);
-//	surfaceMaterial.map = null;
-
 	surfaceMaterial.map = this.createTexture(param);
+	surfaceMaterial.transparent = true;
 	surfaceMaterial.depthWrite = false;
 
 	var visual = new glam.Visual(
@@ -239,8 +237,8 @@ glam.TextElement.createTexture = function(param) {
     var ctx = canvas.getContext('2d');
 
 
-    ctx.fillStyle = "white";
-//    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "rgba(0, 0, 0, 0)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 	var fontSize = param.fontSize * FONT_MULTIPLIER;
 	var fontName = param.fontFamily; // "Helvetica Neue";
