@@ -51668,8 +51668,8 @@ goog.provide('glam.SurfaceElement');
 
 glam.SurfaceElement.DEFAULT_WIDTH = 2;
 glam.SurfaceElement.DEFAULT_HEIGHT = 2;
-glam.SurfaceElement.DEFAULT_WIDTH_SEGMENTS = 1;
-glam.SurfaceElement.DEFAULT_HEIGHT_SEGMENTS = 1;
+glam.SurfaceElement.DEFAULT_WIDTH_SEGMENTS = 16;
+glam.SurfaceElement.DEFAULT_HEIGHT_SEGMENTS = 16;
 glam.SurfaceElement.DEFAULT_CURVATURE = 0;
 glam.SurfaceElement.DEFAULT_VALUE = "";
 glam.SurfaceElement.DEFAULT_COLOR = "black";
@@ -51820,7 +51820,7 @@ glam.SurfaceElement.createVisual = function(docelt, material, param) {
 
 glam.SurfaceElement.createTexture = function(param) {
 
-	var totalSize = 2048;
+	var totalSize = 1024;
 	var FONT_MULTIPLIER = 1;
 
 	var hAspect = 1, vAspect = param.height / param.width;
@@ -51861,7 +51861,7 @@ glam.SurfaceElement.createTexture = function(param) {
 //	ctx.font= fontSize.toString() + "px " + fontName;
 
     ctx.fillStyle = param.color;
-	ctx.fillText(param.value,50,200);
+	ctx.fillText(param.value,20,100);
 
 
     // Creates a texture
