@@ -5838,6 +5838,7 @@ goog.provide('glam.SurfaceElement');
 glam.SurfaceElement.DEFAULT_WIDTH = 2;
 glam.SurfaceElement.DEFAULT_HEIGHT = 2;
 glam.SurfaceElement.DEFAULT_WIDTH_SEGMENTS = 1;
+glam.SurfaceElement.DEFAULT_HEIGHT_SEGMENTS = 1;
 glam.SurfaceElement.DEFAULT_CURVATURE = 0;
 glam.SurfaceElement.DEFAULT_VALUE = "";
 glam.SurfaceElement.DEFAULT_COLOR = "black";
@@ -5973,7 +5974,7 @@ glam.SurfaceElement.createVisual = function(docelt, material, param) {
 
 
 	var surfaceMaterial = material.clone();
-
+	surfaceMaterial.color.setRGB(1, 1, 1);
 	surfaceMaterial.map = glam.SurfaceElement.createTexture(param);
 	surfaceMaterial.transparent = true;
 	surfaceMaterial.depthWrite = false;
@@ -6010,13 +6011,14 @@ glam.SurfaceElement.createTexture = function(param) {
     ctx.fillStyle = param.backgroundColor;
     ctx.strokeStyle = param.color;
     ctx.lineWidth = param.border;
+
     glam.SurfaceElement.roundRect(ctx, 0, 0, canvas.width, canvas.height, 
     		{
     			left:param.borderRadiusLeft, right:param.borderRadiusRight, 
     			top:param.borderRadiusTop, bottom:param.borderRadiusBottom
     		}, 
     	true, param.border);
-
+    
 	var fontSize = param.fontSize * FONT_MULTIPLIER;
 	var fontName = param.fontFamily; // "Helvetica Neue";
 	var fontStyle = param.fontStyle;
@@ -6063,7 +6065,8 @@ glam.SurfaceElement.roundRect = function(ctx, x, y, width, height, radius, fill,
   if (fill) {
     ctx.fill();	
   }
-}/**
+}
+/**
  * @fileoverview line primitive parser/implementation
  * 
  * @author Tony Parisi
