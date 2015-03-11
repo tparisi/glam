@@ -1,0 +1,263 @@
+{
+    "animations": {},
+    "asset": {
+        "generator": "collada2gltf@8ffb01efe30653c6a629c9403833575252cb5bec"
+    },
+    "attributes": {
+        "attribute_23": {
+            "bufferView": "bufferView_29",
+            "byteOffset": 0,
+            "byteStride": 12,
+            "count": 4,
+            "max": [
+                5.60284,
+                0,
+                2.85911
+            ],
+            "min": [
+                -5.60284,
+                0,
+                -2.85911
+            ],
+            "type": "FLOAT_VEC3"
+        },
+        "attribute_25": {
+            "bufferView": "bufferView_29",
+            "byteOffset": 48,
+            "byteStride": 12,
+            "count": 4,
+            "max": [
+                0,
+                1,
+                0
+            ],
+            "min": [
+                0,
+                1,
+                0
+            ],
+            "type": "FLOAT_VEC3"
+        },
+        "attribute_27": {
+            "bufferView": "bufferView_29",
+            "byteOffset": 96,
+            "byteStride": 8,
+            "count": 4,
+            "max": [
+                1,
+                1
+            ],
+            "min": [
+                0,
+                0.489703
+            ],
+            "type": "FLOAT_VEC2"
+        }
+    },
+    "bufferViews": {
+        "bufferView_29": {
+            "buffer": "rectangle.bin",
+            "byteLength": 128,
+            "byteOffset": 0,
+            "target": "ARRAY_BUFFER"
+        },
+        "bufferView_30": {
+            "buffer": "rectangle.bin",
+            "byteLength": 12,
+            "byteOffset": 128,
+            "target": "ELEMENT_ARRAY_BUFFER"
+        }
+    },
+    "buffers": {
+        "rectangle.bin": {
+            "byteLength": 140,
+            "path": "rectangle.bin"
+        }
+    },
+    "indices": {
+        "indices_21": {
+            "bufferView": "bufferView_30",
+            "byteOffset": 0,
+            "count": 6,
+            "type": "UNSIGNED_SHORT"
+        }
+    },
+    "materials": {
+        "lambert1-fx": {
+            "instanceTechnique": {
+                "technique": "technique1",
+                "values": [
+                    {
+                        "parameter": "ambient",
+                        "value": [
+                            0,
+                            0,
+                            0,
+                            1
+                        ]
+                    },
+                    {
+                        "parameter": "diffuse",
+                        "value": [
+                            0,
+                            0.8,
+                            0,
+                            1
+                        ]
+                    },
+                    {
+                        "parameter": "emission",
+                        "value": [
+                            0,
+                            0,
+                            0,
+                            1
+                        ]
+                    }
+                ]
+            },
+            "name": "lambert1"
+        }
+    },
+    "meshes": {
+        "pPlaneShape1": {
+            "name": "pPlaneShape1",
+            "primitives": [
+                {
+                    "indices": "indices_21",
+                    "material": "lambert1-fx",
+                    "primitive": "TRIANGLES",
+                    "semantics": {
+                        "NORMAL": "attribute_25",
+                        "POSITION": "attribute_23",
+                        "TEXCOORD_0": "attribute_27"
+                    }
+                }
+            ]
+        }
+    },
+    "nodes": {
+        "pPlane1": {
+            "children": [],
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                -5.89505,
+                0,
+                -2.93547,
+                1
+            ],
+            "meshes": [
+                "pPlaneShape1"
+            ],
+            "name": "pPlane1"
+        }
+    },
+    "profile": "WebGL 1.0",
+    "programs": {
+        "program_0": {
+            "fragmentShader": "rectangle0FS",
+            "vertexShader": "rectangle0VS"
+        }
+    },
+    "scene": "defaultScene",
+    "scenes": {
+        "defaultScene": {
+            "nodes": [
+                "pPlane1"
+            ]
+        }
+    },
+    "shaders": {
+        "rectangle0FS": {
+            "path": "rectangle0FS.glsl"
+        },
+        "rectangle0VS": {
+            "path": "rectangle0VS.glsl"
+        }
+    },
+    "skins": {},
+    "techniques": {
+        "technique1": {
+            "parameters": {
+                "diffuse": {
+                    "type": "FLOAT_VEC4"
+                },
+                "emission": {
+                    "type": "FLOAT_VEC4"
+                },
+                "normal": {
+                    "semantic": "NORMAL",
+                    "type": "FLOAT_VEC3"
+                },
+                "normalMatrix": {
+                    "semantic": "WORLDVIEWINVERSETRANSPOSE",
+                    "type": "FLOAT_MAT3"
+                },
+                "position": {
+                    "semantic": "POSITION",
+                    "type": "FLOAT_VEC3"
+                },
+                "projectionMatrix": {
+                    "semantic": "PROJECTION",
+                    "type": "FLOAT_MAT4"
+                },
+                "worldViewMatrix": {
+                    "semantic": "WORLDVIEW",
+                    "type": "FLOAT_MAT4"
+                }
+            },
+            "pass": "defaultPass",
+            "passes": {
+                "defaultPass": {
+                    "details": {
+                        "commonProfile": {
+                            "extras": {
+                                "doubleSided": true
+                            },
+                            "lightingModel": "Lambert",
+                            "parameters": [
+                                "diffuse",
+                                "emission",
+                                "normalMatrix",
+                                "projectionMatrix",
+                                "worldViewMatrix"
+                            ]
+                        },
+                        "type": "COLLADA-1.4.1/commonProfile"
+                    },
+                    "instanceProgram": {
+                        "attributes": {
+                            "a_normal": "normal",
+                            "a_position": "position"
+                        },
+                        "program": "program_0",
+                        "uniforms": {
+                            "u_diffuse": "diffuse",
+                            "u_emission": "emission",
+                            "u_normalMatrix": "normalMatrix",
+                            "u_projectionMatrix": "projectionMatrix",
+                            "u_worldViewMatrix": "worldViewMatrix"
+                        }
+                    },
+                    "states": {
+                        "blendEnable": false,
+                        "cullFaceEnable": false,
+                        "depthMask": true,
+                        "depthTestEnable": true
+                    }
+                }
+            }
+        }
+    }
+}

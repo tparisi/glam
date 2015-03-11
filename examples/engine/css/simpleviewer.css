@@ -1,0 +1,30 @@
+@CHARSET "UTF-8";
+* {
+    font-family: Arial;
+    font-style: italic;
+}
+
+body {
+	background-color:#eeeeee;
+	color:#212121;
+}
+
+#container {
+	z-index:-1;
+	width: 98%;
+	height:98%;
+	position:absolute;
+	border:1px solid;
+	box-shadow: 4px 4px 2px #888888;
+}
+
+:focus { outline: none; }
+
+#loadStatus {
+	width: 95%;
+	height: 6%;
+	top: 200px;
+	text-align:center;
+	position:absolute;
+}
+

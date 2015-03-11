@@ -1,0 +1,149 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Futurgo City</title>
+
+	<!-- Google font: PT Sans http://www.google.com/fonts#UsePlace:use/Collection:PT+Sans  -->
+	<link rel="stylesheet" href="../../libs/jquery-ui-1.10.3.custom/css/ui-lightness/jquery-ui-1.10.3.custom.css" />
+	<link rel="stylesheet" media="screen" type="text/css" href="../../libs/colorpicker/css/colorpicker.css" />
+	<link href='../css/fonts.css' rel='stylesheet' type='text/css'>
+	<link href="../css/futurgoCityRift.css" rel="stylesheet" type='text/css'/> 
+	<style>
+			.button {
+				position: fixed;
+				bottom: 20px;
+				right: 20px;
+				padding: 8px;
+				color: #FFF;
+				background-color: #555;
+			}
+	
+	</style>
+</head>
+<body>
+	<div class="button">Start VR Mode</div>
+	<div id="container"></div>
+	<div id="loadStatus" style="display:none">
+	Loading scene...
+	</div>
+	<audio volume="0.0" id="city_sound">
+	  <!-- http://www.freesound.org/people/synthetic-oz/sounds/162704/  -->
+	  <source src="../sounds/162704__synthetic-oz__city-trimmed-looped.wav" type="audio/wav" />
+	  Your browser does not support WAV files in the audio element.
+	</audio>
+	<audio volume="0.0" id="bump_sound">
+	  <!-- http://www.freesound.org/people/Calethos/sounds/31126/  -->
+	  <source src="../sounds/31126__calethos__bump.wav" type="audio/wav" />
+	  Your browser does not support WAV files in the audio element.
+	</audio>
+
+    <script src="../../libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+    <script src="../../libs/jquery-ui-1.10.3.custom/js/jquery-ui-1.10.3.custom.js"></script>
+	<script src="../../libs/colorpicker/js/colorpicker.js"></script>
+	<script src="../../build/glam.js"></script>
+	<script src="futurgoCityRift.js"></script>
+	<script src="futurgoController.js"></script>
+	<script src="futurgoDashboard.js"></script>
+	<script src="futurgoSound.js"></script>
+	<script src="helpScreen.js"></script>
+	<script>
+
+   	var futurgoCity = null;
+   	var help_walk = document.getElementById("help_walk");
+   	var help_drive = document.getElementById("help_drive");
+   	
+	$(document).ready(function() {
+
+		initControls();
+		loadStatus = document.getElementById("loadStatus");
+		var container = document.getElementById("container");
+		futurgoCity = new FuturgoCity({ container : container,
+				loadCallback : onLoadComplete,
+				loadProgressCallback : onLoadProgress,
+				mouseOverCallback : onMouseOver,
+				mouseOutCallback : onMouseOut,
+				mouseClickCallback : onMouseClick,
+				riftRender : true, 
+				riftController : true,
+			 });	
+
+		loadStatus.style.display = 'block';
+
+		futurgoCity.go();
+
+		var fullScreenButton = document.querySelector( '.button' );
+		fullScreenButton.onclick = function() {
+			glam.Graphics.instance.setFullScreen( true );
+		};
+		
+		document.addEventListener("keyup", function(event) {
+			onKeyUp(event);
+		});
+	}
+	);
+
+	function initControls() {
+	}
+	
+	function onLoadComplete(loadTime)
+	{
+		// Hide the loader bar
+		loadStatus.style.display = 'none';		
+		console.log("Loaded " + loadTime.toFixed(2) + " seconds.");
+	}
+
+	function onLoadProgress(percentProgress)
+	{
+		loadStatus.innerHTML = "Loading scene... " + percentProgress.toFixed(0) + " %";
+	}
+
+	function onMouseOver(what, event) {
+		//console.log("Mouse over", what, event);
+		//showOverlay(what, event);
+	}
+
+	function onMouseOut(what, event) {
+		//console.log("Mouse out", what, event);
+		//hideOverlay();
+	}
+
+	function onMouseClick(what, event) {
+		return;
+		if (what == "futurgo") {
+			toggleStartStop();
+		}
+	}
+
+	function startTestDrive() {
+		futurgoCity.startTestDrive();
+		help_drive.style.display = 'block';
+		help_walk.style.display = 'none';
+		futurgoCity.viewer.focus();
+	}
+
+	function endTestDrive() {
+		futurgoCity.endTestDrive();
+		help_drive.style.display = 'none';
+		help_walk.style.display = 'block';
+		futurgoCity.viewer.focus();
+	}
+
+	function tour() {
+		futurgoCity.tour();
+		futurgoCity.viewer.focus();
+	}
+
+	function toggleStartStop() {
+		futurgoCity.toggleStartStop();
+	}
+	
+	function onKeyUp(event) {
+		if (event.keyCode == 32)
+			toggleStartStop();
+	}
+	
+	</script>
+	
+</body>
+</html>

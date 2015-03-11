@@ -1,0 +1,89 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>glam Test Load Scene</title>
+</head>
+<body>
+	<div id="container" style="width:98%; height:98%; position:absolute;"></div>
+
+	<script src="../../build/glam.js"></script>
+	<script>
+
+	window.addEventListener('load', function(){
+		var container = document.getElementById("container");
+		
+		var app = new glam.Application({ container : container, displayStats:true });
+		
+		var scene = null;
+		var rotator = null;
+		var loader = new glam.Loader;
+		
+		loader.addEventListener("loaded", function(data) { 
+				if (true) {
+					scene = data.scene;
+					app.addObject(scene);
+	
+	
+					var visuals = scene.findNodes(glam.Visual);
+	
+					var duck = scene.findNode(/LOD.*/);
+					if (duck) {
+						rotator = new glam.RotateBehavior({autoStart:true, duration:2});
+						duck.addComponent(rotator);
+						// coordinate space issue
+						duck.addComponent(new glam.BounceBehavior({bounceVector:new THREE.Vector3(0, 100, 0),
+							loop:true, autoStart:true}));
+					}
+				}
+				else {
+					var obj = new glam.Object;
+					obj.addComponent(data.scene);
+					app.addObject(obj);		
+				}
+			});
+		loader.loadScene("./models/duck.dae");
+
+		var camobj1 = new glam.Object;
+		camera1 = new glam.PerspectiveCamera({active:true});
+		camobj1.addComponent(camera1);
+		app.addObject(camobj1);
+
+		var controller = glam.Prefabs.ModelController({active:true, headlight:true});
+		var controllerScript = controller.getComponent(glam.ModelControllerScript);
+		controllerScript.camera = camera1;
+		camera1.active = true;
+		
+		container.addEventListener("mouseup", function(e) {
+				controllerScript.headlightOn = !controllerScript.headlightOn;
+				if (rotator)
+					rotator.toggle();
+
+				if (scene) {
+					scene.map(glam.Visual, function(v) {
+						v.material.wireframe = !v.material.wireframe;
+					});
+				}
+			});
+		
+		app.addObject(controller);
+
+		var effect = new glam.Effect( THREE.DotScreenRGBShader );
+		effect.pass.uniforms.scale.value=4;
+		effect.pass.renderToScreen = false;
+        glam.Graphics.instance.addEffect(effect);
+
+		app.run();
+	},
+	false
+	);
+
+	function onSceneLoaded(data, app) {
+		// root.addComponent(data.scene);
+		app.addObject(data.scene);
+	}
+
+	</script>
+	
+</body>
+</html>

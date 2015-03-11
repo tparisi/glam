@@ -1,0 +1,44 @@
+ModelBegin
+ ProtoBegin cube_0_0
+  TextureModes Lit Foreshorten
+  Transform 1. 0. 0. 0. 0. 1. 0. 0. 0. 0. 1. 0. 0. 0. 1. 1.
+  Vertex 1. -1. 1. UV 1. 0. Prelight 1 1 1
+  Vertex -1. -1. 1. UV 0. 0. Prelight 1 1 1
+  Vertex -1. -1. -1. UV 0. 1. Prelight 1 1 1
+  Vertex 1. -1. -1. UV 1. 1. Prelight 1 1 1
+  Vertex 1. 1. -1. UV 0. 0. Prelight 1 1 1
+  Vertex 1. -1. -1. UV 0. 1. Prelight 1 1 1
+  Vertex -1. -1. -1. UV 1. 1. Prelight 1 1 1
+  Vertex -1. 1. -1. UV 1. 0. Prelight 1 1 1
+  Vertex 1. 1. 1. UV 1. 0. Prelight 1 1 1
+  Vertex 1. -1. 1. UV 0. 0. Prelight 1 1 1
+  Vertex 1. 1. -1. UV 1. 1. Prelight 1 1 1
+  Vertex -1. 1. 1. UV 1. 1. Prelight 1 1 1
+  Vertex -1. -1. 1. UV 1. 0. Prelight 1 1 1
+  Vertex 1. 1. 1. UV 0. 1. Prelight 1 1 1
+  Vertex -1. 1. 1. UV 1. 0. Prelight 1 1 1
+  Vertex 1. 1. 1. UV 0. 0. Prelight 1 1 1
+  Vertex 1. 1. -1. UV 0. 1. Prelight 1 1 1
+  Vertex -1. 1. -1. UV 1. 1. Prelight 1 1 1
+  Vertex -1. 1. 1. UV 0. 0. Prelight 1 1 1
+  Vertex -1. 1. -1. UV 0. 1. Prelight 1 1 1
+  Color 1. 1. 1.
+  Opacity 1.
+  Textureaddressmode clamp
+  Texture right55
+  Quad 7 20 19 13
+  Texture front55
+  Quad 18 17 16 15
+  Texture top55
+  Quad 14 10 13 12
+  Texture left55
+  Quad 11 6 10 9
+  Texture back55
+  Quad 4 3 2 1
+ ProtoEnd # cube_0_0
+ ClumpBegin
+  Rotate 1 0 0 -90
+  Scale .1 .1 .1
+  ProtoInstance cube_0_0
+ ClumpEnd
+ModelEnd

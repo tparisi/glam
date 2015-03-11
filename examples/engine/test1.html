@@ -1,0 +1,130 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>glam</title>
+</head>
+<body>
+	<div id="container" style="width:98%; height:98%; position:absolute;"></div>
+
+	<script src="../../build/glam.js"></script>
+	<script>
+
+	var cube = null;
+	var cylinder = null;
+	var dirlight = null;
+	var camera1 = null, camera2 = null;
+	
+	window.addEventListener('load', function(){
+		var container = document.getElementById("container");
+		
+		var app = new glam.Viewer({ container : container, displayStats:true } );
+		
+		var root = new glam.Object;
+		
+		var dragger = new glam.PlaneDragger({ normal: new THREE.Vector3(0, 1, 1) });
+		dragger.overCursor = 'pointer';
+		dragger.addEventListener("mouseover", onDraggerMouseOver);
+		dragger.addEventListener("mouseout", onDraggerMouseOut);
+		dragger.addEventListener("mousedown", onDraggerMouseDown);
+		dragger.addEventListener("mousemove", onDraggerMouseMove);
+		dragger.addEventListener("mouseup", onDraggerMouseUp);
+		dragger.addEventListener("mousescroll", onDraggerMouseScroll);
+		dragger.addEventListener("drag", onDraggerDrag);
+		
+		var group = new glam.Object;
+		group.addComponent(dragger);
+
+		root.addChild(group);
+		
+		cube = createCube();
+		group.addChild(cube);
+
+		cylinder = createCylinder();
+		cylinderTransform = cylinder.getComponent(glam.Transform);
+		cube.addChild(cylinder);
+
+		var obj = new glam.Object;
+		obj.addComponent(new glam.AmbientLight);
+		obj.light.color.setHex(0x444444);
+		root.addChild(obj);
+
+		app.addObject(root);
+
+		app.run();
+	},
+	false
+	);
+
+	function createCube() {	
+		var o = new glam.Object;
+
+		o.transform.rotation.x = Math.PI / 6;
+		
+		var visual = new glam.Visual(
+				{ geometry: new THREE.BoxGeometry(2, 2, 2),
+					material: new THREE.MeshPhongMaterial({color:0xffffff, map:THREE.ImageUtils.loadTexture("./images/board.png")})
+				});
+
+		
+		o.addComponent(visual);
+
+		return o;
+	}
+
+
+	function createCylinder() {	
+		var o = new glam.Object;
+
+		o.transform.position.set(1, 1, 1);
+		
+		var visual = new glam.Visual(
+				{ geometry: new THREE.CylinderGeometry(.1, .1, .3, 100, 100, false),
+					material: new THREE.MeshPhongMaterial({color:0, ambient:0x00ff00})
+				});
+
+		
+		o.addComponent(visual);
+		return o;
+	}
+
+	var savedColor = 0;
+	function onDraggerMouseOver(event)
+	{
+		savedColor = cube.visuals[0].material.color.getHex();
+		cube.visuals[0].material.color.setHex(0x00ff00);
+	}
+		
+	function onDraggerMouseOut(event)
+	{
+		cube.visuals[0].material.color.setHex(savedColor);
+	}
+
+	function onDraggerMouseDown(event)
+	{
+//		cylinder.transform.position.copy(event.point);
+	}
+
+	function onDraggerMouseMove(event)
+	{
+		offset = event.point.clone();
+	}
+	
+	function onDraggerMouseUp(event)
+	{
+	}
+
+	function onDraggerMouseScroll(event)
+	{
+		console.log("Mouse scroll: ", event);	
+	}
+
+	function onDraggerDrag(event)
+	{
+		console.log("Mouse: ", event.offset);
+		cube.transform.position.copy(event.offset);
+	}	
+	</script>
+	
+</body>
+</html>

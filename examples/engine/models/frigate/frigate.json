@@ -1,0 +1,811 @@
+{
+    "accessors": {
+        "accessor_10": {
+            "bufferView": "bufferView_39",
+            "byteOffset": 5760,
+            "count": 96,
+            "type": 35665
+        },
+        "accessor_11": {
+            "bufferView": "bufferView_39",
+            "byteOffset": 6912,
+            "count": 96,
+            "type": 35666
+        },
+        "accessor_4": {
+            "bufferView": "bufferView_39",
+            "byteOffset": 0,
+            "count": 96,
+            "type": 5126
+        },
+        "accessor_5": {
+            "bufferView": "bufferView_39",
+            "byteOffset": 768,
+            "count": 96,
+            "type": 35665
+        },
+        "accessor_6": {
+            "bufferView": "bufferView_39",
+            "byteOffset": 1920,
+            "count": 96,
+            "type": 35665
+        },
+        "accessor_7": {
+            "bufferView": "bufferView_39",
+            "byteOffset": 3072,
+            "count": 96,
+            "type": 35666
+        },
+        "accessor_8": {
+            "bufferView": "bufferView_39",
+            "byteOffset": 384,
+            "count": 96,
+            "type": 5126
+        },
+        "accessor_9": {
+            "bufferView": "bufferView_39",
+            "byteOffset": 4608,
+            "count": 96,
+            "type": 35665
+        },
+        "attribute_23": {
+            "bufferView": "bufferView_37",
+            "byteOffset": 0,
+            "byteStride": 12,
+            "count": 1455,
+            "max": [
+                9.88778,
+                12.2619,
+                8.51435
+            ],
+            "min": [
+                -9.88811,
+                4.78454,
+                -8.50789
+            ],
+            "type": 35665
+        },
+        "attribute_25": {
+            "bufferView": "bufferView_37",
+            "byteOffset": 17460,
+            "byteStride": 12,
+            "count": 1455,
+            "max": [
+                0.57735,
+                0.97757,
+                0.57735
+            ],
+            "min": [
+                -0.10699,
+                0.57735,
+                -0.408239
+            ],
+            "type": 35665
+        },
+        "attribute_27": {
+            "bufferView": "bufferView_37",
+            "byteOffset": 34920,
+            "byteStride": 8,
+            "count": 1455,
+            "max": [
+                1.0042,
+                0.982939
+            ],
+            "min": [
+                0.0145173,
+                0.0169199
+            ],
+            "type": 35664
+        },
+        "indices_21": {
+            "bufferView": "bufferView_38",
+            "byteOffset": 0,
+            "count": 4422,
+            "type": 5123
+        }
+    },
+    "animations": {
+        "animation_0": {
+            "channels": [
+                {
+                    "sampler": "animation_0_scale_sampler",
+                    "target": {
+                        "id": "spin",
+                        "path": "scale"
+                    }
+                },
+                {
+                    "sampler": "animation_0_translation_sampler",
+                    "target": {
+                        "id": "spin",
+                        "path": "translation"
+                    }
+                },
+                {
+                    "sampler": "animation_0_rotation_sampler",
+                    "target": {
+                        "id": "spin",
+                        "path": "rotation"
+                    }
+                }
+            ],
+            "count": 96,
+            "parameters": {
+                "TIME": "accessor_4",
+                "rotation": "accessor_7",
+                "scale": "accessor_5",
+                "translation": "accessor_6"
+            },
+            "samplers": {
+                "animation_0_rotation_sampler": {
+                    "input": "TIME",
+                    "interpolation": "LINEAR",
+                    "output": "rotation"
+                },
+                "animation_0_scale_sampler": {
+                    "input": "TIME",
+                    "interpolation": "LINEAR",
+                    "output": "scale"
+                },
+                "animation_0_translation_sampler": {
+                    "input": "TIME",
+                    "interpolation": "LINEAR",
+                    "output": "translation"
+                }
+            }
+        },
+        "animation_1": {
+            "channels": [
+                {
+                    "sampler": "animation_1_scale_sampler",
+                    "target": {
+                        "id": "up_down",
+                        "path": "scale"
+                    }
+                },
+                {
+                    "sampler": "animation_1_translation_sampler",
+                    "target": {
+                        "id": "up_down",
+                        "path": "translation"
+                    }
+                },
+                {
+                    "sampler": "animation_1_rotation_sampler",
+                    "target": {
+                        "id": "up_down",
+                        "path": "rotation"
+                    }
+                }
+            ],
+            "count": 96,
+            "parameters": {
+                "TIME": "accessor_8",
+                "rotation": "accessor_11",
+                "scale": "accessor_9",
+                "translation": "accessor_10"
+            },
+            "samplers": {
+                "animation_1_rotation_sampler": {
+                    "input": "TIME",
+                    "interpolation": "LINEAR",
+                    "output": "rotation"
+                },
+                "animation_1_scale_sampler": {
+                    "input": "TIME",
+                    "interpolation": "LINEAR",
+                    "output": "scale"
+                },
+                "animation_1_translation_sampler": {
+                    "input": "TIME",
+                    "interpolation": "LINEAR",
+                    "output": "translation"
+                }
+            }
+        }
+    },
+    "asset": {
+        "generator": "collada2gltf@fb6d6e65e66c3b0013c75a8d1e63650f4309bf77"
+    },
+    "bufferViews": {
+        "bufferView_37": {
+            "buffer": "frigate",
+            "byteLength": 46560,
+            "byteOffset": 0,
+            "target": 34962
+        },
+        "bufferView_38": {
+            "buffer": "frigate",
+            "byteLength": 8844,
+            "byteOffset": 46560,
+            "target": 34963
+        },
+        "bufferView_39": {
+            "buffer": "frigate",
+            "byteLength": 8448,
+            "byteOffset": 55404
+        }
+    },
+    "buffers": {
+        "frigate": {
+            "byteLength": 63852,
+            "path": "frigate.bin",
+            "type": "arraybuffer"
+        }
+    },
+    "cameras": {
+        "camera_0": {
+            "perspective": {
+                "aspect_ratio": 1.5,
+                "yfov": 37.8493,
+                "zfar": 10000,
+                "znear": 0.000999987
+            },
+            "type": "perspective"
+        },
+        "camera_1": {
+            "orthographic": {
+                "aspect_ratio": 1.5,
+                "xmag": 19.7907,
+                "zfar": 10,
+                "znear": 0.000999987
+            },
+            "type": "orthographic"
+        },
+        "camera_2": {
+            "perspective": {
+                "aspect_ratio": 1.5,
+                "yfov": 37.8493,
+                "zfar": 10000,
+                "znear": 0.1
+            },
+            "type": "perspective"
+        }
+    },
+    "images": {
+        "image_0": {
+            "path": "textures/frigate_color.png"
+        }
+    },
+    "lights": {
+        "ambientLightShape1": {
+            "ambient": {
+                "color": [
+                    1,
+                    1,
+                    1
+                ]
+            },
+            "type": "ambient"
+        },
+        "directionalLightShape1": {
+            "directional": {
+                "color": [
+                    1,
+                    1,
+                    1
+                ]
+            },
+            "type": "directional"
+        },
+        "pointShape1": {
+            "point": {
+                "color": [
+                    1,
+                    1,
+                    1
+                ],
+                "constantAttenuation": 1,
+                "linearAttenuation": 0,
+                "quadraticAttenuation": 0
+            },
+            "type": "point"
+        },
+        "pointShape2": {
+            "point": {
+                "color": [
+                    1,
+                    1,
+                    1
+                ],
+                "constantAttenuation": 1,
+                "linearAttenuation": 0,
+                "quadraticAttenuation": 0
+            },
+            "type": "point"
+        }
+    },
+    "materials": {
+        "lambert13-fx": {
+            "instanceTechnique": {
+                "technique": "technique1",
+                "values": {
+                    "ambient": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    "diffuse": "texture_image_0",
+                    "emission": [
+                        0,
+                        0,
+                        0,
+                        1
+                    ]
+                }
+            },
+            "name": "lambert13"
+        }
+    },
+    "meshes": {
+        "frigateShape": {
+            "name": "frigateShape",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": "attribute_25",
+                        "POSITION": "attribute_23",
+                        "TEXCOORD_0": "attribute_27"
+                    },
+                    "indices": "indices_21",
+                    "material": "lambert13-fx",
+                    "primitive": 4
+                }
+            ]
+        }
+    },
+    "nodes": {
+        "_frigate": {
+            "children": [
+                "spin"
+            ],
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "name": "frigate"
+        },
+        "persp": {
+            "camera": "camera_0",
+            "children": [],
+            "matrix": [
+                -0.798066,
+                -0.509041,
+                -0.32244,
+                0,
+                -0.582845,
+                0.787917,
+                0.198691,
+                0,
+                0.152914,
+                0.346501,
+                -0.925502,
+                0,
+                5.96542,
+                24.9375,
+                -53.3177,
+                1
+            ],
+            "name": "persp"
+        },
+        "point1": {
+            "children": [],
+            "light": "pointShape1",
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                16.2319,
+                18.5504,
+                7.6281,
+                1
+            ],
+            "name": "point1"
+        },
+        "point2": {
+            "children": [],
+            "light": "pointShape2",
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                -13.6045,
+                19.017,
+                11.4866,
+                1
+            ],
+            "name": "point2"
+        },
+        "point3": {
+            "children": [],
+            "light": "directionalLightShape1",
+            "matrix": [
+                -715.674,
+                0,
+                650.414,
+                0,
+                0,
+                967.072,
+                0,
+                0,
+                -650.414,
+                0,
+                -715.674,
+                0,
+                -13.6045,
+                9.82829,
+                -13.2198,
+                1
+            ],
+            "name": "point3"
+        },
+        "point4": {
+            "children": [],
+            "light": "ambientLightShape1",
+            "matrix": [
+                1178.22,
+                0,
+                0,
+                0,
+                0,
+                1178.22,
+                0,
+                0,
+                0,
+                0,
+                1178.22,
+                0,
+                16.2319,
+                9.36164,
+                -17.0782,
+                1
+            ],
+            "name": "point4"
+        },
+        "setup": {
+            "camera": "camera_2",
+            "children": [],
+            "matrix": [
+                -0.894154,
+                0,
+                0.447759,
+                0,
+                0.24608,
+                0.83544,
+                0.491411,
+                0,
+                -0.374076,
+                0.549582,
+                -0.747012,
+                0,
+                -21.4197,
+                41.1819,
+                -48.9879,
+                1
+            ],
+            "name": "setup"
+        },
+        "spin": {
+            "children": [
+                "up_down"
+            ],
+            "name": "spin",
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "translation": [
+                0,
+                0,
+                0
+            ]
+        },
+        "top": {
+            "camera": "camera_1",
+            "children": [],
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                -1,
+                0,
+                0,
+                0,
+                0,
+                -1,
+                0,
+                0.00287012,
+                0.00323016,
+                -1.03934,
+                1
+            ],
+            "name": "top"
+        },
+        "up_down": {
+            "children": [
+                "up_down_frigate"
+            ],
+            "name": "up_down",
+            "rotation": [
+                0.576355,
+                0.579336,
+                0.576355,
+                0.00892659
+            ],
+            "scale": [
+                1.29554,
+                1.29554,
+                1.29554
+            ],
+            "translation": [
+                0.295544,
+                0.295544,
+                0.295544
+            ]
+        },
+        "up_down_frigate": {
+            "children": [],
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "meshes": [
+                "frigateShape"
+            ],
+            "name": "frigate"
+        }
+    },
+    "profile": "WebGL 1.0.2",
+    "programs": {
+        "program_0": {
+            "attributes": [
+                "a_normal",
+                "a_position",
+                "a_texcoord0"
+            ],
+            "fragmentShader": "frigate0FS",
+            "vertexShader": "frigate0VS"
+        }
+    },
+    "samplers": {
+        "sampler_0": {
+            "magFilter": 9729,
+            "minFilter": 9729,
+            "wrapS": 10497,
+            "wrapT": 10497
+        }
+    },
+    "scene": "defaultScene",
+    "scenes": {
+        "defaultScene": {
+            "nodes": [
+                "persp",
+                "top",
+                "point1",
+                "point2",
+                "setup",
+                "_frigate",
+                "point3",
+                "point4"
+            ]
+        }
+    },
+    "shaders": {
+        "frigate0FS": {
+            "path": "frigate0FS.glsl"
+        },
+        "frigate0VS": {
+            "path": "frigate0VS.glsl"
+        }
+    },
+    "skins": {},
+    "techniques": {
+        "technique1": {
+            "parameters": {
+                "ambient": {
+                    "type": 35666
+                },
+                "diffuse": {
+                    "type": 35678
+                },
+                "emission": {
+                    "type": 35666
+                },
+                "light0Color": {
+                    "type": 35665,
+                    "value": [
+                        1,
+                        1,
+                        1
+                    ]
+                },
+                "light0Transform": {
+                    "source": "point1",
+                    "type": 35676
+                },
+                "light1Color": {
+                    "type": 35665,
+                    "value": [
+                        1,
+                        1,
+                        1
+                    ]
+                },
+                "light1Transform": {
+                    "source": "point2",
+                    "type": 35676
+                },
+                "light2Color": {
+                    "type": 35665,
+                    "value": [
+                        1,
+                        1,
+                        1
+                    ]
+                },
+                "light2Transform": {
+                    "source": "point3",
+                    "type": 35676
+                },
+                "light3Color": {
+                    "type": 35665,
+                    "value": [
+                        1,
+                        1,
+                        1
+                    ]
+                },
+                "modelViewMatrix": {
+                    "semantic": "MODELVIEW",
+                    "type": 35676
+                },
+                "normal": {
+                    "semantic": "NORMAL",
+                    "type": 35665
+                },
+                "normalMatrix": {
+                    "semantic": "MODELVIEWINVERSETRANSPOSE",
+                    "type": 35675
+                },
+                "position": {
+                    "semantic": "POSITION",
+                    "type": 35665
+                },
+                "projectionMatrix": {
+                    "semantic": "PROJECTION",
+                    "type": 35676
+                },
+                "texcoord0": {
+                    "semantic": "TEXCOORD_0",
+                    "type": 35664
+                }
+            },
+            "pass": "defaultPass",
+            "passes": {
+                "defaultPass": {
+                    "details": {
+                        "commonProfile": {
+                            "extras": {
+                                "doubleSided": true
+                            },
+                            "lightingModel": "Lambert",
+                            "parameters": [
+                                "ambient",
+                                "diffuse",
+                                "emission",
+                                "light0Color",
+                                "light0Transform",
+                                "light1Color",
+                                "light1Transform",
+                                "light2Color",
+                                "light2Transform",
+                                "light3Color",
+                                "modelViewMatrix",
+                                "normalMatrix",
+                                "projectionMatrix"
+                            ],
+                            "texcoordBindings": {
+                                "diffuse": "TEXCOORD_0"
+                            }
+                        },
+                        "type": "COLLADA-1.4.1/commonProfile"
+                    },
+                    "instanceProgram": {
+                        "attributes": {
+                            "a_normal": "normal",
+                            "a_position": "position",
+                            "a_texcoord0": "texcoord0"
+                        },
+                        "program": "program_0",
+                        "uniforms": {
+                            "u_ambient": "ambient",
+                            "u_diffuse": "diffuse",
+                            "u_emission": "emission",
+                            "u_light0Color": "light0Color",
+                            "u_light0Transform": "light0Transform",
+                            "u_light1Color": "light1Color",
+                            "u_light1Transform": "light1Transform",
+                            "u_light2Color": "light2Color",
+                            "u_light2Transform": "light2Transform",
+                            "u_light3Color": "light3Color",
+                            "u_modelViewMatrix": "modelViewMatrix",
+                            "u_normalMatrix": "normalMatrix",
+                            "u_projectionMatrix": "projectionMatrix"
+                        }
+                    },
+                    "states": {
+                        "blendEnable": 0,
+                        "cullFaceEnable": 0,
+                        "depthMask": 1,
+                        "depthTestEnable": 1
+                    }
+                }
+            }
+        }
+    },
+    "textures": {
+        "texture_image_0": {
+            "format": 6408,
+            "internalFormat": 6408,
+            "sampler": "sampler_0",
+            "source": "image_0",
+            "target": 3553
+        }
+    }
+}
