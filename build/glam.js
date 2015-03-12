@@ -49563,6 +49563,10 @@ glam.DOM.getAnimation = function(id) {
 	return glam.DOM.animations[id];
 }
 
+glam.DOM.createElement = function(tagName) {
+	return glam.DOMViewer.instance.createElement(tagName);
+}
+
 window.addEventListener('load',
 	function() {
 		glam.DOM.ready();
@@ -50910,6 +50914,7 @@ glam.DOMViewer = function(doc) {
 	this.riftRender = glam.DOM.riftRender || false;
 	this.cardboardRender = glam.DOM.cardboardRender || false;
 	this.displayStats = glam.DOM.displayStats || false;
+	glam.DOMViewer.instance = this;
 }
 
 glam.DOMViewer.prototype = new Object;
@@ -50946,6 +50951,8 @@ glam.DOMViewer.prototype.traverseScene = function() {
 	var scenes = this.document.getElementsByTagName('scene');
 	if (scenes) {
 		var scene = scenes[0];
+		glam.DOMElement.init(scene);
+		scene.glam.object = this.scene;
 		this.traverse(scene, this.scene);
 	}
 	else {
@@ -50992,16 +50999,35 @@ glam.DOMViewer.prototype.addNode = function(docelt) {
 	var type = tag ? glam.DOMTypes.types[tag] : null;
 	if (type && type.cls && (fn = type.cls.create) && typeof(fn) == "function") {
 
-		glam.DOMElement.init(docelt);
-		var style = glam.DOMElement.getStyle(docelt);
-		var obj = fn.call(this, docelt, style, this.app);
-		
-		if (obj) {
-			docelt.glam.object = obj;
-			this.addFeatures(docelt, style, obj, type);
-			this.scene.addChild(obj);
-			this.traverse(docelt, obj);
+		if (docelt.glam) {
+			var obj = docelt.glam.object;
+			if (!obj._parent) {
+				var parentElt = docelt.parentElement;
+				if (parentElt && parentElt.glam) {
+					var parentObj = parentElt.glam.object;
+					parentObj.addChild(obj);
+				}				
+			}
 		}
+		else {
+			glam.DOMElement.init(docelt);
+			var style = glam.DOMElement.getStyle(docelt);
+			var obj = fn.call(this, docelt, style, this.app);
+			
+			if (obj) {
+				docelt.glam.object = obj;
+				this.addFeatures(docelt, style, obj, type);
+				this.scene.addChild(obj);
+				this.traverse(docelt, obj);
+			}			
+		}
+	}
+
+	var children = docelt.childNodes;
+	var i, len = children.length;
+
+	for (i = 0; i < len; i++) {
+		this.addNode(children[i]);
 	}
 }
 
@@ -51011,6 +51037,31 @@ glam.DOMViewer.prototype.removeNode = function(docelt) {
 	if (obj) {
 		obj._parent.removeChild(obj);
 	}
+}
+
+glam.DOMViewer.prototype.createElement = function(tagName) {
+
+	var tag = tagName;
+	if (tag)
+		tag = tag.toLowerCase();
+	var fn = null;
+	var type = tag ? glam.DOMTypes.types[tag] : null;
+	if (type && type.cls && (fn = type.cls.create) && typeof(fn) == "function") {
+
+		var docelt = document.createElement(tagName);
+		glam.DOMElement.init(docelt);
+		var style = glam.DOMElement.getStyle(docelt);
+		var obj = fn.call(this, docelt, style, this.app);
+		
+		if (obj) {
+			docelt.glam.object = obj;
+			this.addFeatures(docelt, style, obj, type);
+		}
+
+		return docelt;
+	}
+
+	return null;
 }
 
 glam.DOMViewer.prototype.addFeatures = function(docelt, style, obj, type) {
@@ -60923,4 +60974,8 @@ glam.ready = function() {
 
 glam.setFullScreen = function(enable) {
 	return glam.Graphics.instance.setFullScreen(enable);
+}
+
+glam.createElement = function(tagName) {
+	return glam.DOM.createElement(tagName);
 }

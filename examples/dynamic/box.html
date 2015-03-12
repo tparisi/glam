@@ -1,0 +1,53 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../../build/glam.js" ></script>
+
+<title>glam - dynamic</title>
+
+<style>
+	body{
+		margin: 0px;
+		background-color: #000;
+	}
+
+	#box1 {
+	}
+	
+</style>
+<script>
+
+function createBox(scene) {
+	var groupelt = glam.createElement('group');
+	
+	var boxelt = glam.createElement('box');
+
+	groupelt.appendChild(boxelt);
+		
+	return groupelt;
+}
+
+window.addEventListener('load', function(){
+
+	glam.ready();
+	var scene = document.getElementsByTagName('scene')[0];
+	var box = createBox();
+	scene.appendChild(box);
+
+},
+false);
+
+</script>
+</head>
+<body>
+	
+<div id="container" style="width:98%; height:98%;position:absolute;">
+<glam>
+  <scene>
+  </scene>
+</glam>
+</div>
+
+</body>
+</html>

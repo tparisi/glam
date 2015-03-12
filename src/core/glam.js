@@ -41,3 +41,7 @@ glam.ready = function() {
 glam.setFullScreen = function(enable) {
 	return glam.Graphics.instance.setFullScreen(enable);
 }
+
+glam.createElement = function(tagName) {
+	return glam.DOM.createElement(tagName);
+}

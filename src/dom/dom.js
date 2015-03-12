@@ -61,6 +61,10 @@ glam.DOM.getAnimation = function(id) {
 	return glam.DOM.animations[id];
 }
 
+glam.DOM.createElement = function(tagName) {
+	return glam.DOMViewer.instance.createElement(tagName);
+}
+
 window.addEventListener('load',
 	function() {
 		glam.DOM.ready();
