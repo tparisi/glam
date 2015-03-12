@@ -1,0 +1,71 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../../build/glam.js" ></script>
+
+<title>glam - dynamic lines</title>
+
+<style>
+	body{
+		margin: 0px;
+		background-color: #000;
+	}
+
+	#box1 {
+	}
+	
+</style>
+<script>
+
+function createLines(scene) {
+	var groupelt = glam.createElement('group');
+	
+	var lineselt = glam.createElement('line');
+	var visual = lineselt.glam.object.visuals[0]
+	var geom = visual.geometry;
+   
+	
+	geom.vertices.push(new THREE.Vector3(-.5, -.5, 0));
+	geom.vertices.push(new THREE.Vector3(.5, -.5, 0));
+	geom.vertices.push(new THREE.Vector3(.5, .5, 0));
+	geom.vertices.push(new THREE.Vector3(-.5, .5, 0));
+	geom.vertices.push(new THREE.Vector3(-.5, -.5, 0));
+
+	geom.colors.push(new THREE.Color(1, 0, 0));
+	geom.colors.push(new THREE.Color(0, 1, 0));
+	geom.colors.push(new THREE.Color(0, 1, 1));
+	geom.colors.push(new THREE.Color(0, 0, 1));
+	geom.colors.push(new THREE.Color(1, 0, 1));
+
+	var mat = visual.material;
+	mat.vertexColors = THREE.VertexColors;
+
+	groupelt.appendChild(lineselt);
+		
+	return groupelt;
+}
+
+window.addEventListener('load', function(){
+
+	glam.ready();
+	var scene = document.getElementsByTagName('scene')[0];
+	var lines = createLines();
+	scene.appendChild(lines);
+
+},
+false);
+
+</script>
+</head>
+<body>
+	
+<div id="container" style="width:98%; height:98%;position:absolute;">
+<glam>
+  <scene>
+  </scene>
+</glam>
+</div>
+
+</body>
+</html>

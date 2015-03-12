@@ -35,7 +35,9 @@ glam.LineElement.parse = function(docelt, geometry, material) {
 	var verts = docelt.getElementsByTagName('vertices');
 	if (verts) {
 		verts = verts[0];
-		glam.DOMTypes.parseVector3Array(verts, geometry.vertices);
+		if (verts) {
+			glam.DOMTypes.parseVector3Array(verts, geometry.vertices);
+		}
 	}
 	
 	var vertexColors = [];
