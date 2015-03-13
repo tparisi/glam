@@ -59716,6 +59716,8 @@ glam.DOMInput.add = function(docelt, obj) {
 	
 	function addListener(picker, evt) {
 		picker.addEventListener(evt, function(event){
+		
+		/*
 			var domEvent = new CustomEvent(
 					evt, 
 					{
@@ -59725,6 +59727,16 @@ glam.DOMInput.add = function(docelt, obj) {
 						cancelable: true
 					}
 				);
+		*/
+		
+		//Allows some of the examples to work with ie11
+			var domEvent = document.createEvent("CustomEvent");
+				domEvent.initCustomEvent(evt, false,false, { 
+					detail: {},
+					bubbles: true,
+					cancelable: true 
+				});
+				
 			for (var propName in event) {
 				if (domEvent[propName] === undefined) {
 					domEvent[propName] = event[propName];					
