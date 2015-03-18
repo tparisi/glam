@@ -37,6 +37,7 @@ glam.SurfaceElement.getAttributes = function(docelt, style, param) {
 	var fontWeight = docelt.getAttribute('fontWeight') || glam.SurfaceElement.DEFAULT_FONT_WEIGHT; 
 	var fontStyle = docelt.getAttribute('fontStyle') || glam.SurfaceElement.DEFAULT_FONT_STYLE; 
 	var fontSize = docelt.getAttribute('fontSize') || glam.SurfaceElement.DEFAULT_FONT_SIZE;
+	var elementID = docelt.getAttribute('element');
 
 	var border = 0,
 		borderRadius = 0,
@@ -140,6 +141,8 @@ glam.SurfaceElement.getAttributes = function(docelt, style, param) {
 	param.fontWeight = fontWeight;
 	param.fontStyle = fontStyle;
 	param.fontSize = fontSize;
+	param.elementID = elementID;
+	param.docelt = docelt;
 }
 
 glam.SurfaceElement.createVisual = function(docelt, material, param) {
@@ -179,6 +182,10 @@ glam.SurfaceElement.createTexture = function(param) {
 
     ctx.fillStyle = "rgba(0, 0, 0, 0)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (param.elementID) {
+    	glam.SurfaceElement.createHTMLTexture(param);
+    }
 
     ctx.fillStyle = param.backgroundColor;
     ctx.strokeStyle = param.color;
@@ -237,4 +244,35 @@ glam.SurfaceElement.roundRect = function(ctx, x, y, width, height, radius, fill,
   if (fill) {
     ctx.fill();	
   }
+}
+
+glam.SurfaceElement.createHTMLTexture = function(param) {
+	var element = document.getElementById(param.elementID);
+	var docelt = param.docelt;
+
+    html2canvas(element).then(function(canvas) {
+        document.body.removeChild(element);
+
+	    var map = new THREE.Texture(canvas);
+	    map.needsUpdate = true;
+
+	    var obj = docelt.glam.object;
+	    var visual = obj.visuals[0];
+
+	    var geometry = visual.geometry.clone();
+	    var material = visual.material.clone();
+		material.map = map;
+
+	    visual.material.color.setRGB(1, 0, 0);
+
+		obj.removeComponent(visual);
+
+		var visual = new glam.Visual(
+				{ geometry: geometry,
+					material: material
+				});
+
+		obj.addComponent(visual);
+    });
+
 }
