@@ -2,8 +2,7 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<script src="../../build/glam.js" ></script>
-<title>glam - eight line cube</title>
+<title>glam - surfaces and HTML</title>
 
 <style>
 
@@ -14,12 +13,14 @@
 
 	.card {
 		backface-visibility:visible;
-		border:10px solid;
+		border:6px solid;
+		border-radius: 10px;
+		padding:20px;
 		background-color:rgba(255, 0, 0, 0);
-		color:cyan;
 		font-family: verdana;
 		font-style:italic;
 		font-size:72px;
+		color:cyan;
 	}
 
 	#surf1 {
@@ -31,7 +32,6 @@
 		position:absolute;
 		width:1024px;
 		height:512px;
-		color:white;
 		font-size:72px;
 		left:10000px;
 	}
@@ -88,10 +88,12 @@ glam - Simple scene with cube
 	<surface id="surf1" height=2 width=4 class="card" element="html1">
 	</surface>
 	<surface id="surf2" height=1 width=4 class="card">your text here</surface>
+	<effect type="Bloom" strength='1'></effect>
   </scene>
 </glam>
 </div>
 
+<script src="../../build/glam.min.js" ></script>
 
 </body>
 
