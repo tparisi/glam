@@ -1,0 +1,124 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../../build/glam.min.js" ></script>
+<title>glam - Imported scene with skybox background</title>
+
+<style>
+	body{
+		margin: 0px;
+		background-color: #000;
+	}
+	
+	@-webkit-keyframes kfBB1 {
+	  0% {
+	    -webkit-transform: translateY(-.2);
+	  }
+	
+	  50% {
+	   -webkit-transform: translateY(0);
+	  }
+	  
+	  100% {
+	   -webkit-transform: translateY(-.2);
+	  }
+	}
+
+	@-webkit-keyframes kfBB2 {
+	  0% {
+	    -webkit-transform: translateY(0);
+	  }
+	
+	  50% {
+	   -webkit-transform: translateY(.2);
+	  }
+	  
+	  100% {
+	   -webkit-transform: translateY(0);
+	  }
+	}
+
+	@-webkit-keyframes kfBB3 {
+	  0% {
+	    -webkit-transform: translateY(-.2) rotateY(0deg);
+	  }
+	
+	  50% {
+	   -webkit-transform: translateY(0) rotateY(180deg);
+	  }
+	  
+	  100% {
+	   -webkit-transform: translateY(-.2) rotateY(360deg);
+	  }
+	}
+
+	@-webkit-keyframes kfPath1 {
+	  0% {
+	    -webkit-transform: translateX(-2) translateZ(0);
+	  }
+	
+	  50% {
+	   -webkit-transform: translateX(0) translateZ(1);
+	  }
+	  
+	  100% {
+	   -webkit-transform: translateX(-2) translateZ(0);
+	  }
+	}
+
+	.bubbleBounce
+	 {
+	  -webkit-animation-duration: 2s;
+	  -webkit-animation-name: kfBB1;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
+
+	.bubbleBounce2
+	 {
+	  -webkit-animation-duration: 3s;
+	  -webkit-animation-name: kfBB2;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
+
+	.bubbleBounce3
+	 {
+	  -webkit-animation-duration: 4s;
+	  -webkit-animation-name: kfBB3;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
+
+	.path1
+	 {
+	  -webkit-animation-duration: 4s;
+	  -webkit-animation-name: kfPath1;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
+
+</style>
+</head>
+<body>
+<div id="container" style="width:98%; height:98%;position:absolute;">
+<glam>
+  <scene>
+  	<group class="path1">
+		<import id="imported_scene1" src="../../models/duck/duck.dae" class="bubbleBounce" ></import>
+	</group>
+	<import id="imported_scene2" src="../../models/duck/duck.dae" class="bubbleBounce2" x='2'></import>
+	<import id="imported_scene3" src="../../models/duck/duck.dae" class="bubbleBounce3" x='-2'></import>
+	<import id="imported_scene1" src="../../models/duck/duck.dae" class="bubbleBounce3" z='1'></import>
+	<import id="imported_scene2" src="../../models/duck/duck.dae" class="bubbleBounce2" z='-1'></import>
+	<import id="imported_scene3" src="../../models/duck/duck.dae" class="bubbleBounce3" z='-2'></import>
+	<effect type="RGBShift" amount=".005" disabled></effect>
+	<effect type="DotScreenRGB" scale='4'></effect>
+  </scene>
+</glam>
+</div>
+
+
+</body>
+</html>
