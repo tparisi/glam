@@ -1,0 +1,171 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html>
+  <head>
+    <title>
+      display/box/float/clear test
+    </title>
+    <style type="text/css">
+      /* last modified: 1 Dec 98 */
+
+      html {
+        font: 10px/1 Verdana, sans-serif;
+        background-color: blue;
+        color: white;
+      }
+
+      body {
+        margin: 1.5em;
+        padding: 0;
+        width: 48em;
+        background-color: white;
+        color:black;
+      }
+
+      #content {
+        position:absolute;
+        left:10000px;
+      }
+
+      #hello {
+        background-color:rgba(255, 255, 255, 0);
+        position:absolute;
+        width:1024px;
+        height:1024px;
+        font-size:72px;
+        font-family:Helvetica Neue;
+      }
+
+      #element2 {
+        background-color:rgba(255, 255, 255, 0);
+        color:white;
+        position:absolute;
+        width:1024px;
+        height:1024px;
+        font-size:72px;
+        font-family:Verdana;
+        font-style:italic;
+      }
+
+      .content {
+        left:10000px;
+      }
+
+      #container {
+        width:98%;
+        height:98%;
+        position:absolute;
+      }
+
+    </style>
+  </head>
+  <body>
+
+
+      <div id="hello" class="content">
+      Hello world
+      <div>THIS IS MORE TEXT</div>
+      <img width=512 height=512 src="../../images/flowers.jpg"/>
+      And an image
+      </div>
+
+      <div id="element2" class="content">
+      Now is the time for all good men to come to the aid of the party
+      </div>
+
+  <div id="container"></div>
+
+
+    <script src="../../build/glam.js"></script>
+    <script type="text/javascript" src="./libs/html2canvas/html2canvas.js"></script>
+    <script type="text/javascript">
+
+  window.addEventListener('load', function(){
+
+    var container = document.getElementById("container");
+    
+    var app = new glam.Viewer({ container : container, displayStats:false } );
+
+
+    var root = new glam.Object;
+    
+    var dragger = new glam.PlaneDragger({ normal: new THREE.Vector3(0, 1, 1) });
+    dragger.overCursor = 'pointer';
+    
+    var group = new glam.Object;
+    group.addComponent(dragger);
+
+    root.addChild(group);
+   
+      var hello = document.getElementById("hello");
+
+        html2canvas(hello).then(function(canvas) {
+            document.body.removeChild(hello);
+
+          var plane = createPlane(canvas);
+          group.addChild(plane);
+
+        });
+
+      var element2 = document.getElementById("element2");
+
+        html2canvas(element2).then(function(canvas) {
+            document.body.removeChild(element2);
+
+          var plane = createPlane(canvas);
+          plane.transform.position.set(0, -1, 2)
+          group.addChild(plane);
+
+
+        });
+
+
+      app.addObject(root);
+      app.run();
+      },
+  false
+  );
+
+
+  function createCube(canvas) { 
+    var o = new glam.Object;
+
+    o.transform.rotation.x = Math.PI / 6;
+    
+    var map = new THREE.Texture(canvas);
+    map.needsUpdate = true;
+
+    var visual = new glam.Visual(
+        { geometry: new THREE.BoxGeometry(2, 2, 2),
+          material: new THREE.MeshBasicMaterial({color:0xffffff, map:map,
+            transparent:true})
+        });
+
+    
+    o.addComponent(visual);
+
+    return o;
+  }
+
+  function createPlane(canvas) { 
+    var o = new glam.Object;
+
+    o.transform.rotation.x = Math.PI / 6;
+    
+    var map = new THREE.Texture(canvas);
+    map.needsUpdate = true;
+
+    var visual = new glam.Visual(
+        { geometry: new THREE.PlaneGeometry(2, 2),
+          material: new THREE.MeshBasicMaterial({color:0xffffff, map:map,
+            transparent:true})
+        });
+
+    
+    o.addComponent(visual);
+
+    return o;
+  }
+
+    </script>
+  </body>
+</html>

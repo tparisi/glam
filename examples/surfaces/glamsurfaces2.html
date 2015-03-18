@@ -1,0 +1,192 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../../build/glam.js" ></script>
+<title>glam - eight line cube</title>
+
+<style>
+
+	body{
+		margin: 0px;
+		background-color: #000;
+	}
+
+	.card {
+		backface-visibility:visible;
+		border-radius:64px;
+		border:10px solid;
+		background-color:rgba(255, 0, 0, 0);
+		color:cyan;
+#		font-family: verdana;
+		font-family: Helvetica Neue;
+		font-style:italic;
+		font-size:36px;
+		width:4;
+		height:1;
+	}
+
+	#surf1 {
+	}
+
+	#surf2 {
+		font-family:Helvetica Neue;
+		font-style:normal;
+		transform:translateZ(-1);
+		color:red;
+	}
+
+	#surf3 {
+		transform:translateZ(-2);
+		color:black;
+		background-color:rgba(128, 128, 128, .5);
+		border:5px;
+		border-radius: 0;
+	}
+
+	#ticker1 {
+		color:yellow;
+		font-family:Verdana;
+		font-style:italic;
+		backface-visibility:visible;
+		font-render:bitmap;
+	}	
+
+	#line1 {
+		opacity:.5;
+		line-width:4;
+	}
+
+	@-webkit-keyframes kfRotateY {
+	  from {
+	    -webkit-transform: rotateY(0deg);
+	  }
+	
+	  to {
+	   -webkit-transform: rotateY(360deg);
+	  }
+	}
+	.animRotateY
+	 {
+	  -webkit-animation-duration: 30s;
+	  -webkit-animation-name: kfRotateY;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:linear;
+	}
+
+	@-webkit-keyframes kfTicker {
+	  from {
+	    -webkit-transform: translateX(2) translateY(-1) translateZ(3);
+	  }
+	
+	  to {
+	   -webkit-transform: translateX(-2) translateY(-1) translateZ(3);
+	  }
+	}
+	.animTicker
+	 {
+	  -webkit-animation-duration: 10s;
+	  -webkit-animation-name: kfTicker;
+	  -webkit-animation-iteration-count: infinite;
+	  -webkit-animation-timing-function:linear;
+	}
+
+	@-webkit-keyframes kfCamera {
+	  from {
+	    -webkit-transform: translateZ(100);
+	  }
+	
+	  to {
+	   -webkit-transform: translateZ(0) translateY(2);
+	  }
+	}
+	.animCamera
+	 {
+	  -webkit-animation-duration: 6s;
+	  -webkit-animation-name: kfCamera;
+	  -webkit-animation-iteration-count: 1;
+	  -webkit-animation-timing-function:ease-in-out;
+	}
+
+</style>
+</head>
+<body>
+<!-- 
+glam - Simple scene with cube
+ -->
+<div id="container" style="width:100%;height:100%;position:absolute;">
+<glam>
+  <scene>
+  	<!--
+		<line id="line1">
+			<vertices>0 0 0 .5 .5 .5</vertices>
+			<colors>0 1 0 0 1 0</colors>
+		</line>
+	-->
+	<surface id="surf1" height=1 width=4 class="card">GLAM &lt;surface&gt;prototype</surface>
+	<surface id="surf2" height=1 width=4 class="card">your text here</surface>
+	<surface id="surf3" height=1 width=4 class="card">Third card.</surface>
+	<text id="ticker1" class="animTicker">...ALERT ALERT ALERT...</text>
+	<!--
+	<effect type="Bloom" strength='2'></effect>
+	-->
+  </scene>
+</glam>
+</div>
+
+
+</body>
+<script>
+
+function createCard(scene, x, y, z, width, height, i) {
+
+	var groupelt = document.createElement('group');
+	
+	groupelt.setAttribute('x', x);
+	groupelt.setAttribute('z', z);
+	groupelt.setAttribute('y', y);
+
+	var surf = document.createElement('surface');
+	surf.setAttribute('class', "card animRotateY");
+	surf.setAttribute('value', "Surface " + i)
+
+	// sphereelt.setAttribute('animation', animClass);
+
+	groupelt.appendChild(surf);
+		
+	return groupelt;
+}
+
+function addCards(scene) {
+
+	
+	var i, len = 256;
+
+	for (i = 0; i < len; i++) {
+
+		var x = (Math.random() - .5) * 40;
+		var y = (Math.random() - .5) * 40;
+		var z = (Math.random() - .5) * 40;
+		var width = 2 * Math.random();
+		var height = 2 * Math.random();
+		var r = Math.random() * 255, g = Math.random() * 255, b = Math.random() * 255;
+		var color = "#" + r.toString(16) + g.toString(16) + b.toString(16);
+		var groupelt = createCard(scene, x, y, z, width, height, i);
+		
+		scene.appendChild(groupelt);
+		
+	}
+}
+
+window.addEventListener('load', function(){
+
+	glam.ready();
+	var scene = document.getElementsByTagName('scene')[0];
+	addCards(scene);
+
+},
+false);
+
+</script>
+
+</html>

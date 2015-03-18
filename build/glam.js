@@ -57872,7 +57872,9 @@ glam.Viewer.prototype.calcSceneStats = function()
 	for (i = 0; i < len; i++) {
 		var visual = visuals[i];
 		var geometry = visual.geometry;
-		var nFaces = geometry.faces ? geometry.faces.length : geometry.attributes.index.array.length / 3;
+		var nFaces = geometry.faces ? geometry.faces.length : 
+			(geometry.attributes.index  ? geometry.attributes.index.array.length / 3 :
+			geometry.attributes.position.array.length / 3);
 		this.faceCount += nFaces;
 		this.meshCount++;		
 	}
