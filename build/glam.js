@@ -56472,10 +56472,13 @@ glam.SurfaceElement.roundRect = function(ctx, x, y, width, height, radius, fill,
 
 glam.SurfaceElement.createHTMLTexture = function(param) {
 	var element = document.getElementById(param.elementID);
+	var cloned = element.cloneNode(true);
+	document.body.appendChild(cloned);
+
 	var docelt = param.docelt;
 
-    html2canvas(element).then(function(canvas) {
-        document.body.removeChild(element);
+    html2canvas(cloned).then(function(canvas) {
+        document.body.removeChild(cloned);
 
 	    var map = new THREE.Texture(canvas);
 	    map.needsUpdate = true;
