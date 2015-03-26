@@ -63,14 +63,15 @@ glam.RiftControllerScript.prototype.update = function()
 {
 	if (this._enabled && this.riftControls) {
 		this.riftControls.update();
-	}
-	
-	if (this._headlightOn)
-	{
-		this.cameraDir.set(0, 0, -1);
-		this.cameraDir.transformDirection(this.camera.object.matrixWorld);
-		
-		this.headlight.direction.copy(this.cameraDir);
+
+		if (this._headlightOn)
+		{
+			this.cameraDir.set(0, 0, -1);
+			this.cameraDir.transformDirection(this.camera.object.matrixWorld);
+			
+			this.headlight.direction.copy(this.cameraDir);
+		}	
+
 	}	
 }
 
@@ -86,10 +87,13 @@ glam.RiftControllerScript.prototype.setCamera = function(camera) {
 
 glam.RiftControllerScript.prototype.createControls = function(camera)
 {
+	var that = this;
 	var controls = new THREE.VRControls(camera.object, function(err) {
 			if (err) {
 				console.log("Error creating VR controller: ", err);
 			}
+
+			that.dispatchEvent("create", { type: "create", error : err });
 		});
 
 	// N.B.: this only works because the callback up there is synchronous...

@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Vizi - Skybox</title>
+      <style>
+          body {
+              margin: 0px;
+              background-color: #000000;
+              overflow: hidden;
+          }
+
+          #viewSelect {
+              position: absolute;
+              top: 0px; 
+              padding: 5px;
+z-index: 1;
+          }
+
+          a {
+              color: #ff8800;
+          }
+
+			.button {
+				position: fixed;
+				bottom: 20px;
+				right: 20px;
+				padding: 8px;
+				color: #FFF;
+				background-color: #555;
+				display:none;
+			}
+      </style>
+</head>
+<body>
+	<div class="button">Start VR Mode</div>
+	<div id="container" style="width:98%; height:98%; position:absolute;z-index:-2"></div>
+	<select id="viewSelect">
+	<option value="pan0.jpg">Plaza</option>
+	<option value="pan1.jpg">Mall</option>
+	<option value="pan2.jpg">Mall 2</option>
+	<option value="pan3.jpg">Back Yard</option>
+	<option value="pan4.jpg">Bar</option>
+	<option value="pan5.jpg">Restaurant</option>
+	<option value="pan6.jpg">Tunnels</option>
+	<option value="pan7.jpg">Planetarium</option>
+	<option value="pan8.jpg">Basement Bar</option>
+	<option value="pan9.jpg">Greece</option>
+	<option value="car.jpg">Car</option>
+	<option value="car2.jpg">Car 2</option>
+	<option value="car3.jpg">Car 3</option>
+	<option value="room.jpg">Room</option>
+	<option value="room2.jpg">Room 2</option>
+	<option value="room3.jpg">Room 3</option>
+	<option value="room4.jpg">Room 4</option>
+	<option value="room5.jpg">Room 5</option>
+	<option value="mellon_square.jpg">Mellon Square</option>
+	<option value="belmorepark1right.jpg">Belmore Park</option>
+	<option value="Panorama-wx8jmd.jpg">Museum</option>
+
+	
+	</select>
+
+    <script src="./libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+	<script src="../../build/glam.js"></script>
+	<script>
+
+	var skysphereScript = null;
+	
+	$(document).ready(function() {
+		var container = document.getElementById("container");
+		var fullScreenButton = document.querySelector( '.button' );
+		fullScreenButton.onclick = function() {
+			glam.Graphics.instance.setFullScreen( true );
+		};
+		
+		
+		var app = new glam.Application({ container : container, riftRender : true });
+
+		// Skybox from http://www.3delyvisions.com/
+		// http://www.3delyvisions.com/skf1.htm
+		var path = "images/spherepano/pan0.jpg";
+		
+		var texture = THREE.ImageUtils.loadTexture(path);
+
+		var skysphere = glam.Prefabs.Skysphere();
+		skysphereScript = skysphere.getComponent(glam.SkysphereScript);
+		skysphereScript.texture = texture;
+
+		app.addObject(skysphere);
+
+		var cam = new glam.PerspectiveCamera;
+		var camera = new glam.Object;
+		camera.addComponent(cam);
+		cam.active = true;
+
+		app.addObject(camera);
+		
+		var controller = glam.Prefabs.ModelController({active:true, headlight:true, 
+			});
+		var controllerScript = controller.getComponent(glam.ModelControllerScript);
+		controllerScript.camera = cam;
+		app.addObject(controller);
+
+		var riftController = glam.Prefabs.RiftController({active:true, headlight:true, 
+			});
+		var riftControllerScript = riftController.getComponent(glam.RiftControllerScript);
+		riftControllerScript.addEventListener("create", function(event) {
+
+			if (event.error) {
+				console.log("App: ", event.error);
+				fullScreenButton.style.display = 'none';
+			}
+			else {
+				riftControllerScript.camera = cam;
+				app.addObject(controller);
+				riftControllerScript.enabled = true;
+				controllerScript.enabled = false;
+				fullScreenButton.style.display = 'block';
+			}
+		});
+		riftControllerScript.camera = cam;
+		app.addObject(riftController);
+		
+		var cube = new glam.Object;
+
+		var visual = new glam.Visual(
+				{ geometry: new THREE.BoxGeometry(2, 2, 2),
+					material: new THREE.MeshPhongMaterial({
+						color:0xffffff,
+						})
+				});
+
+
+		cube.addComponent(visual);
+		app.addObject(cube);
+
+		var effect = new glam.Effect(THREE.DotScreenRGBShader);
+		effect.pass.uniforms[ 'scale' ].value = 12;
+//        glam.Graphics.instance.addEffect(effect);
+
+		var effect = new glam.Effect( new THREE.BloomPass);
+//       glam.Graphics.instance.addEffect(effect);
+
+		var effect = new glam.Effect(THREE.CopyShader);
+//        glam.Graphics.instance.addEffect(effect);
+
+		app.run();
+	}
+	);
+
+	var views = document.getElementById("viewSelect");
+	views.onchange = function(){
+
+		var pic = views.options[views.selectedIndex].value;	
+	
+		var texture = THREE.ImageUtils.loadTexture( 'images/spherepano/' + pic );
+		skysphereScript.texture = texture;
+	}	
+
+	</script>
+	
+</body>
+</html>

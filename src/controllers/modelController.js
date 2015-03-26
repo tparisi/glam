@@ -108,6 +108,9 @@ glam.ModelControllerScript.prototype.createControls = function(camera)
 
 glam.ModelControllerScript.prototype.update = function()
 {
+	if (!this.enabled)
+		return;
+	
 	this.controls.update();
 	if (this._headlightOn)
 	{

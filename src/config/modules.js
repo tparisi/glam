@@ -65,6 +65,7 @@ goog.require('glam.ParticleSystemScript');
 goog.require('glam.Composer');
 goog.require('glam.Effect');
 goog.require('glam.SceneComponent');
+goog.require('glam.Billboard');
 goog.require('glam.SceneUtils');
 goog.require('glam.SceneVisual');
 goog.require('glam.Transform');
