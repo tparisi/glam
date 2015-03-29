@@ -25,6 +25,15 @@ THREE.VREffect = function ( renderer, done ) {
 	
 	this.FULLSCREEN_WIDTH = 1280;
 	this.FULLSCREEN_HEIGHT = 800;
+
+	/*
+	for now
+	var scale = 1;
+
+	this.FULLSCREEN_WIDTH = 1920 * scale;
+	this.FULLSCREEN_HEIGHT = 1080 * scale;
+	
+	*/
 	
 	this._renderer = renderer;
 
@@ -59,6 +68,8 @@ THREE.VREffect = function ( renderer, done ) {
 					self.cube = new THREE.Mesh(geom, material);
 					self.dummyScene = new THREE.Scene;
 					self.dummyScene.add(self.cube);
+					self.clearColor = new THREE.Color;
+
 					break; // We keep the first we encounter
 				}
 			}
@@ -112,6 +123,14 @@ THREE.VREffect = function ( renderer, done ) {
 		}
 
 
+		var css = renderer.domElement.parentNode.style.backgroundColor;
+		if (css) {
+			this.clearColor.setStyle(css);
+		}
+		else {
+			this.clearColor.setRGB(0, 0, 0);
+		}
+
 		var i, len = scenes.length;
 		for (i = 0; i < len; i++) {
 
@@ -119,11 +138,11 @@ THREE.VREffect = function ( renderer, done ) {
 			var camera = cameras[i];
 			
 			if (i == 0) {
-			   	renderer.setClearColor( 0, 0 );
+			   	renderer.setClearColor( this.clearColor, 1 );
 				renderer.autoClearColor = true;				
 			}
 			else {
-			    renderer.setClearColor( 0, 1 );
+			    renderer.setClearColor( this.clearColor, 1 );
 				renderer.autoClearColor = false;				
 			}
 

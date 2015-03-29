@@ -44082,6 +44082,15 @@ THREE.VREffect = function ( renderer, done ) {
 	
 	this.FULLSCREEN_WIDTH = 1280;
 	this.FULLSCREEN_HEIGHT = 800;
+
+	/*
+	for now
+	var scale = 1;
+
+	this.FULLSCREEN_WIDTH = 1920 * scale;
+	this.FULLSCREEN_HEIGHT = 1080 * scale;
+	
+	*/
 	
 	this._renderer = renderer;
 
@@ -44116,6 +44125,8 @@ THREE.VREffect = function ( renderer, done ) {
 					self.cube = new THREE.Mesh(geom, material);
 					self.dummyScene = new THREE.Scene;
 					self.dummyScene.add(self.cube);
+					self.clearColor = new THREE.Color;
+
 					break; // We keep the first we encounter
 				}
 			}
@@ -44169,6 +44180,14 @@ THREE.VREffect = function ( renderer, done ) {
 		}
 
 
+		var css = renderer.domElement.parentNode.style.backgroundColor;
+		if (css) {
+			this.clearColor.setStyle(css);
+		}
+		else {
+			this.clearColor.setRGB(0, 0, 0);
+		}
+
 		var i, len = scenes.length;
 		for (i = 0; i < len; i++) {
 
@@ -44176,11 +44195,11 @@ THREE.VREffect = function ( renderer, done ) {
 			var camera = cameras[i];
 			
 			if (i == 0) {
-			   	renderer.setClearColor( 0, 0 );
+			   	renderer.setClearColor( this.clearColor, 1 );
 				renderer.autoClearColor = true;				
 			}
 			else {
-			    renderer.setClearColor( 0, 1 );
+			    renderer.setClearColor( this.clearColor, 1 );
 				renderer.autoClearColor = false;				
 			}
 
@@ -56938,12 +56957,9 @@ glam.ViewPicker = function(param) {
 
     this.enabled = (param.enabled !== undefined) ? param.enabled : true;
 
-	this.position = new THREE.Vector3();
-	this.mouse = new THREE.Vector3(0,0, 1);
-	this.unprojectedMouse = new THREE.Vector3();
-
+	this.origin = new THREE.Vector3();
+	this.direction = new THREE.Vector3();
 	this.raycaster = new THREE.Raycaster();
-	this.projector = new THREE.Projector();
 
 	this.over = false;
 }
@@ -56958,8 +56974,7 @@ glam.ViewPicker.prototype.realize = function() {
 
 glam.ViewPicker.prototype.update = function() {
 
-	this.unprojectMouse();
-	var intersected = this.checkForIntersections(this.unprojectedMouse);
+	var intersected = this.checkForIntersections();
 
 	if (intersected != this.over) {
 		this.over = intersected;
@@ -56972,26 +56987,18 @@ glam.ViewPicker.prototype.update = function() {
 	}
 }
 
-glam.ViewPicker.prototype.unprojectMouse = function() {
+glam.ViewPicker.prototype.checkForIntersections = function() {
 
-	this.unprojectedMouse.copy(this.mouse);
-	this.projector.unprojectVector(this.unprojectedMouse, glam.Graphics.instance.camera);
-}
+	this.origin.set(0, 0, 0);
+	this.origin.applyMatrix4(glam.Graphics.instance.camera.matrixWorld);
+	this.direction.set(0, 0, -1);
+	this.direction.transformDirection(glam.Graphics.instance.camera.matrixWorld);
 
-glam.ViewPicker.prototype.checkForIntersections = function(position) {
-
-	var origin = position;
-	var direction = origin.clone()
-	var pos = new THREE.Vector3();
-	pos.applyMatrix4(glam.Graphics.instance.camera.matrixWorld);
-	direction.sub(pos);
-	direction.normalize();
-
-	this.raycaster.set(pos, direction);
+	this.raycaster.set(this.origin, this.direction);
 	this.raycaster.near = glam.Graphics.instance.camera.near;
 	this.raycaster.far = glam.Graphics.instance.camera.far;
 
-	var intersected = this.raycaster.intersectObjects(this._object.transform.object.children);
+	var intersected = this.raycaster.intersectObjects(this._object.transform.object.children, true);
 
 	return (intersected.length > 0);
 }

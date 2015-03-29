@@ -14,12 +14,9 @@ glam.ViewPicker = function(param) {
 
     this.enabled = (param.enabled !== undefined) ? param.enabled : true;
 
-	this.position = new THREE.Vector3();
-	this.mouse = new THREE.Vector3(0,0, 1);
-	this.unprojectedMouse = new THREE.Vector3();
-
+	this.origin = new THREE.Vector3();
+	this.direction = new THREE.Vector3();
 	this.raycaster = new THREE.Raycaster();
-	this.projector = new THREE.Projector();
 
 	this.over = false;
 }
@@ -34,8 +31,7 @@ glam.ViewPicker.prototype.realize = function() {
 
 glam.ViewPicker.prototype.update = function() {
 
-	this.unprojectMouse();
-	var intersected = this.checkForIntersections(this.unprojectedMouse);
+	var intersected = this.checkForIntersections();
 
 	if (intersected != this.over) {
 		this.over = intersected;
@@ -48,26 +44,18 @@ glam.ViewPicker.prototype.update = function() {
 	}
 }
 
-glam.ViewPicker.prototype.unprojectMouse = function() {
+glam.ViewPicker.prototype.checkForIntersections = function() {
 
-	this.unprojectedMouse.copy(this.mouse);
-	this.projector.unprojectVector(this.unprojectedMouse, glam.Graphics.instance.camera);
-}
+	this.origin.set(0, 0, 0);
+	this.origin.applyMatrix4(glam.Graphics.instance.camera.matrixWorld);
+	this.direction.set(0, 0, -1);
+	this.direction.transformDirection(glam.Graphics.instance.camera.matrixWorld);
 
-glam.ViewPicker.prototype.checkForIntersections = function(position) {
-
-	var origin = position;
-	var direction = origin.clone()
-	var pos = new THREE.Vector3();
-	pos.applyMatrix4(glam.Graphics.instance.camera.matrixWorld);
-	direction.sub(pos);
-	direction.normalize();
-
-	this.raycaster.set(pos, direction);
+	this.raycaster.set(this.origin, this.direction);
 	this.raycaster.near = glam.Graphics.instance.camera.near;
 	this.raycaster.far = glam.Graphics.instance.camera.far;
 
-	var intersected = this.raycaster.intersectObjects(this._object.transform.object.children);
+	var intersected = this.raycaster.intersectObjects(this._object.transform.object.children, true);
 
 	return (intersected.length > 0);
 }

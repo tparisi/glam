@@ -83,6 +83,15 @@
 		
 		o.addComponent(visual);
 
+		var viewpicker = new glam.ViewPicker;
+		viewpicker.addEventListener("viewover", function() {
+			console.log('over');
+		});
+		viewpicker.addEventListener("viewout", function() {
+			console.log('out');
+		});
+
+		o.addComponent(viewpicker);
 		return o;
 	}
 	
