@@ -18,7 +18,8 @@
 	window.addEventListener('load', function(){
 		var container = document.getElementById("container");
 		
-		var app = new glam.Viewer({ container : container, displayStats:true } );
+		var app = new glam.Viewer({ container : container, displayStats:true,
+			firstPerson: true, tabstop: true } );
 		
 		var root = new glam.Object;
 
@@ -63,7 +64,7 @@
 
 //		o.addChild(c);
 
-		var billboard = new glam.Billboard({screenAlign:true});
+		var billboard = new glam.Billboard({});
 		o.addComponent(billboard);
 
 		return o;

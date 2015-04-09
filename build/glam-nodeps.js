@@ -8617,7 +8617,7 @@ glam.Billboard = function(param) {
 	this.z = new THREE.Vector3(0, 0, 1);
 	this.campos = new THREE.Vector3;
 	this.prevcampos = new THREE.Vector3;
-	this.plane = new THREE.Plane(this.up);
+	this.plane = new THREE.Plane(this.up.clone());
 	this.invMat = new THREE.Matrix4;
 	this.projectedPoint = new THREE.Vector3;
 
@@ -8672,7 +8672,8 @@ glam.Billboard.prototype.update = function() {
 					theta = -theta;
 				}
 
-				obj.transform.rotation.y = -theta;
+				obj.transform.lookAt(this.projectedPoint);
+				// obj.transform.rotation.y = -theta;
 
 			}
 
@@ -8681,7 +8682,7 @@ glam.Billboard.prototype.update = function() {
 }
 
 glam.Billboard.DEFAULT_ENABLED = true;
-glam.Billboard.DEFAULT_SCREENALIGN = true;
+glam.Billboard.DEFAULT_SCREENALIGN = false;
 
 glam.Billboard.EPSILON = 0.001;
 
