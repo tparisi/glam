@@ -1,0 +1,123 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Vizi</title>
+</head>
+<body>
+	<div id="container" style="width:98%; height:98%; position:absolute;"></div>
+
+    <script src="./libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+	<script src="../../build/glam.js"></script>
+	<script>
+
+	var cube = null;
+	var dirlight = null;
+	var camera1 = null, camera2 = null;
+	var colorTransition = null;
+	var positionTransition = null;
+	
+	$(document).ready(function() {
+		var container = document.getElementById("container");
+		
+		var app = new glam.Application({ container : container, displayStats:true } );
+
+		var camobj1 = new glam.Object;
+		camera1 = new glam.PerspectiveCamera({active:true});
+		camobj1.addComponent(camera1);
+		camera1.position.z = 10;
+		app.addObject(camobj1);
+		
+		var root = new glam.Object;
+		
+		var group = new glam.Object;
+		var picker = new glam.Picker();
+		picker.overCursor = 'pointer';
+		picker.addEventListener("mouseover", onPickerMouseOver);
+		picker.addEventListener("mouseout", onPickerMouseOut);
+		picker.addEventListener("mousedown", onPickerMouseDown);
+		picker.addEventListener("mouseup", onPickerMouseUp);
+		group.addComponent(picker);
+
+		root.addChild(group);
+		
+		cube = createCube();
+		group.addChild(cube);
+
+		
+		colorTransition = new glam.Transition({
+			target: cube.visuals[0].material.color,
+			to : {
+				r : 0,
+				g : 1,
+				b : 0,
+			},
+			duration : 2000,
+		});
+
+		positionTransition = new glam.Transition({
+			target: cube.transform.position,
+			to : {
+				y : 1.5,
+			},
+			duration : 1000,
+			easing : TWEEN.Easing.Quadratic.InOut,
+		});
+		
+		group.addComponent(colorTransition);
+		group.addComponent(positionTransition);
+		
+		dirlight = new glam.Object;
+		dirlight.addComponent(new glam.DirectionalLight);
+		dirlight.transform.position.z = 20;
+		root.addChild(dirlight);
+		
+		app.addObject(root);
+
+		app.run();
+	}
+	);
+
+	function createCube() {	
+		var o = new glam.Object;
+
+		o.transform.rotation.x = Math.PI / 6;
+		
+		var visual = new glam.Visual(
+				{ geometry: new THREE.BoxGeometry(2, 2, 2),
+					material: new THREE.MeshPhongMaterial({color:0xffffff})
+				});
+
+		
+		o.addComponent(visual);
+
+		return o;
+	}
+
+	function onPickerMouseOver(event)
+	{
+		// reset
+		cube.visuals[0].material.color.setRGB(1, 1, 1);
+		cube.transform.position.y = 0;
+
+		colorTransition.start();
+		positionTransition.start();
+	}
+		
+	function onPickerMouseOut(event)
+	{
+		colorTransition.stop();
+	}
+
+	function onPickerMouseDown(event)
+	{
+	}
+
+	function onPickerMouseUp(event)
+	{
+	}
+	
+	</script>
+	
+</body>
+</html>
