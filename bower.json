@@ -28,6 +28,10 @@
     "shaders",
     "demos",
     "css",
-    "javascripts"
+    "javascripts",
+    "*.html",
+    "params.json",
+    "README.md",
+    "server"
   ]
 }
