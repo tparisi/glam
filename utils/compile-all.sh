@@ -1,4 +1,4 @@
-Echo "Compiling debug..."
+echo "Compiling debug..."
 ./compile-debug.sh
-Echo "Compiling min..."
+echo "Compiling min..."
 ./compile-min.sh

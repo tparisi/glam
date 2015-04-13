@@ -19,6 +19,9 @@
  * global <code>CLOSURE_NO_DEPS</code> is set to true.  This allows projects to
  * include their own deps file(s) from different locations.
  *
+ * @author arv@google.com (Erik Arvidsson)
+ *
+ * @provideGoog
  */
 
 
@@ -30,13 +33,13 @@ var COMPILED = false;
 
 
 /**
- * Base namespace for the Closure library.  Checks to see goog is
- * already defined in the current scope before assigning to prevent
- * clobbering if base.js is loaded more than once.
+ * Base namespace for the Closure library.  Checks to see goog is already
+ * defined in the current scope before assigning to prevent clobbering if
+ * base.js is loaded more than once.
  *
  * @const
  */
-var goog = goog || {}; // Identifies this file as the Closure base.
+var goog = goog || {};
 
 
 /**
@@ -46,116 +49,63 @@ goog.global = this;
 
 
 /**
- * @define {boolean} DEBUG is provided as a convenience so that debugging code
- * that should not be included in a production js_binary can be easily stripped
- * by specifying --define goog.DEBUG=false to the JSCompiler. For example, most
- * toString() methods should be declared inside an "if (goog.DEBUG)" conditional
- * because they are generally used for debugging purposes and it is difficult
- * for the JSCompiler to statically determine whether they are used.
+ * A hook for overriding the define values in uncompiled mode.
+ *
+ * In uncompiled mode, {@code CLOSURE_UNCOMPILED_DEFINES} may be defined before
+ * loading base.js.  If a key is defined in {@code CLOSURE_UNCOMPILED_DEFINES},
+ * {@code goog.define} will use the value instead of the default value.  This
+ * allows flags to be overwritten without compilation (this is normally
+ * accomplished with the compiler's "define" flag).
+ *
+ * Example:
+ * <pre>
+ *   var CLOSURE_UNCOMPILED_DEFINES = {'goog.DEBUG': false};
+ * </pre>
+ *
+ * @type {Object.<string, (string|number|boolean)>|undefined}
  */
-goog.DEBUG = true;
+goog.global.CLOSURE_UNCOMPILED_DEFINES;
 
 
 /**
- * @define {string} LOCALE defines the locale being used for compilation. It is
- * used to select locale specific data to be compiled in js binary. BUILD rule
- * can specify this value by "--define goog.LOCALE=<locale_name>" as JSCompiler
- * option.
+ * A hook for overriding the define values in uncompiled or compiled mode,
+ * like CLOSURE_UNCOMPILED_DEFINES but effective in compiled code.  In
+ * uncompiled code CLOSURE_UNCOMPILED_DEFINES takes precedence.
  *
- * Take into account that the locale code format is important. You should use
- * the canonical Unicode format with hyphen as a delimiter. Language must be
- * lowercase, Language Script - Capitalized, Region - UPPERCASE.
- * There are few examples: pt-BR, en, en-US, sr-Latin-BO, zh-Hans-CN.
+ * Also unlike CLOSURE_UNCOMPILED_DEFINES the values must be number, boolean or
+ * string literals or the compiler will emit an error.
  *
- * See more info about locale codes here:
- * http://www.unicode.org/reports/tr35/#Unicode_Language_and_Locale_Identifiers
+ * While any @define value may be set, only those set with goog.define will be
+ * effective for uncompiled code.
  *
- * For language codes you should use values defined by ISO 693-1. See it here
- * http://www.w3.org/WAI/ER/IG/ert/iso639.htm. There is only one exception from
- * this rule: the Hebrew language. For legacy reasons the old code (iw) should
- * be used instead of the new code (he), see http://wiki/Main/IIISynonyms.
+ * Example:
+ * <pre>
+ *   var CLOSURE_DEFINES = {'goog.DEBUG': false};
+ * </pre>
+ *
+ * @type {Object.<string, (string|number|boolean)>|undefined}
  */
-goog.LOCALE = 'en';  // default to en
+goog.global.CLOSURE_DEFINES;
 
 
 /**
- * Creates object stubs for a namespace.  The presence of one or more
- * goog.provide() calls indicate that the file defines the given
- * objects/namespaces.  Build tools also scan for provide/require statements
- * to discern dependencies, build dependency files (see deps.js), etc.
- * @see goog.require
- * @param {string} name Namespace provided by this file in the form
- *     "goog.package.part".
+ * Returns true if the specified value is not undefined.
+ * WARNING: Do not use this to test if an object has a property. Use the in
+ * operator instead.
+ *
+ * @param {?} val Variable to test.
+ * @return {boolean} Whether variable is defined.
  */
-goog.provide = function(name) {
-  if (!COMPILED) {
-    // Ensure that the same namespace isn't provided twice. This is intended
-    // to teach new developers that 'goog.provide' is effectively a variable
-    // declaration. And when JSCompiler transforms goog.provide into a real
-    // variable declaration, the compiled JS should work the same as the raw
-    // JS--even when the raw JS uses goog.provide incorrectly.
-    if (goog.isProvided_(name)) {
-      throw Error('Namespace "' + name + '" already declared.');
-    }
-    delete goog.implicitNamespaces_[name];
-
-    var namespace = name;
-    while ((namespace = namespace.substring(0, namespace.lastIndexOf('.')))) {
-      if (goog.getObjectByName(namespace)) {
-        break;
-      }
-      goog.implicitNamespaces_[namespace] = true;
-    }
-  }
-
-  goog.exportPath_(name);
+goog.isDef = function(val) {
+  // void 0 always evaluates to undefined and hence we do not need to depend on
+  // the definition of the global variable named 'undefined'.
+  return val !== void 0;
 };
 
 
 /**
- * Marks that the current file should only be used for testing, and never for
- * live code in production.
- * @param {string=} opt_message Optional message to add to the error that's
- *     raised when used in production code.
- */
-goog.setTestOnly = function(opt_message) {
-  if (COMPILED && !goog.DEBUG) {
-    opt_message = opt_message || '';
-    throw Error('Importing test-only code into non-debug environment' +
-                opt_message ? ': ' + opt_message : '.');
-  }
-};
-
-
-if (!COMPILED) {
-
-  /**
-   * Check if the given name has been goog.provided. This will return false for
-   * names that are available only as implicit namespaces.
-   * @param {string} name name of the object to look for.
-   * @return {boolean} Whether the name has been provided.
-   * @private
-   */
-  goog.isProvided_ = function(name) {
-    return !goog.implicitNamespaces_[name] && !!goog.getObjectByName(name);
-  };
-
-  /**
-   * Namespaces implicitly defined by goog.provide. For example,
-   * goog.provide('goog.events.Event') implicitly declares
-   * that 'goog' and 'goog.events' must be namespaces.
-   *
-   * @type {Object}
-   * @private
-   */
-  goog.implicitNamespaces_ = {};
-}
-
-
-/**
- * Builds an object structure for the provided namespace path,
- * ensuring that names that already exist are not overwritten. For
- * example:
+ * Builds an object structure for the provided namespace path, ensuring that
+ * names that already exist are not overwritten. For example:
  * "a.b.c" -> a = {};a.b={};a.b.c={};
  * Used by goog.provide and goog.exportSymbol.
  * @param {string} name name of the object that this file defines.
@@ -195,9 +145,343 @@ goog.exportPath_ = function(name, opt_object, opt_objectToExportTo) {
 
 
 /**
- * Returns an object based on its fully qualified external name.  If you are
- * using a compilation pass that renames property names beware that using this
- * function will not find renamed properties.
+ * Defines a named value. In uncompiled mode, the value is retreived from
+ * CLOSURE_DEFINES or CLOSURE_UNCOMPILED_DEFINES if the object is defined and
+ * has the property specified, and otherwise used the defined defaultValue.
+ * When compiled the default can be overridden using the compiler
+ * options or the value set in the CLOSURE_DEFINES object.
+ *
+ * @param {string} name The distinguished name to provide.
+ * @param {string|number|boolean} defaultValue
+ */
+goog.define = function(name, defaultValue) {
+  var value = defaultValue;
+  if (!COMPILED) {
+    if (goog.global.CLOSURE_UNCOMPILED_DEFINES &&
+        Object.prototype.hasOwnProperty.call(
+            goog.global.CLOSURE_UNCOMPILED_DEFINES, name)) {
+      value = goog.global.CLOSURE_UNCOMPILED_DEFINES[name];
+    } else if (goog.global.CLOSURE_DEFINES &&
+        Object.prototype.hasOwnProperty.call(
+            goog.global.CLOSURE_DEFINES, name)) {
+      value = goog.global.CLOSURE_DEFINES[name];
+    }
+  }
+  goog.exportPath_(name, value);
+};
+
+
+/**
+ * @define {boolean} DEBUG is provided as a convenience so that debugging code
+ * that should not be included in a production js_binary can be easily stripped
+ * by specifying --define goog.DEBUG=false to the JSCompiler. For example, most
+ * toString() methods should be declared inside an "if (goog.DEBUG)" conditional
+ * because they are generally used for debugging purposes and it is difficult
+ * for the JSCompiler to statically determine whether they are used.
+ */
+goog.DEBUG = true;
+
+
+/**
+ * @define {string} LOCALE defines the locale being used for compilation. It is
+ * used to select locale specific data to be compiled in js binary. BUILD rule
+ * can specify this value by "--define goog.LOCALE=<locale_name>" as JSCompiler
+ * option.
+ *
+ * Take into account that the locale code format is important. You should use
+ * the canonical Unicode format with hyphen as a delimiter. Language must be
+ * lowercase, Language Script - Capitalized, Region - UPPERCASE.
+ * There are few examples: pt-BR, en, en-US, sr-Latin-BO, zh-Hans-CN.
+ *
+ * See more info about locale codes here:
+ * http://www.unicode.org/reports/tr35/#Unicode_Language_and_Locale_Identifiers
+ *
+ * For language codes you should use values defined by ISO 693-1. See it here
+ * http://www.w3.org/WAI/ER/IG/ert/iso639.htm. There is only one exception from
+ * this rule: the Hebrew language. For legacy reasons the old code (iw) should
+ * be used instead of the new code (he), see http://wiki/Main/IIISynonyms.
+ */
+goog.define('goog.LOCALE', 'en');  // default to en
+
+
+/**
+ * @define {boolean} Whether this code is running on trusted sites.
+ *
+ * On untrusted sites, several native functions can be defined or overridden by
+ * external libraries like Prototype, Datejs, and JQuery and setting this flag
+ * to false forces closure to use its own implementations when possible.
+ *
+ * If your JavaScript can be loaded by a third party site and you are wary about
+ * relying on non-standard implementations, specify
+ * "--define goog.TRUSTED_SITE=false" to the JSCompiler.
+ */
+goog.define('goog.TRUSTED_SITE', true);
+
+
+/**
+ * @define {boolean} Whether a project is expected to be running in strict mode.
+ *
+ * This define can be used to trigger alternate implementations compatible with
+ * running in EcmaScript Strict mode or warn about unavailable functionality.
+ * See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions_and_function_scope/Strict_mode
+ */
+goog.define('goog.STRICT_MODE_COMPATIBLE', false);
+
+
+/**
+ * Creates object stubs for a namespace.  The presence of one or more
+ * goog.provide() calls indicate that the file defines the given
+ * objects/namespaces.  Provided objects must not be null or undefined.
+ * Build tools also scan for provide/require statements
+ * to discern dependencies, build dependency files (see deps.js), etc.
+ * @see goog.require
+ * @param {string} name Namespace provided by this file in the form
+ *     "goog.package.part".
+ */
+goog.provide = function(name) {
+  if (!COMPILED) {
+    // Ensure that the same namespace isn't provided twice.
+    // A goog.module/goog.provide maps a goog.require to a specific file
+    if (goog.isProvided_(name)) {
+      throw Error('Namespace "' + name + '" already declared.');
+    }
+  }
+
+  goog.constructNamespace_(name);
+};
+
+
+/**
+ * @param {string} name Namespace provided by this file in the form
+ *     "goog.package.part".
+ * @param {Object=} opt_obj The object to embed in the namespace.
+ * @private
+ */
+goog.constructNamespace_ = function(name, opt_obj) {
+  if (!COMPILED) {
+    delete goog.implicitNamespaces_[name];
+
+    var namespace = name;
+    while ((namespace = namespace.substring(0, namespace.lastIndexOf('.')))) {
+      if (goog.getObjectByName(namespace)) {
+        break;
+      }
+      goog.implicitNamespaces_[namespace] = true;
+    }
+  }
+
+  goog.exportPath_(name, opt_obj);
+};
+
+
+/**
+ * goog.module serves two purposes:
+ * - marks a file that must be loaded as a module
+ * - reserves a namespace (it can not also be goog.provided)
+ * and has three requirements:
+ * - goog.module may not be used in the same file as goog.provide.
+ * - goog.module must be the first statement in the file.
+ * - only one goog.module is allowed per file.
+ * When a goog.module annotated file is loaded, it is loaded enclosed in
+ * a strict function closure. This means that:
+ * - any variable declared in a goog.module file are private to the file,
+ * not global. Although the compiler is expected to inline the module.
+ * - The code must obey all the rules of "strict" JavaScript.
+ * - the file will be marked as "use strict"
+ *
+ * NOTE: unlike goog.provide, goog.module does not declare any symbols by
+ * itself.
+ *
+ * @param {string} name Namespace provided by this file in the form
+ *     "goog.package.part", is expected but not required.
+ */
+goog.module = function(name) {
+  if (!goog.isString(name) || !name) {
+    throw Error('Invalid module identifier');
+  }
+  if (!goog.isInModuleLoader_()) {
+    throw Error('Module ' + name + ' has been loaded incorrectly.');
+  }
+  if (goog.moduleLoaderState_.moduleName) {
+    throw Error('goog.module may only be called once per module.');
+  }
+
+  // Store the module name for the loader.
+  goog.moduleLoaderState_.moduleName = name;
+  if (!COMPILED) {
+    // Ensure that the same namespace isn't provided twice.
+    // A goog.module/goog.provide maps a goog.require to a specific file
+    if (goog.isProvided_(name)) {
+      throw Error('Namespace "' + name + '" already declared.');
+    }
+    delete goog.implicitNamespaces_[name];
+  }
+};
+
+
+/**
+ * @param {string} name The module identifier.
+ * @return {?} The module exports for an already loaded module or null.
+ *
+ * Note: This is not an alternative to goog.require, it does not
+ * indicate a hard dependency, instead it is used to indicate
+ * an optional dependency or to access the exports of a module
+ * that has already been loaded.
+ */
+goog.module.get = function(name) {
+  return goog.module.getInternal_(name);
+};
+
+
+/**
+ * @param {string} name The module identifier.
+ * @return {?} The module exports for an already loaded module or null.
+ * @private
+ */
+goog.module.getInternal_ = function(name) {
+  if (!COMPILED) {
+    if (goog.isProvided_(name)) {
+      // goog.require only return a value with-in goog.module files.
+      return name in goog.loadedModules_ ?
+          goog.loadedModules_[name] :
+          goog.getObjectByName(name);
+    } else {
+      return null;
+    }
+  }
+};
+
+
+/**
+ * @private {?{
+ *   moduleName: (string|undefined),
+ *   declareTestMethods: boolean
+ * }}
+ */
+goog.moduleLoaderState_ = null;
+
+
+/**
+ * @private
+ * @return {boolean} Whether a goog.module is currently being initialized.
+ */
+goog.isInModuleLoader_ = function() {
+  return goog.moduleLoaderState_ != null;
+};
+
+
+/**
+ * Indicate that a module's exports that are known test methods should
+ * be copied to the global object.  This makes the test methods visible to
+ * test runners that inspect the global object.
+ *
+ * TODO(johnlenz): Make the test framework aware of goog.module so
+ * that this isn't necessary. Alternately combine this with goog.setTestOnly
+ * to minimize boiler plate.
+ */
+goog.module.declareTestMethods = function() {
+  if (!goog.isInModuleLoader_()) {
+    throw new Error('goog.module.declareTestMethods must be called from ' +
+        'within a goog.module');
+  }
+  goog.moduleLoaderState_.declareTestMethods = true;
+};
+
+
+/**
+ * Provide the module's exports as a globally accessible object under the
+ * module's declared name.  This is intended to ease migration to goog.module
+ * for files that have existing usages.
+ */
+goog.module.declareLegacyNamespace = function() {
+  if (!COMPILED && !goog.isInModuleLoader_()) {
+    throw new Error('goog.module.declareLegacyNamespace must be called from ' +
+        'within a goog.module');
+  }
+  if (!COMPILED && !goog.moduleLoaderState_.moduleName) {
+    throw Error('goog.module must be called prior to ' +
+        'goog.module.declareLegacyNamespace.');
+  }
+  goog.moduleLoaderState_.declareLegacyNamespace = true;
+};
+
+
+/**
+ * Marks that the current file should only be used for testing, and never for
+ * live code in production.
+ *
+ * In the case of unit tests, the message may optionally be an exact namespace
+ * for the test (e.g. 'goog.stringTest'). The linter will then ignore the extra
+ * provide (if not explicitly defined in the code).
+ *
+ * @param {string=} opt_message Optional message to add to the error that's
+ *     raised when used in production code.
+ */
+goog.setTestOnly = function(opt_message) {
+  if (COMPILED && !goog.DEBUG) {
+    opt_message = opt_message || '';
+    throw Error('Importing test-only code into non-debug environment' +
+                (opt_message ? ': ' + opt_message : '.'));
+  }
+};
+
+
+/**
+ * Forward declares a symbol. This is an indication to the compiler that the
+ * symbol may be used in the source yet is not required and may not be provided
+ * in compilation.
+ *
+ * The most common usage of forward declaration is code that takes a type as a
+ * function parameter but does not need to require it. By forward declaring
+ * instead of requiring, no hard dependency is made, and (if not required
+ * elsewhere) the namespace may never be required and thus, not be pulled
+ * into the JavaScript binary. If it is required elsewhere, it will be type
+ * checked as normal.
+ *
+ *
+ * @param {string} name The namespace to forward declare in the form of
+ *     "goog.package.part".
+ */
+goog.forwardDeclare = function(name) {};
+
+
+if (!COMPILED) {
+
+  /**
+   * Check if the given name has been goog.provided. This will return false for
+   * names that are available only as implicit namespaces.
+   * @param {string} name name of the object to look for.
+   * @return {boolean} Whether the name has been provided.
+   * @private
+   */
+  goog.isProvided_ = function(name) {
+    return (name in goog.loadedModules_) ||
+        (!goog.implicitNamespaces_[name] &&
+            goog.isDefAndNotNull(goog.getObjectByName(name)));
+  };
+
+  /**
+   * Namespaces implicitly defined by goog.provide. For example,
+   * goog.provide('goog.events.Event') implicitly declares that 'goog' and
+   * 'goog.events' must be namespaces.
+   *
+   * @type {Object.<string, (boolean|undefined)>}
+   * @private
+   */
+  goog.implicitNamespaces_ = {'goog.module': true};
+
+  // NOTE: We add goog.module as an implicit namespace as goog.module is defined
+  // here and because the existing module package has not been moved yet out of
+  // the goog.module namespace. This satisifies both the debug loader and
+  // ahead-of-time dependency management.
+}
+
+
+/**
+ * Returns an object based on its fully qualified external name.  The object
+ * is not found if null or undefined.  If you are using a compilation pass that
+ * renames property names beware that using this function will not find renamed
+ * properties.
  *
  * @param {string} name The fully qualified name.
  * @param {Object=} opt_obj The object within which to look; default is
@@ -237,22 +521,21 @@ goog.globalize = function(obj, opt_global) {
 /**
  * Adds a dependency from a file to the files it requires.
  * @param {string} relPath The path to the js file.
- * @param {Array} provides An array of strings with the names of the objects
- *                         this file provides.
- * @param {Array} requires An array of strings with the names of the objects
- *                         this file requires.
+ * @param {!Array.<string>} provides An array of strings with
+ *     the names of the objects this file provides.
+ * @param {!Array.<string>} requires An array of strings with
+ *     the names of the objects this file requires.
+ * @param {boolean=} opt_isModule Whether this dependency must be loaded as
+ *     a module as declared by goog.module.
  */
-goog.addDependency = function(relPath, provides, requires) {
-  if (!COMPILED) {
+goog.addDependency = function(relPath, provides, requires, opt_isModule) {
+  if (goog.DEPENDENCIES_ENABLED) {
     var provide, require;
     var path = relPath.replace(/\\/g, '/');
     var deps = goog.dependencies_;
     for (var i = 0; provide = provides[i]; i++) {
       deps.nameToPath[provide] = path;
-      if (!(path in deps.pathToNames)) {
-        deps.pathToNames[path] = {};
-      }
-      deps.pathToNames[path][provide] = true;
+      deps.pathIsModule[path] = !!opt_isModule;
     }
     for (var j = 0; require = requires[j]; j++) {
       if (!(path in deps.requires)) {
@@ -266,17 +549,17 @@ goog.addDependency = function(relPath, provides, requires) {
 
 
 
-// NOTE(user): The debug DOM loader was included in base.js as an orignal
-// way to do "debug-mode" development.  The dependency system can sometimes
-// be confusing, as can the debug DOM loader's asyncronous nature.
+// NOTE(nnaze): The debug DOM loader was included in base.js as an original way
+// to do "debug-mode" development.  The dependency system can sometimes be
+// confusing, as can the debug DOM loader's asynchronous nature.
 //
-// With the DOM loader, a call to goog.require() is not blocking -- the
-// script will not load until some point after the current script.  If a
-// namespace is needed at runtime, it needs to be defined in a previous
-// script, or loaded via require() with its registered dependencies.
+// With the DOM loader, a call to goog.require() is not blocking -- the script
+// will not load until some point after the current script.  If a namespace is
+// needed at runtime, it needs to be defined in a previous script, or loaded via
+// require() with its registered dependencies.
 // User-defined namespaces may need their own deps file.  See http://go/js_deps,
 // http://go/genjsdeps, or, externally, DepsWriter.
-// http://code.google.com/closure/library/docs/depswriter.html
+// https://developers.google.com/closure/library/docs/depswriter
 //
 // Because of legacy clients, the DOM loader can't be easily removed from
 // base.js.  Work is being done to make it disableable or replaceable for
@@ -294,29 +577,40 @@ goog.addDependency = function(relPath, provides, requires) {
  * provided (and depend on the fact that some outside tool correctly ordered
  * the script).
  */
-goog.ENABLE_DEBUG_LOADER = true;
+goog.define('goog.ENABLE_DEBUG_LOADER', true);
 
 
 /**
- * Implements a system for the dynamic resolution of dependencies
- * that works in parallel with the BUILD system. Note that all calls
- * to goog.require will be stripped by the JSCompiler when the
- * --closure_pass option is used.
+ * @param {string} msg
+ * @private
+ */
+goog.logToConsole_ = function(msg) {
+  if (goog.global.console) {
+    goog.global.console['error'](msg);
+  }
+};
+
+
+/**
+ * Implements a system for the dynamic resolution of dependencies that works in
+ * parallel with the BUILD system. Note that all calls to goog.require will be
+ * stripped by the JSCompiler when the --closure_pass option is used.
  * @see goog.provide
- * @param {string} name Namespace to include (as was given in goog.provide())
- *     in the form "goog.package.part".
+ * @param {string} name Namespace to include (as was given in goog.provide()) in
+ *     the form "goog.package.part".
+ * @return {?} If called within a goog.module file, the associated namespace or
+ *     module otherwise null.
  */
 goog.require = function(name) {
 
-  // if the object already exists we do not need do do anything
-  // TODO(user): If we start to support require based on file name this has
-  //            to change
-  // TODO(user): If we allow goog.foo.* this has to change
-  // TODO(user): If we implement dynamic load after page load we should probably
-  //            not remove this code for the compiled output
+  // If the object already exists we do not need do do anything.
   if (!COMPILED) {
     if (goog.isProvided_(name)) {
-      return;
+      if (goog.isInModuleLoader_()) {
+        return goog.module.getInternal_(name);
+      } else {
+        return null;
+      }
     }
 
     if (goog.ENABLE_DEBUG_LOADER) {
@@ -324,24 +618,20 @@ goog.require = function(name) {
       if (path) {
         goog.included_[path] = true;
         goog.writeScripts_();
-        return;
+        return null;
       }
     }
 
     var errorMessage = 'goog.require could not find: ' + name;
-    if (goog.global.console) {
-      goog.global.console['error'](errorMessage);
-    }
+    goog.logToConsole_(errorMessage);
 
-
-      throw Error(errorMessage);
-
+    throw Error(errorMessage);
   }
 };
 
 
 /**
- * Path for included scripts
+ * Path for included scripts.
  * @type {string}
  */
 goog.basePath = '';
@@ -355,8 +645,7 @@ goog.global.CLOSURE_BASE_PATH;
 
 
 /**
- * Whether to write out Closure's deps file. By default,
- * the deps are written.
+ * Whether to write out Closure's deps file. By default, the deps are written.
  * @type {boolean|undefined}
  */
 goog.global.CLOSURE_NO_DEPS;
@@ -370,6 +659,7 @@ goog.global.CLOSURE_NO_DEPS;
  *
  * The function is passed the script source, which is a relative URI. It should
  * return true if the script was imported, false otherwise.
+ * @type {(function(string): boolean)|undefined}
  */
 goog.global.CLOSURE_IMPORT_SCRIPT;
 
@@ -384,30 +674,29 @@ goog.nullFunction = function() {};
 /**
  * The identity function. Returns its first argument.
  *
- * @param {...*} var_args The arguments of the function.
- * @return {*} The first argument.
+ * @param {*=} opt_returnValue The single value that will be returned.
+ * @param {...*} var_args Optional trailing arguments. These are ignored.
+ * @return {?} The first argument. We can't know the type -- just pass it along
+ *      without type.
  * @deprecated Use goog.functions.identity instead.
  */
-goog.identityFunction = function(var_args) {
-  return arguments[0];
+goog.identityFunction = function(opt_returnValue, var_args) {
+  return opt_returnValue;
 };
 
 
 /**
  * When defining a class Foo with an abstract method bar(), you can do:
- *
  * Foo.prototype.bar = goog.abstractMethod
  *
- * Now if a subclass of Foo fails to override bar(), an error
- * will be thrown when bar() is invoked.
+ * Now if a subclass of Foo fails to override bar(), an error will be thrown
+ * when bar() is invoked.
  *
- * Note: This does not take the name of the function to override as
- * an argument because that would make it more difficult to obfuscate
- * our JavaScript code.
+ * Note: This does not take the name of the function to override as an argument
+ * because that would make it more difficult to obfuscate our JavaScript code.
  *
  * @type {!Function}
- * @throws {Error} when invoked to indicate the method should be
- *   overridden.
+ * @throws {Error} when invoked to indicate the method should be overridden.
  */
 goog.abstractMethod = function() {
   throw Error('unimplemented abstract method');
@@ -415,42 +704,99 @@ goog.abstractMethod = function() {
 
 
 /**
- * Adds a {@code getInstance} static method that always return the same instance
- * object.
+ * Adds a {@code getInstance} static method that always returns the same
+ * instance object.
  * @param {!Function} ctor The constructor for the class to add the static
  *     method to.
  */
 goog.addSingletonGetter = function(ctor) {
   ctor.getInstance = function() {
-    return ctor.instance_ || (ctor.instance_ = new ctor());
+    if (ctor.instance_) {
+      return ctor.instance_;
+    }
+    if (goog.DEBUG) {
+      // NOTE: JSCompiler can't optimize away Array#push.
+      goog.instantiatedSingletons_[goog.instantiatedSingletons_.length] = ctor;
+    }
+    return ctor.instance_ = new ctor;
   };
 };
 
 
-if (!COMPILED && goog.ENABLE_DEBUG_LOADER) {
+/**
+ * All singleton classes that have been instantiated, for testing. Don't read
+ * it directly, use the {@code goog.testing.singleton} module. The compiler
+ * removes this variable if unused.
+ * @type {!Array.<!Function>}
+ * @private
+ */
+goog.instantiatedSingletons_ = [];
+
+
+/**
+ * @define {boolean} Whether to load goog.modules using {@code eval} when using
+ * the debug loader.  This provides a better debugging experience as the
+ * source is unmodified and can be edited using Chrome Workspaces or
+ * similiar.  However in some environments the use of {@code eval} is banned
+ * so we provide an alternative.
+ */
+goog.define('goog.LOAD_MODULE_USING_EVAL', true);
+
+
+/**
+ * @define {boolean} Whether the exports of goog.modules should be sealed when
+ * possible.
+ */
+goog.define('goog.SEAL_MODULE_EXPORTS', goog.DEBUG);
+
+
+/**
+ * The registry of initialized modules:
+ * the module identifier to module exports map.
+ * @private @const {Object.<string, ?>}
+ */
+goog.loadedModules_ = {};
+
+
+/**
+ * True if goog.dependencies_ is available.
+ * @const {boolean}
+ */
+goog.DEPENDENCIES_ENABLED = !COMPILED && goog.ENABLE_DEBUG_LOADER;
+
+
+if (goog.DEPENDENCIES_ENABLED) {
   /**
-   * Object used to keep track of urls that have already been added. This
-   * record allows the prevention of circular dependencies.
-   * @type {Object}
-   * @private
+   * Object used to keep track of urls that have already been added. This record
+   * allows the prevention of circular dependencies.
+   * @private {!Object.<string, boolean>}
    */
   goog.included_ = {};
 
 
   /**
    * This object is used to keep track of dependencies and other data that is
-   * used for loading scripts
+   * used for loading scripts.
    * @private
-   * @type {Object}
+   * @type {{
+   *   pathIsModule: !Object.<string, boolean>,
+   *   nameToPath: !Object.<string, string>,
+   *   requires: !Object.<string, !Object.<string, boolean>>,
+   *   visited: !Object.<string, boolean>,
+   *   written: !Object.<string, boolean>
+   * }}
    */
   goog.dependencies_ = {
-    pathToNames: {}, // 1 to many
+    pathIsModule: {}, // 1 to 1
+
     nameToPath: {}, // 1 to 1
+
     requires: {}, // 1 to many
-    // used when resolving dependencies to prevent us from
-    // visiting the file twice
+
+    // Used when resolving dependencies to prevent us from visiting file twice.
     visited: {},
-    written: {} // used to keep track of script files we have written
+
+    written: {} // Used to keep track of script files we have written.
   };
 
 
@@ -467,7 +813,7 @@ if (!COMPILED && goog.ENABLE_DEBUG_LOADER) {
 
 
   /**
-   * Tries to detect the base path of the base.js script that bootstraps Closure
+   * Tries to detect the base path of base.js script that bootstraps Closure.
    * @private
    */
   goog.findBasePath_ = function() {
@@ -482,7 +828,8 @@ if (!COMPILED && goog.ENABLE_DEBUG_LOADER) {
     // Search backwards since the current script is in almost all cases the one
     // that has base.js.
     for (var i = scripts.length - 1; i >= 0; --i) {
-      var src = scripts[i].src;
+      var script = /** @type {!HTMLScriptElement} */ (scripts[i]);
+      var src = script.src;
       var qmark = src.lastIndexOf('?');
       var l = qmark == -1 ? src.length : qmark;
       if (src.substr(l - 7, 7) == 'base.js') {
@@ -497,14 +844,199 @@ if (!COMPILED && goog.ENABLE_DEBUG_LOADER) {
    * Imports a script if, and only if, that script hasn't already been imported.
    * (Must be called at execution time)
    * @param {string} src Script source.
+   * @param {string=} opt_sourceText The optionally source text to evaluate
    * @private
    */
-  goog.importScript_ = function(src) {
+  goog.importScript_ = function(src, opt_sourceText) {
     var importScript = goog.global.CLOSURE_IMPORT_SCRIPT ||
         goog.writeScriptTag_;
-    if (!goog.dependencies_.written[src] && importScript(src)) {
+    if (importScript(src, opt_sourceText)) {
       goog.dependencies_.written[src] = true;
     }
+  };
+
+
+  /** @const @private {boolean} */
+  goog.IS_OLD_IE_ = goog.global.document &&
+      goog.global.document.all && !goog.global.atob;
+
+
+  /**
+   * Given a URL initiate retrieval and execution of the module.
+   * @param {string} src Script source URL.
+   * @private
+   */
+  goog.importModule_ = function(src) {
+    // In an attempt to keep browsers from timing out loading scripts using
+    // synchronous XHRs, put each load in its own script block.
+    var bootstrap = 'goog.retrieveAndExecModule_("' + src + '");';
+
+    if (goog.importScript_('', bootstrap)) {
+      goog.dependencies_.written[src] = true;
+    }
+  };
+
+
+  /** @private {Array.<string>} */
+  goog.queuedModules_ = [];
+
+
+  /**
+   * Retrieve and execute a module.
+   * @param {string} src Script source URL.
+   * @private
+   */
+  goog.retrieveAndExecModule_ = function(src) {
+    // Canonicalize the path, removing any /./ or /../ since Chrome's debugging
+    // console doesn't auto-canonicalize XHR loads as it does <script> srcs.
+    var separator;
+    while ((separator = src.indexOf('/./')) != -1) {
+      src = src.substr(0, separator) + src.substr(separator + '/.'.length);
+    }
+    while ((separator = src.indexOf('/../')) != -1) {
+      var previousComponent = src.lastIndexOf('/', separator - 1);
+      src = src.substr(0, previousComponent) +
+          src.substr(separator + '/..'.length);
+    }
+
+    var importScript = goog.global.CLOSURE_IMPORT_SCRIPT ||
+        goog.writeScriptTag_;
+
+    var scriptText = null;
+
+    var xhr = new goog.global['XMLHttpRequest']();
+
+    /** @this {Object} */
+    xhr.onload = function() {
+      scriptText = this.responseText;
+    };
+    xhr.open('get', src, false);
+    xhr.send();
+
+    scriptText = xhr.responseText;
+
+    if (scriptText != null) {
+      var execModuleScript = goog.wrapModule_(src, scriptText);
+      var isOldIE = goog.IS_OLD_IE_;
+      if (isOldIE) {
+        goog.queuedModules_.push(execModuleScript);
+      } else {
+        importScript(src, execModuleScript);
+      }
+      goog.dependencies_.written[src] = true;
+    } else {
+      throw new Error('load of ' + src + 'failed');
+    }
+  };
+
+
+  /**
+   * Return an appropriate module text. Suitable to insert into
+   * a script tag (that is unescaped).
+   * @param {string} srcUrl
+   * @param {string} scriptText
+   * @return {string}
+   * @private
+   */
+  goog.wrapModule_ = function(srcUrl, scriptText) {
+    if (!goog.LOAD_MODULE_USING_EVAL || !goog.isDef(goog.global.JSON)) {
+      return '' +
+          'goog.loadModule(function(exports) {' +
+          '"use strict";' +
+          scriptText +
+          '\n' + // terminate any trailing single line comment.
+          ';return exports' +
+          '});' +
+          '\n//# sourceURL=' + srcUrl + '\n';
+    } else {
+      return '' +
+          'goog.loadModule(' +
+          goog.global.JSON.stringify(
+              scriptText + '\n//# sourceURL=' + srcUrl + '\n') +
+          ');';
+    }
+  };
+
+
+  /**
+   * Load any deferred goog.module loads.
+   * @private
+   */
+  goog.loadQueuedModules_ = function() {
+    var count = goog.queuedModules_.length;
+    if (count > 0) {
+      var queue = goog.queuedModules_;
+      goog.queuedModules_ = [];
+      for (var i = 0; i < count; i++) {
+        var entry = queue[i];
+        goog.globalEval(entry);
+      }
+    }
+  };
+
+
+  /**
+   * @param {function(?):?|string} moduleDef The module definition.
+   */
+  goog.loadModule = function(moduleDef) {
+    // NOTE: we allow function definitions to be either in the from
+    // of a string to eval (which keeps the original source intact) or
+    // in a eval forbidden environment (CSP) we allow a function definition
+    // which in its body must call {@code goog.module}, and return the exports
+    // of the module.
+    try {
+      goog.moduleLoaderState_ = {
+        moduleName: undefined, declareTestMethods: false};
+      var exports;
+      if (goog.isFunction(moduleDef)) {
+        exports = moduleDef.call(goog.global, {});
+      } else if (goog.isString(moduleDef)) {
+        exports = goog.loadModuleFromSource_.call(goog.global, moduleDef);
+      } else {
+        throw Error('Invalid module definition');
+      }
+
+      var moduleName = goog.moduleLoaderState_.moduleName;
+      if (!goog.isString(moduleName) || !moduleName) {
+        throw Error('Invalid module name \"' + moduleName + '\"');
+      }
+
+      // Don't seal legacy namespaces as they may be uses as a parent of
+      // another namespace
+      if (goog.moduleLoaderState_.declareLegacyNamespace) {
+        goog.constructNamespace_(moduleName, exports);
+      } else if (goog.SEAL_MODULE_EXPORTS && Object.seal) {
+        Object.seal(exports);
+      }
+
+      goog.loadedModules_[moduleName] = exports;
+      if (goog.moduleLoaderState_.declareTestMethods) {
+        for (var entry in exports) {
+          if (entry.indexOf('test', 0) === 0 ||
+              entry == 'tearDown' ||
+              entry == 'setUp' ||
+              entry == 'setUpPage' ||
+              entry == 'tearDownPage') {
+            goog.global[entry] = exports[entry];
+          }
+        }
+      }
+    } finally {
+      goog.moduleLoaderState_ = null;
+    }
+  };
+
+
+  /**
+   * @private @const {function(string):?}
+   */
+  goog.loadModuleFromSource_ = function() {
+    // NOTE: we avoid declaring parameters or local variables here to avoid
+    // masking globals or leaking values into the module definition.
+    'use strict';
+    var exports = {};
+    eval(arguments[0]);
+    return exports;
   };
 
 
@@ -512,15 +1044,51 @@ if (!COMPILED && goog.ENABLE_DEBUG_LOADER) {
    * The default implementation of the import function. Writes a script tag to
    * import the script.
    *
-   * @param {string} src The script source.
+   * @param {string} src The script url.
+   * @param {string=} opt_sourceText The optionally source text to evaluate
    * @return {boolean} True if the script was imported, false otherwise.
    * @private
    */
-  goog.writeScriptTag_ = function(src) {
+  goog.writeScriptTag_ = function(src, opt_sourceText) {
     if (goog.inHtmlDocument_()) {
       var doc = goog.global.document;
-      doc.write(
-          '<script type="text/javascript" src="' + src + '"></' + 'script>');
+
+      // If the user tries to require a new symbol after document load,
+      // something has gone terribly wrong. Doing a document.write would
+      // wipe out the page.
+      if (doc.readyState == 'complete') {
+        // Certain test frameworks load base.js multiple times, which tries
+        // to write deps.js each time. If that happens, just fail silently.
+        // These frameworks wipe the page between each load of base.js, so this
+        // is OK.
+        var isDeps = /\bdeps.js$/.test(src);
+        if (isDeps) {
+          return false;
+        } else {
+          throw Error('Cannot write "' + src + '" after document load');
+        }
+      }
+
+      var isOldIE = goog.IS_OLD_IE_;
+
+      if (opt_sourceText === undefined) {
+        if (!isOldIE) {
+          doc.write(
+              '<script type="text/javascript" src="' +
+                  src + '"></' + 'script>');
+        } else {
+          var state = " onreadystatechange='goog.onScriptLoad_(this, " +
+              ++goog.lastNonModuleScriptIndex_ + ")' ";
+          doc.write(
+              '<script type="text/javascript" src="' +
+                  src + '"' + state + '></' + 'script>');
+        }
+      } else {
+        doc.write(
+            '<script type="text/javascript">' +
+            opt_sourceText +
+            '</' + 'script>');
+      }
       return true;
     } else {
       return false;
@@ -528,24 +1096,46 @@ if (!COMPILED && goog.ENABLE_DEBUG_LOADER) {
   };
 
 
+  /** @private {number} */
+  goog.lastNonModuleScriptIndex_ = 0;
+
+
+  /**
+   * A readystatechange handler for legacy IE
+   * @param {HTMLScriptElement} script
+   * @param {number} scriptIndex
+   * @return {boolean}
+   * @private
+   */
+  goog.onScriptLoad_ = function(script, scriptIndex) {
+    // for now load the modules when we reach the last script,
+    // later allow more inter-mingling.
+    if (script.readyState == 'complete' &&
+        goog.lastNonModuleScriptIndex_ == scriptIndex) {
+      goog.loadQueuedModules_();
+    }
+    return true;
+  };
+
   /**
    * Resolves dependencies based on the dependencies added using addDependency
    * and calls importScript_ in the correct order.
    * @private
    */
   goog.writeScripts_ = function() {
-    // the scripts we need to write this time
+    /** @type {!Array.<string>} The scripts we need to write this time. */
     var scripts = [];
     var seenScript = {};
     var deps = goog.dependencies_;
 
+    /** @param {string} path */
     function visitNode(path) {
       if (path in deps.written) {
         return;
       }
 
-      // we have already visited this one. We can get here if we have cyclic
-      // dependencies
+      // We have already visited this one. We can get here if we have cyclic
+      // dependencies.
       if (path in deps.visited) {
         if (!(path in seenScript)) {
           seenScript[path] = true;
@@ -582,13 +1172,36 @@ if (!COMPILED && goog.ENABLE_DEBUG_LOADER) {
       }
     }
 
+    // record that we are going to load all these scripts.
     for (var i = 0; i < scripts.length; i++) {
-      if (scripts[i]) {
-        goog.importScript_(goog.basePath + scripts[i]);
+      var path = scripts[i];
+      goog.dependencies_.written[path] = true;
+    }
+
+    // If a module is loaded synchronously then we need to
+    // clear the current inModuleLoader value, and restore it when we are
+    // done loading the current "requires".
+    var moduleState = goog.moduleLoaderState_;
+    goog.moduleLoaderState_ = null;
+
+    var loadingModule = false;
+    for (var i = 0; i < scripts.length; i++) {
+      var path = scripts[i];
+      if (path) {
+        if (!deps.pathIsModule[path]) {
+          goog.importScript_(goog.basePath + path);
+        } else {
+          loadingModule = true;
+          goog.importModule_(goog.basePath + path);
+        }
       } else {
+        goog.moduleLoaderState_ = moduleState;
         throw Error('Undefined script input');
       }
     }
+
+    // restore the current "module loading state"
+    goog.moduleLoaderState_ = moduleState;
   };
 
 
@@ -676,7 +1289,7 @@ goog.typeOf = function(value) {
       if ((className == '[object Array]' ||
            // In IE all non value types are wrapped as objects across window
            // boundaries (not iframe though) so we have to do object detection
-           // for this edge case
+           // for this edge case.
            typeof value.length == 'number' &&
            typeof value.splice != 'undefined' &&
            typeof value.propertyIsEnumerable != 'undefined' &&
@@ -706,17 +1319,15 @@ goog.typeOf = function(value) {
         return 'function';
       }
 
-
     } else {
       return 'null';
     }
 
   } else if (s == 'function' && typeof value.call == 'undefined') {
-    // In Safari typeof nodeList returns 'function', and on Firefox
-    // typeof behaves similarly for HTML{Applet,Embed,Object}Elements
-    // and RegExps.  We would like to return object for those and we can
-    // detect an invalid function by making sure that the function
-    // object has a call method.
+    // In Safari typeof nodeList returns 'function', and on Firefox typeof
+    // behaves similarly for HTML{Applet,Embed,Object}, Elements and RegExps. We
+    // would like to return object for those and we can detect an invalid
+    // function by making sure that the function object has a call method.
     return 'object';
   }
   return s;
@@ -724,67 +1335,8 @@ goog.typeOf = function(value) {
 
 
 /**
- * Safe way to test whether a property is enumarable.  It allows testing
- * for enumerable on objects where 'propertyIsEnumerable' is overridden or
- * does not exist (like DOM nodes in IE). Does not use browser native
- * Object.propertyIsEnumerable.
- * @param {Object} object The object to test if the property is enumerable.
- * @param {string} propName The property name to check for.
- * @return {boolean} True if the property is enumarable.
- * @private
- */
-goog.propertyIsEnumerableCustom_ = function(object, propName) {
-  // KJS in Safari 2 is not ECMAScript compatible and lacks crucial methods
-  // such as propertyIsEnumerable.  We therefore use a workaround.
-  // Does anyone know a more efficient work around?
-  if (propName in object) {
-    for (var key in object) {
-      if (key == propName &&
-          Object.prototype.hasOwnProperty.call(object, propName)) {
-        return true;
-      }
-    }
-  }
-  return false;
-};
-
-
-/**
- * Safe way to test whether a property is enumarable.  It allows testing
- * for enumerable on objects where 'propertyIsEnumerable' is overridden or
- * does not exist (like DOM nodes in IE).
- * @param {Object} object The object to test if the property is enumerable.
- * @param {string} propName The property name to check for.
- * @return {boolean} True if the property is enumarable.
- * @private
- */
-goog.propertyIsEnumerable_ = function(object, propName) {
-  // In IE if object is from another window, cannot use propertyIsEnumerable
-  // from this window's Object. Will raise a 'JScript object expected' error.
-  if (object instanceof Object) {
-    return Object.prototype.propertyIsEnumerable.call(object, propName);
-  } else {
-    return goog.propertyIsEnumerableCustom_(object, propName);
-  }
-};
-
-
-/**
- * Returns true if the specified value is not |undefined|.
- * WARNING: Do not use this to test if an object has a property. Use the in
- * operator instead.  Additionally, this function assumes that the global
- * undefined variable has not been redefined.
- * @param {*} val Variable to test.
- * @return {boolean} Whether variable is defined.
- */
-goog.isDef = function(val) {
-  return val !== undefined;
-};
-
-
-/**
- * Returns true if the specified value is |null|
- * @param {*} val Variable to test.
+ * Returns true if the specified value is null.
+ * @param {?} val Variable to test.
  * @return {boolean} Whether variable is null.
  */
 goog.isNull = function(val) {
@@ -793,8 +1345,8 @@ goog.isNull = function(val) {
 
 
 /**
- * Returns true if the specified value is defined and not null
- * @param {*} val Variable to test.
+ * Returns true if the specified value is defined and not null.
+ * @param {?} val Variable to test.
  * @return {boolean} Whether variable is defined and not null.
  */
 goog.isDefAndNotNull = function(val) {
@@ -804,8 +1356,8 @@ goog.isDefAndNotNull = function(val) {
 
 
 /**
- * Returns true if the specified value is an array
- * @param {*} val Variable to test.
+ * Returns true if the specified value is an array.
+ * @param {?} val Variable to test.
  * @return {boolean} Whether variable is an array.
  */
 goog.isArray = function(val) {
@@ -816,20 +1368,22 @@ goog.isArray = function(val) {
 /**
  * Returns true if the object looks like an array. To qualify as array like
  * the value needs to be either a NodeList or an object with a Number length
- * property.
- * @param {*} val Variable to test.
+ * property. As a special case, a function value is not array like, because its
+ * length property is fixed to correspond to the number of expected arguments.
+ * @param {?} val Variable to test.
  * @return {boolean} Whether variable is an array.
  */
 goog.isArrayLike = function(val) {
   var type = goog.typeOf(val);
+  // We do not use goog.isObject here in order to exclude function values.
   return type == 'array' || type == 'object' && typeof val.length == 'number';
 };
 
 
 /**
- * Returns true if the object looks like a Date. To qualify as Date-like
- * the value needs to be an object and have a getFullYear() function.
- * @param {*} val Variable to test.
+ * Returns true if the object looks like a Date. To qualify as Date-like the
+ * value needs to be an object and have a getFullYear() function.
+ * @param {?} val Variable to test.
  * @return {boolean} Whether variable is a like a Date.
  */
 goog.isDateLike = function(val) {
@@ -838,8 +1392,8 @@ goog.isDateLike = function(val) {
 
 
 /**
- * Returns true if the specified value is a string
- * @param {*} val Variable to test.
+ * Returns true if the specified value is a string.
+ * @param {?} val Variable to test.
  * @return {boolean} Whether variable is a string.
  */
 goog.isString = function(val) {
@@ -848,8 +1402,8 @@ goog.isString = function(val) {
 
 
 /**
- * Returns true if the specified value is a boolean
- * @param {*} val Variable to test.
+ * Returns true if the specified value is a boolean.
+ * @param {?} val Variable to test.
  * @return {boolean} Whether variable is boolean.
  */
 goog.isBoolean = function(val) {
@@ -858,8 +1412,8 @@ goog.isBoolean = function(val) {
 
 
 /**
- * Returns true if the specified value is a number
- * @param {*} val Variable to test.
+ * Returns true if the specified value is a number.
+ * @param {?} val Variable to test.
  * @return {boolean} Whether variable is a number.
  */
 goog.isNumber = function(val) {
@@ -868,8 +1422,8 @@ goog.isNumber = function(val) {
 
 
 /**
- * Returns true if the specified value is a function
- * @param {*} val Variable to test.
+ * Returns true if the specified value is a function.
+ * @param {?} val Variable to test.
  * @return {boolean} Whether variable is a function.
  */
 goog.isFunction = function(val) {
@@ -878,30 +1432,32 @@ goog.isFunction = function(val) {
 
 
 /**
- * Returns true if the specified value is an object.  This includes arrays
- * and functions.
- * @param {*} val Variable to test.
+ * Returns true if the specified value is an object.  This includes arrays and
+ * functions.
+ * @param {?} val Variable to test.
  * @return {boolean} Whether variable is an object.
  */
 goog.isObject = function(val) {
-  var type = goog.typeOf(val);
-  return type == 'object' || type == 'array' || type == 'function';
+  var type = typeof val;
+  return type == 'object' && val != null || type == 'function';
+  // return Object(val) === val also works, but is slower, especially if val is
+  // not an object.
 };
 
 
 /**
- * Gets a unique ID for an object. This mutates the object so that further
- * calls with the same object as a parameter returns the same value. The unique
- * ID is guaranteed to be unique across the current session amongst objects that
- * are passed into {@code getUid}. There is no guarantee that the ID is unique
- * or consistent across sessions. It is unsafe to generate unique ID for
- * function prototypes.
+ * Gets a unique ID for an object. This mutates the object so that further calls
+ * with the same object as a parameter returns the same value. The unique ID is
+ * guaranteed to be unique across the current session amongst objects that are
+ * passed into {@code getUid}. There is no guarantee that the ID is unique or
+ * consistent across sessions. It is unsafe to generate unique ID for function
+ * prototypes.
  *
  * @param {Object} obj The object to get the unique ID for.
  * @return {number} The unique ID for the object.
  */
 goog.getUid = function(obj) {
-  // TODO(user): Make the type stricter, do not accept null.
+  // TODO(arv): Make the type stricter, do not accept null.
 
   // In Opera window.hasOwnProperty exists but always returns false so we avoid
   // using it. As a consequence the unique ID generated for BaseClass.prototype
@@ -912,16 +1468,29 @@ goog.getUid = function(obj) {
 
 
 /**
+ * Whether the given object is alreay assigned a unique ID.
+ *
+ * This does not modify the object.
+ *
+ * @param {Object} obj The object to check.
+ * @return {boolean} Whether there an assigned unique id for the object.
+ */
+goog.hasUid = function(obj) {
+  return !!obj[goog.UID_PROPERTY_];
+};
+
+
+/**
  * Removes the unique ID from an object. This is useful if the object was
  * previously mutated using {@code goog.getUid} in which case the mutation is
  * undone.
  * @param {Object} obj The object to remove the unique ID field from.
  */
 goog.removeUid = function(obj) {
-  // TODO(user): Make the type stricter, do not accept null.
+  // TODO(arv): Make the type stricter, do not accept null.
 
-  // DOM nodes in IE are not instance of Object and throws exception
-  // for delete. Instead we try to use removeAttribute
+  // In IE, DOM nodes are not instances of Object and throw an exception if we
+  // try to delete.  Instead we try to use removeAttribute.
   if ('removeAttribute' in obj) {
     obj.removeAttribute(goog.UID_PROPERTY_);
   }
@@ -935,12 +1504,11 @@ goog.removeUid = function(obj) {
 
 /**
  * Name for unique ID property. Initialized in a way to help avoid collisions
- * with other closure javascript on the same page.
+ * with other closure JavaScript on the same page.
  * @type {string}
  * @private
  */
-goog.UID_PROPERTY_ = 'closure_uid_' +
-    Math.floor(Math.random() * 2147483648).toString(36);
+goog.UID_PROPERTY_ = 'closure_uid_' + ((Math.random() * 1e9) >>> 0);
 
 
 /**
@@ -1002,30 +1570,17 @@ goog.cloneObject = function(obj) {
 
 
 /**
- * Forward declaration for the clone method. This is necessary until the
- * compiler can better support duck-typing constructs as used in
- * goog.cloneObject.
- *
- * TODO(user): Remove once the JSCompiler can infer that the check for
- * proto.clone is safe in goog.cloneObject.
- *
- * @type {Function}
- */
-Object.prototype.clone;
-
-
-/**
  * A native implementation of goog.bind.
  * @param {Function} fn A function to partially apply.
- * @param {Object|undefined} selfObj Specifies the object which |this| should
+ * @param {Object|undefined} selfObj Specifies the object which this should
  *     point to when the function is run.
- * @param {...*} var_args Additional arguments that are partially
- *     applied to the function.
+ * @param {...*} var_args Additional arguments that are partially applied to the
+ *     function.
  * @return {!Function} A partially-applied form of the function bind() was
  *     invoked as a method of.
  * @private
- * @suppress {deprecated} The compiler thinks that Function.prototype.bind
- *     is deprecated because some people have declared a pure-JS version.
+ * @suppress {deprecated} The compiler thinks that Function.prototype.bind is
+ *     deprecated because some people have declared a pure-JS version.
  *     Only the pure-JS version is truly deprecated.
  */
 goog.bindNative_ = function(fn, selfObj, var_args) {
@@ -1036,10 +1591,10 @@ goog.bindNative_ = function(fn, selfObj, var_args) {
 /**
  * A pure-JS implementation of goog.bind.
  * @param {Function} fn A function to partially apply.
- * @param {Object|undefined} selfObj Specifies the object which |this| should
+ * @param {Object|undefined} selfObj Specifies the object which this should
  *     point to when the function is run.
- * @param {...*} var_args Additional arguments that are partially
- *     applied to the function.
+ * @param {...*} var_args Additional arguments that are partially applied to the
+ *     function.
  * @return {!Function} A partially-applied form of the function bind() was
  *     invoked as a method of.
  * @private
@@ -1069,36 +1624,36 @@ goog.bindJs_ = function(fn, selfObj, var_args) {
 /**
  * Partially applies this function to a particular 'this object' and zero or
  * more arguments. The result is a new function with some arguments of the first
- * function pre-filled and the value of |this| 'pre-specified'.<br><br>
+ * function pre-filled and the value of this 'pre-specified'.
  *
- * Remaining arguments specified at call-time are appended to the pre-
- * specified ones.<br><br>
+ * Remaining arguments specified at call-time are appended to the pre-specified
+ * ones.
  *
- * Also see: {@link #partial}.<br><br>
+ * Also see: {@link #partial}.
  *
  * Usage:
  * <pre>var barMethBound = bind(myFunction, myObj, 'arg1', 'arg2');
  * barMethBound('arg3', 'arg4');</pre>
  *
- * @param {Function} fn A function to partially apply.
- * @param {Object|undefined} selfObj Specifies the object which |this| should
- *     point to when the function is run.
- * @param {...*} var_args Additional arguments that are partially
- *     applied to the function.
+ * @param {?function(this:T, ...)} fn A function to partially apply.
+ * @param {T} selfObj Specifies the object which this should point to when the
+ *     function is run.
+ * @param {...*} var_args Additional arguments that are partially applied to the
+ *     function.
  * @return {!Function} A partially-applied form of the function bind() was
  *     invoked as a method of.
+ * @template T
  * @suppress {deprecated} See above.
  */
 goog.bind = function(fn, selfObj, var_args) {
   // TODO(nicksantos): narrow the type signature.
   if (Function.prototype.bind &&
-      // NOTE(nicksantos): Somebody pulled base.js into the default
-      // Chrome extension environment. This means that for Chrome extensions,
-      // they get the implementation of Function.prototype.bind that
-      // calls goog.bind instead of the native one. Even worse, we don't want
-      // to introduce a circular dependency between goog.bind and
-      // Function.prototype.bind, so we have to hack this to make sure it
-      // works correctly.
+      // NOTE(nicksantos): Somebody pulled base.js into the default Chrome
+      // extension environment. This means that for Chrome extensions, they get
+      // the implementation of Function.prototype.bind that calls goog.bind
+      // instead of the native one. Even worse, we don't want to introduce a
+      // circular dependency between goog.bind and Function.prototype.bind, so
+      // we have to hack this to make sure it works correctly.
       Function.prototype.bind.toString().indexOf('native code') != -1) {
     goog.bind = goog.bindNative_;
   } else {
@@ -1117,17 +1672,17 @@ goog.bind = function(fn, selfObj, var_args) {
  * g(arg3, arg4);
  *
  * @param {Function} fn A function to partially apply.
- * @param {...*} var_args Additional arguments that are partially
- *     applied to fn.
+ * @param {...*} var_args Additional arguments that are partially applied to fn.
  * @return {!Function} A partially-applied form of the function bind() was
  *     invoked as a method of.
  */
 goog.partial = function(fn, var_args) {
   var args = Array.prototype.slice.call(arguments, 1);
   return function() {
-    // Prepend the bound arguments to the current arguments.
-    var newArgs = Array.prototype.slice.call(arguments);
-    newArgs.unshift.apply(newArgs, args);
+    // Clone the array (with slice()) and append additional arguments
+    // to the existing arguments.
+    var newArgs = args.slice();
+    newArgs.push.apply(newArgs, arguments);
     return fn.apply(this, newArgs);
   };
 };
@@ -1157,7 +1712,7 @@ goog.mixin = function(target, source) {
  * @return {number} An integer value representing the number of milliseconds
  *     between midnight, January 1, 1970 and the current time.
  */
-goog.now = Date.now || (function() {
+goog.now = (goog.TRUSTED_SITE && Date.now) || (function() {
   // Unary plus operator converts its operand to a number which in the case of
   // a date is done by calling getTime().
   return +new Date();
@@ -1165,7 +1720,7 @@ goog.now = Date.now || (function() {
 
 
 /**
- * Evals javascript in the global scope.  In IE this uses execScript, other
+ * Evals JavaScript in the global scope.  In IE this uses execScript, other
  * browsers use goog.global.eval. If goog.global.eval does not evaluate in the
  * global scope (for example, in Safari), appends a script tag instead.
  * Throws an exception if neither execScript or eval is defined.
@@ -1218,8 +1773,7 @@ goog.evalWorksForGlobals_ = null;
 /**
  * Optional map of CSS class names to obfuscated names used with
  * goog.getCssName().
- * @type {Object|undefined}
- * @private
+ * @private {!Object.<string, string>|undefined}
  * @see goog.setCssNameMapping
  */
 goog.cssNameMapping_;
@@ -1240,27 +1794,26 @@ goog.cssNameMappingStyle_;
  *
  * This function works in tandem with @see goog.setCssNameMapping.
  *
- * Without any mapping set, the arguments are simple joined with a
- * hyphen and passed through unaltered.
+ * Without any mapping set, the arguments are simple joined with a hyphen and
+ * passed through unaltered.
  *
- * When there is a mapping, there are two possible styles in which
- * these mappings are used. In the BY_PART style, each part (i.e. in
- * between hyphens) of the passed in css name is rewritten according
- * to the map. In the BY_WHOLE style, the full css name is looked up in
- * the map directly. If a rewrite is not specified by the map, the
- * compiler will output a warning.
+ * When there is a mapping, there are two possible styles in which these
+ * mappings are used. In the BY_PART style, each part (i.e. in between hyphens)
+ * of the passed in css name is rewritten according to the map. In the BY_WHOLE
+ * style, the full css name is looked up in the map directly. If a rewrite is
+ * not specified by the map, the compiler will output a warning.
  *
- * When the mapping is passed to the compiler, it will replace calls
- * to goog.getCssName with the strings from the mapping, e.g.
+ * When the mapping is passed to the compiler, it will replace calls to
+ * goog.getCssName with the strings from the mapping, e.g.
  *     var x = goog.getCssName('foo');
  *     var y = goog.getCssName(this.baseClass, 'active');
  *  becomes:
  *     var x= 'foo';
  *     var y = this.baseClass + '-active';
  *
- * If one argument is passed it will be processed, if two are passed
- * only the modifier will be processed, as it is assumed the first
- * argument was generated as a result of calling goog.getCssName.
+ * If one argument is passed it will be processed, if two are passed only the
+ * modifier will be processed, as it is assumed the first argument was generated
+ * as a result of calling goog.getCssName.
  *
  * @param {string} className The class name.
  * @param {string=} opt_modifier A modifier to be appended to the class name.
@@ -1339,7 +1892,7 @@ goog.setCssNameMapping = function(mapping, opt_style) {
  * are made in uncompiled mode.
  *
  * A hook for overriding the CSS name mapping.
- * @type {Object|undefined}
+ * @type {!Object.<string, string>|undefined}
  */
 goog.global.CLOSURE_CSS_NAME_MAPPING;
 
@@ -1352,34 +1905,61 @@ if (!COMPILED && goog.global.CLOSURE_CSS_NAME_MAPPING) {
 
 
 /**
- * Abstract implementation of goog.getMsg for use with localized messages.
+ * Gets a localized message.
+ *
+ * This function is a compiler primitive. If you give the compiler a localized
+ * message bundle, it will replace the string at compile-time with a localized
+ * version, and expand goog.getMsg call to a concatenated string.
+ *
+ * Messages must be initialized in the form:
+ * <code>
+ * var MSG_NAME = goog.getMsg('Hello {$placeholder}', {'placeholder': 'world'});
+ * </code>
+ *
  * @param {string} str Translatable string, places holders in the form {$foo}.
- * @param {Object=} opt_values Map of place holder name to value.
+ * @param {Object.<string, string>=} opt_values Maps place holder name to value.
  * @return {string} message with placeholders filled.
  */
 goog.getMsg = function(str, opt_values) {
-  var values = opt_values || {};
-  for (var key in values) {
-    var value = ('' + values[key]).replace(/\$/g, '$$$$');
-    str = str.replace(new RegExp('\\{\\$' + key + '\\}', 'gi'), value);
+  if (opt_values) {
+    str = str.replace(/\{\$([^}]+)}/g, function(match, key) {
+      return key in opt_values ? opt_values[key] : match;
+    });
   }
   return str;
 };
 
 
 /**
+ * Gets a localized message. If the message does not have a translation, gives a
+ * fallback message.
+ *
+ * This is useful when introducing a new message that has not yet been
+ * translated into all languages.
+ *
+ * This function is a compiler primitive. Must be used in the form:
+ * <code>var x = goog.getMsgWithFallback(MSG_A, MSG_B);</code>
+ * where MSG_A and MSG_B were initialized with goog.getMsg.
+ *
+ * @param {string} a The preferred message.
+ * @param {string} b The fallback message.
+ * @return {string} The best translated message.
+ */
+goog.getMsgWithFallback = function(a, b) {
+  return a;
+};
+
+
+/**
  * Exposes an unobfuscated global namespace path for the given object.
- * Note that fields of the exported object *will* be obfuscated,
- * unless they are exported in turn via this function or
- * goog.exportProperty
+ * Note that fields of the exported object *will* be obfuscated, unless they are
+ * exported in turn via this function or goog.exportProperty.
  *
- * <p>Also handy for making public items that are defined in anonymous
- * closures.
+ * Also handy for making public items that are defined in anonymous closures.
  *
- * ex. goog.exportSymbol('Foo', Foo);
+ * ex. goog.exportSymbol('public.path.Foo', Foo);
  *
- * ex. goog.exportSymbol('public.path.Foo.staticFunction',
- *                       Foo.staticFunction);
+ * ex. goog.exportSymbol('public.path.Foo.staticFunction', Foo.staticFunction);
  *     public.path.Foo.staticFunction();
  *
  * ex. goog.exportSymbol('public.path.Foo.prototype.myMethod',
@@ -1389,7 +1969,7 @@ goog.getMsg = function(str, opt_values) {
  * @param {string} publicPath Unobfuscated name to export.
  * @param {*} object Object the name should point to.
  * @param {Object=} opt_objectToExportTo The object to add the path to; default
- *     is |goog.global|.
+ *     is goog.global.
  */
 goog.exportSymbol = function(publicPath, object, opt_objectToExportTo) {
   goog.exportPath_(publicPath, object, opt_objectToExportTo);
@@ -1415,25 +1995,15 @@ goog.exportProperty = function(object, publicName, symbol) {
  * Usage:
  * <pre>
  * function ParentClass(a, b) { }
- * ParentClass.prototype.foo = function(a) { }
+ * ParentClass.prototype.foo = function(a) { };
  *
  * function ChildClass(a, b, c) {
- *   goog.base(this, a, b);
+ *   ChildClass.base(this, 'constructor', a, b);
  * }
  * goog.inherits(ChildClass, ParentClass);
  *
  * var child = new ChildClass('a', 'b', 'see');
- * child.foo(); // works
- * </pre>
- *
- * In addition, a superclass' implementation of a method can be invoked
- * as follows:
- *
- * <pre>
- * ChildClass.prototype.foo = function(a) {
- *   ChildClass.superClass_.foo.call(this, a);
- *   // other code
- * };
+ * child.foo(); // This works.
  * </pre>
  *
  * @param {Function} childCtor Child class.
@@ -1445,7 +2015,30 @@ goog.inherits = function(childCtor, parentCtor) {
   tempCtor.prototype = parentCtor.prototype;
   childCtor.superClass_ = parentCtor.prototype;
   childCtor.prototype = new tempCtor();
+  /** @override */
   childCtor.prototype.constructor = childCtor;
+
+  /**
+   * Calls superclass constructor/method.
+   *
+   * This function is only available if you use goog.inherits to
+   * express inheritance relationships between classes.
+   *
+   * NOTE: This is a replacement for goog.base and for superClass_
+   * property defined in childCtor.
+   *
+   * @param {!Object} me Should always be "this".
+   * @param {string} methodName The method name to call. Calling
+   *     superclass constructor can be done with the special string
+   *     'constructor'.
+   * @param {...*} var_args The arguments to pass to superclass
+   *     method/constructor.
+   * @return {*} The return value of the superclass method/constructor.
+   */
+  childCtor.base = function(me, methodName, var_args) {
+    var args = Array.prototype.slice.call(arguments, 2);
+    return parentCtor.prototype[methodName].apply(me, args);
+  };
 };
 
 
@@ -1453,29 +2046,36 @@ goog.inherits = function(childCtor, parentCtor) {
  * Call up to the superclass.
  *
  * If this is called from a constructor, then this calls the superclass
- * contructor with arguments 1-N.
+ * constructor with arguments 1-N.
  *
- * If this is called from a prototype method, then you must pass
- * the name of the method as the second argument to this function. If
- * you do not, you will get a runtime error. This calls the superclass'
- * method with arguments 2-N.
+ * If this is called from a prototype method, then you must pass the name of the
+ * method as the second argument to this function. If you do not, you will get a
+ * runtime error. This calls the superclass' method with arguments 2-N.
  *
- * This function only works if you use goog.inherits to express
- * inheritance relationships between your classes.
+ * This function only works if you use goog.inherits to express inheritance
+ * relationships between your classes.
  *
- * This function is a compiler primitive. At compile-time, the
- * compiler will do macro expansion to remove a lot of
- * the extra overhead that this function introduces. The compiler
- * will also enforce a lot of the assumptions that this function
- * makes, and treat it as a compiler error if you break them.
+ * This function is a compiler primitive. At compile-time, the compiler will do
+ * macro expansion to remove a lot of the extra overhead that this function
+ * introduces. The compiler will also enforce a lot of the assumptions that this
+ * function makes, and treat it as a compiler error if you break them.
  *
  * @param {!Object} me Should always be "this".
  * @param {*=} opt_methodName The method name if calling a super method.
  * @param {...*} var_args The rest of the arguments.
  * @return {*} The return value of the superclass method.
+ * @suppress {es5Strict} This method can not be used in strict mode, but
+ *     all Closure Library consumers must depend on this file.
  */
 goog.base = function(me, opt_methodName, var_args) {
   var caller = arguments.callee.caller;
+
+  if (goog.STRICT_MODE_COMPATIBLE || (goog.DEBUG && !caller)) {
+    throw Error('arguments.caller not defined.  goog.base() cannot be used ' +
+                'with strict mode code. See ' +
+                'http://www.ecma-international.org/ecma-262/5.1/#sec-C');
+  }
+
   if (caller.superClass_) {
     // This is a constructor. Call the superclass constructor.
     return caller.superClass_.constructor.apply(
@@ -1493,8 +2093,8 @@ goog.base = function(me, opt_methodName, var_args) {
     }
   }
 
-  // If we did not find the caller in the prototype chain,
-  // then one of two things happened:
+  // If we did not find the caller in the prototype chain, then one of two
+  // things happened:
   // 1) The caller is an instance method.
   // 2) This method was not called by the right caller.
   if (me[opt_methodName] === caller) {
@@ -1509,17 +2109,214 @@ goog.base = function(me, opt_methodName, var_args) {
 
 /**
  * Allow for aliasing within scope functions.  This function exists for
- * uncompiled code - in compiled code the calls will be inlined and the
- * aliases applied.  In uncompiled code the function is simply run since the
- * aliases as written are valid JavaScript.
+ * uncompiled code - in compiled code the calls will be inlined and the aliases
+ * applied.  In uncompiled code the function is simply run since the aliases as
+ * written are valid JavaScript.
+ *
+ *
  * @param {function()} fn Function to call.  This function can contain aliases
  *     to namespaces (e.g. "var dom = goog.dom") or classes
- *    (e.g. "var Timer = goog.Timer").
+ *     (e.g. "var Timer = goog.Timer").
  */
 goog.scope = function(fn) {
   fn.call(goog.global);
 };
 
+
+/*
+ * To support uncompiled, strict mode bundles that use eval to divide source
+ * like so:
+ *    eval('someSource;//# sourceUrl sourcefile.js');
+ * We need to export the globally defined symbols "goog" and "COMPILED".
+ * Exporting "goog" breaks the compiler optimizations, so we required that
+ * be defined externally.
+ * NOTE: We don't use goog.exportSymbol here because we don't want to trigger
+ * extern generation when that compiler option is enabled.
+ */
+if (!COMPILED) {
+  goog.global['COMPILED'] = COMPILED;
+}
+
+
+
+//==============================================================================
+// goog.defineClass implementation
+//==============================================================================
+
+
+/**
+ * Creates a restricted form of a Closure "class":
+ *   - from the compiler's perspective, the instance returned from the
+ *     constructor is sealed (no new properties may be added).  This enables
+ *     better checks.
+ *   - the compiler will rewrite this definition to a form that is optimal
+ *     for type checking and optimization (initially this will be a more
+ *     traditional form).
+ *
+ * @param {Function} superClass The superclass, Object or null.
+ * @param {goog.defineClass.ClassDescriptor} def
+ *     An object literal describing the
+ *     the class.  It may have the following properties:
+ *     "constructor": the constructor function
+ *     "statics": an object literal containing methods to add to the constructor
+ *        as "static" methods or a function that will receive the constructor
+ *        function as its only parameter to which static properties can
+ *        be added.
+ *     all other properties are added to the prototype.
+ * @return {!Function} The class constructor.
+ */
+goog.defineClass = function(superClass, def) {
+  // TODO(johnlenz): consider making the superClass an optional parameter.
+  var constructor = def.constructor;
+  var statics = def.statics;
+  // Wrap the constructor prior to setting up the prototype and static methods.
+  if (!constructor || constructor == Object.prototype.constructor) {
+    constructor = function() {
+      throw Error('cannot instantiate an interface (no constructor defined).');
+    };
+  }
+
+  var cls = goog.defineClass.createSealingConstructor_(constructor, superClass);
+  if (superClass) {
+    goog.inherits(cls, superClass);
+  }
+
+  // Remove all the properties that should not be copied to the prototype.
+  delete def.constructor;
+  delete def.statics;
+
+  goog.defineClass.applyProperties_(cls.prototype, def);
+  if (statics != null) {
+    if (statics instanceof Function) {
+      statics(cls);
+    } else {
+      goog.defineClass.applyProperties_(cls, statics);
+    }
+  }
+
+  return cls;
+};
+
+
+/**
+ * @typedef {
+ *     !Object|
+ *     {constructor:!Function}|
+ *     {constructor:!Function, statics:(Object|function(Function):void)}}
+ */
+goog.defineClass.ClassDescriptor;
+
+
+/**
+ * @define {boolean} Whether the instances returned by
+ * goog.defineClass should be sealed when possible.
+ */
+goog.define('goog.defineClass.SEAL_CLASS_INSTANCES', goog.DEBUG);
+
+
+/**
+ * If goog.defineClass.SEAL_CLASS_INSTANCES is enabled and Object.seal is
+ * defined, this function will wrap the constructor in a function that seals the
+ * results of the provided constructor function.
+ *
+ * @param {!Function} ctr The constructor whose results maybe be sealed.
+ * @param {Function} superClass The superclass constructor.
+ * @return {!Function} The replacement constructor.
+ * @private
+ */
+goog.defineClass.createSealingConstructor_ = function(ctr, superClass) {
+  if (goog.defineClass.SEAL_CLASS_INSTANCES &&
+      Object.seal instanceof Function) {
+    // Don't seal subclasses of unsealable-tagged legacy classes.
+    if (superClass && superClass.prototype &&
+        superClass.prototype[goog.UNSEALABLE_CONSTRUCTOR_PROPERTY_]) {
+      return ctr;
+    }
+    /** @this {*} */
+    var wrappedCtr = function() {
+      // Don't seal an instance of a subclass when it calls the constructor of
+      // its super class as there is most likely still setup to do.
+      var instance = ctr.apply(this, arguments) || this;
+      instance[goog.UID_PROPERTY_] = instance[goog.UID_PROPERTY_];
+      if (this.constructor === wrappedCtr) {
+        Object.seal(instance);
+      }
+      return instance;
+    };
+    return wrappedCtr;
+  }
+  return ctr;
+};
+
+
+// TODO(johnlenz): share these values with the goog.object
+/**
+ * The names of the fields that are defined on Object.prototype.
+ * @type {!Array.<string>}
+ * @private
+ * @const
+ */
+goog.defineClass.OBJECT_PROTOTYPE_FIELDS_ = [
+  'constructor',
+  'hasOwnProperty',
+  'isPrototypeOf',
+  'propertyIsEnumerable',
+  'toLocaleString',
+  'toString',
+  'valueOf'
+];
+
+
+// TODO(johnlenz): share this function with the goog.object
+/**
+ * @param {!Object} target The object to add properties to.
+ * @param {!Object} source The object to copy properites from.
+ * @private
+ */
+goog.defineClass.applyProperties_ = function(target, source) {
+  // TODO(johnlenz): update this to support ES5 getters/setters
+
+  var key;
+  for (key in source) {
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      target[key] = source[key];
+    }
+  }
+
+  // For IE the for-in-loop does not contain any properties that are not
+  // enumerable on the prototype object (for example isPrototypeOf from
+  // Object.prototype) and it will also not include 'replace' on objects that
+  // extend String and change 'replace' (not that it is common for anyone to
+  // extend anything except Object).
+  for (var i = 0; i < goog.defineClass.OBJECT_PROTOTYPE_FIELDS_.length; i++) {
+    key = goog.defineClass.OBJECT_PROTOTYPE_FIELDS_[i];
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      target[key] = source[key];
+    }
+  }
+};
+
+
+/**
+ * Sealing classes breaks the older idiom of assigning properties on the
+ * prototype rather than in the constructor.  As such, goog.defineClass
+ * must not seal subclasses of these old-style classes until they are fixed.
+ * Until then, this marks a class as "broken", instructing defineClass
+ * not to seal subclasses.
+ * @param {!Function} ctr The legacy constructor to tag as unsealable.
+ */
+goog.tagUnsealableClass = function(ctr) {
+  if (!COMPILED && goog.defineClass.SEAL_CLASS_INSTANCES) {
+    ctr.prototype[goog.UNSEALABLE_CONSTRUCTOR_PROPERTY_] = true;
+  }
+};
+
+
+/**
+ * Name for unsealable tag property.
+ * @const @private {string}
+ */
+goog.UNSEALABLE_CONSTRUCTOR_PROPERTY_ = 'goog_defineClass_legacy_unsealable';
 
 /**
  * @author Tony Parisi
@@ -1552,7 +2349,8 @@ glam.Service.prototype.terminate = function() {};
 /**
  * Updates the Service - Abstract.
  */
-glam.Service.prototype.update = function() {};/**
+glam.Service.prototype.update = function() {};
+/**
  *
  */
 goog.provide('glam.Keyboard');
@@ -1589,6 +2387,7 @@ glam.Keyboard.KEY_LEFT  = 37;
 glam.Keyboard.KEY_UP  = 38;
 glam.Keyboard.KEY_RIGHT  = 39;
 glam.Keyboard.KEY_DOWN  = 40;
+
 /**
  *
  */
@@ -1656,6 +2455,7 @@ glam.Mouse.prototype.getState = function()
 
 glam.Mouse.instance = null;
 glam.Mouse.NO_POSITION = Number.MIN_VALUE;
+
 /**
  *
  */
@@ -1682,7 +2482,8 @@ glam.Input.prototype.update = function() {
 		this.gamepad.update();
 }
 
-glam.Input.instance = null;/**
+glam.Input.instance = null;
+/**
  * @fileoverview Main interface to the graphics and rendering subsystem
  * 
  * @author Tony Parisi
@@ -1713,6 +2514,7 @@ glam.Time.prototype.update = function()
 
 glam.Time.instance = null;
 	        
+
 /**
  *
  */
@@ -1754,7 +2556,8 @@ glam.EventService.prototype.update = function()
 		glam.Application.instance.updateObjects();
 	}
 	while (glam.EventService.eventsPending);
-}/**
+}
+/**
  * @fileoverview EventDispatcher is the base class for any object that sends/receives messages
  * 
  * @author Tony Parisi
@@ -1882,7 +2685,8 @@ glam.EventDispatcher.prototype.handleConnection = function(sourceProp, target, t
 	}
 }
 
-    /**
+    
+/**
  * @fileoverview Component is the base class for defining capabilities used within an Object
  * 
  * @author Tony Parisi
@@ -1936,6 +2740,7 @@ glam.Component.prototype.realize = function() {
 
 glam.Component.prototype.update = function() {
 }
+
 /**
  * @fileoverview Behavior component - base class for time-based behaviors
  * 
@@ -2005,6 +2810,7 @@ glam.Behavior.prototype.evaluate = function(t)
 }
 
 glam.Behavior.WARN_ON_ABSTRACT = true;
+
 /**
  * @fileoverview BounceBehavior - simple angular rotation
  * 
@@ -2079,7 +2885,8 @@ glam.BounceBehavior.prototype.evaluate = function(t)
 		if (this.loop)
 			this.start();
 	}
-}/**
+}
+/**
  * @fileoverview General-purpose key frame animation
  * @author Tony Parisi
  */
@@ -2259,7 +3066,8 @@ glam.KeyFrameAnimator.prototype.updateAnimations = function()
 // Statics
 glam.KeyFrameAnimator.default_duration = 1000;
 glam.KeyFrameAnimator.FORWARD_DIRECTION = 0;
-glam.KeyFrameAnimator.REVERSE_DIRECTION = 1;/**
+glam.KeyFrameAnimator.REVERSE_DIRECTION = 1;
+/**
  * @fileoverview camera parser/implementation
  * 
  * @author Tony Parisi
@@ -2312,6 +3120,7 @@ glam.CameraElement.create = function(docelt, style, app) {
 	
 	return camera;
 }
+
 /**
  * @fileoverview Base class for visual elements.
  * @author Tony Parisi
@@ -2470,6 +3279,7 @@ glam.SceneComponent.prototype.removeFromScene = function() {
 	
 	this._realized = false;
 }
+
 goog.provide('glam.Light');
 goog.require('glam.SceneComponent');
 
@@ -2510,7 +3320,8 @@ glam.Light.prototype.realize = function()
 
 glam.Light.DEFAULT_COLOR = 0xFFFFFF;
 glam.Light.DEFAULT_INTENSITY = 1;
-glam.Light.DEFAULT_RANGE = 10000;goog.provide('glam.SpotLight');
+glam.Light.DEFAULT_RANGE = 10000;
+goog.provide('glam.SpotLight');
 goog.require('glam.Light');
 
 glam.SpotLight = function(param)
@@ -2629,6 +3440,7 @@ glam.SpotLight.DEFAULT_ANGLE = Math.PI / 2;
 glam.SpotLight.DEFAULT_EXPONENT = 10;
 glam.SpotLight.DEFAULT_CAST_SHADOWS = false;
 glam.SpotLight.DEFAULT_SHADOW_DARKNESS = 0.3;
+
 /**
  *
  */
@@ -2693,6 +3505,7 @@ glam.Transform.prototype.removeFromScene = function() {
 		// N.B.: throw something?
 	}
 }
+
 /**
  * @fileoverview Main interface to the graphics and rendering subsystem
  * 
@@ -2712,9 +3525,10 @@ glam.Graphics = function()
 }
 	        
 glam.Graphics.instance = null;
+
 /**
  * @fileoverview Main interface to the graphics and rendering subsystem
- * 
+ *
  * @author Tony Parisi
  */
 goog.require('glam.Graphics');
@@ -2730,7 +3544,7 @@ goog.inherits(glam.GraphicsThreeJS, glam.Graphics);
 glam.GraphicsThreeJS.prototype.initialize = function(param)
 {
 	param = param || {};
-	
+
 	// call all the setup functions
 	this.initOptions(param);
 	this.initPageElements(param);
@@ -2751,7 +3565,7 @@ glam.GraphicsThreeJS.prototype.focus = function()
 
 glam.GraphicsThreeJS.prototype.initOptions = function(param)
 {
-	this.displayStats = (param && param.displayStats) ? 
+	this.displayStats = (param && param.displayStats) ?
 			param.displayStats : glam.GraphicsThreeJS.default_display_stats;
 }
 
@@ -2768,7 +3582,7 @@ glam.GraphicsThreeJS.prototype.initPageElements = function(param)
    	}
 
     this.saved_cursor = this.container.style.cursor;
-    
+
     if (this.displayStats)
     {
     	if (window.Stats)
@@ -2792,24 +3606,24 @@ glam.GraphicsThreeJS.prototype.initScene = function()
 {
     var scene = new THREE.Scene();
 
-//    scene.add( new THREE.AmbientLight(0xffffff) ); //  0x505050 ) ); // 
-	
-    var camera = new THREE.PerspectiveCamera( 45, 
+//    scene.add( new THREE.AmbientLight(0xffffff) ); //  0x505050 ) ); //
+
+    var camera = new THREE.PerspectiveCamera( 45,
     		this.container.offsetWidth / this.container.offsetHeight, 1, 10000 );
     camera.position.copy(glam.Camera.DEFAULT_POSITION);
 
     scene.add(camera);
-    
+
     this.scene = scene;
 	this.camera = camera;
-	
+
 	this.backgroundLayer = {};
     var scene = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera( 45, 
+    var camera = new THREE.PerspectiveCamera( 45,
     		this.container.offsetWidth / this.container.offsetHeight, 0.01, 10000 );
-    camera.position.set( 0, 0, 10 );	
+    camera.position.set( 0, 0, 10 );
     scene.add(camera);
-    
+
     this.backgroundLayer.scene = scene;
     this.backgroundLayer.camera = camera;
 }
@@ -2819,13 +3633,13 @@ glam.GraphicsThreeJS.prototype.initRenderer = function(param)
 	var antialias = (param.antialias !== undefined) ? param.antialias : true;
 	var alpha = (param.alpha !== undefined) ? param.alpha : true;
 	//var devicePixelRatio = (param.devicePixelRatio !== undefined) ? param.devicePixelRatio : 1;
-	
+
     var renderer = // glam.Config.USE_WEBGL ?
-    	new THREE.WebGLRenderer( { antialias: antialias, 
+    	new THREE.WebGLRenderer( { antialias: antialias,
     		alpha: alpha,
     		/*devicePixelRatio : devicePixelRatio */ } ); // :
     	// new THREE.CanvasRenderer;
-    	
+
     renderer.sortObjects = false;
     renderer.setSize( this.container.offsetWidth, this.container.offsetHeight );
 
@@ -2834,7 +3648,7 @@ glam.GraphicsThreeJS.prototype.initRenderer = function(param)
     	renderer.domElement.style.backgroundColor = param.backgroundColor;
     	renderer.domElement.setAttribute('z-index', -1);
     }
-    
+
     this.container.appendChild( renderer.domElement );
 
     var projector = new THREE.Projector();
@@ -2843,7 +3657,7 @@ glam.GraphicsThreeJS.prototype.initRenderer = function(param)
     this.projector = projector;
 
     this.lastFrameTime = 0;
-    
+
     if (param.riftRender) {
     	this.riftCam = new THREE.VREffect(this.renderer, function(err) {
 			if (err) {
@@ -2855,7 +3669,7 @@ glam.GraphicsThreeJS.prototype.initRenderer = function(param)
     	this.cardboard = new THREE.StereoEffect(this.renderer);
     	this.cardboard.setSize( this.container.offsetWidth, this.container.offsetHeight );
     }
-    
+
     // Placeholder for effects composer
     this.composer = null;
 }
@@ -2863,47 +3677,47 @@ glam.GraphicsThreeJS.prototype.initRenderer = function(param)
 glam.GraphicsThreeJS.prototype.initMouse = function()
 {
 	var dom = this.renderer.domElement;
-	
+
 	var that = this;
-	dom.addEventListener( 'mousemove', 
+	dom.addEventListener( 'mousemove',
 			function(e) { that.onDocumentMouseMove(e); }, false );
-	dom.addEventListener( 'mousedown', 
+	dom.addEventListener( 'mousedown',
 			function(e) { that.onDocumentMouseDown(e); }, false );
-	dom.addEventListener( 'mouseup', 
-			function(e) { that.onDocumentMouseUp(e); }, false ); 
- 	dom.addEventListener( 'click', 
+	dom.addEventListener( 'mouseup',
+			function(e) { that.onDocumentMouseUp(e); }, false );
+ 	dom.addEventListener( 'click',
 			function(e) { that.onDocumentMouseClick(e); }, false );
-	dom.addEventListener( 'dblclick', 
+	dom.addEventListener( 'dblclick',
 			function(e) { that.onDocumentMouseDoubleClick(e); }, false );
 
-	dom.addEventListener( 'mousewheel', 
+	dom.addEventListener( 'mousewheel',
 			function(e) { that.onDocumentMouseScroll(e); }, false );
-	dom.addEventListener( 'DOMMouseScroll', 
+	dom.addEventListener( 'DOMMouseScroll',
 			function(e) { that.onDocumentMouseScroll(e); }, false );
-	
-	dom.addEventListener( 'touchstart', 
+
+	dom.addEventListener( 'touchstart',
 			function(e) { that.onDocumentTouchStart(e); }, false );
-	dom.addEventListener( 'touchmove', 
+	dom.addEventListener( 'touchmove',
 			function(e) { that.onDocumentTouchMove(e); }, false );
-	dom.addEventListener( 'touchend', 
+	dom.addEventListener( 'touchend',
 			function(e) { that.onDocumentTouchEnd(e); }, false );
 }
 
 glam.GraphicsThreeJS.prototype.initKeyboard = function()
 {
 	var dom = this.renderer.domElement;
-	
+
 	var that = this;
-	dom.addEventListener( 'keydown', 
+	dom.addEventListener( 'keydown',
 			function(e) { that.onKeyDown(e); }, false );
-	dom.addEventListener( 'keyup', 
+	dom.addEventListener( 'keyup',
 			function(e) { that.onKeyUp(e); }, false );
-	dom.addEventListener( 'keypress', 
+	dom.addEventListener( 'keypress',
 			function(e) { that.onKeyPress(e); }, false );
 
 	// so it can take focus
 	dom.setAttribute("tabindex", 1);
-    
+
 }
 
 glam.GraphicsThreeJS.prototype.addDomHandlers = function()
@@ -2912,11 +3726,11 @@ glam.GraphicsThreeJS.prototype.addDomHandlers = function()
 	window.addEventListener( 'resize', function(event) { that.onWindowResize(event); }, false );
 
 	setTimeout(function(event) { that.onWindowResize(event); }, 10);
-	
+
 	var fullScreenChange =
 		this.renderer.domElement.mozRequestFullScreen? 'mozfullscreenchange' : 'webkitfullscreenchange';
-	
-	document.addEventListener( fullScreenChange, 
+
+	document.addEventListener( fullScreenChange,
 			function(e) {that.onFullScreenChanged(e); }, false );
 
 }
@@ -2924,38 +3738,38 @@ glam.GraphicsThreeJS.prototype.addDomHandlers = function()
 glam.GraphicsThreeJS.prototype.objectFromMouse = function(event)
 {
 	var eltx = event.elementX, elty = event.elementY;
-	
+
 	// translate client coords into vp x,y
     var vpx = ( eltx / this.container.offsetWidth ) * 2 - 1;
     var vpy = - ( elty / this.container.offsetHeight ) * 2 + 1;
-    
+
     var vector = new THREE.Vector3( vpx, vpy, 0.5 );
 
-    this.projector.unprojectVector( vector, this.camera );
-	
+    vector.unproject( this.camera );
+
     var pos = new THREE.Vector3;
     pos = pos.applyMatrix4(this.camera.matrixWorld);
-	
+
     var raycaster = new THREE.Raycaster( pos, vector.sub( pos ).normalize() );
 
 	var intersects = raycaster.intersectObjects( this.scene.children, true );
-	
+
     if ( intersects.length > 0 ) {
     	var i = 0;
-    	while(i < intersects.length && (!intersects[i].object.visible || 
+    	while(i < intersects.length && (!intersects[i].object.visible ||
     			intersects[i].object.ignorePick))
     	{
     		i++;
     	}
-    	
+
     	var intersected = intersects[i];
-    	
+
     	if (i >= intersects.length)
     	{
         	return { object : null, point : null, normal : null };
     	}
-    	
-    	return (this.findObjectFromIntersected(intersected.object, intersected.point, intersected.face));        	    	                             
+
+    	return (this.findObjectFromIntersected(intersected.object, intersected.point, intersected.face));
     }
     else
     {
@@ -2969,30 +3783,30 @@ glam.GraphicsThreeJS.prototype.objectFromRay = function(hierarchy, origin, direc
 
     var objects = null;
     if (hierarchy) {
-    	objects = hierarchy.transform.object.children; 
+    	objects = hierarchy.transform.object.children;
     }
     else {
     	objects = this.scene.children;
     }
-    
+
 	var intersects = raycaster.intersectObjects( objects, true );
-	
+
     if ( intersects.length > 0 ) {
     	var i = 0;
-    	while(i < intersects.length && (!intersects[i].object.visible || 
+    	while(i < intersects.length && (!intersects[i].object.visible ||
     			intersects[i].object.ignoreCollision))
     	{
     		i++;
     	}
-    	
+
     	var intersected = intersects[i];
-    	
+
     	if (i >= intersects.length)
     	{
         	return { object : null, point : null, normal : null };
     	}
-    	
-    	return (this.findObjectFromIntersected(intersected.object, intersected.point, intersected.face));        	    	                             
+
+    	return (this.findObjectFromIntersected(intersected.object, intersected.point, intersected.face));
     }
     else
     {
@@ -3029,36 +3843,36 @@ glam.GraphicsThreeJS.prototype.nodeFromMouse = function(event)
 {
 	// Blerg, this is to support code outside the SB components & picker framework
 	// Returns a raw Three.js node
-	
+
 	// translate client coords into vp x,y
 	var eltx = event.elementX, elty = event.elementY;
-	
+
     var vpx = ( eltx / this.container.offsetWidth ) * 2 - 1;
     var vpy = - ( elty / this.container.offsetHeight ) * 2 + 1;
-    
+
     var vector = new THREE.Vector3( vpx, vpy, 0.5 );
 
-    this.projector.unprojectVector( vector, this.camera );
-	
+    vector.unproject( this.camera );
+
     var pos = new THREE.Vector3;
     pos = pos.applyMatrix4(this.camera.matrixWorld);
 
     var raycaster = new THREE.Raycaster( pos, vector.sub( pos ).normalize() );
 
 	var intersects = raycaster.intersectObjects( this.scene.children, true );
-	
+
     if ( intersects.length > 0 ) {
     	var i = 0;
     	while(!intersects[i].object.visible)
     	{
     		i++;
     	}
-    	
+
     	var intersected = intersects[i];
     	if (intersected)
     	{
-    		return { node : intersected.object, 
-    				 point : intersected.point, 
+    		return { node : intersected.object,
+    				 point : intersected.point,
     				 normal : intersected.face.normal
     				}
     	}
@@ -3076,14 +3890,14 @@ glam.GraphicsThreeJS.prototype.getObjectIntersection = function(x, y, object)
 	// Translate client coords into viewport x,y
 	var vpx = ( x / this.renderer.domElement.offsetWidth ) * 2 - 1;
 	var vpy = - ( y / this.renderer.domElement.offsetHeight ) * 2 + 1;
-	
+
     var vector = new THREE.Vector3( vpx, vpy, 0.5 );
 
-    this.projector.unprojectVector( vector, this.camera );
-	
+    vector.unproject( this.camera );
+
     var pos = new THREE.Vector3;
     pos = pos.applyMatrix4(this.camera.matrixWorld);
-	
+
     var raycaster = new THREE.Raycaster( pos, vector.sub( pos ).normalize() );
 
 	var intersects = raycaster.intersectObject( object, true );
@@ -3097,14 +3911,14 @@ glam.GraphicsThreeJS.prototype.getObjectIntersection = function(x, y, object)
 	}
 	else
 		return null;
-		
+
 }
 
 glam.GraphicsThreeJS.prototype.calcElementOffset = function(offset) {
 
 	offset.left = this.renderer.domElement.offsetLeft;
 	offset.top = this.renderer.domElement.offsetTop;
-	
+
 	var parent = this.renderer.domElement.offsetParent;
 	while(parent) {
 		offset.left += parent.offsetLeft;
@@ -3116,48 +3930,48 @@ glam.GraphicsThreeJS.prototype.calcElementOffset = function(offset) {
 glam.GraphicsThreeJS.prototype.onDocumentMouseMove = function(event)
 {
     event.preventDefault();
-    
+
 	var offset = {};
 	this.calcElementOffset(offset);
-	
+
 	var eltx = event.pageX - offset.left;
 	var elty = event.pageY - offset.top;
-	
-	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
+
+	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY,
 	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
 	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey };
-	
+
     glam.Mouse.instance.onMouseMove(evt);
-    
+
     if (glam.PickManager)
     {
     	glam.PickManager.handleMouseMove(evt);
     }
-    
+
     glam.Application.handleMouseMove(evt);
 }
 
 glam.GraphicsThreeJS.prototype.onDocumentMouseDown = function(event)
 {
     event.preventDefault();
-    
+
 	var offset = {};
 	this.calcElementOffset(offset);
-	
+
 	var eltx = event.pageX - offset.left;
 	var elty = event.pageY - offset.top;
-		
-	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
+
+	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY,
 	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
 	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey  };
-	
+
     glam.Mouse.instance.onMouseDown(evt);
-    
+
     if (glam.PickManager)
     {
     	glam.PickManager.handleMouseDown(evt);
     }
-    
+
     glam.Application.handleMouseDown(evt);
 }
 
@@ -3167,20 +3981,20 @@ glam.GraphicsThreeJS.prototype.onDocumentMouseUp = function(event)
 
 	var offset = {};
 	this.calcElementOffset(offset);
-	
+
 	var eltx = event.pageX - offset.left;
 	var elty = event.pageY - offset.top;
-	
-	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
+
+	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY,
 	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
 	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey  };
-    
+
     glam.Mouse.instance.onMouseUp(evt);
-    
+
     if (glam.PickManager)
     {
     	glam.PickManager.handleMouseUp(evt);
-    }	            
+    }
 
     glam.Application.handleMouseUp(evt);
 }
@@ -3191,20 +4005,20 @@ glam.GraphicsThreeJS.prototype.onDocumentMouseClick = function(event)
 
 	var offset = {};
 	this.calcElementOffset(offset);
-	
+
 	var eltx = event.pageX - offset.left;
 	var elty = event.pageY - offset.top;
-	
-	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
+
+	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY,
 	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
 	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey  };
-    
+
     glam.Mouse.instance.onMouseClick(evt);
-    
+
     if (glam.PickManager)
     {
     	glam.PickManager.handleMouseClick(evt);
-    }	            
+    }
 
     glam.Application.handleMouseClick(evt);
 }
@@ -3215,23 +4029,23 @@ glam.GraphicsThreeJS.prototype.onDocumentMouseDoubleClick = function(event)
 
 	var offset = {};
 	this.calcElementOffset(offset);
-	
+
 	var eltx = event.pageX - offset.left;
 	var elty = event.pageY - offset.top;
-	
+
 	var eltx = event.pageX - offset.left;
 	var elty = event.pageY - offset.top;
-	
-	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
+
+	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY,
 	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
 	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey  };
-    
+
     glam.Mouse.instance.onMouseDoubleClick(evt);
-    
+
     if (glam.PickManager)
     {
     	glam.PickManager.handleMouseDoubleClick(evt);
-    }	            
+    }
 
     glam.Application.handleMouseDoubleClick(evt);
 }
@@ -3253,14 +4067,14 @@ glam.GraphicsThreeJS.prototype.onDocumentMouseScroll = function(event)
 	}
 
 	var evt = { type : "mousescroll", delta : delta };
-    
+
     glam.Mouse.instance.onMouseScroll(evt);
 
     if (glam.PickManager)
     {
     	glam.PickManager.handleMouseScroll(evt);
     }
-    
+
     glam.Application.handleMouseScroll(evt);
 }
 
@@ -3285,7 +4099,7 @@ glam.GraphicsThreeJS.prototype.translateTouch = function(touch, offset) {
 glam.GraphicsThreeJS.prototype.onDocumentTouchStart = function(event)
 {
     event.preventDefault();
-    
+
 	var offset = {};
 	this.calcElementOffset(offset);
 
@@ -3296,22 +4110,22 @@ glam.GraphicsThreeJS.prototype.onDocumentTouchStart = function(event)
 	}
 
 	var evt = { type : event.type, touches : touches };
-	
+
     if (glam.PickManager)
     {
     	glam.PickManager.handleTouchStart(evt);
     }
-    
+
     glam.Application.handleTouchStart(evt);
 }
 
 glam.GraphicsThreeJS.prototype.onDocumentTouchMove = function(event)
 {
     event.preventDefault();
-    
+
 	var offset = {};
 	this.calcElementOffset(offset);
-	
+
 	var touches = [];
 	var i, len = event.touches.length;
 	for (i = 0; i < len; i++) {
@@ -3325,12 +4139,12 @@ glam.GraphicsThreeJS.prototype.onDocumentTouchMove = function(event)
 	}
 
 	var evt = { type : event.type, touches : touches, changedTouches : changedTouches };
-		    
+
     if (glam.PickManager)
     {
     	glam.PickManager.handleTouchMove(evt);
     }
-    
+
     glam.Application.handleTouchMove(evt);
 }
 
@@ -3340,7 +4154,7 @@ glam.GraphicsThreeJS.prototype.onDocumentTouchEnd = function(event)
 
 	var offset = {};
 	this.calcElementOffset(offset);
-	
+
 	var touches = [];
 	var i, len = event.touches.length;
 	for (i = 0; i < len; i++) {
@@ -3354,11 +4168,11 @@ glam.GraphicsThreeJS.prototype.onDocumentTouchEnd = function(event)
 	}
 
 	var evt = { type : event.type, touches : touches, changedTouches : changedTouches };
-    
+
     if (glam.PickManager)
     {
     	glam.PickManager.handleTouchEnd(evt);
-    }	            
+    }
 
     glam.Application.handleTouchEnd(evt);
 }
@@ -3370,7 +4184,7 @@ glam.GraphicsThreeJS.prototype.onKeyDown = function(event)
 	event.preventDefault();
 
     glam.Keyboard.instance.onKeyDown(event);
-    
+
 	glam.Application.handleKeyDown(event);
 }
 
@@ -3380,17 +4194,17 @@ glam.GraphicsThreeJS.prototype.onKeyUp = function(event)
 	event.preventDefault();
 
     glam.Keyboard.instance.onKeyUp(event);
-    
+
 	glam.Application.handleKeyUp(event);
 }
-	        
+
 glam.GraphicsThreeJS.prototype.onKeyPress = function(event)
 {
 	// N.B.: Chrome doesn't deliver keyPress if we don't bubble... keep an eye on this
 	event.preventDefault();
 
     glam.Keyboard.instance.onKeyPress(event);
-    
+
 	glam.Application.handleKeyPress(event);
 }
 
@@ -3409,16 +4223,16 @@ glam.GraphicsThreeJS.prototype.onWindowResize = function(event)
 	if (this.cardboard) {
 		this.cardboard.setSize(width, height);
 	}
-	
+
 	this.renderer.setSize(width, height);
-	
+
 	if (this.composer) {
 		this.composer.setSize(width, height);
 	}
-	
-	
+
+
 	if (glam.CameraManager && glam.CameraManager.handleWindowResize(this.container.offsetWidth, this.container.offsetHeight))
-	{		
+	{
 	}
 	else
 	{
@@ -3428,7 +4242,7 @@ glam.GraphicsThreeJS.prototype.onWindowResize = function(event)
 }
 
 glam.GraphicsThreeJS.prototype.onFullScreenChanged = function(event) {
-	
+
 	if ( !document.mozFullscreenElement && !document.webkitFullscreenElement ) {
 		this.fullscreen = false;
 	}
@@ -3444,7 +4258,7 @@ glam.GraphicsThreeJS.prototype.setCursor = function(cursor)
 {
 	if (!cursor)
 		cursor = this.saved_cursor;
-	
+
 	this.container.style.cursor = cursor;
 }
 
@@ -3470,7 +4284,7 @@ glam.GraphicsThreeJS.prototype.update = function()
 	else {
 		this.render();
 	}
-	
+
     if (this.stats)
     {
     	this.stats.update();
@@ -3513,13 +4327,13 @@ glam.GraphicsThreeJS.prototype.setFullScreen = function(enable)
 	if (this.riftCam) {
 
 		this.fullscreen = enable;
-		
+
 		this.riftCam.setFullScreen(enable);
 	}
 	else if (this.cardboard) {
 
 		var canvas = this.renderer.domElement;
-		
+
 		if (enable) {
 			if ( this.container.mozRequestFullScreen ) {
 				this.container.mozRequestFullScreen();
@@ -3545,28 +4359,29 @@ glam.GraphicsThreeJS.prototype.setCamera = function(camera) {
 }
 
 glam.GraphicsThreeJS.prototype.addEffect = function(effect) {
-	
+
 	if (!this.composer) {
 		this.composer = new glam.Composer();
 	}
-	
+
 	if (!this.effects) {
 		this.effects  = [];
 	}
-	
+
 	if (effect.isShaderEffect) {
 		for (var i = 0; i < this.effects.length; i++) {
 			var ef = this.effects[i];
 //			ef.pass.renderToScreen = false;
-		}	
+		}
 //		effect.pass.renderToScreen = true;
 	}
-	
+
 	this.effects.push(effect);
 	this.composer.addEffect(effect);
 }
 
 glam.GraphicsThreeJS.default_display_stats = false;
+
 /**
  *
  */
@@ -3605,6 +4420,7 @@ glam.TweenService.prototype.update = function()
 	if (window.TWEEN)
 		TWEEN.update();
 }
+
 /**
  * @fileoverview Service locator for various game services.
  */
@@ -3669,7 +4485,8 @@ glam.Services.registerService = function(serviceName, object)
 		var serviceType = { object: object };
 		glam.Services._serviceMap[serviceName] = serviceType;
 	}
-}/**
+}
+/**
  * @fileoverview glam namespace and globals
  * 
  * @author Tony Parisi
@@ -3737,6 +4554,7 @@ window.addEventListener('load',
 		glam.DOM.ready();
 	}, 
 	false);
+
 
 /**
  * @fileoverview Picker component - add one to get picking support on your object
@@ -3875,6 +4693,7 @@ glam.Picker.prototype.onTouchEnd = function(event)
 }
 
 
+
 /**
  * @fileoverview Picker component - get drag for an object along the surface of a reference object
  * 
@@ -3972,6 +4791,7 @@ glam.SurfaceDragger.prototype.onMouseMove = function(event)
 
 
 
+
 /**
  * @fileoverview renderer parser/implementation
  * 
@@ -3982,6 +4802,7 @@ goog.provide('glam.DOMRenderer');
 
 glam.DOMRenderer = {
 };
+
 /**
  * @fileoverview Base class for visual elements.
  * @author Tony Parisi
@@ -4027,6 +4848,7 @@ glam.Visual.prototype.realize = function()
 	}	
 }
 
+
 /**
  * @fileoverview Base class for visual decoration - like glam.Visual but not pickable.
  * @author Tony Parisi
@@ -4053,7 +4875,8 @@ glam.Decoration.prototype.realize = function()
 {
 	glam.Visual.prototype.realize.call(this);
 	this.object.ignorePick = true;
-}/**
+}
+/**
  * @fileoverview Interpolator for key frame animation
  * @author Tony Parisi
  */
@@ -4181,6 +5004,7 @@ glam.Interpolator.prototype.tween = function(from, to, fract)
 	
 	return value;
 }
+
 /**
  * @fileoverview 2D arc parser/implementation
  * 
@@ -4241,11 +5065,13 @@ glam.ArcElement.createVisual = function(docelt, material, param) {
 
 	return visual;
 }
+
 /**
  * @fileoverview Contains prefab assemblies for core GLAM package
  * @author Tony Parisi
  */
-goog.provide('glam.Prefabs');/**
+goog.provide('glam.Prefabs');
+/**
  * @fileoverview Behavior component - base class for time-based behaviors
  * 
  * @author Tony Parisi
@@ -4275,6 +5101,7 @@ glam.Script.prototype.update = function()
 }
 
 glam.Script.WARN_ON_ABSTRACT = true;
+
 
 goog.require('glam.Prefabs');
 
@@ -4489,6 +5316,7 @@ glam.FirstPersonControllerScript.prototype.setHeadlightOn = function(on)
 	}
 }
 
+
 /**
  * @fileoverview General-purpose transitions
  * @author Tony Parisi
@@ -4568,7 +5396,8 @@ glam.Transition.prototype.onTweenComplete = function()
 }
 // Statics
 glam.Transition.default_duration = 1000;
-glam.Transition.default_easing = TWEEN.Easing.Linear.None;/**
+glam.Transition.default_easing = TWEEN.Easing.Linear.None;
+/**
  * @fileoverview GLAM Effects Composer - postprocessing effects composer, wraps Three.js
  * 
  * @author Tony Parisi
@@ -4627,7 +5456,8 @@ glam.Composer.prototype.setSize = function(width, height) {
 	this.composer.setSize(width, height);
 }
 
-glam.Composer.instance = null;/**
+glam.Composer.instance = null;
+/**
  * @fileoverview cube primitive parser/implementation
  * 
  * @author Tony Parisi
@@ -4676,6 +5506,7 @@ glam.BoxElement.createVisual = function(docelt, material, param) {
 	
 	return visual;
 }
+
 goog.provide('glam.Camera');
 goog.require('glam.SceneComponent');
 
@@ -4735,6 +5566,7 @@ glam.Camera.prototype.lookAt = function(v)
 glam.Camera.DEFAULT_POSITION = new THREE.Vector3(0, 0, 0);
 glam.Camera.DEFAULT_NEAR = 1;
 glam.Camera.DEFAULT_FAR = 10000;
+
 goog.provide('glam.PerspectiveCamera');
 goog.require('glam.Camera');
 
@@ -4814,6 +5646,7 @@ glam.PerspectiveCamera.prototype.update = function()  {
 		this.updateProjection = false;
 	}
 }
+
 /**
  * @author mrdoob / http://mrdoob.com/
  */
@@ -5017,6 +5850,7 @@ glam.PointerLockControls = function ( camera ) {
   };
 
 };
+
 /**
  * @fileoverview visual base type - used by all thing seen on screen
  * 
@@ -5064,6 +5898,7 @@ glam.VisualElement.addProperties = function(docelt, obj) {
 		docelt.material = visual.material;
 	}
 }
+
 /**
  * @fileoverview viewer - creates WebGL (Three.js/GLAM scene) by traversing document
  * 
@@ -5223,6 +6058,7 @@ glam.DOMViewer.prototype.prepareViewsAndControllers = function() {
 		cam.active = true;
 	}
 }
+
 
 /**
  * @fileoverview Object collects a group of Components that define an object and its behaviors
@@ -5666,6 +6502,7 @@ glam.Object.prototype.map = function(query, callback){
 		callback(found[i]);
 	}
 }
+
 /**
  * @fileoverview FadeBehavior - simple angular rotation
  * 
@@ -5740,6 +6577,7 @@ glam.FadeBehavior.prototype.stop = function()
 
 	glam.Behavior.prototype.stop.call(this);
 }
+
 /**
  * @fileoverview Object collects a group of Components that define an object and its behaviors
  * 
@@ -5826,6 +6664,7 @@ glam.SkyboxScript.prototype.update = function()
 	this.camera.quaternion.copy(this.maincamrot);
 }
 
+
 /**
  * @fileoverview line primitive parser/implementation
  * 
@@ -5886,6 +6725,7 @@ glam.LineElement.parse = function(docelt, geometry, material) {
 
 
 }
+
 
 /**
  * @fileoverview The base Application class
@@ -6243,9 +7083,10 @@ glam.Application.prototype.onTouchEnd = function(event)
 	}
 }
 
+
 /**
  * @fileoverview Picker component - add one to get picking support on your object
- * 
+ *
  * @author Tony Parisi
  */
 
@@ -6254,7 +7095,7 @@ goog.require('glam.Component');
 
 glam.ViewPicker = function(param) {
 	param = param || {};
-	
+
     glam.Component.call(this, param);
 
     this.enabled = (param.enabled !== undefined) ? param.enabled : true;
@@ -6296,7 +7137,7 @@ glam.ViewPicker.prototype.update = function() {
 glam.ViewPicker.prototype.unprojectMouse = function() {
 
 	this.unprojectedMouse.copy(this.mouse);
-	this.projector.unprojectVector(this.unprojectedMouse, glam.Graphics.instance.camera);
+    this.unprojectedMouse.unproject(glam.Graphics.instance.camera);
 }
 
 glam.ViewPicker.prototype.checkForIntersections = function(position) {
@@ -6324,6 +7165,7 @@ glam.ViewPicker.prototype.onViewOver = function() {
 glam.ViewPicker.prototype.onViewOut = function() {
     this.dispatchEvent("viewout", { type : "viewout" });
 }
+
 
 /**
  * @fileoverview class list - emulate DOM classList property for glam
@@ -6355,12 +7197,13 @@ glam.DOMClassList.prototype.remove = function(item) {
 	}
 }
 
+
 goog.provide('glam.ParticleEmitter');
 goog.require('glam.Component');
 
 glam.ParticleEmitter = function(param) {
 	this.param = param || {};
-	
+
 	glam.Component.call(this, param);
 
 	var size = this.param.size || glam.ParticleEmitter.DEFAULT_SIZE;
@@ -6379,7 +7222,7 @@ glam.ParticleEmitter = function(param) {
 
 	this._active = false;
 
-	this.object = new ShaderParticleEmitter({
+	this.object = new SPE.Emitter({
 		size: size,
         sizeEnd: sizeEnd,
         colorStart: colorStart,
@@ -6394,7 +7237,7 @@ glam.ParticleEmitter = function(param) {
         accelerationSpread: accelerationSpread,
         blending: blending,
       });
-	
+
     Object.defineProperties(this, {
         active: {
 	        get: function() {
@@ -6421,7 +7264,7 @@ glam.ParticleEmitter.prototype.update = function() {
 glam.ParticleEmitter.prototype.setActive = function(active) {
 
     this._active = active;
-    
+
     if (this._active) {
     	this.object.enable();
     }
@@ -6445,6 +7288,7 @@ glam.ParticleEmitter.DEFAULT_ACCELERATION_SPREAD = new THREE.Vector3(0, 1, 0);
 glam.ParticleEmitter.DEFAULT_BLENDING = THREE.NoBlending;
 
 
+
 goog.provide('glam.ParticleSystemScript');
 goog.require('glam.Script');
 goog.require('glam.ParticleEmitter');
@@ -6452,7 +7296,7 @@ goog.require('glam.ParticleEmitter');
 glam.ParticleSystem = function(param) {
 
 	param = param || {};
-	
+
 	var obj = new glam.Object;
 
 	var texture = param.texture || null;
@@ -6460,10 +7304,10 @@ glam.ParticleSystem = function(param) {
 
 	var visual = null;
 	if (param.geometry) {
-		
+
 		var color = (param.color !== undefined) ? param.color : glam.ParticleSystem.DEFAULT_COLOR;
 		var material = new THREE.PointCloudMaterial({color:color, size:param.size, map:param.map,
-			transparent: (param.map !== null), 
+			transparent: (param.map !== null),
 		    depthWrite: false,
 			vertexColors: (param.geometry.colors.length > 0)});
 		var ps = new THREE.PointCloud(param.geometry, material);
@@ -6471,26 +7315,26 @@ glam.ParticleSystem = function(param) {
 
 		if (param.map)
 			ps.sortParticles = true;
-		
+
 	    visual = new glam.Visual({object:ps});
 	}
 	else {
-		
-		var particleGroup = new ShaderParticleGroup({
+
+		var particleGroup = new SPE.Group({
 	        texture: texture,
 	        maxAge: maxAge,
 	      });
-		    
+
 	    visual = new glam.Visual({object:particleGroup.mesh});
 	}
-	
+
     obj.addComponent(visual);
-    
+
 	param.particleGroup = particleGroup;
-	
+
 	var pScript = new glam.ParticleSystemScript(param);
 	obj.addComponent(pScript);
-	
+
 	return obj;
 }
 
@@ -6499,9 +7343,9 @@ glam.ParticleSystemScript = function(param) {
 	glam.Script.call(this, param);
 
 	this.particleGroup = param.particleGroup;
-	
+
 	this._active = true;
-	
+
     Object.defineProperties(this, {
         active: {
 	        get: function() {
@@ -6524,17 +7368,17 @@ glam.ParticleSystemScript.prototype.realize = function()
 }
 
 glam.ParticleSystemScript.prototype.initEmitters = function() {
-	
+
 	var emitters = this._object.getComponents(glam.ParticleEmitter);
-	
+
 	var i = 0, len = emitters.length;
-	
+
     for (i = 0; i < len; i++) {
     	var emitter = emitters[i];
     	this.particleGroup.addEmitter(emitter.object);
     	emitter.active = this._active;
     }
-    
+
     this.emitters = emitters;
 }
 
@@ -6543,9 +7387,9 @@ glam.ParticleSystemScript.prototype.setActive = function(active) {
 	var emitters = this.emitters;
 	if (!emitters)
 		return;
-	
+
 	var i = 0, len = emitters.length;
-	
+
     for (i = 0; i < len; i++) {
     	var emitter = emitters[i];
     	emitter.active = active;
@@ -6562,6 +7406,7 @@ glam.ParticleSystemScript.prototype.update = function() {
 
 glam.ParticleSystem.DEFAULT_COLOR = 0xffffff;
 glam.ParticleSystemScript.DEFAULT_MAX_AGE = 1;
+
 
 /**
  * @fileoverview ScaleBehavior - simple scale up/down over time
@@ -6627,7 +7472,8 @@ glam.ScaleBehavior.prototype.stop = function()
 		this.tween.stop();
 	
 	glam.Behavior.prototype.stop.call(this);
-}/**
+}
+/**
  *
  */
 goog.require('glam.Service');
@@ -6665,6 +7511,7 @@ glam.AnimationService.prototype.update = function()
 	if (window.TWEEN)
 		THREE.glTFAnimator.update();
 }
+
 /**
  * @fileoverview material parser/implementation
  * 
@@ -7176,6 +8023,7 @@ glam.DOMMaterial.onSetProperty = function(obj, docelt, attr, val) {
 			break;
 	}
 }
+
 /**
  * @fileoverview mesh parser/implementation. currently only supports triangle sets
  * 
@@ -7358,6 +8206,7 @@ glam.MeshElement.parse = function(docelt, geometry, material, param) {
 	}
 }
 
+
 /**
  *
  */
@@ -7518,6 +8367,7 @@ glam.Gamepad.AXIS_LEFT_H								= 0;
 glam.Gamepad.AXIS_LEFT_V								= 1;
 glam.Gamepad.AXIS_RIGHT_H								= 2;
 glam.Gamepad.AXIS_RIGHT_V								= 3;
+
 /**
  * @fileoverview glam document class
  * 
@@ -7580,6 +8430,7 @@ glam.DOMDocument = {
 		}
 	},
 };
+
 // jQuery based CSS parser
 // documentation: http://youngisrael-stl.org/wordpress/2009/01/16/jquery-css-parser/
 // Version: 1.5
@@ -7799,6 +8650,7 @@ glam.CSSParser = {
 		parser.parsecss(ret, callback);
 	}
 })(glam.CSSParser);
+
 /**
  * @fileoverview animation parser/implementation
  * 
@@ -8226,6 +9078,7 @@ glam.AnimationElement.callParseCallbacks = function(id, anim) {
 		}
 	}
 }
+
 /**
  * @fileoverview transition parser/implementation - still WIP
  * 
@@ -8273,6 +9126,7 @@ glam.TransitionElement.parse = function(docelt, style, obj) {
 	}
 	
 }
+
 /**
  * @fileoverview grouping element parser/implementation
  * 
@@ -8288,6 +9142,7 @@ glam.GroupElement.create = function(docelt, style) {
 	
 	return group;
 }
+
 /**
  * @fileoverview HighlightBehavior - simple angular rotation
  * 
@@ -8342,6 +9197,7 @@ glam.HighlightBehavior.prototype.stop = function()
 // Alias a few functions - syntactic sugar
 glam.HighlightBehavior.prototype.on = glam.HighlightBehavior.prototype.start;
 glam.HighlightBehavior.prototype.off = glam.HighlightBehavior.prototype.stop;
+
 /**
  * @fileoverview MoveBehavior - simple angular rotation
  * 
@@ -8403,7 +9259,8 @@ glam.MoveBehavior.prototype.stop = function()
 		this.tween.stop();
 	
 	glam.Behavior.prototype.stop.call(this);
-}/**
+}
+/**
  * @fileoverview 2D circle parser/implementation
  * 
  * @author Tony Parisi
@@ -8446,6 +9303,7 @@ glam.CircleElement.createVisual = function(docelt, material, param) {
 	
 	return visual;
 }
+
 /**
  * @fileoverview 2D rectangle parser/implementation
  * 
@@ -8502,6 +9360,7 @@ glam.RectElement.createVisual = function(docelt, material, param) {
 
 	return visual;
 }
+
 /**
  * @fileoverview light parser/implementation. supports point, spot, directional, ambient
  * 
@@ -8593,6 +9452,7 @@ glam.LightElement.create = function(docelt, style, app) {
 	
 	return null;
 }
+
 goog.provide('glam.DirectionalLight');
 goog.require('glam.Light');
 
@@ -8668,6 +9528,7 @@ glam.DirectionalLight.prototype.updateShadows = function()
 
 glam.DirectionalLight.DEFAULT_CAST_SHADOWS = false;
 glam.DirectionalLight.DEFAULT_SHADOW_DARKNESS = 0.3;
+
 /**
  * DeviceOrientationControls - applies device orientation on object rotation
  *
@@ -8873,6 +9734,7 @@ glam.DeviceOrientationControlsCB = function(object) {
 
 };
 
+
 /**
  * @fileoverview cone primitive parser/implementation
  * 
@@ -8916,6 +9778,7 @@ glam.ConeElement.createVisual = function(docelt, material, param) {
 
 	return visual;
 }
+
 
 goog.require('glam.Prefabs');
 
@@ -9123,6 +9986,7 @@ glam.PointerLockControllerScript.prototype.setHeadlightOn = function(on)
 	}
 }
 
+
 /**
  * @fileoverview base node class
  * 
@@ -9187,6 +10051,7 @@ glam.DOMElement.getStyle = function(docelt) {
 	
 	return style;
 }
+
 /**
  * @fileoverview parser base; see also viewer.js
  * 
@@ -9313,6 +10178,7 @@ glam.DOMParser = {
 	},
 };
 
+
 /**
  * @fileoverview sphere primitive parser/implementation
  * 
@@ -9362,6 +10228,7 @@ glam.SphereElement.createVisual = function(docelt, material, param) {
 	
 	return visual;
 }
+
 
 goog.require('glam.Prefabs');
 
@@ -9461,6 +10328,7 @@ glam.RiftControllerScript.prototype.createControls = function(camera)
 }
 
 
+
 /**
  * @fileoverview model import parser/implementation
  * 
@@ -9495,6 +10363,7 @@ glam.ImportElement.onLoadComplete = function(obj, data, url) {
 
 	obj.addChild(data.scene);
 }
+
 /**
  * @fileoverview effect parser/implementation. supports built-in postprocessing effects
  * 
@@ -9611,6 +10480,7 @@ glam.EffectElement.parseAttributes = function(docelt, effect, style) {
 		}
 	}
 }
+
 
 /**
  * @fileoverview text primitive parser/implementation. only supports helvetiker and optimer fonts right now.
@@ -9781,6 +10651,7 @@ glam.TextElement.createVisual = function(docelt, material, param) {
 	
 	return visual;
 }
+
 /**
  * @fileoverview cylinder parser/implementation
  * 
@@ -9823,6 +10694,7 @@ glam.CylinderElement.createVisual = function(docelt, material, param) {
 	
 	return visual;
 }
+
 /**
  * @fileoverview particle system parser/implementation
  * 
@@ -10024,6 +10896,7 @@ glam.ParticlesElement.addEmitters = function(emitters, ps) {
 
 glam.ParticlesElement.DEFAULT_MAX_AGE = 1;
 
+
 /**
  * @fileoverview background parser/implementation. supports skyboxes and skyspheres
  * 
@@ -10089,6 +10962,7 @@ glam.BackgroundElement.onSetAttribute = function(obj, docelt, attr, val) {
 			break;
 	}
 }
+
 /**
  * @fileoverview controller parser/implementation. supports model, FPS and Rift
  * 
@@ -10184,6 +11058,7 @@ glam.ControllerElement.create = function(docelt, style, app) {
 	
 	return null;
 }
+
 /**
  * @fileoverview built-in types and utilities to support glam parser
  * 
@@ -10393,6 +11268,7 @@ glam.DOMTypes.parseUVArray = function(element, uvs) {
 	}
 
 }
+
 /**
  * @author qiao / https://github.com/qiao
  * @author mrdoob / http://mrdoob.com
@@ -10883,6 +11759,7 @@ glam.OrbitControls = function ( object, domElement ) {
 };
 
 glam.OrbitControls.prototype = Object.create( THREE.EventDispatcher.prototype );
+
 /**
  * @fileoverview Camera Manager - singleton to manage cameras, active, resize etc.
  * 
@@ -10935,7 +11812,8 @@ glam.CameraManager.handleWindowResize = function(width, height)
 
 
 glam.CameraManager.cameraList = [];
-glam.CameraManager.activeCamera = null;/**
+glam.CameraManager.activeCamera = null;
+/**
  * @fileoverview Viewer class - Application Subclass for Model/Scene Viewer
  * @author Tony Parisi / http://www.tonyparisi.com
  */
@@ -11679,6 +12557,7 @@ glam.Viewer.DEFAULT_GRID_STEP_SIZE = 1;
 glam.Viewer.GRID_COLOR = 0x202020;
 glam.Viewer.GRID_OPACITY = 0.2;
 glam.Viewer.DEFAULT_HEADLIGHT_INTENSITY = 1;
+
 /**
  * Copyright 2013 Google Inc. All Rights Reserved.
  *
@@ -11884,6 +12763,7 @@ glam.OculusRiftControls = function ( camera ) {
 	};
 
 };
+
 /**
  * @fileoverview Pick Manager - singleton to manage currently picked object(s)
  * 
@@ -12182,7 +13062,8 @@ glam.PickManager.findObjectPicker = function(event, hitPointWorld, object) {
 
 
 glam.PickManager.clickedObject = null;
-glam.PickManager.overObject  =  null;goog.provide('glam.AmbientLight');
+glam.PickManager.overObject  =  null;
+goog.provide('glam.AmbientLight');
 goog.require('glam.Light');
 
 glam.AmbientLight = function(param)
@@ -12205,6 +13086,7 @@ glam.AmbientLight.prototype.realize = function()
 {
 	glam.Light.prototype.realize.call(this);
 }
+
 /**
  * @fileoverview RotateBehavior - simple angular rotation
  * 
@@ -12252,7 +13134,8 @@ glam.RotateBehavior.prototype.evaluate = function(t)
 	{
 		this.stop();
 	}
-}/**
+}
+/**
  * @fileoverview Object collects a group of Components that define an object and its behaviors
  * 
  * @author Tony Parisi
@@ -12332,6 +13215,7 @@ glam.SkysphereScript.prototype.update = function()
 	this.camera.quaternion.copy(this.maincamrot);
 }
 
+
 goog.provide("glam.System");
 
 glam.System = {
@@ -12367,7 +13251,8 @@ glam.System = {
         }, false );
         xhr.send(null);
     },		
-};goog.provide('glam.PointLight');
+};
+goog.provide('glam.PointLight');
 goog.require('glam.Light');
 
 glam.PointLight = function(param)
@@ -12423,6 +13308,7 @@ glam.PointLight.prototype.update = function()
 }
 
 glam.PointLight.DEFAULT_DISTANCE = 0;
+
 /**
  * @fileoverview Effect - GLAM postprocessing effect, wraps Three.js
  * 
@@ -12458,6 +13344,7 @@ glam.Effect.prototype.update = function() {
 	// hook for later - maybe we do
 	// subclass with specific knowledge about shader uniforms
 }
+
 
 /**
  * @fileoverview Picker component - add one to get picking support on your object
@@ -12609,7 +13496,8 @@ glam.PlaneDragger.prototype.onTouchEnd = function(event) {
 }
 
 glam.PlaneDragger.SHOW_DRAG_PLANE = false;
-glam.PlaneDragger.SHOW_DRAG_NORMAL = false;/**
+glam.PlaneDragger.SHOW_DRAG_NORMAL = false;
+/**
  * @fileoverview A visual containing a model in Collada format
  * @author Tony Parisi
  */
@@ -12633,6 +13521,7 @@ glam.SceneVisual.prototype.realize = function()
 	
     this.addToScene();
 }
+
 /**
  * @fileoverview Contains prefab assemblies for core GLAM package
  * @author Tony Parisi
@@ -12735,6 +13624,7 @@ glam.Helpers.PlaneDecoration = function(param) {
 	return decoration;
 }
 
+
 /**
  * @fileoverview GLAM scene utilities
  * @author Tony Parisi
@@ -12823,6 +13713,7 @@ glam.SceneUtils.computeBoundingBox = function(obj) {
 		return new THREE.Box3(new THREE.Vector3, new THREE.Vector3);
 	}
 }
+
 
 
 /**
@@ -13079,6 +13970,7 @@ glam.Loader.prototype.convertScene = function(scene) {
 	return convert(scene);
 }
 
+
 goog.require('glam.Prefabs');
 
 glam.Prefabs.ModelController = function(param)
@@ -13226,6 +14118,7 @@ glam.ModelControllerScript.MIN_X_ROTATION = -Math.PI / 2;
 glam.ModelControllerScript.MAX_Y_ROTATION = Math.PI * 2;
 glam.ModelControllerScript.MIN_Y_ROTATION = -Math.PI * 2;
 
+
 goog.require('glam.Prefabs');
 
 glam.Prefabs.DeviceOrientationController = function(param)
@@ -13334,6 +14227,7 @@ glam.DeviceOrientationControllerScript.prototype.setCamera = function(camera) {
 	this._camera = camera;
 	this.controls = this.createControls(camera);
 }
+
 /**
  * @author mrdoob / http://mrdoob.com/
  * @author alteredq / http://alteredqualia.com/
@@ -13871,6 +14765,7 @@ glam.FirstPersonControls = function ( object, domElement ) {
 	this.handleResize();
 
 };
+
 /**
  * @fileoverview mouse input implementation
  * 
@@ -13923,6 +14818,7 @@ glam.DOMInput.add = function(docelt, obj) {
 	addListener(viewpicker, "viewover")
 	addListener(viewpicker, "viewout");
 }
+
 /**
  * @fileoverview styles support - emulate built-in DOM style object
  * 
@@ -14076,6 +14972,7 @@ glam.DOMStyle._standardProperties = {
 		"z" : "",
 };
 
+
 /**
  * @fileoverview Timer - component that generates time events
  * 
@@ -14146,6 +15043,7 @@ glam.Timer.prototype.stop = function()
 	this.running = false;
 }
 
+
 /**
  * @fileoverview Object collects a group of Components that define an object and its behaviors
  * 
@@ -14208,6 +15106,7 @@ glam.HUDScript.prototype.update = function() {
 }
 
 glam.HUDScript.DEFAULT_Z_DISTANCE = 1;
+
 
 /**
  * @fileoverview transform properties parser/implementation
@@ -14402,6 +15301,7 @@ glam.DOMTransform.onSetAttribute = function(obj, docelt, attr, val) {
 		
 	}
 }
+
 /**
  * @fileoverview Picker component - add one to get picking support on your object
  * 
@@ -14582,6 +15482,7 @@ glam.CylinderDragger.prototype.onTouchEnd = function(event) {
 
 glam.CylinderDragger.SHOW_DRAG_PLANE = false;
 glam.CylinderDragger.SHOW_DRAG_NORMAL = false;
+
 /**
  * @fileoverview Module Configuration
  * 
@@ -14700,6 +15601,7 @@ glam.Modules = function()
 }
 
 var CLOSURE_NO_DEPS = true;
+
 
 goog.provide('glam');
 

@@ -3,7 +3,7 @@ goog.require('glam.Component');
 
 glam.ParticleEmitter = function(param) {
 	this.param = param || {};
-	
+
 	glam.Component.call(this, param);
 
 	var size = this.param.size || glam.ParticleEmitter.DEFAULT_SIZE;
@@ -22,7 +22,7 @@ glam.ParticleEmitter = function(param) {
 
 	this._active = false;
 
-	this.object = new ShaderParticleEmitter({
+	this.object = new SPE.Emitter({
 		size: size,
         sizeEnd: sizeEnd,
         colorStart: colorStart,
@@ -37,7 +37,7 @@ glam.ParticleEmitter = function(param) {
         accelerationSpread: accelerationSpread,
         blending: blending,
       });
-	
+
     Object.defineProperties(this, {
         active: {
 	        get: function() {
@@ -64,7 +64,7 @@ glam.ParticleEmitter.prototype.update = function() {
 glam.ParticleEmitter.prototype.setActive = function(active) {
 
     this._active = active;
-    
+
     if (this._active) {
     	this.object.enable();
     }
