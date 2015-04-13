@@ -1,6 +1,6 @@
 /**
  * @fileoverview Main interface to the graphics and rendering subsystem
- * 
+ *
  * @author Tony Parisi
  */
 goog.require('glam.Graphics');
@@ -16,7 +16,7 @@ goog.inherits(glam.GraphicsThreeJS, glam.Graphics);
 glam.GraphicsThreeJS.prototype.initialize = function(param)
 {
 	param = param || {};
-	
+
 	// call all the setup functions
 	this.initOptions(param);
 	this.initPageElements(param);
@@ -37,7 +37,7 @@ glam.GraphicsThreeJS.prototype.focus = function()
 
 glam.GraphicsThreeJS.prototype.initOptions = function(param)
 {
-	this.displayStats = (param && param.displayStats) ? 
+	this.displayStats = (param && param.displayStats) ?
 			param.displayStats : glam.GraphicsThreeJS.default_display_stats;
 }
 
@@ -54,7 +54,7 @@ glam.GraphicsThreeJS.prototype.initPageElements = function(param)
    	}
 
     this.saved_cursor = this.container.style.cursor;
-    
+
     if (this.displayStats)
     {
     	if (window.Stats)
@@ -78,24 +78,24 @@ glam.GraphicsThreeJS.prototype.initScene = function()
 {
     var scene = new THREE.Scene();
 
-//    scene.add( new THREE.AmbientLight(0xffffff) ); //  0x505050 ) ); // 
-	
-    var camera = new THREE.PerspectiveCamera( 45, 
+//    scene.add( new THREE.AmbientLight(0xffffff) ); //  0x505050 ) ); //
+
+    var camera = new THREE.PerspectiveCamera( 45,
     		this.container.offsetWidth / this.container.offsetHeight, 1, 10000 );
     camera.position.copy(glam.Camera.DEFAULT_POSITION);
 
     scene.add(camera);
-    
+
     this.scene = scene;
 	this.camera = camera;
-	
+
 	this.backgroundLayer = {};
     var scene = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera( 45, 
+    var camera = new THREE.PerspectiveCamera( 45,
     		this.container.offsetWidth / this.container.offsetHeight, 0.01, 10000 );
-    camera.position.set( 0, 0, 10 );	
+    camera.position.set( 0, 0, 10 );
     scene.add(camera);
-    
+
     this.backgroundLayer.scene = scene;
     this.backgroundLayer.camera = camera;
 }
@@ -105,13 +105,13 @@ glam.GraphicsThreeJS.prototype.initRenderer = function(param)
 	var antialias = (param.antialias !== undefined) ? param.antialias : true;
 	var alpha = (param.alpha !== undefined) ? param.alpha : true;
 	//var devicePixelRatio = (param.devicePixelRatio !== undefined) ? param.devicePixelRatio : 1;
-	
+
     var renderer = // glam.Config.USE_WEBGL ?
-    	new THREE.WebGLRenderer( { antialias: antialias, 
+    	new THREE.WebGLRenderer( { antialias: antialias,
     		alpha: alpha,
     		/*devicePixelRatio : devicePixelRatio */ } ); // :
     	// new THREE.CanvasRenderer;
-    	
+
     renderer.sortObjects = false;
     renderer.setSize( this.container.offsetWidth, this.container.offsetHeight );
 
@@ -120,7 +120,7 @@ glam.GraphicsThreeJS.prototype.initRenderer = function(param)
     	renderer.domElement.style.backgroundColor = param.backgroundColor;
     	renderer.domElement.setAttribute('z-index', -1);
     }
-    
+
     this.container.appendChild( renderer.domElement );
 
     var projector = new THREE.Projector();
@@ -129,7 +129,7 @@ glam.GraphicsThreeJS.prototype.initRenderer = function(param)
     this.projector = projector;
 
     this.lastFrameTime = 0;
-    
+
     if (param.riftRender) {
     	this.riftCam = new THREE.VREffect(this.renderer, function(err) {
 			if (err) {
@@ -141,7 +141,7 @@ glam.GraphicsThreeJS.prototype.initRenderer = function(param)
     	this.cardboard = new THREE.StereoEffect(this.renderer);
     	this.cardboard.setSize( this.container.offsetWidth, this.container.offsetHeight );
     }
-    
+
     // Placeholder for effects composer
     this.composer = null;
 }
@@ -149,47 +149,47 @@ glam.GraphicsThreeJS.prototype.initRenderer = function(param)
 glam.GraphicsThreeJS.prototype.initMouse = function()
 {
 	var dom = this.renderer.domElement;
-	
+
 	var that = this;
-	dom.addEventListener( 'mousemove', 
+	dom.addEventListener( 'mousemove',
 			function(e) { that.onDocumentMouseMove(e); }, false );
-	dom.addEventListener( 'mousedown', 
+	dom.addEventListener( 'mousedown',
 			function(e) { that.onDocumentMouseDown(e); }, false );
-	dom.addEventListener( 'mouseup', 
-			function(e) { that.onDocumentMouseUp(e); }, false ); 
- 	dom.addEventListener( 'click', 
+	dom.addEventListener( 'mouseup',
+			function(e) { that.onDocumentMouseUp(e); }, false );
+ 	dom.addEventListener( 'click',
 			function(e) { that.onDocumentMouseClick(e); }, false );
-	dom.addEventListener( 'dblclick', 
+	dom.addEventListener( 'dblclick',
 			function(e) { that.onDocumentMouseDoubleClick(e); }, false );
 
-	dom.addEventListener( 'mousewheel', 
+	dom.addEventListener( 'mousewheel',
 			function(e) { that.onDocumentMouseScroll(e); }, false );
-	dom.addEventListener( 'DOMMouseScroll', 
+	dom.addEventListener( 'DOMMouseScroll',
 			function(e) { that.onDocumentMouseScroll(e); }, false );
-	
-	dom.addEventListener( 'touchstart', 
+
+	dom.addEventListener( 'touchstart',
 			function(e) { that.onDocumentTouchStart(e); }, false );
-	dom.addEventListener( 'touchmove', 
+	dom.addEventListener( 'touchmove',
 			function(e) { that.onDocumentTouchMove(e); }, false );
-	dom.addEventListener( 'touchend', 
+	dom.addEventListener( 'touchend',
 			function(e) { that.onDocumentTouchEnd(e); }, false );
 }
 
 glam.GraphicsThreeJS.prototype.initKeyboard = function()
 {
 	var dom = this.renderer.domElement;
-	
+
 	var that = this;
-	dom.addEventListener( 'keydown', 
+	dom.addEventListener( 'keydown',
 			function(e) { that.onKeyDown(e); }, false );
-	dom.addEventListener( 'keyup', 
+	dom.addEventListener( 'keyup',
 			function(e) { that.onKeyUp(e); }, false );
-	dom.addEventListener( 'keypress', 
+	dom.addEventListener( 'keypress',
 			function(e) { that.onKeyPress(e); }, false );
 
 	// so it can take focus
 	dom.setAttribute("tabindex", 1);
-    
+
 }
 
 glam.GraphicsThreeJS.prototype.addDomHandlers = function()
@@ -198,11 +198,11 @@ glam.GraphicsThreeJS.prototype.addDomHandlers = function()
 	window.addEventListener( 'resize', function(event) { that.onWindowResize(event); }, false );
 
 	setTimeout(function(event) { that.onWindowResize(event); }, 10);
-	
+
 	var fullScreenChange =
 		this.renderer.domElement.mozRequestFullScreen? 'mozfullscreenchange' : 'webkitfullscreenchange';
-	
-	document.addEventListener( fullScreenChange, 
+
+	document.addEventListener( fullScreenChange,
 			function(e) {that.onFullScreenChanged(e); }, false );
 
 }
@@ -210,38 +210,38 @@ glam.GraphicsThreeJS.prototype.addDomHandlers = function()
 glam.GraphicsThreeJS.prototype.objectFromMouse = function(event)
 {
 	var eltx = event.elementX, elty = event.elementY;
-	
+
 	// translate client coords into vp x,y
     var vpx = ( eltx / this.container.offsetWidth ) * 2 - 1;
     var vpy = - ( elty / this.container.offsetHeight ) * 2 + 1;
-    
+
     var vector = new THREE.Vector3( vpx, vpy, 0.5 );
 
-    this.projector.unprojectVector( vector, this.camera );
-	
+    vector.unproject( this.camera );
+
     var pos = new THREE.Vector3;
     pos = pos.applyMatrix4(this.camera.matrixWorld);
-	
+
     var raycaster = new THREE.Raycaster( pos, vector.sub( pos ).normalize() );
 
 	var intersects = raycaster.intersectObjects( this.scene.children, true );
-	
+
     if ( intersects.length > 0 ) {
     	var i = 0;
-    	while(i < intersects.length && (!intersects[i].object.visible || 
+    	while(i < intersects.length && (!intersects[i].object.visible ||
     			intersects[i].object.ignorePick))
     	{
     		i++;
     	}
-    	
+
     	var intersected = intersects[i];
-    	
+
     	if (i >= intersects.length)
     	{
         	return { object : null, point : null, normal : null };
     	}
-    	
-    	return (this.findObjectFromIntersected(intersected.object, intersected.point, intersected.face));        	    	                             
+
+    	return (this.findObjectFromIntersected(intersected.object, intersected.point, intersected.face));
     }
     else
     {
@@ -255,30 +255,30 @@ glam.GraphicsThreeJS.prototype.objectFromRay = function(hierarchy, origin, direc
 
     var objects = null;
     if (hierarchy) {
-    	objects = hierarchy.transform.object.children; 
+    	objects = hierarchy.transform.object.children;
     }
     else {
     	objects = this.scene.children;
     }
-    
+
 	var intersects = raycaster.intersectObjects( objects, true );
-	
+
     if ( intersects.length > 0 ) {
     	var i = 0;
-    	while(i < intersects.length && (!intersects[i].object.visible || 
+    	while(i < intersects.length && (!intersects[i].object.visible ||
     			intersects[i].object.ignoreCollision))
     	{
     		i++;
     	}
-    	
+
     	var intersected = intersects[i];
-    	
+
     	if (i >= intersects.length)
     	{
         	return { object : null, point : null, normal : null };
     	}
-    	
-    	return (this.findObjectFromIntersected(intersected.object, intersected.point, intersected.face));        	    	                             
+
+    	return (this.findObjectFromIntersected(intersected.object, intersected.point, intersected.face));
     }
     else
     {
@@ -315,36 +315,36 @@ glam.GraphicsThreeJS.prototype.nodeFromMouse = function(event)
 {
 	// Blerg, this is to support code outside the SB components & picker framework
 	// Returns a raw Three.js node
-	
+
 	// translate client coords into vp x,y
 	var eltx = event.elementX, elty = event.elementY;
-	
+
     var vpx = ( eltx / this.container.offsetWidth ) * 2 - 1;
     var vpy = - ( elty / this.container.offsetHeight ) * 2 + 1;
-    
+
     var vector = new THREE.Vector3( vpx, vpy, 0.5 );
 
-    this.projector.unprojectVector( vector, this.camera );
-	
+    vector.unproject( this.camera );
+
     var pos = new THREE.Vector3;
     pos = pos.applyMatrix4(this.camera.matrixWorld);
 
     var raycaster = new THREE.Raycaster( pos, vector.sub( pos ).normalize() );
 
 	var intersects = raycaster.intersectObjects( this.scene.children, true );
-	
+
     if ( intersects.length > 0 ) {
     	var i = 0;
     	while(!intersects[i].object.visible)
     	{
     		i++;
     	}
-    	
+
     	var intersected = intersects[i];
     	if (intersected)
     	{
-    		return { node : intersected.object, 
-    				 point : intersected.point, 
+    		return { node : intersected.object,
+    				 point : intersected.point,
     				 normal : intersected.face.normal
     				}
     	}
@@ -362,14 +362,14 @@ glam.GraphicsThreeJS.prototype.getObjectIntersection = function(x, y, object)
 	// Translate client coords into viewport x,y
 	var vpx = ( x / this.renderer.domElement.offsetWidth ) * 2 - 1;
 	var vpy = - ( y / this.renderer.domElement.offsetHeight ) * 2 + 1;
-	
+
     var vector = new THREE.Vector3( vpx, vpy, 0.5 );
 
-    this.projector.unprojectVector( vector, this.camera );
-	
+    vector.unproject( this.camera );
+
     var pos = new THREE.Vector3;
     pos = pos.applyMatrix4(this.camera.matrixWorld);
-	
+
     var raycaster = new THREE.Raycaster( pos, vector.sub( pos ).normalize() );
 
 	var intersects = raycaster.intersectObject( object, true );
@@ -383,14 +383,14 @@ glam.GraphicsThreeJS.prototype.getObjectIntersection = function(x, y, object)
 	}
 	else
 		return null;
-		
+
 }
 
 glam.GraphicsThreeJS.prototype.calcElementOffset = function(offset) {
 
 	offset.left = this.renderer.domElement.offsetLeft;
 	offset.top = this.renderer.domElement.offsetTop;
-	
+
 	var parent = this.renderer.domElement.offsetParent;
 	while(parent) {
 		offset.left += parent.offsetLeft;
@@ -402,48 +402,48 @@ glam.GraphicsThreeJS.prototype.calcElementOffset = function(offset) {
 glam.GraphicsThreeJS.prototype.onDocumentMouseMove = function(event)
 {
     event.preventDefault();
-    
+
 	var offset = {};
 	this.calcElementOffset(offset);
-	
+
 	var eltx = event.pageX - offset.left;
 	var elty = event.pageY - offset.top;
-	
-	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
+
+	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY,
 	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
 	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey };
-	
+
     glam.Mouse.instance.onMouseMove(evt);
-    
+
     if (glam.PickManager)
     {
     	glam.PickManager.handleMouseMove(evt);
     }
-    
+
     glam.Application.handleMouseMove(evt);
 }
 
 glam.GraphicsThreeJS.prototype.onDocumentMouseDown = function(event)
 {
     event.preventDefault();
-    
+
 	var offset = {};
 	this.calcElementOffset(offset);
-	
+
 	var eltx = event.pageX - offset.left;
 	var elty = event.pageY - offset.top;
-		
-	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
+
+	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY,
 	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
 	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey  };
-	
+
     glam.Mouse.instance.onMouseDown(evt);
-    
+
     if (glam.PickManager)
     {
     	glam.PickManager.handleMouseDown(evt);
     }
-    
+
     glam.Application.handleMouseDown(evt);
 }
 
@@ -453,20 +453,20 @@ glam.GraphicsThreeJS.prototype.onDocumentMouseUp = function(event)
 
 	var offset = {};
 	this.calcElementOffset(offset);
-	
+
 	var eltx = event.pageX - offset.left;
 	var elty = event.pageY - offset.top;
-	
-	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
+
+	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY,
 	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
 	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey  };
-    
+
     glam.Mouse.instance.onMouseUp(evt);
-    
+
     if (glam.PickManager)
     {
     	glam.PickManager.handleMouseUp(evt);
-    }	            
+    }
 
     glam.Application.handleMouseUp(evt);
 }
@@ -477,20 +477,20 @@ glam.GraphicsThreeJS.prototype.onDocumentMouseClick = function(event)
 
 	var offset = {};
 	this.calcElementOffset(offset);
-	
+
 	var eltx = event.pageX - offset.left;
 	var elty = event.pageY - offset.top;
-	
-	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
+
+	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY,
 	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
 	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey  };
-    
+
     glam.Mouse.instance.onMouseClick(evt);
-    
+
     if (glam.PickManager)
     {
     	glam.PickManager.handleMouseClick(evt);
-    }	            
+    }
 
     glam.Application.handleMouseClick(evt);
 }
@@ -501,23 +501,23 @@ glam.GraphicsThreeJS.prototype.onDocumentMouseDoubleClick = function(event)
 
 	var offset = {};
 	this.calcElementOffset(offset);
-	
+
 	var eltx = event.pageX - offset.left;
 	var elty = event.pageY - offset.top;
-	
+
 	var eltx = event.pageX - offset.left;
 	var elty = event.pageY - offset.top;
-	
-	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY, 
+
+	var evt = { type : event.type, pageX : event.pageX, pageY : event.pageY,
 	    	elementX : eltx, elementY : elty, button:event.button, altKey:event.altKey,
 	    	ctrlKey:event.ctrlKey, shiftKey:event.shiftKey  };
-    
+
     glam.Mouse.instance.onMouseDoubleClick(evt);
-    
+
     if (glam.PickManager)
     {
     	glam.PickManager.handleMouseDoubleClick(evt);
-    }	            
+    }
 
     glam.Application.handleMouseDoubleClick(evt);
 }
@@ -539,14 +539,14 @@ glam.GraphicsThreeJS.prototype.onDocumentMouseScroll = function(event)
 	}
 
 	var evt = { type : "mousescroll", delta : delta };
-    
+
     glam.Mouse.instance.onMouseScroll(evt);
 
     if (glam.PickManager)
     {
     	glam.PickManager.handleMouseScroll(evt);
     }
-    
+
     glam.Application.handleMouseScroll(evt);
 }
 
@@ -571,7 +571,7 @@ glam.GraphicsThreeJS.prototype.translateTouch = function(touch, offset) {
 glam.GraphicsThreeJS.prototype.onDocumentTouchStart = function(event)
 {
     event.preventDefault();
-    
+
 	var offset = {};
 	this.calcElementOffset(offset);
 
@@ -582,22 +582,22 @@ glam.GraphicsThreeJS.prototype.onDocumentTouchStart = function(event)
 	}
 
 	var evt = { type : event.type, touches : touches };
-	
+
     if (glam.PickManager)
     {
     	glam.PickManager.handleTouchStart(evt);
     }
-    
+
     glam.Application.handleTouchStart(evt);
 }
 
 glam.GraphicsThreeJS.prototype.onDocumentTouchMove = function(event)
 {
     event.preventDefault();
-    
+
 	var offset = {};
 	this.calcElementOffset(offset);
-	
+
 	var touches = [];
 	var i, len = event.touches.length;
 	for (i = 0; i < len; i++) {
@@ -611,12 +611,12 @@ glam.GraphicsThreeJS.prototype.onDocumentTouchMove = function(event)
 	}
 
 	var evt = { type : event.type, touches : touches, changedTouches : changedTouches };
-		    
+
     if (glam.PickManager)
     {
     	glam.PickManager.handleTouchMove(evt);
     }
-    
+
     glam.Application.handleTouchMove(evt);
 }
 
@@ -626,7 +626,7 @@ glam.GraphicsThreeJS.prototype.onDocumentTouchEnd = function(event)
 
 	var offset = {};
 	this.calcElementOffset(offset);
-	
+
 	var touches = [];
 	var i, len = event.touches.length;
 	for (i = 0; i < len; i++) {
@@ -640,11 +640,11 @@ glam.GraphicsThreeJS.prototype.onDocumentTouchEnd = function(event)
 	}
 
 	var evt = { type : event.type, touches : touches, changedTouches : changedTouches };
-    
+
     if (glam.PickManager)
     {
     	glam.PickManager.handleTouchEnd(evt);
-    }	            
+    }
 
     glam.Application.handleTouchEnd(evt);
 }
@@ -656,7 +656,7 @@ glam.GraphicsThreeJS.prototype.onKeyDown = function(event)
 	event.preventDefault();
 
     glam.Keyboard.instance.onKeyDown(event);
-    
+
 	glam.Application.handleKeyDown(event);
 }
 
@@ -666,17 +666,17 @@ glam.GraphicsThreeJS.prototype.onKeyUp = function(event)
 	event.preventDefault();
 
     glam.Keyboard.instance.onKeyUp(event);
-    
+
 	glam.Application.handleKeyUp(event);
 }
-	        
+
 glam.GraphicsThreeJS.prototype.onKeyPress = function(event)
 {
 	// N.B.: Chrome doesn't deliver keyPress if we don't bubble... keep an eye on this
 	event.preventDefault();
 
     glam.Keyboard.instance.onKeyPress(event);
-    
+
 	glam.Application.handleKeyPress(event);
 }
 
@@ -695,16 +695,16 @@ glam.GraphicsThreeJS.prototype.onWindowResize = function(event)
 	if (this.cardboard) {
 		this.cardboard.setSize(width, height);
 	}
-	
+
 	this.renderer.setSize(width, height);
-	
+
 	if (this.composer) {
 		this.composer.setSize(width, height);
 	}
-	
-	
+
+
 	if (glam.CameraManager && glam.CameraManager.handleWindowResize(this.container.offsetWidth, this.container.offsetHeight))
-	{		
+	{
 	}
 	else
 	{
@@ -714,7 +714,7 @@ glam.GraphicsThreeJS.prototype.onWindowResize = function(event)
 }
 
 glam.GraphicsThreeJS.prototype.onFullScreenChanged = function(event) {
-	
+
 	if ( !document.mozFullscreenElement && !document.webkitFullscreenElement ) {
 		this.fullscreen = false;
 	}
@@ -730,7 +730,7 @@ glam.GraphicsThreeJS.prototype.setCursor = function(cursor)
 {
 	if (!cursor)
 		cursor = this.saved_cursor;
-	
+
 	this.container.style.cursor = cursor;
 }
 
@@ -756,7 +756,7 @@ glam.GraphicsThreeJS.prototype.update = function()
 	else {
 		this.render();
 	}
-	
+
     if (this.stats)
     {
     	this.stats.update();
@@ -799,13 +799,13 @@ glam.GraphicsThreeJS.prototype.setFullScreen = function(enable)
 	if (this.riftCam) {
 
 		this.fullscreen = enable;
-		
+
 		this.riftCam.setFullScreen(enable);
 	}
 	else if (this.cardboard) {
 
 		var canvas = this.renderer.domElement;
-		
+
 		if (enable) {
 			if ( this.container.mozRequestFullScreen ) {
 				this.container.mozRequestFullScreen();
@@ -831,23 +831,23 @@ glam.GraphicsThreeJS.prototype.setCamera = function(camera) {
 }
 
 glam.GraphicsThreeJS.prototype.addEffect = function(effect) {
-	
+
 	if (!this.composer) {
 		this.composer = new glam.Composer();
 	}
-	
+
 	if (!this.effects) {
 		this.effects  = [];
 	}
-	
+
 	if (effect.isShaderEffect) {
 		for (var i = 0; i < this.effects.length; i++) {
 			var ef = this.effects[i];
 //			ef.pass.renderToScreen = false;
-		}	
+		}
 //		effect.pass.renderToScreen = true;
 	}
-	
+
 	this.effects.push(effect);
 	this.composer.addEffect(effect);
 }

@@ -1,6 +1,6 @@
 /**
  * @fileoverview Picker component - add one to get picking support on your object
- * 
+ *
  * @author Tony Parisi
  */
 
@@ -9,7 +9,7 @@ goog.require('glam.Component');
 
 glam.ViewPicker = function(param) {
 	param = param || {};
-	
+
     glam.Component.call(this, param);
 
     this.enabled = (param.enabled !== undefined) ? param.enabled : true;
@@ -51,7 +51,7 @@ glam.ViewPicker.prototype.update = function() {
 glam.ViewPicker.prototype.unprojectMouse = function() {
 
 	this.unprojectedMouse.copy(this.mouse);
-	this.projector.unprojectVector(this.unprojectedMouse, glam.Graphics.instance.camera);
+    this.unprojectedMouse.unproject(glam.Graphics.instance.camera);
 }
 
 glam.ViewPicker.prototype.checkForIntersections = function(position) {

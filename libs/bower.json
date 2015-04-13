@@ -1,0 +1,7 @@
+{
+  "name": "glam libs",
+  "dependencies": {
+    "ShaderParticleEngine": "squarefeet/ShaderParticleEngine#Release-0.7.9",
+    "three.js": "mrdoob/three.js#r71"
+  }
+}
