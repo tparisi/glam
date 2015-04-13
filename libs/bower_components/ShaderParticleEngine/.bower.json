@@ -1,0 +1,14 @@
+{
+  "name": "ShaderParticleEngine",
+  "homepage": "https://github.com/squarefeet/ShaderParticleEngine",
+  "_release": "Release-0.7.9",
+  "_resolution": {
+    "type": "tag",
+    "tag": "Release-0.7.9",
+    "commit": "ac4dd5a2600ab77af50d4214928e869e99211310"
+  },
+  "_source": "git://github.com/squarefeet/ShaderParticleEngine.git",
+  "_target": "Release-0.7.9",
+  "_originalSource": "squarefeet/ShaderParticleEngine",
+  "_direct": true
+}
