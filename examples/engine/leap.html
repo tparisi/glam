@@ -1,0 +1,265 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>glam</title>
+</head>
+<body>
+	<div id="container" style="width:98%; height:98%; position:absolute;"></div>
+
+	<script src="../../build/glam.js"></script>
+	<script src="./libs/leapjs/leap-0.6.4.js"></script>
+	<script>
+
+	var cube = null;
+	var cylinder = null;
+	var dirlight = null;
+	var camera1 = null, camera2 = null;
+  var rotationTransition = null,
+      positionTransition = null;
+
+	window.addEventListener('load', function(){
+		var container = document.getElementById("container");
+		
+		var app = new glam.Viewer({ container : container, displayStats:true, 
+      firstPerson: true, tabstop: true } );
+		
+
+		var root = new glam.Object;
+		
+		var dragger = new glam.PlaneDragger({ normal: new THREE.Vector3(0, 1, 1) });
+		dragger.overCursor = 'pointer';
+		dragger.addEventListener("mouseover", onDraggerMouseOver);
+		dragger.addEventListener("mouseout", onDraggerMouseOut);
+		dragger.addEventListener("mousedown", onDraggerMouseDown);
+		dragger.addEventListener("mousemove", onDraggerMouseMove);
+		dragger.addEventListener("mouseup", onDraggerMouseUp);
+		dragger.addEventListener("mousescroll", onDraggerMouseScroll);
+		dragger.addEventListener("drag", onDraggerDrag);
+		
+		var group = new glam.Object;
+		group.addComponent(dragger);
+
+		root.addChild(group);
+		
+		cube = createCube();
+		group.addChild(cube);
+
+		var obj = new glam.Object;
+		obj.addComponent(new glam.DirectionalLight);
+		root.addChild(obj);
+
+		app.addObject(root);
+
+		app.run();
+
+      var controller = new Leap.Controller({enableGestures: true});
+      controller.loop(function(frame) {
+        latestFrame = frame;
+
+        var str = "";
+        for (var i in frame.handsMap) {
+          var hand = frame.handsMap[i];
+          str += (" " + hand.roll() + " "
+            + hand.pitch() + " "
+            + hand.yaw());
+        }
+        
+        // if (str) console.log(str);
+
+        for (g in frame.gestures) {
+          var gesture = frame.gestures[g];
+          switch (gesture.type) {
+            case "swipe" :
+              //cube.transform.rotation.x += gesture.direction[0];
+              if (gesture.direction[0] > 0) {
+                swipeLeft();
+              }
+              else {
+                swipeRight();
+              }
+              //cube.transform.rotation.z += gesture.direction[2];
+              break;
+
+            case "screenTap" :
+              console.log("Gesture: ", gesture.type, gesture);
+//              screenTap();
+              break;
+
+            default :
+//              console.log("Gesture: ", gesture.type, gesture);
+              break;
+          }     
+        }
+
+      });
+      controller.on('ready', function() {
+          console.log("ready");
+      });
+      controller.on('connect', function() {
+          console.log("connect");
+      });
+      controller.on('disconnect', function() {
+          console.log("disconnect");
+      });
+      controller.on('focus', function() {
+          console.log("focus");
+      });
+      controller.on('blur', function() {
+          console.log("blur");
+      });
+      controller.on('deviceConnected', function() {
+          console.log("deviceConnected");
+      });
+      controller.on('deviceDisconnected', function() {
+          console.log("deviceDisconnected");
+      });
+
+	},
+	false
+	);
+
+	function createCube() {	
+		var o = new glam.Object;
+
+		o.transform.rotation.x = Math.PI / 6;
+		
+		var visual = new glam.Visual(
+				{ geometry: new THREE.PlaneGeometry(2, 2),
+					material: new THREE.MeshPhongMaterial({color:0xffaa22,
+					transparent: false,
+					opacity:1,
+          side: THREE.DoubleSide})
+				});
+
+		
+		o.addComponent(visual);
+
+    rotationTransition = new glam.Transition({
+      target: o.transform.rotation,
+      to : {
+        y : 0
+      },
+      duration : 500,
+      easing : TWEEN.Easing.Cubic.InOut,
+    });
+
+    o.addComponent(rotationTransition);
+
+    positionTransition = new glam.Transition({
+      target: o.transform.position,
+      to : {
+        y : 0
+      },
+      duration : 500,
+      easing : TWEEN.Easing.Cubic.InOut,
+    });
+    
+    o.addComponent(positionTransition);
+
+		return o;
+	}
+
+
+	var savedColor = 0;
+	function onDraggerMouseOver(event)
+	{
+		savedColor = cube.visuals[0].material.color.getHex();
+		cube.visuals[0].material.color.setHex(0x00ff00);
+	}
+		
+	function onDraggerMouseOut(event)
+	{
+		cube.visuals[0].material.color.setHex(savedColor);
+	}
+
+	function onDraggerMouseDown(event)
+	{
+//		cylinder.transform.position.copy(event.point);
+	}
+
+	function onDraggerMouseMove(event)
+	{
+		offset = event.point.clone();
+	}
+	
+	function onDraggerMouseUp(event)
+	{
+	}
+
+	function onDraggerMouseScroll(event)
+	{
+		console.log("Mouse scroll: ", event);	
+	}
+
+	function onDraggerDrag(event)
+	{
+		console.log("Mouse: ", event.offset);
+		cube.transform.position.copy(event.offset);
+	}	
+
+  var swipingLeft = swipingRight = false;
+
+  function swipeLeft() {
+    if (swipingLeft) {
+      return;
+    }
+
+    if (swipingRight) {
+      rotationTransition.stop();
+    }
+
+    rotationTransition.to.y += Math.PI;
+    rotationTransition.start();
+
+    swipingLeft = true;
+    setTimeout(function() {
+      swipingLeft = false;
+    }, rotationTransition.duration)
+  }
+
+  function swipeRight() {
+    if (swipingRight) {
+      return;
+    }
+
+    if (swipingLeft) {
+      rotationTransition.stop();
+    }
+
+    rotationTransition.to.y -= Math.PI;
+    rotationTransition.start();
+
+    swipingRight = true;
+    setTimeout(function() {
+      swipingRight = false;
+    }, rotationTransition.duration)
+
+  }
+
+  var screenTapping = false;
+
+  function screenTap() {
+    if (screenTapping) {
+      return;
+    }
+
+    if (screenTapping) {
+      positionTransition.stop();
+    }
+
+    positionTransition.to.y += 1;
+    positionTransition.start();
+
+    screenTapping = true;
+    setTimeout(function() {
+      screenTapping = false;
+    }, positionTransition.duration)
+  }
+
+
+	</script>
+
+
+</body>
+</html>

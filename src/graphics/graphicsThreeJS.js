@@ -443,6 +443,11 @@ glam.GraphicsThreeJS.prototype.onDocumentMouseDown = function(event)
     {
     	glam.PickManager.handleMouseDown(evt);
     }
+
+    if (glam.ViewPicker)
+    {
+    	glam.ViewPicker.handleMouseDown(evt);
+    }
     
     glam.Application.handleMouseDown(evt);
 }
@@ -468,6 +473,11 @@ glam.GraphicsThreeJS.prototype.onDocumentMouseUp = function(event)
     	glam.PickManager.handleMouseUp(evt);
     }	            
 
+    if (glam.ViewPicker)
+    {
+    	glam.ViewPicker.handleMouseUp(evt);
+    }
+    
     glam.Application.handleMouseUp(evt);
 }
 

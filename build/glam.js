@@ -53521,6 +53521,11 @@ glam.GraphicsThreeJS.prototype.onDocumentMouseDown = function(event)
     {
     	glam.PickManager.handleMouseDown(evt);
     }
+
+    if (glam.ViewPicker)
+    {
+    	glam.ViewPicker.handleMouseDown(evt);
+    }
     
     glam.Application.handleMouseDown(evt);
 }
@@ -53546,6 +53551,11 @@ glam.GraphicsThreeJS.prototype.onDocumentMouseUp = function(event)
     	glam.PickManager.handleMouseUp(evt);
     }	            
 
+    if (glam.ViewPicker)
+    {
+    	glam.ViewPicker.handleMouseUp(evt);
+    }
+    
     glam.Application.handleMouseUp(evt);
 }
 
@@ -57005,12 +57015,44 @@ glam.ViewPicker.prototype.checkForIntersections = function() {
 
 glam.ViewPicker.prototype.onViewOver = function() {
     this.dispatchEvent("viewover", { type : "viewover" });
+    glam.ViewPicker.overObject = this;
 }
 
 glam.ViewPicker.prototype.onViewOut = function() {
     this.dispatchEvent("viewout", { type : "viewout" });
+    glam.ViewPicker.overObject = null;
 }
 
+glam.ViewPicker.prototype.onViewMouseDown = function() {
+    this.dispatchEvent("mousedown", { type : "mousedown" });
+}
+
+glam.ViewPicker.prototype.onViewMouseUp = function() {
+    this.dispatchEvent("mouseup", { type : "mouseup" });
+}
+
+glam.ViewPicker.prototype.onViewMouseClick = function() {
+    this.dispatchEvent("click", { type : "click" });
+}
+
+glam.ViewPicker.handleMouseDown = function(event) {
+    glam.ViewPicker.clickedObject = glam.ViewPicker.overObject;
+    if (glam.ViewPicker.clickedObject) {
+    	glam.ViewPicker.clickedObject.onViewMouseDown();
+    }
+}
+
+glam.ViewPicker.handleMouseUp = function(event) {
+    if (glam.ViewPicker.clickedObject) {
+    	glam.ViewPicker.clickedObject.onViewMouseUp();
+    	glam.ViewPicker.clickedObject.onViewMouseClick();
+    }
+
+    glam.ViewPicker.clickedObject = null;
+}
+
+glam.ViewPicker.overObject = null;
+glam.ViewPicker.clickedObject = null;
 /**
  * @fileoverview class list - emulate DOM classList property for glam
  * 

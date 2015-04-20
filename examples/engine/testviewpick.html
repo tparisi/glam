@@ -1,0 +1,98 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>glam</title>
+</head>
+<body>
+	<div id="container" style="width:98%; height:98%; position:absolute;"></div>
+
+	<script src="../../build/glam.js"></script>
+	<script>
+
+	var cube = null;
+	var cylinder = null;
+	var dirlight = null;
+	var camera1 = null, camera2 = null;
+	
+	window.addEventListener('load', function(){
+		var container = document.getElementById("container");
+		
+		var app = new glam.Viewer({ container : container, displayStats:true,
+			firstPerson: true } );
+		
+		var root = new glam.Object;
+		
+		var picker = new glam.ViewPicker;
+		picker.addEventListener("viewover", onViewOver);
+		picker.addEventListener("viewout", onViewOut);
+		picker.addEventListener("mousedown", onViewMouseDown);
+		picker.addEventListener("mouseup", onViewMouseUp);
+		picker.addEventListener("click", onViewMouseClick);
+		
+		var group = new glam.Object;
+		group.addComponent(picker);
+
+		root.addChild(group);
+		
+		cube = createCube();
+		group.addChild(cube);
+
+		var obj = new glam.Object;
+		obj.addComponent(new glam.DirectionalLight);
+		root.addChild(obj);
+
+		app.addObject(root);
+
+
+		app.run();
+	},
+	false
+	);
+
+	function createCube() {	
+		var o = new glam.Object;
+
+		o.transform.rotation.x = Math.PI / 6;
+		o.transform.position.set(2, 0, -10);
+		
+		var visual = new glam.Visual(
+				{ geometry: new THREE.BoxGeometry(2, 2, 2),
+					material: new THREE.MeshPhongMaterial({color:0xffffff, map:THREE.ImageUtils.loadTexture("./images/board.png")})
+				});
+
+		
+		o.addComponent(visual);
+
+		return o;
+	}
+
+
+	var savedColor = 0;
+	function onViewOver(event)
+	{
+		savedColor = cube.visuals[0].material.color.getHex();
+		cube.visuals[0].material.color.setHex(0x00ff00);
+	}
+		
+	function onViewOut(event)
+	{
+		cube.visuals[0].material.color.setHex(savedColor);
+	}
+
+	function onViewMouseDown(event) {
+		console.log("Mouse down");
+	}
+	
+	function onViewMouseUp(event) {
+		console.log("Mouse up");
+	}
+
+	function onViewMouseClick(event) {
+		console.log("Mouse click");
+	}
+
+	</script>
+	
+</body>
+</html>
