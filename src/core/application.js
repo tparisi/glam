@@ -229,9 +229,11 @@ glam.Application.minFrameTime = 1;
 	    	
 glam.Application.handleMouseMove = function(event)
 {
+	/*
     if (glam.PickManager && glam.PickManager.clickedObject)
     	return;
-    
+    */
+
     if (glam.Application.instance.onMouseMove)
     	glam.Application.instance.onMouseMove(event);	            	
 }
@@ -241,72 +243,88 @@ glam.Application.handleMouseDown = function(event)
     // Click to focus
     if (glam.Application.instance.tabstop)
     	glam.Application.instance.focus();
-        
+    
+    /*    
     if (glam.PickManager && glam.PickManager.clickedObject)
     	return;
-    
+    */
+
     if (glam.Application.instance.onMouseDown)
     	glam.Application.instance.onMouseDown(event);	            	
 }
 
 glam.Application.handleMouseUp = function(event)
 {
+	/*
     if (glam.PickManager && glam.PickManager.clickedObject)
     	return;
-    
+    */
+
     if (glam.Application.instance.onMouseUp)
     	glam.Application.instance.onMouseUp(event);	            	
 }
 
 glam.Application.handleMouseClick = function(event)
 {
+	/*
     if (glam.PickManager && glam.PickManager.clickedObject)
     	return;
-    
+    */
+
     if (glam.Application.instance.onMouseClick)
     	glam.Application.instance.onMouseClick(event);	            	
 }
 
 glam.Application.handleMouseDoubleClick = function(event)
 {
+	/*
     if (glam.PickManager && glam.PickManager.clickedObject)
     	return;
-    
+    */
+
     if (glam.Application.instance.onMouseDoubleClick)
     	glam.Application.instance.onMouseDoubleClick(event);	            	
 }
 
 glam.Application.handleMouseScroll = function(event)
 {
+	/*
     if (glam.PickManager && glam.PickManager.overObject)
     	return;
-    
+    */
+
     if (glam.Application.instance.onMouseScroll)
     	glam.Application.instance.onMouseScroll(event);	            	
 }
 
 glam.Application.handleTouchStart = function(event)
 {
+	/*
     if (glam.PickManager && glam.PickManager.clickedObject)
     	return;
-    
+    */
+
     if (glam.Application.instance.onTouchStart)
     	glam.Application.instance.onTouchStart(event);	            	
 }
 
 glam.Application.handleTouchMove = function(event)
 {
+	/*
     if (glam.PickManager && glam.PickManager.clickedObject)
     	return;
-    
+    */
+
     if (glam.Application.instance.onTouchMove)
     	glam.Application.instance.onTouchMove(event);	            	
 }
 
 glam.Application.handleTouchEnd = function(event)
 {
+	/*
     if (glam.PickManager && glam.PickManager.clickedObject)
     	return;
+    */
     
     if (glam.Application.instance.onTouchEnd)
     	glam.Application.instance.onTouchEnd(event);	            	

@@ -17,6 +17,9 @@ glam.FirstPersonControls = function ( object, domElement ) {
 
 	this.domElement = ( domElement !== undefined ) ? domElement : document;
 
+	this.useWASD = true;
+	this.useArrows = true;
+
 	this.movementSpeed = 1.0;
 	this.lookSpeed = 1.0;
 
@@ -363,22 +366,31 @@ glam.FirstPersonControls = function ( object, domElement ) {
 
 		//event.preventDefault();
 
-		switch ( event.keyCode ) {
+		if (this.useWASD) {
 
-			case 38: /*up*/
-			case 87: /*W*/ this.moveForward = true; break;
+			if ( event.keyCode == 87 ) /*W*/ this.moveForward = true;
 
-			case 37: /*left*/
-			case 65: /*A*/ this.moveLeft = true; break;
+			if ( event.keyCode == 65 ) /*A*/ this.moveLeft = true;
 
-			case 40: /*down*/
-			case 83: /*S*/ this.moveBackward = true; break;
+			if ( event.keyCode == 83 ) /*S*/ this.moveBackward = true;
 
-			case 39: /*right*/
-			case 68: /*D*/ this.moveRight = true; break;
+			if ( event.keyCode == 68 ) /*D*/ this.moveRight = true;
 
-			case 82: /*R*/ this.moveUp = true; break;
-			case 70: /*F*/ this.moveDown = true; break;
+			if ( event.keyCode == 82 ) /*R*/ this.moveUp = true;
+
+			if ( event.keyCode == 70 ) /*F*/ this.moveDown = true;
+
+		}
+
+		if (this.useArrows) {
+
+			if ( event.keyCode == 38 ) /*up*/ this.moveForward = true;
+
+			if ( event.keyCode == 37 ) /*left*/ this.moveLeft = true;
+
+			if ( event.keyCode == 40 ) /*down*/ this.moveBackward = true;
+
+			if ( event.keyCode == 39 ) /*right*/ this.moveRight = true;
 
 		}
 
@@ -386,24 +398,35 @@ glam.FirstPersonControls = function ( object, domElement ) {
 
 	this.onKeyUp = function ( event ) {
 
-		switch( event.keyCode ) {
+		if (this.useWASD) {
 
-			case 38: /*up*/
-			case 87: /*W*/ this.moveForward = false; break;
+			if ( event.keyCode == 87 ) /*W*/ this.moveForward = false;
 
-			case 37: /*left*/
-			case 65: /*A*/ this.moveLeft = false; break;
+			if ( event.keyCode == 65 ) /*A*/ this.moveLeft = false;
 
-			case 40: /*down*/
-			case 83: /*S*/ this.moveBackward = false; break;
+			if ( event.keyCode == 83 ) /*S*/ this.moveBackward = false;
 
-			case 39: /*right*/
-			case 68: /*D*/ this.moveRight = false; break;
+			if ( event.keyCode == 68 ) /*D*/ this.moveRight = false;
 
-			case 82: /*R*/ this.moveUp = false; break;
-			case 70: /*F*/ this.moveDown = false; break;
+			if ( event.keyCode == 82 ) /*R*/ this.moveUp = false;
+
+			if ( event.keyCode == 70 ) /*F*/ this.moveDown = false;
+
 
 		}
+
+		if (this.useArrows) {
+
+			if ( event.keyCode == 38 ) /*up*/ this.moveForward = false;
+
+			if ( event.keyCode == 37 ) /*left*/ this.moveLeft = false;
+
+			if ( event.keyCode == 40 ) /*down*/ this.moveBackward = false;
+
+			if ( event.keyCode == 39 ) /*right*/ this.moveRight = false;
+
+		}
+
 
 	};
 

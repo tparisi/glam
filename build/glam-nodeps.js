@@ -3025,52 +3025,6 @@ glam.GraphicsThreeJS.prototype.findObjectFromIntersected = function(object, poin
 	}
 }
 
-glam.GraphicsThreeJS.prototype.nodeFromMouse = function(event)
-{
-	// Blerg, this is to support code outside the SB components & picker framework
-	// Returns a raw Three.js node
-	
-	// translate client coords into vp x,y
-	var eltx = event.elementX, elty = event.elementY;
-	
-    var vpx = ( eltx / this.container.offsetWidth ) * 2 - 1;
-    var vpy = - ( elty / this.container.offsetHeight ) * 2 + 1;
-    
-    var vector = new THREE.Vector3( vpx, vpy, 0.5 );
-
-    this.projector.unprojectVector( vector, this.camera );
-	
-    var pos = new THREE.Vector3;
-    pos = pos.applyMatrix4(this.camera.matrixWorld);
-
-    var raycaster = new THREE.Raycaster( pos, vector.sub( pos ).normalize() );
-
-	var intersects = raycaster.intersectObjects( this.scene.children, true );
-	
-    if ( intersects.length > 0 ) {
-    	var i = 0;
-    	while(!intersects[i].object.visible)
-    	{
-    		i++;
-    	}
-    	
-    	var intersected = intersects[i];
-    	if (intersected)
-    	{
-    		return { node : intersected.object, 
-    				 point : intersected.point, 
-    				 normal : intersected.face.normal
-    				}
-    	}
-    	else
-    		return null;
-    }
-    else
-    {
-    	return null;
-    }
-}
-
 glam.GraphicsThreeJS.prototype.getObjectIntersection = function(x, y, object)
 {
 	// Translate client coords into viewport x,y
@@ -3466,6 +3420,10 @@ glam.GraphicsThreeJS.prototype.update = function()
     this.frameRate = 1 / deltat;
 
     this.lastFrameTime = frameTime;
+
+    if (glam.ViewPicker) {
+    	glam.ViewPicker.update();
+    }
 
 	// N.B.: start with hack, let's see how it goes...
 	if (this.composer) {
@@ -4321,6 +4279,8 @@ glam.FirstPersonControllerScript = function(param)
 	this._turn = (param.turn !== undefined) ? param.turn : true;
 	this._tilt = (param.tilt !== undefined) ? param.tilt : true;
 	this._mouseLook = (param.mouseLook !== undefined) ? param.mouseLook : false;
+	this._useArrows = (param.useArrows !== undefined) ? param.useArrows : true;
+	this._useWASD = (param.useWASD !== undefined) ? param.useWASD : true;
 	this.testCollisions = (param.testCollisions !== undefined) ? param.testCollisions : false;
 	
 	this.collisionDistance = 10;
@@ -4401,6 +4361,8 @@ glam.FirstPersonControllerScript.prototype.createControls = function(camera)
 	controls.lookSpeed = this._look ? this.lookSpeed  : 0;
 	controls.turnSpeed = this._turn ? this.turnSpeed : 0;
 	controls.tiltSpeed = this._tilt ? this.tiltSpeed : 0;
+	controls.useArrows = this._useArrows;
+	controls.useWASD = this._useWASD;
 
 	this.clock = new THREE.Clock();
 	return controls;
@@ -6462,9 +6424,11 @@ glam.Application.minFrameTime = 1;
 	    	
 glam.Application.handleMouseMove = function(event)
 {
+	/*
     if (glam.PickManager && glam.PickManager.clickedObject)
     	return;
-    
+    */
+
     if (glam.Application.instance.onMouseMove)
     	glam.Application.instance.onMouseMove(event);	            	
 }
@@ -6474,72 +6438,88 @@ glam.Application.handleMouseDown = function(event)
     // Click to focus
     if (glam.Application.instance.tabstop)
     	glam.Application.instance.focus();
-        
+    
+    /*    
     if (glam.PickManager && glam.PickManager.clickedObject)
     	return;
-    
+    */
+
     if (glam.Application.instance.onMouseDown)
     	glam.Application.instance.onMouseDown(event);	            	
 }
 
 glam.Application.handleMouseUp = function(event)
 {
+	/*
     if (glam.PickManager && glam.PickManager.clickedObject)
     	return;
-    
+    */
+
     if (glam.Application.instance.onMouseUp)
     	glam.Application.instance.onMouseUp(event);	            	
 }
 
 glam.Application.handleMouseClick = function(event)
 {
+	/*
     if (glam.PickManager && glam.PickManager.clickedObject)
     	return;
-    
+    */
+
     if (glam.Application.instance.onMouseClick)
     	glam.Application.instance.onMouseClick(event);	            	
 }
 
 glam.Application.handleMouseDoubleClick = function(event)
 {
+	/*
     if (glam.PickManager && glam.PickManager.clickedObject)
     	return;
-    
+    */
+
     if (glam.Application.instance.onMouseDoubleClick)
     	glam.Application.instance.onMouseDoubleClick(event);	            	
 }
 
 glam.Application.handleMouseScroll = function(event)
 {
+	/*
     if (glam.PickManager && glam.PickManager.overObject)
     	return;
-    
+    */
+
     if (glam.Application.instance.onMouseScroll)
     	glam.Application.instance.onMouseScroll(event);	            	
 }
 
 glam.Application.handleTouchStart = function(event)
 {
+	/*
     if (glam.PickManager && glam.PickManager.clickedObject)
     	return;
-    
+    */
+
     if (glam.Application.instance.onTouchStart)
     	glam.Application.instance.onTouchStart(event);	            	
 }
 
 glam.Application.handleTouchMove = function(event)
 {
+	/*
     if (glam.PickManager && glam.PickManager.clickedObject)
     	return;
-    
+    */
+
     if (glam.Application.instance.onTouchMove)
     	glam.Application.instance.onTouchMove(event);	            	
 }
 
 glam.Application.handleTouchEnd = function(event)
 {
+	/*
     if (glam.PickManager && glam.PickManager.clickedObject)
     	return;
+    */
     
     if (glam.Application.instance.onTouchEnd)
     	glam.Application.instance.onTouchEnd(event);	            	
@@ -6601,62 +6581,23 @@ glam.ViewPicker = function(param) {
 	
     glam.Component.call(this, param);
 
-    this.enabled = (param.enabled !== undefined) ? param.enabled : true;
-
-	this.origin = new THREE.Vector3();
-	this.direction = new THREE.Vector3();
-	this.raycaster = new THREE.Raycaster();
-
-	this.over = false;
+	this.enabled = (param.enabled !== undefined) ? param.enabled : true;
 }
 
 goog.inherits(glam.ViewPicker, glam.Component);
 
-glam.ViewPicker.prototype._componentCategory = "pickers";
+glam.ViewPicker.prototype._componentCategory = "viewpickers";
 
 glam.ViewPicker.prototype.realize = function() {
 	glam.Component.prototype.realize.call(this);
 }
 
-glam.ViewPicker.prototype.update = function() {
-
-	var intersected = this.checkForIntersections();
-
-	if (intersected != this.over) {
-		this.over = intersected;
-		if (this.over) {
-			this.onViewOver();
-		}
-		else {
-			this.onViewOut();
-		}
-	}
-}
-
-glam.ViewPicker.prototype.checkForIntersections = function() {
-
-	this.origin.set(0, 0, 0);
-	this.origin.applyMatrix4(glam.Graphics.instance.camera.matrixWorld);
-	this.direction.set(0, 0, -1);
-	this.direction.transformDirection(glam.Graphics.instance.camera.matrixWorld);
-
-	this.raycaster.set(this.origin, this.direction);
-	this.raycaster.near = glam.Graphics.instance.camera.near;
-	this.raycaster.far = glam.Graphics.instance.camera.far;
-
-	var intersected = this.raycaster.intersectObjects(this._object.transform.object.children, true);
-
-	return (intersected.length > 0);
-}
-
 glam.ViewPicker.prototype.onViewOver = function() {
     this.dispatchEvent("viewover", { type : "viewover" });
-    glam.ViewPicker.overObject = this;
 }
 
 glam.ViewPicker.prototype.onViewOut = function() {
     this.dispatchEvent("viewout", { type : "viewout" });
-    glam.ViewPicker.overObject = null;
 }
 
 glam.ViewPicker.prototype.onViewMouseDown = function() {
@@ -6686,6 +6627,105 @@ glam.ViewPicker.handleMouseUp = function(event) {
 
     glam.ViewPicker.clickedObject = null;
 }
+
+glam.ViewPicker.update = function() {
+
+    var oldObj = glam.ViewPicker.overObject;
+	glam.ViewPicker.overObject = glam.ViewPicker.objectFromView();
+
+    if (glam.ViewPicker.overObject != oldObj) {
+    	if (oldObj) {
+    		oldObj.onViewOut();
+    	}
+
+    	if (glam.ViewPicker.overObject) {
+    		glam.ViewPicker.overObject.onViewOver();
+    	}
+	}
+}
+
+glam.ViewPicker.objectFromView = function(event)
+{
+	this.origin.set(0, 0, 0);
+	this.origin.applyMatrix4(glam.Graphics.instance.camera.matrixWorld);
+	this.direction.set(0, 0, -1);
+	this.direction.transformDirection(glam.Graphics.instance.camera.matrixWorld);
+
+	this.raycaster.set(this.origin, this.direction);
+	this.raycaster.near = glam.Graphics.instance.camera.near;
+	this.raycaster.far = glam.Graphics.instance.camera.far;
+
+	var intersects = this.raycaster.intersectObjects(glam.Graphics.instance.scene.children, 
+		true);
+
+    if ( intersects.length > 0 ) {
+    	var i = 0;
+    	while(i < intersects.length && (!intersects[i].object.visible))
+    	{
+    		i++;
+    	}
+    	
+    	var intersected = intersects[i];
+	}
+
+	if (intersected && intersected.object)
+	{
+		var obj = glam.ViewPicker.findObjectFromIntersected(intersected.object);
+
+    	if (obj.viewpickers)
+    	{
+    		var pickers = obj.viewpickers;
+    		var i, len = pickers.length;
+    		for (i = 0; i < len; i++) {
+    			if (pickers[i].enabled) { // just need one :-)
+    				return pickers[i]; // intersected.data._object;
+    			}
+    		}
+    	}
+
+		return glam.ViewPicker.findObjectPicker(intersected.object);
+	}
+	else
+	{
+		return null;
+	}
+}
+
+glam.ViewPicker.findObjectFromIntersected = function(object) {
+	if (object.data) {
+		return object.data;
+	}
+	else if (object.parent) {
+		return glam.ViewPicker.findObjectFromIntersected(object.parent);
+	}
+	else {
+		return null;
+	}
+}
+
+glam.ViewPicker.findObjectPicker = function(object) {
+	while (object) {
+		
+		if (object.data && object.data._object.viewpickers) {
+    		var pickers = object.data._object.viewpickers;
+    		var i, len = pickers.length;
+    		for (i = 0; i < len; i++) {
+    			if (pickers[i].enabled) { // just need one :-)
+    				return pickers[i]; // object.data._object;
+    			}
+    		}
+		}
+
+		object = object.parent;
+	}
+	
+	return null;
+}
+
+
+glam.ViewPicker.origin = new THREE.Vector3();
+glam.ViewPicker.direction = new THREE.Vector3();
+glam.ViewPicker.raycaster = new THREE.Raycaster();
 
 glam.ViewPicker.overObject = null;
 glam.ViewPicker.clickedObject = null;
@@ -13919,6 +13959,9 @@ glam.FirstPersonControls = function ( object, domElement ) {
 
 	this.domElement = ( domElement !== undefined ) ? domElement : document;
 
+	this.useWASD = true;
+	this.useArrows = true;
+
 	this.movementSpeed = 1.0;
 	this.lookSpeed = 1.0;
 
@@ -14265,22 +14308,31 @@ glam.FirstPersonControls = function ( object, domElement ) {
 
 		//event.preventDefault();
 
-		switch ( event.keyCode ) {
+		if (this.useWASD) {
 
-			case 38: /*up*/
-			case 87: /*W*/ this.moveForward = true; break;
+			if ( event.keyCode == 87 ) /*W*/ this.moveForward = true;
 
-			case 37: /*left*/
-			case 65: /*A*/ this.moveLeft = true; break;
+			if ( event.keyCode == 65 ) /*A*/ this.moveLeft = true;
 
-			case 40: /*down*/
-			case 83: /*S*/ this.moveBackward = true; break;
+			if ( event.keyCode == 83 ) /*S*/ this.moveBackward = true;
 
-			case 39: /*right*/
-			case 68: /*D*/ this.moveRight = true; break;
+			if ( event.keyCode == 68 ) /*D*/ this.moveRight = true;
 
-			case 82: /*R*/ this.moveUp = true; break;
-			case 70: /*F*/ this.moveDown = true; break;
+			if ( event.keyCode == 82 ) /*R*/ this.moveUp = true;
+
+			if ( event.keyCode == 70 ) /*F*/ this.moveDown = true;
+
+		}
+
+		if (this.useArrows) {
+
+			if ( event.keyCode == 38 ) /*up*/ this.moveForward = true;
+
+			if ( event.keyCode == 37 ) /*left*/ this.moveLeft = true;
+
+			if ( event.keyCode == 40 ) /*down*/ this.moveBackward = true;
+
+			if ( event.keyCode == 39 ) /*right*/ this.moveRight = true;
 
 		}
 
@@ -14288,24 +14340,35 @@ glam.FirstPersonControls = function ( object, domElement ) {
 
 	this.onKeyUp = function ( event ) {
 
-		switch( event.keyCode ) {
+		if (this.useWASD) {
 
-			case 38: /*up*/
-			case 87: /*W*/ this.moveForward = false; break;
+			if ( event.keyCode == 87 ) /*W*/ this.moveForward = false;
 
-			case 37: /*left*/
-			case 65: /*A*/ this.moveLeft = false; break;
+			if ( event.keyCode == 65 ) /*A*/ this.moveLeft = false;
 
-			case 40: /*down*/
-			case 83: /*S*/ this.moveBackward = false; break;
+			if ( event.keyCode == 83 ) /*S*/ this.moveBackward = false;
 
-			case 39: /*right*/
-			case 68: /*D*/ this.moveRight = false; break;
+			if ( event.keyCode == 68 ) /*D*/ this.moveRight = false;
 
-			case 82: /*R*/ this.moveUp = false; break;
-			case 70: /*F*/ this.moveDown = false; break;
+			if ( event.keyCode == 82 ) /*R*/ this.moveUp = false;
+
+			if ( event.keyCode == 70 ) /*F*/ this.moveDown = false;
+
 
 		}
+
+		if (this.useArrows) {
+
+			if ( event.keyCode == 38 ) /*up*/ this.moveForward = false;
+
+			if ( event.keyCode == 37 ) /*left*/ this.moveLeft = false;
+
+			if ( event.keyCode == 40 ) /*down*/ this.moveBackward = false;
+
+			if ( event.keyCode == 39 ) /*right*/ this.moveRight = false;
+
+		}
+
 
 	};
 

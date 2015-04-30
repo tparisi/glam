@@ -30,6 +30,8 @@ glam.FirstPersonControllerScript = function(param)
 	this._turn = (param.turn !== undefined) ? param.turn : true;
 	this._tilt = (param.tilt !== undefined) ? param.tilt : true;
 	this._mouseLook = (param.mouseLook !== undefined) ? param.mouseLook : false;
+	this._useArrows = (param.useArrows !== undefined) ? param.useArrows : true;
+	this._useWASD = (param.useWASD !== undefined) ? param.useWASD : true;
 	this.testCollisions = (param.testCollisions !== undefined) ? param.testCollisions : false;
 	
 	this.collisionDistance = 10;
@@ -110,6 +112,8 @@ glam.FirstPersonControllerScript.prototype.createControls = function(camera)
 	controls.lookSpeed = this._look ? this.lookSpeed  : 0;
 	controls.turnSpeed = this._turn ? this.turnSpeed : 0;
 	controls.tiltSpeed = this._tilt ? this.tiltSpeed : 0;
+	controls.useArrows = this._useArrows;
+	controls.useWASD = this._useWASD;
 
 	this.clock = new THREE.Clock();
 	return controls;

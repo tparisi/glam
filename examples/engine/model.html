@@ -1,0 +1,42 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>glam Test Load Scene</title>
+</head>
+<body>
+	<div id="container" style="width:98%; height:98%; position:absolute;"></div>
+
+	<script src="../../build/glam.js"></script>
+	<script>
+
+	window.addEventListener('load', function(){
+		var container = document.getElementById("container");
+		
+		var app = new glam.Viewer({ container : container, displayStats:true });
+		
+		var scene = null;
+		var rotator = null;
+		var loader = new glam.Loader;
+		
+		loader.addEventListener("loaded", function(data) { 
+				scene = data.scene;
+				app.addObject(scene);
+			});
+		loader.loadScene("./models/blackmoorgold/model.js");
+
+
+		app.run();
+	},
+	false
+	);
+
+	function onSceneLoaded(data, app) {
+		// root.addComponent(data.scene);
+		app.addObject(data.scene);
+	}
+
+	</script>
+	
+</body>
+</html>
