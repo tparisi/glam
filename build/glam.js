@@ -53215,7 +53215,8 @@ glam.GraphicsThreeJS.prototype.initRenderer = function(param)
 			}
     	});
     }
-    else if (param.cardboard) {
+    
+    if (param.cardboard) {
     	this.cardboard = new THREE.StereoEffect(this.renderer);
     	this.cardboard.setSize( this.container.offsetWidth, this.container.offsetHeight );
     }
@@ -53729,7 +53730,7 @@ glam.GraphicsThreeJS.prototype.onWindowResize = function(event)
 
 	// HACK HACK HACK seems to be the only reliable thing and even this
 	// is dicey on Chrome. Is there a race condition?
-	if (this.riftCam) {
+	if (this.riftCam  && this.riftCam._vrHMD) {
 		width = window.innerWidth;
 		height = window.innerHeight;
 	}
@@ -53842,7 +53843,7 @@ glam.GraphicsThreeJS.prototype.enableShadows = function(enable)
 
 glam.GraphicsThreeJS.prototype.setFullScreen = function(enable)
 {
-	if (this.riftCam) {
+	if (this.riftCam && this.riftCam._vrHMD) {
 
 		this.fullscreen = enable;
 		

@@ -20,7 +20,8 @@
 		font-family: verdana;
 		font-style:italic;
 		font-size:72px;
-		color:cyan;
+		color:green;
+		shader:phong;
 	}
 
 	#surf1 {
@@ -91,6 +92,7 @@ glam - Simple scene with cube
 
 <glam>
   <scene>
+  	<light type="directional"></light>
 	<surface id="surf1" height=2 width=4 class="card" element="html1">
 	</surface>
 	<surface id="surf2" height=1 width=4 class="card">your text here</surface>
