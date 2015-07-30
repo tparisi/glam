@@ -63323,9 +63323,13 @@ goog.provide("glam.System");
 
 glam.System = {
 	log : function() {
+		var args = ["[glam] "].concat([].slice.call(arguments));
+		console.log.apply(console, args);			
+	},
+	info : function() {
 		if (glam.System.logLevel <= glam.System.LOG_INFO) {
 			var args = ["[glam] "].concat([].slice.call(arguments));
-			console.log.apply(console, args);			
+			console.info.apply(console, args);			
 		}
 	},
 	warn : function() {
