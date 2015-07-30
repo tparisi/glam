@@ -133,7 +133,7 @@ glam.GraphicsThreeJS.prototype.initRenderer = function(param)
     if (param.riftRender) {
     	this.riftCam = new THREE.VREffect(this.renderer, function(err) {
 			if (err) {
-				console.log("Error creating VR renderer: ", err);
+				glam.System.warn("Unable to create VR renderer: ", err);
 			}
     	});
     }

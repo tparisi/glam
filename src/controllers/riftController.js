@@ -90,7 +90,7 @@ glam.RiftControllerScript.prototype.createControls = function(camera)
 	var that = this;
 	var controls = new THREE.VRControls(camera.object, function(err) {
 			if (err) {
-				console.log("Error creating VR controller: ", err);
+				glam.System.warn("Unable to create VR controller: ", err);
 			}
 
 			that.dispatchEvent("create", { type: "create", error : err });

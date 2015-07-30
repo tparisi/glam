@@ -2847,7 +2847,7 @@ glam.GraphicsThreeJS.prototype.initRenderer = function(param)
     if (param.riftRender) {
     	this.riftCam = new THREE.VREffect(this.renderer, function(err) {
 			if (err) {
-				console.log("Error creating VR renderer: ", err);
+				glam.System.warn("Unable to create VR renderer: ", err);
 			}
     	});
     }
@@ -9950,7 +9950,7 @@ glam.RiftControllerScript.prototype.createControls = function(camera)
 	var that = this;
 	var controls = new THREE.VRControls(camera.object, function(err) {
 			if (err) {
-				console.log("Error creating VR controller: ", err);
+				glam.System.warn("Unable to create VR controller: ", err);
 			}
 
 			that.dispatchEvent("create", { type: "create", error : err });
@@ -12940,16 +12940,22 @@ goog.provide("glam.System");
 
 glam.System = {
 	log : function() {
-		var args = ["[glam] "].concat([].slice.call(arguments));
-		console.log.apply(console, args);
+		if (glam.System.logLevel <= glam.System.LOG_INFO) {
+			var args = ["[glam] "].concat([].slice.call(arguments));
+			console.log.apply(console, args);			
+		}
 	},
 	warn : function() {
-		var args = ["[glam] "].concat([].slice.call(arguments));
-		console.warn.apply(console, args);
+		if (glam.System.logLevel <= glam.System.LOG_WARNINGS) {
+			var args = ["[glam] "].concat([].slice.call(arguments));
+			console.warn.apply(console, args);
+		}
 	},
 	error : function() {
-		var args = ["[glam] "].concat([].slice.call(arguments));
-		console.error.apply(console, args);
+		if (glam.System.logLevel <= glam.System.LOG_ERRORS) {
+			var args = ["[glam] "].concat([].slice.call(arguments));
+			console.error.apply(console, args);
+		}
 	},
 	ajax : function(param) {
 
@@ -12971,7 +12977,14 @@ glam.System = {
         }, false );
         xhr.send(null);
     },		
-};goog.provide('glam.PointLight');
+};
+
+glam.System.LOG_INFO = 0;
+glam.System.LOG_WARNINGS = 1;
+glam.System.LOG_ERRORS = 2;
+
+glam.System.logLevel = glam.System.LOG_INFO;
+goog.provide('glam.PointLight');
 goog.require('glam.Light');
 
 glam.PointLight = function(param)

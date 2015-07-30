@@ -44114,12 +44114,31 @@ THREE.VREffect = function ( renderer, done ) {
 				if ( devices[i] instanceof HMDVRDevice ) {
 					vrHMD = devices[i];
 					self._vrHMD = vrHMD;
-					self.leftEyeTranslation = vrHMD.getEyeTranslation( "left" );
-					self.rightEyeTranslation = vrHMD.getEyeTranslation( "right" );
-					self.leftEyeFOV = vrHMD.getRecommendedEyeFieldOfView( "left" );
-					self.rightEyeFOV = vrHMD.getRecommendedEyeFieldOfView( "right" );
-					self.leftEyeMatrix = (new THREE.Matrix4()).makeTranslation(self.leftEyeTranslation.x, self.leftEyeTranslation.y, self.leftEyeTranslation.z);
-					self.rightEyeMatrix = (new THREE.Matrix4()).makeTranslation(self.rightEyeTranslation.x, self.rightEyeTranslation.y, self.rightEyeTranslation.z);
+
+                    if ( vrHMD.getEyeParameters ) {
+                      self.left = vrHMD.getEyeParameters( "left" );
+                      self.right = vrHMD.getEyeParameters( "right" );
+                    }
+                    else {
+                      self.left = {
+                        renderRect: vrHMD.getRecommendedEyeRenderRect( "left" ),
+                        eyeTranslation: vrHMD.getEyeTranslation( "left" ),
+                        recommendedFieldOfView: vrHMD.getRecommendedEyeFieldOfView(
+                            "left" )
+                      };
+                      self.right = {
+                        renderRect: vrHMD.getRecommendedEyeRenderRect( "right" ),
+                        eyeTranslation: vrHMD.getEyeTranslation( "right" ),
+                        recommendedFieldOfView: vrHMD.getRecommendedEyeFieldOfView(
+                            "right" )
+                      };
+                    }
+
+
+					self.leftEyeFOV = self.left.recommendedFieldOfView;
+					self.rightEyeFOV = self.right.recommendedFieldOfView;
+					self.leftEyeMatrix = (new THREE.Matrix4()).makeTranslation(self.left.eyeTranslation.x, self.left.eyeTranslation.y, self.left.eyeTranslation.z);
+					self.rightEyeMatrix = (new THREE.Matrix4()).makeTranslation(self.right.eyeTranslation.x, self.right.eyeTranslation.y, self.right.eyeTranslation.z);
 					var geom = new THREE.BoxGeometry;
 					var material = new THREE.MeshBasicMaterial({color:0x0000ff});
 					self.cube = new THREE.Mesh(geom, material);
@@ -44157,8 +44176,8 @@ THREE.VREffect = function ( renderer, done ) {
 	this.renderStereo = function( scene, camera, renderTarget, forceClear ) {
 		var cameraLeft;
 		var cameraRight;
-		var leftEyeTranslation = this.leftEyeTranslation;
-		var rightEyeTranslation = this.rightEyeTranslation;
+		var leftEyeTranslation = this.left.eyeTranslation;
+		var rightEyeTranslation = this.right.eyeTranslation;
 		var renderer = this._renderer;
 		var rendererWidth = renderer.domElement.width / renderer.devicePixelRatio;
 		var rendererHeight = renderer.domElement.height / renderer.devicePixelRatio;
@@ -53211,7 +53230,7 @@ glam.GraphicsThreeJS.prototype.initRenderer = function(param)
     if (param.riftRender) {
     	this.riftCam = new THREE.VREffect(this.renderer, function(err) {
 			if (err) {
-				console.log("Error creating VR renderer: ", err);
+				glam.System.warn("Unable to create VR renderer: ", err);
 			}
     	});
     }
@@ -60314,7 +60333,7 @@ glam.RiftControllerScript.prototype.createControls = function(camera)
 	var that = this;
 	var controls = new THREE.VRControls(camera.object, function(err) {
 			if (err) {
-				console.log("Error creating VR controller: ", err);
+				glam.System.warn("Unable to create VR controller: ", err);
 			}
 
 			that.dispatchEvent("create", { type: "create", error : err });
@@ -63304,16 +63323,22 @@ goog.provide("glam.System");
 
 glam.System = {
 	log : function() {
-		var args = ["[glam] "].concat([].slice.call(arguments));
-		console.log.apply(console, args);
+		if (glam.System.logLevel <= glam.System.LOG_INFO) {
+			var args = ["[glam] "].concat([].slice.call(arguments));
+			console.log.apply(console, args);			
+		}
 	},
 	warn : function() {
-		var args = ["[glam] "].concat([].slice.call(arguments));
-		console.warn.apply(console, args);
+		if (glam.System.logLevel <= glam.System.LOG_WARNINGS) {
+			var args = ["[glam] "].concat([].slice.call(arguments));
+			console.warn.apply(console, args);
+		}
 	},
 	error : function() {
-		var args = ["[glam] "].concat([].slice.call(arguments));
-		console.error.apply(console, args);
+		if (glam.System.logLevel <= glam.System.LOG_ERRORS) {
+			var args = ["[glam] "].concat([].slice.call(arguments));
+			console.error.apply(console, args);
+		}
 	},
 	ajax : function(param) {
 
@@ -63335,7 +63360,14 @@ glam.System = {
         }, false );
         xhr.send(null);
     },		
-};goog.provide('glam.PointLight');
+};
+
+glam.System.LOG_INFO = 0;
+glam.System.LOG_WARNINGS = 1;
+glam.System.LOG_ERRORS = 2;
+
+glam.System.logLevel = glam.System.LOG_INFO;
+goog.provide('glam.PointLight');
 goog.require('glam.Light');
 
 glam.PointLight = function(param)
