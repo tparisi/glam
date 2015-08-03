@@ -1,4 +1,4 @@
 Echo "Compiling debug..."
-compile-debug.bat
+call compile-debug.bat
 Echo "Compiling min..."
-compile-min.bat
+call compile-min.bat
