@@ -34,7 +34,7 @@ SET RAF=..\libs\requestAnimationFrame\RequestAnimationFrame.js
 SET TWEEN=..\libs\tween.js\tween.min.js
 SET LIBS=%THREE%+%STATS%+%LOADERS%+%TWEEN%+%RAF%
 SET NODEPS=..\src\config\nodeps.js
-SET FLAGS='--language_in=ECMASCRIPT5'
+SET FLAGS="--language_in=ECMASCRIPT5"
 SET FONTS=..\fonts\helvetiker_bold.typeface.js+^
 ..\fonts\helvetiker_regular.typeface.js
 
