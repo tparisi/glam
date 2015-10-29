@@ -99,7 +99,7 @@ glam.DOMMaterial.parseStyle = function(style) {
 	}
 	
 	var wireframe;
-	if (style.hasOwnProperty("render-mode"))
+	if (style["render-mode"])
 		wireframe = (style["render-mode"] == "wireframe");
 	
 	var linewidth;
