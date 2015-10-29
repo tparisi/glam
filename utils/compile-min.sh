@@ -1,10 +1,11 @@
 BUILDDIR=../build
 TARGET="$BUILDDIR/glam-nodeps.min.js"
 OUTPUT="$BUILDDIR/glam.min.js"
-THREEDIR=../libs/three.js.r68
+THREEDIR=../libs/three.js.r73
 THREE="$THREEDIR/three.min.js"
 STATS="$THREEDIR/stats.min.js"
 LOADERS="$THREEDIR/controls/VRControls.js \
+$THREEDIR/geometries/TextGeometry.js \
 $THREEDIR/loaders/ColladaLoader.js \
 $THREEDIR/loaders/glTF/glTF-parser.js \
 $THREEDIR/loaders/glTF/glTFLoader.js \
@@ -18,14 +19,15 @@ $THREEDIR/postprocessing/RenderPass.js \
 $THREEDIR/postprocessing/ShaderPass.js \
 $THREEDIR/renderers/StereoEffect.js \
 $THREEDIR/renderers/VREffect.js \
+$THREEDIR/renderers/Projector.js \
 $THREEDIR/shaders/ConvolutionShader.js \
 $THREEDIR/shaders/CopyShader.js \
 $THREEDIR/shaders/DotScreenShader.js \
-$THREEDIR/shaders/DotScreenRGBShader.js \
 $THREEDIR/shaders/FilmShader.js \
 $THREEDIR/shaders/FXAAShader.js \
 $THREEDIR/shaders/RGBShiftShader.js \
-$THREEDIR/ParticleEngine/ShaderParticles.min.js"
+$THREEDIR/ParticleEngine/ShaderParticles.min.js \
+$THREEDIR/utils/FontUtils.js "
 
 
 RAF=../libs/requestAnimationFrame/RequestAnimationFrame.js

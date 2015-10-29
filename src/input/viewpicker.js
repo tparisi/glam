@@ -103,7 +103,7 @@ glam.ViewPicker.objectFromView = function(event)
 	{
 		var obj = glam.ViewPicker.findObjectFromIntersected(intersected.object);
 
-    	if (obj.viewpickers)
+    	if (obj && obj.viewpickers)
     	{
     		var pickers = obj.viewpickers;
     		var i, len = pickers.length;
