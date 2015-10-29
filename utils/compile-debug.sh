@@ -23,6 +23,7 @@ $THREEDIR/renderers/Projector.js \
 $THREEDIR/shaders/ConvolutionShader.js \
 $THREEDIR/shaders/CopyShader.js \
 $THREEDIR/shaders/DotScreenShader.js \
+$THREEDIR/shaders/DotScreenRGBShader.js \
 $THREEDIR/shaders/FilmShader.js \
 $THREEDIR/shaders/FXAAShader.js \
 $THREEDIR/shaders/RGBShiftShader.js \
