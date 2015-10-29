@@ -65,7 +65,7 @@ z-index: 1;
 		// http://www.3delyvisions.com/skf1.htm
 		var path = "images/spherepano/pan0.jpg";
 		
-		var texture = THREE.ImageUtils.loadTexture(path);
+		var texture = new THREE.TextureLoader().load(path);
 
 		var skysphere = glam.Prefabs.Skysphere();
 		skysphereScript = skysphere.getComponent(glam.SkysphereScript);
@@ -103,18 +103,6 @@ z-index: 1;
 
 		cube.addComponent(visual);
 		app.addObject(cube);
-
-		var effect = new glam.Effect(THREE.DotScreenRGBShader);
-		effect.pass.uniforms[ 'scale' ].value = 8;
-        //glam.Graphics.instance.addEffect(effect);
-
-		var strength = 1,
-			kernelSize = 25,
-			sigma = 4,
-			resolution = 256;
-			
-		var effect = new glam.Effect(new THREE.BloomPass(strength, kernelSize, sigma, resolution));
-        glam.Graphics.instance.addEffect(effect);
 		
 		app.run();
 	}

@@ -24,7 +24,7 @@
 					 path + "topcity.jpg", path + "botcity.jpg",
 					 path + "frontcity.jpg", path + "backcity.jpg" ];
 
-		var cubeTexture = THREE.ImageUtils.loadTextureCube( urls );
+		var cubeTexture = new THREE.CubeTextureLoader().load( urls );
 
 		var skybox = glam.Prefabs.Skybox();
 		var skyboxScript = skybox.getComponent(glam.SkyboxScript);
