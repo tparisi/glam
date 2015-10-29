@@ -59051,7 +59051,7 @@ glam.ViewPicker.objectFromView = function(event)
 	{
 		var obj = glam.ViewPicker.findObjectFromIntersected(intersected.object);
 
-    	if (obj.viewpickers)
+    	if (obj && obj.viewpickers)
     	{
     		var pickers = obj.viewpickers;
     		var i, len = pickers.length;
@@ -59576,16 +59576,18 @@ glam.DOMMaterial.parseStyle = function(style) {
 	var param = {
 	};
 	
+	var textureLoader = new THREE.TextureLoader();
+
 	if (textures.image)
-		param.map = THREE.ImageUtils.loadTexture(textures.image);
+		param.map = textureLoader.load(textures.image);
 	if (textures.envMap)
 		param.envMap = textures.envMap;
 	if (textures.normalMap)
-		param.normalMap = THREE.ImageUtils.loadTexture(textures.normalMap);
+		param.normalMap = textureLoader.load(textures.normalMap);
 	if (textures.bumpMap)
-		param.bumpMap = THREE.ImageUtils.loadTexture(textures.bumpMap);
+		param.bumpMap = textureLoader.load(textures.bumpMap);
 	if (textures.specularMap)
-		param.specularMap = THREE.ImageUtils.loadTexture(textures.specularMap);
+		param.specularMap = textureLoader.load(textures.specularMap);
 	if (color !== undefined)
 		param.color = color;
 	if (diffuse !== undefined)
@@ -59738,7 +59740,8 @@ glam.DOMMaterial.tryParseEnvMap = function(style) {
 	
 	if (urls.length == 6) {
 		//console.log("**** GLAM: Loading cubemap", urls[0]);
-		var cubeTexture = THREE.ImageUtils.loadTextureCube( urls, THREE.Texture.DEFAULT_MAPPING,
+		var textureLoader = new THREE.CubeTextureLoader();
+		var cubeTexture = textureLoader.load( urls, THREE.Texture.DEFAULT_MAPPING,
 			function(texture) {
 				//console.log("**** GLAM: cubemap loaded", texture, urls[0]);
 			} );
@@ -59748,7 +59751,9 @@ glam.DOMMaterial.tryParseEnvMap = function(style) {
 	if (style["sphere-image"]) {
 		var url = glam.DOMMaterial.parseUrl(style["sphere-image"]);
 		//console.log("**** GLAM: Loading spheremap", url);
-		return THREE.ImageUtils.loadTexture(url, THREE.SphericalRefractionMapping, 
+
+		var textureLoader = new THREE.CubeTextureLoader();
+		return textureLoader.load(url, THREE.SphericalRefractionMapping, 
 			function(texture) {
 				//console.log("**** GLAM: spheremap loaded", texture, url);
 			});
@@ -59851,8 +59856,9 @@ glam.DOMMaterial.parseUniforms = function(uniformsText, param) {
 				value = param.envMap;
 			}
 			else {
+				var textureLoader = new THREE.TextureLoader();
 				var image = glam.DOMMaterial.parseUrl(value);
-				value = THREE.ImageUtils.loadTexture(image);
+				value = textureLoader.load(image);
 				value.wrapS = value.wrapT = THREE.Repeat;
 			}
 		}
@@ -64534,7 +64540,7 @@ glam.Viewer.prototype.createGrid = function()
 	var line_material = new THREE.LineBasicMaterial( { color: glam.Viewer.GRID_COLOR, 
 		opacity:glam.Viewer.GRID_OPACITY } );
 	
-	var gridObject = new THREE.Line( geometry, line_material, THREE.LinePieces );
+	var gridObject = new THREE.Line( geometry, line_material, THREE.LineSegments );
 	gridObject.visible = this.showGrid;
 	this.grid = new glam.Visual({ object : gridObject });
 

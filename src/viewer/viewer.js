@@ -617,7 +617,7 @@ glam.Viewer.prototype.createGrid = function()
 	var line_material = new THREE.LineBasicMaterial( { color: glam.Viewer.GRID_COLOR, 
 		opacity:glam.Viewer.GRID_OPACITY } );
 	
-	var gridObject = new THREE.Line( geometry, line_material, THREE.LinePieces );
+	var gridObject = new THREE.Line( geometry, line_material, THREE.LineSegments );
 	gridObject.visible = this.showGrid;
 	this.grid = new glam.Visual({ object : gridObject });
 
