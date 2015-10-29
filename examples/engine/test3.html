@@ -22,7 +22,8 @@
 
 		var visual = new glam.Visual(
 				{ geometry: new THREE.BoxGeometry(2, 2, 2),
-					material: new THREE.MeshBasicMaterial({color:0xeeeeee, map:THREE.ImageUtils.loadTexture("./images/board.png")})
+					material: new THREE.MeshBasicMaterial({color:0xeeeeee, 
+						map:new THREE.TextureLoader().load("./images/board.png")})
 				});
 
 
