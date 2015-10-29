@@ -758,9 +758,9 @@ glam.GraphicsThreeJS.prototype.renderStereo = function() {
 
 glam.GraphicsThreeJS.prototype.enableShadows = function(enable)
 {
-	this.renderer.shadowMapEnabled = enable;
-	this.renderer.shadowMapSoft = enable;
-	this.renderer.shadowMapCullFrontFaces = false;
+	this.renderer.shadowMap.enabled = enable;
+	this.renderer.shadowMap.soft = enable;
+	this.renderer.shadowMap.cullFrontFaces = false;
 }
 
 glam.GraphicsThreeJS.prototype.setFullScreen = function(enable)
