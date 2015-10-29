@@ -2837,10 +2837,7 @@ glam.GraphicsThreeJS.prototype.initRenderer = function(param)
     
     this.container.appendChild( renderer.domElement );
 
-    var projector = new THREE.Projector();
-
     this.renderer = renderer;
-    this.projector = projector;
 
     this.lastFrameTime = 0;
     
@@ -2931,8 +2928,7 @@ glam.GraphicsThreeJS.prototype.objectFromMouse = function(event)
     var vpy = - ( elty / this.container.offsetHeight ) * 2 + 1;
     
     var vector = new THREE.Vector3( vpx, vpy, 0.5 );
-
-    this.projector.unprojectVector( vector, this.camera );
+    vector.unproject(this.camera);
 	
     var pos = new THREE.Vector3;
     pos = pos.applyMatrix4(this.camera.matrixWorld);
@@ -3034,7 +3030,7 @@ glam.GraphicsThreeJS.prototype.getObjectIntersection = function(x, y, object)
 	
     var vector = new THREE.Vector3( vpx, vpy, 0.5 );
 
-    this.projector.unprojectVector( vector, this.camera );
+    vector.unproject( this.camera );
 	
     var pos = new THREE.Vector3;
     pos = pos.applyMatrix4(this.camera.matrixWorld);
