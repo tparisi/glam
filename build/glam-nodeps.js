@@ -7359,7 +7359,7 @@ glam.DOMMaterial.tryParseEnvMap = function(style) {
 	if (urls.length == 6) {
 		//console.log("**** GLAM: Loading cubemap", urls[0]);
 		var textureLoader = new THREE.CubeTextureLoader();
-		var cubeTexture = textureLoader.load( urls, THREE.Texture.DEFAULT_MAPPING,
+		var cubeTexture = textureLoader.load( urls,
 			function(texture) {
 				//console.log("**** GLAM: cubemap loaded", texture, urls[0]);
 			} );
@@ -7370,7 +7370,7 @@ glam.DOMMaterial.tryParseEnvMap = function(style) {
 		var url = glam.DOMMaterial.parseUrl(style["sphere-image"]);
 		//console.log("**** GLAM: Loading spheremap", url);
 
-		var textureLoader = new THREE.CubeTextureLoader();
+		var textureLoader = new THREE.TextureLoader();
 		return textureLoader.load(url, THREE.SphericalRefractionMapping, 
 			function(texture) {
 				//console.log("**** GLAM: spheremap loaded", texture, url);
