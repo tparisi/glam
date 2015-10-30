@@ -19,7 +19,7 @@ glam.ParticleSystem = function(param) {
 			transparent: (param.map !== null), 
 		    depthWrite: false,
 			vertexColors: (param.geometry.colors.length > 0)});
-		var ps = new THREE.PointCloud(param.geometry, material);
+		var ps = new THREE.Points(param.geometry, material);
 		ps.sortParticles = true;
 
 		if (param.map)

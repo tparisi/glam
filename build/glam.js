@@ -46793,7 +46793,7 @@ function ShaderParticleGroup( options ) {
 
     // And finally create the ParticleSystem. It's got its `dynamic` property
     // set so that THREE.js knows to update it on each frame.
-    that.mesh = new THREE.PointCloud( that.geometry, that.material );
+    that.mesh = new THREE.Points( that.geometry, that.material );
     that.mesh.sortParticles = true;
     that.mesh.dynamic = true;
 }
@@ -59321,7 +59321,7 @@ glam.ParticleSystem = function(param) {
 			transparent: (param.map !== null), 
 		    depthWrite: false,
 			vertexColors: (param.geometry.colors.length > 0)});
-		var ps = new THREE.PointCloud(param.geometry, material);
+		var ps = new THREE.Points(param.geometry, material);
 		ps.sortParticles = true;
 
 		if (param.map)
