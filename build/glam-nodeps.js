@@ -10673,7 +10673,7 @@ glam.BackgroundElement.onSetAttribute = function(obj, docelt, attr, val) {
 		case "sphereImage" :
 			var skysphereScript = obj.getComponent(glam.SkysphereScript);
 			if (skysphereScript) {
-				var envMap = THREE.ImageUtils.loadTexture(val);
+				var envMap = new THREE.TextureLoader().load(val);
 				skysphereScript.texture = envMap;
 			}
 			else {
