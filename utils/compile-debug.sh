@@ -31,7 +31,7 @@ $THREEDIR/utils/FontUtils.js "
 
 
 RAF=../libs/requestAnimationFrame/RequestAnimationFrame.js
-TWEEN=../libs/tween.js/tween.min.js
+TWEEN=../libs/tween.js/Tween.js
 HTML=../libs/html2canvas/html2canvas.js
 LIBS="$THREE $STATS $LOADERS $TWEEN $RAF $HTML"
 NODEPS=../src/config/nodeps.js
