@@ -2893,7 +2893,7 @@
 
 		}
 
-		props[ 'shading' ] = preferredShading;
+		// props[ 'shading' ] = preferredShading;
 		props[ 'side' ] = this.effect.doubleSided ? THREE.DoubleSide : THREE.FrontSide;
 
 		switch ( this.type ) {
@@ -2914,7 +2914,10 @@
 			case 'lambert':
 			default:
 
-				if ( props.diffuse != undefined ) props.color = props.diffuse;
+				if ( props.diffuse != undefined ) {
+					props.color = props.diffuse;
+					delete props.diffuse;
+				}
 				this.material = new THREE.MeshLambertMaterial( props );
 				break;
 
