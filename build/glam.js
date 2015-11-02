@@ -53566,7 +53566,6 @@ glam.BounceBehavior.prototype.start = function()
 	this.bounceDelta = new THREE.Vector3;
 	this.tweenUp = new TWEEN.Tween(this.bouncePosition).to(this.bounceEndPosition, this.duration / 2 * 1000)
 	.easing(TWEEN.Easing.Quadratic.InOut)
-	.repeat(0)
 	.start();
 	
 	glam.Behavior.prototype.start.call(this);
@@ -53595,7 +53594,6 @@ glam.BounceBehavior.prototype.evaluate = function(t)
 			this.bounceDelta = new THREE.Vector3;
 			this.tweenDown = new TWEEN.Tween(this.bouncePosition).to(this.bounceEndPosition, this.duration / 2 * 1000)
 			.easing(TWEEN.Easing.Quadratic.InOut)
-			.repeat(0)
 			.start();
 		}
 	}
@@ -57256,7 +57254,6 @@ glam.FadeBehavior.prototype.start = function()
 	this.targetValue = { opacity : this.opacity };
 	this.tween = new TWEEN.Tween(this.value).to(this.targetValue, this.duration * 1000)
 	.easing(TWEEN.Easing.Quadratic.InOut)
-	.repeat(0)
 	.start();
 	
 	glam.Behavior.prototype.start.call(this);

@@ -38,7 +38,6 @@ glam.FadeBehavior.prototype.start = function()
 	this.targetValue = { opacity : this.opacity };
 	this.tween = new TWEEN.Tween(this.value).to(this.targetValue, this.duration * 1000)
 	.easing(TWEEN.Easing.Quadratic.InOut)
-	.repeat(0)
 	.start();
 	
 	glam.Behavior.prototype.start.call(this);
