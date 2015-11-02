@@ -6869,7 +6869,7 @@ glam.ParticleSystem = function(param) {
 	if (param.geometry) {
 		
 		var color = (param.color !== undefined) ? param.color : glam.ParticleSystem.DEFAULT_COLOR;
-		var material = new THREE.PointCloudMaterial({color:color, size:param.size, map:param.map,
+		var material = new THREE.PointsMaterial({color:color, size:param.size, map:param.map,
 			transparent: (param.map !== null), 
 		    depthWrite: false,
 			vertexColors: (param.geometry.colors.length > 0)});
