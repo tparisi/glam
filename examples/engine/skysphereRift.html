@@ -81,7 +81,7 @@ z-index: 1;
 		// http://www.3delyvisions.com/skf1.htm
 		var path = "images/spherepano/pan0.jpg";
 		
-		var texture = THREE.ImageUtils.loadTexture(path);
+		var texture = new THREE.TextureLoader().load(path);
 
 		var skysphere = glam.Prefabs.Skysphere();
 		skysphereScript = skysphere.getComponent(glam.SkysphereScript);
@@ -154,7 +154,7 @@ z-index: 1;
 
 		var pic = views.options[views.selectedIndex].value;	
 	
-		var texture = THREE.ImageUtils.loadTexture( 'images/spherepano/' + pic );
+		var texture = new THREE.TextureLoader().load( 'images/spherepano/' + pic );
 		skysphereScript.texture = texture;
 	}	
 
