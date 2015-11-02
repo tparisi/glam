@@ -19,7 +19,6 @@ $THREEDIR/postprocessing/RenderPass.js \
 $THREEDIR/postprocessing/ShaderPass.js \
 $THREEDIR/renderers/StereoEffect.js \
 $THREEDIR/renderers/VREffect.js \
-$THREEDIR/renderers/Projector.js \
 $THREEDIR/shaders/ConvolutionShader.js \
 $THREEDIR/shaders/CopyShader.js \
 $THREEDIR/shaders/DotScreenShader.js \

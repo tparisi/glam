@@ -113,7 +113,7 @@ z-index: 1;
 
 		var pic = views.options[views.selectedIndex].value;	
 	
-		var texture = THREE.ImageUtils.loadTexture( 'images/spherepano/' + pic );
+		var texture = new THREE.TextureLoader().load( 'images/spherepano/' + pic );
 		skysphereScript.texture = texture;
 	}	
 
