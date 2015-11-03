@@ -44949,72 +44949,93 @@ THREE.StereoEffect = function ( renderer ) {
 
 	this.render = function ( scene, camera ) {
 
-		scene.updateMatrixWorld();
+		var scenes, cameras;
+		if (scene instanceof Array) {
+			scenes = scene;
+		}
+		else {
+			scenes = [ scene ];
+		}
 
-		if ( camera.parent === null ) camera.updateMatrixWorld();
+		if (camera instanceof Array) {
+			cameras = camera;
+		}
+		else {
+			cameras = [ camera ];
+		}
 
-		camera.matrixWorld.decompose( _position, _quaternion, _scale );
+		var i, len = scenes.length;
+		for (i = 0; i < len; i++) {
 
-		// Effective fov of the camera
+			var scene = scenes[i];
+			var camera = cameras[i];
+			scene.updateMatrixWorld();
 
-		_fov = THREE.Math.radToDeg( 2 * Math.atan( Math.tan( THREE.Math.degToRad( camera.fov ) * 0.5 ) / camera.zoom ) );
+			if ( camera.parent === null ) camera.updateMatrixWorld();
 
-		_ndfl = camera.near / this.focalLength;
-		_halfFocalHeight = Math.tan( THREE.Math.degToRad( _fov ) * 0.5 ) * this.focalLength;
-		_halfFocalWidth = _halfFocalHeight * 0.5 * camera.aspect;
+			camera.matrixWorld.decompose( _position, _quaternion, _scale );
 
-		_top = _halfFocalHeight * _ndfl;
-		_bottom = - _top;
-		_innerFactor = ( _halfFocalWidth + this.eyeSeparation / 2.0 ) / ( _halfFocalWidth * 2.0 );
-		_outerFactor = 1.0 - _innerFactor;
+			// Effective fov of the camera
 
-		_outer = _halfFocalWidth * 2.0 * _ndfl * _outerFactor;
-		_inner = _halfFocalWidth * 2.0 * _ndfl * _innerFactor;
+			_fov = THREE.Math.radToDeg( 2 * Math.atan( Math.tan( THREE.Math.degToRad( camera.fov ) * 0.5 ) / camera.zoom ) );
 
-		// left
+			_ndfl = camera.near / this.focalLength;
+			_halfFocalHeight = Math.tan( THREE.Math.degToRad( _fov ) * 0.5 ) * this.focalLength;
+			_halfFocalWidth = _halfFocalHeight * 0.5 * camera.aspect;
 
-		_cameraL.projectionMatrix.makeFrustum(
-			- _outer,
-			_inner,
-			_bottom,
-			_top,
-			camera.near,
-			camera.far
-		);
+			_top = _halfFocalHeight * _ndfl;
+			_bottom = - _top;
+			_innerFactor = ( _halfFocalWidth + this.eyeSeparation / 2.0 ) / ( _halfFocalWidth * 2.0 );
+			_outerFactor = 1.0 - _innerFactor;
 
-		_cameraL.position.copy( _position );
-		_cameraL.quaternion.copy( _quaternion );
-		_cameraL.translateX( - this.eyeSeparation / 2.0 );
+			_outer = _halfFocalWidth * 2.0 * _ndfl * _outerFactor;
+			_inner = _halfFocalWidth * 2.0 * _ndfl * _innerFactor;
 
-		// right
+			// left
 
-		_cameraR.projectionMatrix.makeFrustum(
-			- _inner,
-			_outer,
-			_bottom,
-			_top,
-			camera.near,
-			camera.far
-		);
+			_cameraL.projectionMatrix.makeFrustum(
+				- _outer,
+				_inner,
+				_bottom,
+				_top,
+				camera.near,
+				camera.far
+			);
 
-		_cameraR.position.copy( _position );
-		_cameraR.quaternion.copy( _quaternion );
-		_cameraR.translateX( this.eyeSeparation / 2.0 );
+			_cameraL.position.copy( _position );
+			_cameraL.quaternion.copy( _quaternion );
+			_cameraL.translateX( - this.eyeSeparation / 2.0 );
 
-		//
+			// right
 
-		renderer.clear();
-		renderer.enableScissorTest( true );
+			_cameraR.projectionMatrix.makeFrustum(
+				- _inner,
+				_outer,
+				_bottom,
+				_top,
+				camera.near,
+				camera.far
+			);
 
-		renderer.setScissor( 0, 0, _width, _height );
-		renderer.setViewport( 0, 0, _width, _height );
-		renderer.render( scene, _cameraL );
+			_cameraR.position.copy( _position );
+			_cameraR.quaternion.copy( _quaternion );
+			_cameraR.translateX( this.eyeSeparation / 2.0 );
 
-		renderer.setScissor( _width, 0, _width, _height );
-		renderer.setViewport( _width, 0, _width, _height );
-		renderer.render( scene, _cameraR );
+			//
 
-		renderer.enableScissorTest( false );
+			renderer.clear();
+			renderer.enableScissorTest( true );
+
+			renderer.setScissor( 0, 0, _width, _height );
+			renderer.setViewport( 0, 0, _width, _height );
+			renderer.render( scene, _cameraL );
+
+			renderer.setScissor( _width, 0, _width, _height );
+			renderer.setViewport( _width, 0, _width, _height );
+			renderer.render( scene, _cameraR );
+
+			renderer.enableScissorTest( false );
+		}
 
 	};
 
