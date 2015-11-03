@@ -17,7 +17,7 @@ $THREEDIR/postprocessing/BloomPass.js \
 $THREEDIR/postprocessing/MaskPass.js \
 $THREEDIR/postprocessing/RenderPass.js \
 $THREEDIR/postprocessing/ShaderPass.js \
-$THREEDIR/renderers/StereoEffect.js \
+$THREEDIR/renderers/StereoEffectr68.js \
 $THREEDIR/renderers/VREffect.js \
 $THREEDIR/shaders/ConvolutionShader.js \
 $THREEDIR/shaders/CopyShader.js \
