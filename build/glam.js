@@ -36228,6 +36228,9 @@ THREE.VRControls = function ( object, onError ) {
 
 		}
 
+		if (devices && devices.length)
+			return;
+		
 		if ( onError ) onError( 'HMD not available' );
 
 	}
@@ -45032,6 +45035,9 @@ THREE.VREffect = function ( renderer, onError ) {
 	var vrHMD;
 	var eyeTranslationL, eyeFOVL;
 	var eyeTranslationR, eyeFOVR;
+	this.clearColor = new THREE.Color;
+
+	var that = this;
 
 	function gotVRDevices( devices ) {
 
@@ -45073,6 +45079,8 @@ THREE.VREffect = function ( renderer, onError ) {
 			if ( onError ) onError( 'HMD not available' );
 
 		}
+
+		that._vrHMD = vrHMD;
 
 	}
 
@@ -45129,53 +45137,97 @@ THREE.VREffect = function ( renderer, onError ) {
 
 	this.render = function ( scene, camera ) {
 
+		var scenes, cameras;
+		if (scene instanceof Array) {
+			scenes = scene;
+		}
+		else {
+			scenes = [ scene ];
+		}
+
+		if (camera instanceof Array) {
+			cameras = camera;
+		}
+		else {
+			cameras = [ camera ];
+		}
+
+
+		var css = renderer.domElement.parentNode.style.backgroundColor;
+		if (css) {
+			this.clearColor.setStyle(css);
+		}
+		else {
+			this.clearColor.setRGB(0, 0, 0);
+		}
+
 		if ( vrHMD ) {
 
-			var sceneL, sceneR;
 
-			if ( Array.isArray( scene ) ) {
+			var i, len = scenes.length;
+			for (i = 0; i < len; i++) {
 
-				sceneL = scene[ 0 ];
-				sceneR = scene[ 1 ];
+				var scene = scenes[i];
+				var camera = cameras[i];
+				
+				if (i == 0) {
+				   	renderer.setClearColor( this.clearColor, 1 );
+					renderer.autoClearColor = true;				
+				}
+				else {
+				    renderer.setClearColor( this.clearColor, 1 );
+					renderer.autoClearColor = false;				
+				}
 
-			} else {
+				scene.updateMatrix();
+				scene.updateMatrixWorld();
 
-				sceneL = scene;
-				sceneR = scene;
+					var sceneL, sceneR;
+
+					if ( Array.isArray( scene ) ) {
+
+						sceneL = scene[ 0 ];
+						sceneR = scene[ 1 ];
+
+					} else {
+
+						sceneL = scene;
+						sceneR = scene;
+
+					}
+
+					var size = renderer.getSize();
+					size.width /= 2;
+
+					renderer.enableScissorTest( true );
+					renderer.clear();
+
+					if ( camera.parent === null ) camera.updateMatrixWorld();
+
+					cameraL.projectionMatrix = fovToProjection( eyeFOVL, true, camera.near, camera.far );
+					cameraR.projectionMatrix = fovToProjection( eyeFOVR, true, camera.near, camera.far );
+
+					camera.matrixWorld.decompose( cameraL.position, cameraL.quaternion, cameraL.scale );
+					camera.matrixWorld.decompose( cameraR.position, cameraR.quaternion, cameraR.scale );
+
+					cameraL.translateX( eyeTranslationL.x * this.scale );
+					cameraR.translateX( eyeTranslationR.x * this.scale );
+
+					// render left eye
+					renderer.setViewport( 0, 0, size.width, size.height );
+					renderer.setScissor( 0, 0, size.width, size.height );
+					renderer.render( sceneL, cameraL );
+
+					// render right eye
+					renderer.setViewport( size.width, 0, size.width, size.height );
+					renderer.setScissor( size.width, 0, size.width, size.height );
+					renderer.render( sceneR, cameraR );
+
+					renderer.enableScissorTest( false );
 
 			}
 
-			var size = renderer.getSize();
-			size.width /= 2;
-
-			renderer.enableScissorTest( true );
-			renderer.clear();
-
-			if ( camera.parent === null ) camera.updateMatrixWorld();
-
-			cameraL.projectionMatrix = fovToProjection( eyeFOVL, true, camera.near, camera.far );
-			cameraR.projectionMatrix = fovToProjection( eyeFOVR, true, camera.near, camera.far );
-
-			camera.matrixWorld.decompose( cameraL.position, cameraL.quaternion, cameraL.scale );
-			camera.matrixWorld.decompose( cameraR.position, cameraR.quaternion, cameraR.scale );
-
-			cameraL.translateX( eyeTranslationL.x * this.scale );
-			cameraR.translateX( eyeTranslationR.x * this.scale );
-
-			// render left eye
-			renderer.setViewport( 0, 0, size.width, size.height );
-			renderer.setScissor( 0, 0, size.width, size.height );
-			renderer.render( sceneL, cameraL );
-
-			// render right eye
-			renderer.setViewport( size.width, 0, size.width, size.height );
-			renderer.setScissor( size.width, 0, size.width, size.height );
-			renderer.render( sceneR, cameraR );
-
-			renderer.enableScissorTest( false );
-
 			return;
-
 		}
 
 		// Regular render mode if not HMD

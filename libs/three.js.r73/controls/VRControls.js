@@ -49,6 +49,9 @@ THREE.VRControls = function ( object, onError ) {
 
 		}
 
+		if (devices && devices.length)
+			return;
+		
 		if ( onError ) onError( 'HMD not available' );
 
 	}
