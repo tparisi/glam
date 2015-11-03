@@ -44886,8 +44886,12 @@ THREE.StereoEffect = function ( renderer ) {
 
 	var scope = this;
 
+	this.clearColor = new THREE.Color;
 	this.eyeSeparation = 3;
 	this.focalLength = 15; 	// Distance to the non-parallax or projection plane
+	// Tony's overrides -> meters
+	this.eyeSeparation = 0.0635 / 2; // meters
+	this.focalLength = 0.381; 	// meters
 
 	Object.defineProperties( this, {
 		separation: {
@@ -44964,12 +44968,29 @@ THREE.StereoEffect = function ( renderer ) {
 			cameras = [ camera ];
 		}
 
+		var css = renderer.domElement.parentNode.style.backgroundColor;
+		if (css) {
+			this.clearColor.setStyle(css);
+		}
+		else {
+			this.clearColor.setRGB(0, 0, 0);
+		}
+
 		var i, len = scenes.length;
 		for (i = 0; i < len; i++) {
 
 			var scene = scenes[i];
 			var camera = cameras[i];
 			scene.updateMatrixWorld();
+
+			if (i == 0) {
+			   	renderer.setClearColor( this.clearColor, 1 );
+				renderer.autoClearColor = true;				
+			}
+			else {
+			    renderer.setClearColor( this.clearColor, 1 );
+				renderer.autoClearColor = false;				
+			}
 
 			if ( camera.parent === null ) camera.updateMatrixWorld();
 
@@ -45023,7 +45044,6 @@ THREE.StereoEffect = function ( renderer ) {
 
 			//
 
-			renderer.clear();
 			renderer.enableScissorTest( true );
 
 			renderer.setScissor( 0, 0, _width, _height );
