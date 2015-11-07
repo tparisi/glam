@@ -27,6 +27,13 @@ z-index: 1;
 	<select id="viewSelect">
 	<option value="[Samsung] 360 video demo trimmed.mp4">Samsung</option>
 	<option value="360 Tours Iceland trimmed.mp4">Iceland</option>
+	<option value="Baby+Rhino+Devours+His+Morning+Bottle+(360+Video)-ILOiq7gNnBo.mp4">Baby Rhino</option>
+	<option value="CHANNEL+CROSSING+360+VIDEO-F6qzcw5r8xY.mp4">Channel Crossing</option>
+	<option value="Elephants+on+the+Brink+(360+Video)-2bpICIClAIg.mp4">Elephants on the Brink</option>
+	<option value="Jared+Leto+Tour+Guides+Alaska's+Melting+Glaciers+in+360°+-+Act+In+Paris-XtbgPurqkUc.mp4">Jared Leto Tour Guides</option>
+	<option value="Lion+-+The+Portrait+of+Power+(360+Video)-mymJJtH0X3w">Lion: The Portrait of Power</option>
+	<option value="MythBusters+-+Sharks+Everywhere!+(360+Video)-3WIS6N_9gjA.mp4">MythBusters: Sharks Everywhere!</option>
+
 	
 	</select>
 
@@ -84,7 +91,7 @@ z-index: 1;
 
 		var url = views.options[views.selectedIndex].value;	
 		var video = document.getElementById( 'video' );
-		video.src = 'videos/' + url;
+		video.src = '/360videos/' + url;
 
 		var texture = new THREE.VideoTexture( video );
 		texture.minFilter = THREE.LinearFilter;
