@@ -10,7 +10,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "browserify ./ -s glam -o build/glam.js",
-    "build": "watchify ./ -o -s glam build/glam.js",
+    "build": "watchify ./ -o -s glam build/glam.js"
   },
   "repository": {
     "type": "git",
