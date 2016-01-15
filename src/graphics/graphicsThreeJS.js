@@ -91,7 +91,7 @@ glam.GraphicsThreeJS.prototype.initScene = function()
 	
 	this.backgroundLayer = {};
     var scene = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera( 45, 
+    var camera = new THREE.PerspectiveCamera( 90, 
     		this.container.offsetWidth / this.container.offsetHeight, 0.01, 10000 );
     camera.position.set( 0, 0, 10 );	
     scene.add(camera);
@@ -671,6 +671,11 @@ glam.GraphicsThreeJS.prototype.onWindowResize = function(event)
 	{
 		this.camera.aspect = this.container.offsetWidth / this.container.offsetHeight;
 		this.camera.updateProjectionMatrix();
+	}
+
+	if (this.backgroundLayer && this.backgroundLayer.camera) {
+		this.backgroundLayer.camera.aspect = this.container.offsetWidth / this.container.offsetHeight;
+		this.backgroundLayer.camera.updateProjectionMatrix();
 	}
 }
 
